@@ -1,0 +1,104 @@
+     ____
+    / _  |   Frida 17.9.10 - A world-class dynamic instrumentation toolkit
+   | (_| |
+    > _  |   Commands:
+   /_/ |_|       help      -> Displays the help system
+   . . . .       object?   -> Display information about 'object'
+   . . . .       exit/quit -> Exit
+   . . . .
+   . . . .   More info at https://frida.re/docs/home/
+   . . . .
+   . . . .   Connected to 127.0.0.1:27042 (id=socket@127.0.0.1:27042)
+Attaching...
+[V2] test_clear_badge_v2 loaded
+[Remote::PID::4422 ]-> [A] ns.c.e: 32 → 0
+[B] FMF instance found
+[B] candidate: FindMoreFriendsUI.g1(String, boolean)
+[B] call failed: Error: invoke(): argument types do not match any of:
+	.overload('java.lang.Object', '[Ljava.lang.Object;')
+[B] candidate: FragmentActivitySupport.getBooleanExtra(String, boolean)
+[B] call failed: Error: invoke(): argument types do not match any of:
+	.overload('java.lang.Object', '[Ljava.lang.Object;')
+[B] candidate: FragmentActivitySupport.setBooleanExtra(String, boolean)
+[B] call failed: Error: invoke(): argument types do not match any of:
+	.overload('java.lang.Object', '[Ljava.lang.Object;')
+[B] no (String,boolean) method found on FMF
+[B] FMF scan done
+[C] LauncherUI instance found
+[C] LauncherUI.o: true → false
+[C] LauncherUI.p: true → false
+[C] keyword method: getCurrentTabIndex(0 params)
+[C] keyword method: onPreDestroyed(0 params)
+[C] keyword method: setEnterSharedElementCallback(1 params)
+[C] keyword method: setExitSharedElementCallback(1 params)
+[C] keyword method: dispatchActivityPreDestroyed(0 params)
+[C] keyword method: notifyContentCaptureManagerIfNeeded(1 params)
+[C] keyword method: autofillClientResetableStateAvailable(0 params)
+[C] keyword method: onPrepareDialog(2 params)
+[C] keyword method: onPrepareDialog(3 params)
+[C] keyword method: setEnterSharedElementCallback(1 params)
+[C] keyword method: setExitSharedElementCallback(1 params)
+[C] keyword method: setFeatureDrawable(2 params)
+[C] keyword method: setFeatureDrawableAlpha(2 params)
+[C] keyword method: setFeatureDrawableResource(2 params)
+[C] keyword method: setFeatureDrawableUri(2 params)
+[C] keyword method: createCredentialProtectedStorageContext(0 params)
+[C] keyword method: databaseList(0 params)
+[C] keyword method: deleteDatabase(1 params)
+[C] keyword method: deleteSharedPreferences(1 params)
+[C] keyword method: getDatabasePath(1 params)
+[C] keyword method: getSharedPreferences(2 params)
+[C] keyword method: getSharedPreferences(2 params)
+[C] keyword method: getSharedPreferencesPath(1 params)
+[C] keyword method: getWallpaperDesiredMinimumHeight(0 params)
+[C] keyword method: getWallpaperDesiredMinimumWidth(0 params)
+[C] keyword method: isCredentialProtectedStorage(0 params)
+[C] keyword method: moveDatabaseFrom(2 params)
+[C] keyword method: moveSharedPreferencesFrom(2 params)
+[C] keyword method: openOrCreateDatabase(3 params)
+[C] keyword method: openOrCreateDatabase(4 params)
+[C] keyword method: reloadSharedPreferences(0 params)
+[C] keyword method: sendOrderedBroadcast(9 params)
+[C] keyword method: sendOrderedBroadcast(2 params)
+[C] keyword method: sendOrderedBroadcast(8 params)
+[C] keyword method: sendOrderedBroadcast(7 params)
+[C] keyword method: sendOrderedBroadcast(8 params)
+[C] keyword method: sendOrderedBroadcast(8 params)
+[C] keyword method: sendOrderedBroadcastAsUser(9 params)
+[C] keyword method: sendOrderedBroadcastAsUser(10 params)
+[C] keyword method: sendOrderedBroadcastAsUser(8 params)
+[C] keyword method: sendStickyOrderedBroadcast(6 params)
+[C] keyword method: sendStickyOrderedBroadcastAsUser(7 params)
+[C] keyword method: createCredentialProtectedStorageContext(0 params)
+[C] keyword method: databaseList(0 params)
+[C] keyword method: deleteDatabase(1 params)
+[C] keyword method: deleteSharedPreferences(1 params)
+[C] keyword method: getDatabasePath(1 params)
+[C] keyword method: getSharedPreferences(2 params)
+[C] keyword method: getSharedPreferences(2 params)
+[C] keyword method: getSharedPreferencesPath(1 params)
+[C] keyword method: getSharedPrefsFile(1 params)
+[C] keyword method: getWallpaperDesiredMinimumHeight(0 params)
+[C] keyword method: getWallpaperDesiredMinimumWidth(0 params)
+[C] keyword method: isCredentialProtectedStorage(0 params)
+[C] keyword method: moveDatabaseFrom(2 params)
+[C] keyword method: moveSharedPreferencesFrom(2 params)
+[C] keyword method: openOrCreateDatabase(3 params)
+[C] keyword method: openOrCreateDatabase(4 params)
+[C] keyword method: reloadSharedPreferences(0 params)
+[C] keyword method: sendOrderedBroadcast(9 params)
+[C] keyword method: sendOrderedBroadcast(2 params)
+[C] keyword method: sendOrderedBroadcast(8 params)
+[C] keyword method: sendOrderedBroadcast(7 params)
+[C] keyword method: sendOrderedBroadcast(8 params)
+[C] keyword method: sendOrderedBroadcast(8 params)
+[C] keyword method: sendOrderedBroadcastAsUser(9 params)
+[C] keyword method: sendOrderedBroadcastAsUser(10 params)
+[C] keyword method: sendOrderedBroadcastAsUser(8 params)
+[C] keyword method: sendStickyOrderedBroadcast(6 params)
+[C] keyword method: sendStickyOrderedBroadcastAsUser(7 params)
+[C] LauncherUI scan done
+[V2] all paths fired. 请观察红点变化...
+Process terminated
+
+Thank you for using Frida!

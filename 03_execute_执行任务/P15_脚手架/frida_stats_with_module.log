@@ -1,0 +1,54 @@
+     ____
+    / _  |   Frida 17.9.8 - A world-class dynamic instrumentation toolkit
+   | (_| |
+    > _  |   Commands:
+   /_/ |_|       help      -> Displays the help system
+   . . . .       object?   -> Display information about 'object'
+   . . . .       exit/quit -> Exit
+   . . . .
+   . . . .   More info at https://frida.re/docs/home/
+   . . . .
+   . . . .   Connected to MI 9 (id=609b4b18)
+Spawning `com.tencent.mm`...
+[STATS] 2026-05-19 08:02:11.155 | INIT frida_stats.js v1.1
+[STATS] 2026-05-19 08:02:11.155 | INTERVAL=5s | 每行=过去5秒的累计计数
+Spawned `com.tencent.mm`. Resuming main thread!
+[MI 9::com.tencent.mm ]-> [STATS] 2026-05-19 08:02:16.169 | PROP=1366 vb=0 bl=0 dbg=5 maps=2 smaps=0 status=0 pg=0 KV_O=9 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=1172 access=1236
+[STATS] 2026-05-19 08:02:21.159 | PROP=575 vb=1 bl=1 dbg=1 maps=10 smaps=0 status=0 pg=0 KV_O=4 KV_W=0 DNS=0 CONN=0 mprotect=192 dl_iter=0 open=4582 access=4159
+[STATS] 2026-05-19 08:02:26.165 | PROP=330 vb=0 bl=0 dbg=0 maps=2 smaps=0 status=0 pg=0 KV_O=2 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=1731 access=1726
+[STATS] 2026-05-19 08:02:31.171 | PROP=779 vb=0 bl=0 dbg=0 maps=9 smaps=0 status=4 pg=0 KV_O=7 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=2973 access=3269
+[STATS] 2026-05-19 08:02:36.177 | PROP=237 vb=0 bl=0 dbg=0 maps=1 smaps=0 status=0 pg=0 KV_O=2 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=339 access=331
+[STATS] 2026-05-19 08:02:41.184 | PROP=149 vb=0 bl=0 dbg=0 maps=0 smaps=0 status=0 pg=0 KV_O=4 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=194 access=182
+[STATS] 2026-05-19 08:02:46.190 | PROP=5 vb=0 bl=0 dbg=0 maps=0 smaps=0 status=0 pg=0 KV_O=1 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=137 access=131
+[STATS] 2026-05-19 08:02:51.195 | PROP=49 vb=0 bl=0 dbg=0 maps=0 smaps=0 status=0 pg=0 KV_O=0 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=16 access=14
+[STATS] 2026-05-19 08:02:56.198 | PROP=277 vb=0 bl=0 dbg=0 maps=0 smaps=0 status=2 pg=0 KV_O=5 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=773 access=769
+[STATS] 2026-05-19 08:03:01.199 | PROP=618 vb=0 bl=0 dbg=0 maps=0 smaps=0 status=2 pg=0 KV_O=0 KV_W=0 DNS=0 CONN=81 mprotect=0 dl_iter=0 open=2728 access=2869
+[STATS] 2026-05-19 08:03:06.200 | PROP=212 vb=0 bl=0 dbg=0 maps=0 smaps=0 status=2 pg=0 KV_O=8 KV_W=0 DNS=0 CONN=115 mprotect=0 dl_iter=0 open=3379 access=3433
+[STATS] 2026-05-19 08:03:11.201 | PROP=1718 vb=0 bl=0 dbg=0 maps=1 smaps=0 status=3 pg=0 KV_O=4 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=682 access=645
+[STATS] 2026-05-19 08:03:16.206 | PROP=1882 vb=0 bl=0 dbg=0 maps=0 smaps=0 status=2 pg=0 KV_O=2 KV_W=0 DNS=0 CONN=14 mprotect=0 dl_iter=0 open=1212 access=1272
+[STATS] 2026-05-19 08:03:21.212 | PROP=197 vb=0 bl=0 dbg=0 maps=0 smaps=0 status=3 pg=0 KV_O=4 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=875 access=889
+[STATS] 2026-05-19 08:03:26.217 | PROP=1502 vb=0 bl=0 dbg=0 maps=2 smaps=0 status=2 pg=0 KV_O=5 KV_W=0 DNS=3 CONN=3 mprotect=6 dl_iter=0 open=1300 access=1418
+[STATS] 2026-05-19 08:03:31.223 | PROP=89 vb=0 bl=0 dbg=0 maps=0 smaps=0 status=0 pg=0 KV_O=0 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=355 access=349
+[STATS] 2026-05-19 08:03:36.229 | PROP=8 vb=0 bl=0 dbg=0 maps=0 smaps=0 status=0 pg=0 KV_O=0 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=153 access=139
+[STATS] 2026-05-19 08:03:41.235 | PROP=17 vb=0 bl=0 dbg=0 maps=0 smaps=0 status=0 pg=0 KV_O=0 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=365 access=310
+[STATS] 2026-05-19 08:03:46.237 | PROP=8 vb=0 bl=0 dbg=0 maps=0 smaps=0 status=0 pg=0 KV_O=1 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=108 access=88
+[STATS] 2026-05-19 08:03:51.242 | PROP=9 vb=0 bl=0 dbg=0 maps=0 smaps=0 status=0 pg=0 KV_O=1 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=162 access=157
+[STATS] 2026-05-19 08:03:56.247 | PROP=806 vb=0 bl=0 dbg=0 maps=0 smaps=0 status=4 pg=0 KV_O=5 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=2578 access=2717
+[STATS] 2026-05-19 08:04:01.253 | PROP=100 vb=0 bl=0 dbg=0 maps=0 smaps=0 status=2 pg=0 KV_O=5 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=1937 access=1887
+[STATS] 2026-05-19 08:04:06.259 | PROP=5 vb=0 bl=0 dbg=0 maps=0 smaps=0 status=0 pg=0 KV_O=0 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=587 access=560
+[STATS] 2026-05-19 08:04:11.263 | PROP=4 vb=0 bl=0 dbg=0 maps=0 smaps=0 status=0 pg=0 KV_O=0 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=63 access=63
+[STATS] 2026-05-19 08:04:16.270 | PROP=5 vb=0 bl=0 dbg=0 maps=0 smaps=0 status=0 pg=0 KV_O=3 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=28 access=18
+[STATS] 2026-05-19 08:04:21.276 | PROP=608 vb=0 bl=0 dbg=0 maps=0 smaps=0 status=0 pg=0 KV_O=5 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=1647 access=1576
+[STATS] 2026-05-19 08:04:26.278 | PROP=492 vb=1 bl=1 dbg=1 maps=0 smaps=0 status=5 pg=0 KV_O=7 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=1864 access=1683
+[STATS] 2026-05-19 08:04:31.284 | PROP=329 vb=1 bl=1 dbg=1 maps=4 smaps=0 status=2 pg=0 KV_O=8 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=1160 access=1079
+[STATS] 2026-05-19 08:04:36.291 | PROP=272 vb=0 bl=0 dbg=0 maps=0 smaps=0 status=2 pg=0 KV_O=2 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=1844 access=1759
+[STATS] 2026-05-19 08:04:41.300 | PROP=99 vb=0 bl=0 dbg=0 maps=0 smaps=0 status=2 pg=0 KV_O=3 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=1327 access=1200
+[STATS] 2026-05-19 08:04:46.298 | PROP=532 vb=0 bl=0 dbg=0 maps=0 smaps=0 status=3 pg=0 KV_O=1 KV_W=0 DNS=0 CONN=14 mprotect=0 dl_iter=0 open=3354 access=3394
+[STATS] 2026-05-19 08:04:51.306 | PROP=23 vb=0 bl=0 dbg=0 maps=0 smaps=0 status=0 pg=0 KV_O=5 KV_W=0 DNS=0 CONN=3 mprotect=0 dl_iter=0 open=2140 access=2141
+[STATS] 2026-05-19 08:04:56.309 | PROP=5 vb=0 bl=0 dbg=0 maps=0 smaps=0 status=0 pg=0 KV_O=0 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=637 access=604
+[STATS] 2026-05-19 08:05:01.314 | PROP=5 vb=0 bl=0 dbg=0 maps=0 smaps=0 status=0 pg=0 KV_O=0 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=58 access=58
+[STATS] 2026-05-19 08:05:06.318 | PROP=5 vb=0 bl=0 dbg=0 maps=0 smaps=0 status=0 pg=0 KV_O=0 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=112 access=112
+[STATS] 2026-05-19 08:05:11.324 | PROP=5 vb=0 bl=0 dbg=0 maps=0 smaps=0 status=2 pg=2 KV_O=0 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=23 access=19
+[STATS] 2026-05-19 08:05:16.325 | PROP=5 vb=0 bl=0 dbg=0 maps=0 smaps=0 status=0 pg=0 KV_O=0 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=14 access=14
+[STATS] 2026-05-19 08:05:21.332 | PROP=5 vb=0 bl=0 dbg=0 maps=0 smaps=0 status=0 pg=0 KV_O=0 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=30 access=30
+[STATS] 2026-05-19 08:05:26.338 | PROP=5 vb=0 bl=0 dbg=0 maps=0 smaps=0 status=0 pg=0 KV_O=0 KV_W=0 DNS=0 CONN=0 mprotect=0 dl_iter=0 open=26 access=26

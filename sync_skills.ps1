@@ -1,0 +1,68 @@
+# sync_skills.ps1 - mirror .cursor/skills -> .claude/skills
+#
+# Usage:
+#   powershell -File sync_skills.ps1                    # one-shot
+#   powershell -File sync_skills.ps1 -Watch             # watch mode
+#   powershell -File sync_skills.ps1 -Direction reverse # claude -> cursor
+#
+# Design:
+#   Primary  : .cursor/skills/  (edit here daily)
+#   Mirror   : .claude/skills/  (Claude Code compat)
+#   Strategy : robocopy /MIR, idempotent
+
+param(
+    [switch]$Watch,
+    [ValidateSet('forward','reverse')]
+    [string]$Direction = 'forward'
+)
+
+$ErrorActionPreference = 'Stop'
+$root = Split-Path -Parent $MyInvocation.MyCommand.Definition
+
+$cursorSkills = Join-Path $root '.cursor\skills'
+$claudeSkills = Join-Path $root '.claude\skills'
+
+function Sync-Once {
+    param([string]$Src, [string]$Dst)
+
+    if (-not (Test-Path $Src)) {
+        Write-Warning "Source not found: $Src"
+        return
+    }
+
+    New-Item -ItemType Directory -Force -Path $Dst | Out-Null
+    Write-Host ("[{0}] {1} -> {2}" -f (Get-Date -Format HH:mm:ss), $Src, $Dst) -ForegroundColor Cyan
+
+    robocopy $Src $Dst /MIR /NP /NS /NJH /NJS /NC /NDL | Out-Null
+
+    $count = (Get-ChildItem -Path $Dst -Recurse -Filter 'SKILL.md').Count
+    Write-Host ("  -> synced {0} SKILL.md" -f $count) -ForegroundColor Green
+}
+
+if ($Direction -eq 'forward') {
+    $src = $cursorSkills
+    $dst = $claudeSkills
+} else {
+    $src = $claudeSkills
+    $dst = $cursorSkills
+    Write-Warning "Reverse mode: claude -> cursor, starting in 5s..."
+    Start-Sleep -Seconds 5
+}
+
+Sync-Once -Src $src -Dst $dst
+
+if ($Watch) {
+    Write-Host "Watch mode active, Ctrl+C to exit" -ForegroundColor Yellow
+    $watcher = New-Object System.IO.FileSystemWatcher
+    $watcher.Path = $src
+    $watcher.IncludeSubdirectories = $true
+    $watcher.EnableRaisingEvents = $true
+
+    $action = { Sync-Once -Src $src -Dst $dst }
+    Register-ObjectEvent $watcher 'Changed' -Action $action | Out-Null
+    Register-ObjectEvent $watcher 'Created' -Action $action | Out-Null
+    Register-ObjectEvent $watcher 'Deleted' -Action $action | Out-Null
+    Register-ObjectEvent $watcher 'Renamed' -Action $action | Out-Null
+
+    while ($true) { Start-Sleep -Seconds 1 }
+}

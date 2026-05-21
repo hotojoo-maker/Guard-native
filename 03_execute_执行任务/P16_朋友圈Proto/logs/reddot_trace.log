@@ -1,0 +1,23 @@
+     ____
+    / _  |   Frida 17.9.10 - A world-class dynamic instrumentation toolkit
+   | (_| |
+    > _  |   Commands:
+   /_/ |_|       help      -> Displays the help system
+   . . . .       object?   -> Display information about 'object'
+   . . . .       exit/quit -> Exit
+   . . . .
+   . . . .   More info at https://frida.re/docs/home/
+   . . . .
+   . . . .   Connected to MI 9 (id=609b4b18)
+Attaching...
+[OK] fl4.o.Sh
+[MISS] w1.E1: Error: java.lang.ClassNotFoundException: Didn't find class "com.tencent.mm.plugin.sns.ui.improve.w1" on path: DexPathList[[zip file "/data/user/0/com.tencent.mm/tinker/patch-b2c53cd6/dex/tinker_classN.apk"],nativeLibraryDirectories=[/data/user/0/com.tencent.mm/tinker/patch-b2c53cd6/lib/lib/arm64-v8a, /data/app/~~3b70A491-llST8--4goL8w==/com.tencent.mm-6Z-QeOfO6j_nv-YH34JDqA==/lib/arm64, /data/app/~~3b70A491-llST8--4goL8w==/com.tencent.mm-6Z-QeOfO6j_nv-YH34JDqA==/base.apk!/lib/arm64-v8a, /system/lib64, /system/system_ext/lib64]]
+[MISS] FindMoreFriendsUI.l0: Error: java.lang.ClassNotFoundException: Didn't find class "com.tencent.mm.plugin.sns.ui.improve.FindMoreFriendsUI" on path: DexPathList[[zip file "/data/user/0/com.tencent.mm/tinker/patch-b2c53cd6/dex/tinker_classN.apk"],nativeLibraryDirectories=[/data/user/0/com.tencent.mm/tinker/patch-b2c53cd6/lib/lib/arm64-v8a, /data/app/~~3b70A491-llST8--4goL8w==/com.tencent.mm-6Z-QeOfO6j_nv-YH34JDqA==/lib/arm64, /data/app/~~3b70A491-llST8--4goL8w==/com.tencent.mm-6Z-QeOfO6j_nv-YH34JDqA==/base.apk!/lib/arm64-v8a, /system/lib64, /system/system_ext/lib64]]
+[MISS] FriendSnsPreference.h0: Error: java.lang.ClassNotFoundException: Didn't find class "com.tencent.mm.plugin.sns.ui.improve.FriendSnsPreference" on path: DexPathList[[zip file "/data/user/0/com.tencent.mm/tinker/patch-b2c53cd6/dex/tinker_classN.apk"],nativeLibraryDirectories=[/data/user/0/com.tencent.mm/tinker/patch-b2c53cd6/lib/lib/arm64-v8a, /data/app/~~3b70A491-llST8--4goL8w==/com.tencent.mm-6Z-QeOfO6j_nv-YH34JDqA==/lib/arm64, /data/app/~~3b70A491-llST8--4goL8w==/com.tencent.mm-6Z-QeOfO6j_nv-YH34J[TINKER] NOT FOUND, falling back to default
+[OK] fl4.o.Sh
+[MISS] w1.E1: Error: java.lang.ClassNotFoundException: Didn't find class "com.tencent.mm.plugin.sns.ui.improve.w1" on path: DexPathList[[zip file "/data/user/0/com.tencent.mm/tinker/patch-b2c53cd6/dex/tinker_classN.apk"],nativeLibraryDirectories=[/data/user/0/com.tencent.mm/tinker/patch-b2c53cd6/lib/lib/arm64-v8a, /data/app/~~3b70A491-llST8--4goL8w==/com.tencent.mm-6Z-QeOfO6j_nv-YH34JDqA==/lib/arm64, /data/app/~~3b70A491-llST8--4goL8w==/com.tencent.mm-6Z-QeOfO6j_nv-YH34JDqA==/base.apk!/lib/arm64-v8a, /system/lib64, /system/system_ext/lib64]]
+[MISS] FindMoreFriendsUI.l0: Error: java.lang.ClassNotFoundException: Didn't find class "com.tencent.mm.plugin.sns.ui.improve.FindMoreFriendsUI" on path: DexPathList[[zip file "/data/user/0/com.tencent.mm/tinker/patch-b2c53cd6/dex/tinker_classN.apk"],nativeLibraryDirectories=[/data/user/0/com.tencent.mm/tinker/patch-b2c53cd6/lib/lib/arm64-v8a, /data/app/~~3b70A491-llST8--4goL8w==/com.tencent.mm-6Z-QeOfO6j_nv-YH34JDqA==/lib/arm64, /data/app/~~3b70A491-llST8--4goL8w==/com.tencent.mm-6Z-QeOfO6j_nv-YH34JDqA==/base.apk!/lib/arm64-v8a, /system/lib64, /system/system_ext/lib64]]
+[MISS] FriendSnsPreference.h0: Error: java.lang.ClassNotFoundException: Didn't find class "com.tencent.mm.plugin.sns.ui.improve.FriendSnsPreference" on path: DexPathList[[zip file "/data/user/0/com.tencent.mm/tinker/patch-b2c53cd6/dex/tinker_classN.apk"],nativeLibraryDirectories=[/data/user/0/com.tencent.mm/tinker/patch-b2c53cd6/lib/lib/arm64-v8a, /data/app/~~3b70A491-llST8--4goL8w==/com.tencent.mm-6Z-QeOfO6j_nv-YH34JDqA==/lib/arm64, /data/app/~~3b70A491-llST8--4goL8w==/com.tencent.mm-6Z-QeOfO6j_nv-YH34JDqA==/base.apk!/lib/arm64-v8a, /system/lib64, /system/system_ext/lib64]]
+Process terminated
+
+Thank you for using Frida!

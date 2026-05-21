@@ -1,0 +1,44 @@
+﻿STDOUT:
+     ____
+    / _  |   Frida 17.9.10 - A world-class dynamic instrumentation toolkit
+   | (_| |
+    > _  |   Commands:
+   /_/ |_|       help      -> Displays the help system
+   . . . .       object?   -> Display information about 'object'
+   . . . .       exit/quit -> Exit
+   . . . .
+   . . . .   More info at https://frida.re/docs/home/
+   . . . .
+   . . . .   Connected to MI 9 (id=609b4b18)
+Spawning `com.tencent.mm`...
+Spawned `com.tencent.mm`. Resuming main thread!
+[MI 9::com.tencent.mm ]-> [D6] total methods: 24
+[D6-M] a(java.lang.String) -> void
+[D6-M] d(z15.k46, m94.a) -> void
+[D6-M] k() -> int
+[D6-M] l(com.tencent.mm.plugin.sns.storage.v1, java.lang.String) -> void
+[D6-M] m(com.tencent.mm.plugin.sns.storage.SnsInfo, int, java.lang.String, long, java.lang.String, boolean, int) -> z15.e56
+[D6-M] n(com.tencent.mm.plugin.sns.storage.SnsInfo, int, m94.a, int) -> z15.e56
+[D6-M] o(com.tencent.mm.plugin.sns.storage.SnsInfo, int, m94.a, z15.e56, boolean, int, int) -> z15.e56
+[D6-M] p(java.lang.String, int, m94.a, com.tencent.mm.plugin.sns.storage.SnsInfo, int) -> void
+[D6-M] q(com.tencent.mm.plugin.sns.storage.SnsInfo, int, m94.a, z15.e56, int, int) -> z15.e56
+[D6-M] r(com.tencent.mm.plugin.sns.storage.SnsInfo, int, m94.a, z15.e56, boolean, int, int) -> z15.e56
+[D6-M] b(java.lang.String) -> void
+[D6-M] c(b74.m0, int) -> boolean
+[D6-M] e(int, java.lang.String, boolean, boolean, int) -> void
+[D6-M] f(int, java.lang.String, boolean, boolean, int) -> boolean
+[D6-M] g(int, java.lang.String, int, boolean, long, int) -> void
+[D6-M] h(android.content.Intent, java.lang.String) -> android.content.Intent
+[D6-M] i() -> int
+[D6-M] j(java.lang.String) -> int
+[D6-M] onSceneEnd(int, int, java.lang.String, com.tencent.mm.modelbase.m1) -> void
+[D6-M] s(java.lang.String, java.util.ArrayList) -> void
+[D6-M] t(long) -> void
+[D6-M] u(long, int) -> void
+[D6-M] v(java.lang.String, long, int, int) -> void
+[D6-M] w(int, java.lang.String, b74.m0) -> void
+[D6] k() hooked
+[D6] all methods hooked
+
+STDERR:
+

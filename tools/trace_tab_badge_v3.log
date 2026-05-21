@@ -1,0 +1,104 @@
+﻿STDOUT:
+     ____
+    / _  |   Frida 17.9.10 - A world-class dynamic instrumentation toolkit
+   | (_| |
+    > _  |   Commands:
+   /_/ |_|       help      -> Displays the help system
+   . . . .       object?   -> Display information about 'object'
+   . . . .       exit/quit -> Exit
+   . . . .
+   . . . .   More info at https://frida.re/docs/home/
+   . . . .
+   . . . .   Connected to MI 9 (id=609b4b18)
+Spawning `com.tencent.mm`...
+Spawned `com.tencent.mm`. Resuming main thread!
+[MI 9::com.tencent.mm ]-> [W1] int methods hooked
+[SP] hooked
+[INIT] done
+[SP-BOOL] enable=true
+[SP-BOOL] auto_init=true
+[SP-INT] check_tinker_update_interval=12
+[SP-BOOL] has_been_opened=true
+[SP-BOOL] ld=true
+[SP-INT] ic04=150
+[SP-INT] smst=1
+[SP-BOOL] deferred_analytics_collection=true
+[SP-BOOL] use_service=true
+[SP-BOOL] mrd=true
+[SP-BOOL] b2=true
+[SP-BOOL] b5=true
+[SP-INT] ic04=150
+[SP-INT] acp=100
+[SP-BOOL] settings_sound=true
+[SP-BOOL] settings_shake=true
+[SP-BOOL] settings_new_msg_notification=true
+[SP-INT] huawei_switch=1
+[SP-BOOL] settings_support_swipe=true
+[SP-BOOL] screenResolution_isModifyDensity=true
+[SP-INT] current_draw_fps=15
+[SP-BOOL] enable_dynamic_background=true
+[SP-BOOL] enable_dynamic_background=true
+[NS.C] all methods hooked
+[SP-INT] update_downloaded_pack_update_type=3
+[SP-INT] sns_control_flag=3
+[SP-BOOL] tinker_enable_1.9.15.2_tinker_id_df0298e113717c1df692fc41534f33ca0db71545_arm64-v8a=true
+[SP-BOOL] settings_sound=true
+[SP-INT] ic04=150
+[SP-INT] ic04=151
+[SP-BOOL] settings_new_msg_notification=true
+[SP-BOOL] settings_new_voip_msg_notification=true
+[SP-BOOL] settings_show_detail=true
+[SP-BOOL] settings_sound=true
+[SP-BOOL] settings_shake=true
+[SP-INT] settings_active_begin_time_hour=8
+[SP-INT] settings_active_end_time_hour=23
+[SP-BOOL] KEY_HC_ENABLE=true
+[SP-BOOL] KEY_HC_BG_ENABLE=true
+[SP-INT] KEY_HC_UIN_HASH=63
+[SP-BOOL] KEY_HC_DEBUG=true
+[SP-INT] KEY_HC_KV_PER=50
+[SP-INT] KEY_HC_KV_FT=30
+[SP-INT] KEY_HC_TIMEOUT_MARGIN=30
+[SP-BOOL] KEY_HC_BOOT_ENABLE=true
+[SP-BOOL] KEY_HC_ENTER_CHATTING_ENABLE=true
+[SP-BOOL] KEY_HC_QUIT_CHATTING_ENABLE=true
+[SP-BOOL] KEY_HC_SEND_MSG_ENABLE=true
+[SP-BOOL] KEY_HC_SEND_PIC_MSG_ENABLE=true
+[SP-BOOL] KEY_HC_RECEIVE_MSG_ENABLE=true
+[SP-BOOL] KEY_HC_UPDATE_CHATROOM_ENABLE=true
+[SP-BOOL] KEY_HC_ENCODE_VIDEO_ENABLE=true
+[SP-BOOL] KEY_HC_GIF_ENABLE=true
+[SP-BOOL] KEY_HC_GIF_FRAME_ENABLE=true
+[SP-BOOL] KEY_HC_SNS_SCROLL_ENABLE=true
+[SP-BOOL] KEY_HC_SNS_USER_SCROLL_ENABLE=true
+[SP-BOOL] KEY_HC_SNS_MSG_SCROLL_ENABLE=true
+[SP-BOOL] KEY_HC_MEDIA_GALLERY_SCROLL_ENABLE=true
+[SP-BOOL] KEY_HCALBUM_SCROLL_ENABLE=true
+[SP-BOOL] KEY_HC_MINI_PROGRAM_LAUNCH_ENABLE=true
+[SP-INT] KEY_HC_UIN_HASH=63
+[SP-INT] availableVersion=13
+[SP-BOOL] enable=true
+[SP-INT] availableVersion=13
+[SP-BOOL] recover_is_discard=true
+[SP-BOOL] enable_dynamic_background=true
+[CHOOSE] looking for w1 instances...
+[CHOOSE] done
+[SP-BOOL] key_auth_info_prefs_created=true
+[SP-BOOL] key_auth_info_prefs_created=true
+[SP-INT] network_type=2
+[SP-INT] sns_respone_count=10
+[SP-BOOL] sw_use_wxpc_img=true
+[SP-BOOL] sw_use_vcodec_img=true
+[SP-BOOL] sw_use_wxpc_img=true
+[SP-BOOL] sw_use_vcodec_img=true
+[SP-BOOL] sw_use_wxpc_img=true
+[SP-BOOL] sw_use_vcodec_img=true
+[SP-BOOL] settings_show_detail=true
+[SP-BOOL] sw_use_wxpc_img=true
+[SP-BOOL] sw_use_vcodec_img=true
+[SP-BOOL] sw_use_wxpc_img=true
+[SP-BOOL] sw_use_vcodec_img=true
+[SP-INT] ic04=152
+
+STDERR:
+

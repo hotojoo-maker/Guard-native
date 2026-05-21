@@ -1,0 +1,22 @@
+# Build outputs
+build/
+.gradle/
+*.apk
+*.aab
+
+# jadx decompile output (large, regenerable)
+jadx_8071_out/
+
+# JVM crash dumps
+hs_err_pid*.log
+
+# Local config
+local.properties
+
+# IDE
+.idea/
+*.iml
+
+# OS
+Thumbs.db
+.DS_Store

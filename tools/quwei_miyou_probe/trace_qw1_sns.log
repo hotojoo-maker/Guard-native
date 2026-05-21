@@ -1,0 +1,195 @@
+﻿STDOUT:
+     ____
+    / _  |   Frida 17.9.10 - A world-class dynamic instrumentation toolkit
+   | (_| |
+    > _  |   Commands:
+   /_/ |_|       help      -> Displays the help system
+   . . . .       object?   -> Display information about 'object'
+   . . . .       exit/quit -> Exit
+   . . . .
+   . . . .   More info at https://frida.re/docs/home/
+   . . . .
+   . . . .   Connected to MI 9 (id=609b4b18)
+Spawning `com.tencent.qw1`...
+Spawned `com.tencent.qw1`. Resuming main thread!
+[MI 9::com.tencent.qw1 ]-> [SP] getInt/getBoolean hooked
+[SP-EDITOR] hooked
+[INIT] done
+[SP-GBOOL] deferred_analytics_collection=true
+STACK:
+java.lang.Exception: trace
+	at android.app.SharedPreferencesImpl.getBoolean(Native Method)
+	at com.google.android.gms.internal.measurement.zzfr.zzje(Unknown Source:10)
+	at com.google.android.gms.internal.measurement.zzfb.zzbi(Unknown Source:170)
+	at com.google.android.gms.internal.measurement.zzii.zzk(Unknown Source:16)
+	at com.google.android.gms.internal.measurement.zzii.zza(SourceFile:6)
+	at com.google.android.gms.internal.measurement.zzgl.start(Unknown Source:446)
+	at com.google.android.gms.internal.measurement.zzgm.run(Unknown Source:9)
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:462)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+	at com.google.android.gms.internal.measurement.zzgk.run(Unknown Source:49)
+
+[SP-GET] sns_control_flag=0
+STACK:
+java.lang.Exception: trace
+	at android.app.SharedPreferencesImpl.getInt(Native Method)
+	at com.tencent.mm.plugin.sns.model.c6.k(Unknown Source:39)
+	at com.tencent.mm.plugin.sns.model.k4.onAccountInitialized(Unknown Source:339)
+	at ur4.w.access$1100(Unknown Source:16)
+	at ur4.u.compute(Unknown Source:205)
+	at java.util.concurrent.RecursiveAction.exec(RecursiveAction.java:189)
+	at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:285)
+	at java.util.concurrent.ForkJoinTask.doInvoke(ForkJoinTask.java:397)
+	at java.util.concurrent.ForkJoinTask.invoke(ForkJoinTask.java:726)
+	at ur4.v.compute(Unknown Source:35)
+	at java.util.concurrent.RecursiveAction.exec(RecursiveAction.java:189)
+	at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:285)
+	at java.util.concurrent.ForkJoinTask.d
+[SP-FILES] error: ReferenceError: 'java' is not defined
+[SP-GET] soter_triggered_oom_count37b30bfe3a249b6339c7cf66dd9e0bf7=0
+STACK:
+java.lang.Exception: trace
+	at android.app.SharedPreferencesImpl.getInt(Native Method)
+	at z85.k0.b(Unknown Source:13)
+	at m85.a.f(Unknown Source:5)
+	at z85.m0.<init>(Unknown Source:66)
+	at vy3.b.call(Unknown Source:45)
+	at e25.f.run(Unknown Source:44)
+	at android.os.Handler.handleCallback(Handler.java:938)
+	at android.os.Handler.dispatchMessage(Handler.java:99)
+	at android.os.Looper.loop(Looper.java:236)
+	at android.os.HandlerThread.run(HandlerThread.java:67)
+
+[SP-GET] soter_triggered_oom_count37b30bfe3a249b6339c7cf66dd9e0bf7=0
+STACK:
+java.lang.Exception: trace
+	at android.app.SharedPreferencesImpl.getInt(Native Method)
+	at z85.k0.b(Unknown Source:13)
+	at q85.j.m(Unknown Source:2)
+	at m85.a.l(Unknown Source:15)
+	at z85.m0.<init>(Unknown Source:155)
+	at vy3.b.call(Unknown Source:45)
+	at e25.f.run(Unknown Source:44)
+	at android.os.Handler.handleCallback(Handler.java:938)
+	at android.os.Handler.dispatchMessage(Handler.java:99)
+	at android.os.Looper.loop(Looper.java:236)
+	at android.os.HandlerThread.run(HandlerThread.java:67)
+
+[SP-GET] soter_triggered_oom_count37b30bfe3a249b6339c7cf66dd9e0bf7=0
+STACK:
+java.lang.Exception: trace
+	at android.app.SharedPreferencesImpl.getInt(Native Method)
+	at z85.k0.b(Unknown Source:13)
+	at q85.j.m(Unknown Source:2)
+	at m85.a.l(Unknown Source:15)
+	at com.tencent.soter.core.biometric.BiometricManagerCompat.initImpl(Unknown Source:0)
+	at com.tencent.soter.core.biometric.BiometricManagerCompat.<init>(Unknown Source:7)
+	at com.tencent.soter.core.biometric.BiometricManagerCompat.from(Unknown Source:2)
+	at m85.a.n(Unknown Source:5)
+	at z85.m0.<init>(Unknown Source:161)
+	at vy3.b.call(Unknown Source:45)
+	at e25.f.run(Unknown Source:44)
+	at android.os.Handler.handleCallback(Handler.java:938)
+	at android.os.Handler.dispatchMessage(Handler.java:99)
+	at android.os.Looper.loop(Looper.java:236)
+	at android.os.HandlerThread.run(HandlerThread.java:67)
+
+[SP-GET] soter_triggered_oom_count37b30bfe3a249b6339c7cf66dd9e0bf7=0
+STACK:
+java.lang.Exception: trace
+	at android.app.SharedPreferencesImpl.getInt(Native Method)
+	at z85.k0.b(Unknown Source:13)
+	at q85.j.m(Unknown Source:2)
+	at m85.a.l(Unknown Source:15)
+	at com.tencent.soter.core.biometric.BiometricManagerCompat.initImpl(Unknown Source:44)
+	at com.tencent.soter.core.biometric.BiometricManagerCompat.<init>(Unknown Source:7)
+	at com.tencent.soter.core.biometric.BiometricManagerCompat.from(Unknown Source:2)
+	at m85.a.n(Unknown Source:5)
+	at z85.m0.<init>(Unknown Source:161)
+	at vy3.b.call(Unknown Source:45)
+	at e25.f.run(Unknown Source:44)
+	at android.os.Handler.handleCallback(Handler.java:938)
+	at android.os.Handler.dispatchMessage(Handler.java:99)
+	at android.os.Looper.loop(Looper.java:236)
+	at android.os.HandlerThread.run(HandlerThread.java:67)
+
+[SP-GET] soter_triggered_oom_count37b30bfe3a249b6339c7cf66dd9e0bf7=0
+STACK:
+java.lang.Exception: trace
+	at android.app.SharedPreferencesImpl.getInt(Native Method)
+	at z85.k0.b(Unknown Source:13)
+	at q85.j.m(Unknown Source:2)
+	at q85.j.h(Unknown Source:10)
+	at m85.a.i(Unknown Source:15)
+	at vy3.k.call(Unknown Source:11)
+	at e25.f.run(Unknown Source:44)
+	at android.os.Handler.handleCallback(Handler.java:938)
+	at android.os.Handler.dispatchMessage(Handler.java:99)
+	at android.os.Looper.loop(Looper.java:236)
+	at android.os.HandlerThread.run(HandlerThread.java:67)
+
+[SP-GET] soter_triggered_oom_count37b30bfe3a249b6339c7cf66dd9e0bf7=0
+STACK:
+java.lang.Exception: trace
+	at android.app.SharedPreferencesImpl.getInt(Native Method)
+	at z85.k0.b(Unknown Source:13)
+	at q85.j.m(Unknown Source:2)
+	at q85.j.h(Unknown Source:10)
+	at m85.a.i(Unknown Source:15)
+	at vy3.k.call(Unknown Source:15)
+	at e25.f.run(Unknown Source:44)
+	at android.os.Handler.handleCallback(Handler.java:938)
+	at android.os.Handler.dispatchMessage(Handler.java:99)
+	at android.os.Looper.loop(Looper.java:236)
+	at android.os.HandlerThread.run(HandlerThread.java:67)
+
+[SP-GET] soter_triggered_oom_count37b30bfe3a249b6339c7cf66dd9e0bf7=0
+STACK:
+java.lang.Exception: trace
+	at android.app.SharedPreferencesImpl.getInt(Native Method)
+	at z85.k0.b(Unknown Source:13)
+	at q85.j.m(Unknown Source:2)
+	at q85.j.p(Unknown Source:10)
+	at m85.a.s(Unknown Source:21)
+	at vy3.k.call(Unknown Source:74)
+	at e25.f.run(Unknown Source:44)
+	at android.os.Handler.handleCallback(Handler.java:938)
+	at android.os.Handler.dispatchMessage(Handler.java:99)
+	at android.os.Looper.loop(Looper.java:236)
+	at android.os.HandlerThread.run(HandlerThread.java:67)
+
+[SP-GET] soter_triggered_oom_count37b30bfe3a249b6339c7cf66dd9e0bf7=0
+STACK:
+java.lang.Exception: trace
+	at android.app.SharedPreferencesImpl.getInt(Native Method)
+	at z85.k0.b(Unknown Source:13)
+	at q85.j.m(Unknown Source:2)
+	at q85.j.p(Unknown Source:10)
+	at m85.a.s(Unknown Source:21)
+	at vy3.k.call(Unknown Source:82)
+	at e25.f.run(Unknown Source:44)
+	at android.os.Handler.handleCallback(Handler.java:938)
+	at android.os.Handler.dispatchMessage(Handler.java:99)
+	at android.os.Looper.loop(Looper.java:236)
+	at android.os.HandlerThread.run(HandlerThread.java:67)
+
+[SP-GET] soter_triggered_oom_count37b30bfe3a249b6339c7cf66dd9e0bf7=0
+STACK:
+java.lang.Exception: trace
+	at android.app.SharedPreferencesImpl.getInt(Native Method)
+	at z85.k0.b(Unknown Source:13)
+	at q85.j.m(Unknown Source:2)
+	at q85.j.d(Unknown Source:10)
+	at m85.a.c(Unknown Source:16)
+	at vy3.l.call(Unknown Source:91)
+	at e25.f.run(Unknown Source:44)
+	at android.os.Handler.handleCallback(Handler.java:938)
+	at android.os.Handler.dispatchMessage(Handler.java:99)
+	at android.os.Looper.loop(Looper.java:236)
+	at android.os.HandlerThread.run(HandlerThread.java:67)
+
+[CHOOSE-LATE] looking for w1...
+[CHOOSE-LATE] done
+
+STDERR:
+

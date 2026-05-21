@@ -1,0 +1,175 @@
+     ____
+    / _  |   Frida 17.9.10 - A world-class dynamic instrumentation toolkit
+   | (_| |
+    > _  |   Commands:
+   /_/ |_|       help      -> Displays the help system
+   . . . .       object?   -> Display information about 'object'
+   . . . .       exit/quit -> Exit
+   . . . .
+   . . . .   More info at https://frida.re/docs/home/
+   . . . .
+   . . . .   Connected to 127.0.0.1:27042 (id=socket@127.0.0.1:27042)
+Spawning `com.tencent.mm`...
+Spawned `com.tencent.mm`. Resuming main thread!
+[Remote::com.tencent.mm ]-> [NRC] ns.c loaded OK. initial b=false
+[NRC] ns.c hooked 0 methods
+[FMF] L1 hooked (1 overload(s)), total methods=78
+[FMF] 42 0-param methods hooked
+[MMKV] decodeBool hooked
+[SP] getBoolean hooked (with ncl_cfg filter)
+[NRC] ww2.c initial b=undefined
+[NRC] ww2.c hooked
+[NRC] === trace_nsc_restore v1 all probes installed ===
+[NRC] 请冷启动微信，观察 ns.c.b 变化和 L1() 调用情况
+[SP:bool] KEY=deferred_analytics_collection =true
+STACK:
+java.lang.Exception: TRACE
+	at android.app.SharedPreferencesImpl.getBoolean(Native Method)
+	at com.google.android.gms.internal.measurement.zzfr.zzje(Unknown Source:10)
+	at com.google.android.gms.internal.measurement.zzfb.zzbi(Unknown Source:170)
+	at com.google.android.gms.internal.measurement.zzii.zzk(Unknown Source:16)
+	at com.google.android.gms.internal.measurement.zzii.zza(SourceFile:6)
+	at com.google.android.gms.internal.measurement.zzgl.start(Unknown Source:446)
+	at com.google.android.gms.internal.measurement.zzgm.run(Unknown Source:9)
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:462)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+	at com.google.android.gms.internal.measurement.zzgk.run(Unknown Source:49)
+
+[SP:bool] KEY=settings_new_msg_notification =true
+STACK:
+java.lang.Exception: TRACE
+	at android.app.SharedPreferencesImpl.getBoolean(Native Method)
+	at wo.b.s(Unknown Source:8)
+	at xl3.h.onCreate(Unknown Source:327)
+	at o65.w.access$1000(Unknown Source:16)
+	at o65.u.compute(Unknown Source:123)
+	at java.util.concurrent.RecursiveAction.exec(RecursiveAction.java:189)
+	at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:285)
+	at java.util.concurrent.ForkJoinTask.doInvoke(ForkJoinTask.java:397)
+	at java.util.concurrent.ForkJoinTask.invoke(ForkJoinTask.java:726)
+	at o65.v.compute(Unknown Source:35)
+	at java.util.concurrent.RecursiveAction.exec(RecursiveAction.java:189)
+	at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:285)
+	at java.util.concurrent.ForkJoinTask.doInvoke(ForkJoinTask.java:397)
+	at java.util.concurrent.ForkJoinTask.invoke(ForkJoinTask.java:726)
+	at o65.w.transitLifecycleStatusOnDemand(Unknown Source:254)
+	at o65.n0.j(Unknown Source:20)
+	at o65.f0.call(Unknown Source:31)
+	at o65.n0.f(Unknown Source:6)
+	at o65.n0.c(Unknown Source:11)
+	at ps.c1.onCreate(Unknown Source:1622)
+	at o65.w.access$1000(Unknown Source:16)
+	at o65.u.compute(Unknown Source:123)
+	at java.util.concurrent.RecursiveAction.exec(RecursiveActi
+[SP:bool] KEY=settings_new_msg_notification =true
+STACK:
+java.lang.Exception: TRACE
+	at android.app.SharedPreferencesImpl.getBoolean(Native Method)
+	at wo.b.s(Unknown Source:8)
+	at jy0.z8.a(Unknown Source:0)
+	at sn4.v.onAccountInitialized(Unknown Source:467)
+	at o65.w.access$1100(Unknown Source:16)
+	at o65.u.compute(Unknown Source:205)
+	at java.util.concurrent.RecursiveAction.exec(RecursiveAction.java:189)
+	at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:285)
+	at java.util.concurrent.ForkJoinTask.doInvoke(ForkJoinTask.java:397)
+	at java.util.concurrent.ForkJoinTask.invoke(ForkJoinTask.java:726)
+	at o65.v.compute(Unknown Source:35)
+	at java.util.concurrent.RecursiveAction.exec(RecursiveAction.java:189)
+	at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:285)
+	at java.util.concurrent.ForkJoinTask.doInvoke(ForkJoinTask.java:397)
+	at java.util.concurrent.ForkJoinTask.invoke(ForkJoinTask.java:726)
+	at o65.t.run(Unknown Source:2)
+	at java.util.concurrent.ForkJoinTask$RunnableExecuteAction.exec(ForkJoinTask.java:1411)
+	at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:285)
+	at java.util.concurrent.ForkJoinPool$WorkQueue.runTask(ForkJoinPool.java:1155)
+	at java.util.concurrent.ForkJoinPool.scan(ForkJoinPool.j
+[SP:bool] KEY=settings_new_voip_msg_notification =true
+STACK:
+java.lang.Exception: TRACE
+	at android.app.SharedPreferencesImpl.getBoolean(Native Method)
+	at wo.b.t(Unknown Source:8)
+	at jy0.z8.a(Unknown Source:4)
+	at sn4.v.onAccountInitialized(Unknown Source:467)
+	at o65.w.access$1100(Unknown Source:16)
+	at o65.u.compute(Unknown Source:205)
+	at java.util.concurrent.RecursiveAction.exec(RecursiveAction.java:189)
+	at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:285)
+	at java.util.concurrent.ForkJoinTask.doInvoke(ForkJoinTask.java:397)
+	at java.util.concurrent.ForkJoinTask.invoke(ForkJoinTask.java:726)
+	at o65.v.compute(Unknown Source:35)
+	at java.util.concurrent.RecursiveAction.exec(RecursiveAction.java:189)
+	at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:285)
+	at java.util.concurrent.ForkJoinTask.doInvoke(ForkJoinTask.java:397)
+	at java.util.concurrent.ForkJoinTask.invoke(ForkJoinTask.java:726)
+	at o65.t.run(Unknown Source:2)
+	at java.util.concurrent.ForkJoinTask$RunnableExecuteAction.exec(ForkJoinTask.java:1411)
+	at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:285)
+	at java.util.concurrent.ForkJoinPool$WorkQueue.runTask(ForkJoinPool.java:1155)
+	at java.util.concurrent.ForkJoinPool.scan(ForkJoinPool.j
+[SP:bool] KEY=KEY_HC_SNS_SCROLL_ENABLE =true
+STACK:
+java.lang.Exception: TRACE
+	at android.app.SharedPreferencesImpl.getBoolean(Native Method)
+	at com.tencent.mm.hardcoder.WXHardCoderJNIImpl.reloadSPConfig(Unknown Source:470)
+	at com.tencent.mm.hardcoder.WXHardCoderJNIImpl.onCreate(Unknown Source:12)
+	at o65.w.access$1000(Unknown Source:16)
+	at o65.u.compute(Unknown Source:123)
+	at java.util.concurrent.RecursiveAction.exec(RecursiveAction.java:189)
+	at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:285)
+	at java.util.concurrent.ForkJoinTask.doInvoke(ForkJoinTask.java:397)
+	at java.util.concurrent.ForkJoinTask.invoke(ForkJoinTask.java:726)
+	at o65.v.compute(Unknown Source:35)
+	at java.util.concurrent.RecursiveAction.exec(RecursiveAction.java:189)
+	at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:285)
+	at java.util.concurrent.ForkJoinTask.doInvoke(ForkJoinTask.java:397)
+	at java.util.concurrent.ForkJoinTask.invoke(ForkJoinTask.java:726)
+	at o65.w.transitLifecycleStatusOnDemand(Unknown Source:254)
+	at o65.n0.j(Unknown Source:20)
+	at o65.g0.run(Unknown Source:23)
+	at java.util.concurrent.ForkJoinTask$RunnableExecuteAction.exec(ForkJoinTask.java:1411)
+	at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java
+[SP:bool] KEY=KEY_HC_SNS_USER_SCROLL_ENABLE =true
+STACK:
+java.lang.Exception: TRACE
+	at android.app.SharedPreferencesImpl.getBoolean(Native Method)
+	at com.tencent.mm.hardcoder.WXHardCoderJNIImpl.reloadSPConfig(Unknown Source:494)
+	at com.tencent.mm.hardcoder.WXHardCoderJNIImpl.onCreate(Unknown Source:12)
+	at o65.w.access$1000(Unknown Source:16)
+	at o65.u.compute(Unknown Source:123)
+	at java.util.concurrent.RecursiveAction.exec(RecursiveAction.java:189)
+	at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:285)
+	at java.util.concurrent.ForkJoinTask.doInvoke(ForkJoinTask.java:397)
+	at java.util.concurrent.ForkJoinTask.invoke(ForkJoinTask.java:726)
+	at o65.v.compute(Unknown Source:35)
+	at java.util.concurrent.RecursiveAction.exec(RecursiveAction.java:189)
+	at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:285)
+	at java.util.concurrent.ForkJoinTask.doInvoke(ForkJoinTask.java:397)
+	at java.util.concurrent.ForkJoinTask.invoke(ForkJoinTask.java:726)
+	at o65.w.transitLifecycleStatusOnDemand(Unknown Source:254)
+	at o65.n0.j(Unknown Source:20)
+	at o65.g0.run(Unknown Source:23)
+	at java.util.concurrent.ForkJoinTask$RunnableExecuteAction.exec(ForkJoinTask.java:1411)
+	at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java
+[SP:bool] KEY=KEY_HC_SNS_MSG_SCROLL_ENABLE =true
+STACK:
+java.lang.Exception: TRACE
+	at android.app.SharedPreferencesImpl.getBoolean(Native Method)
+	at com.tencent.mm.hardcoder.WXHardCoderJNIImpl.reloadSPConfig(Unknown Source:514)
+	at com.tencent.mm.hardcoder.WXHardCoderJNIImpl.onCreate(Unknown Source:12)
+	at o65.w.access$1000(Unknown Source:16)
+	at o65.u.compute(Unknown Source:123)
+	at java.util.concurrent.RecursiveAction.exec(RecursiveAction.java:189)
+	at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:285)
+	at java.util.concurrent.ForkJoinTask.doInvoke(ForkJoinTask.java:397)
+	at java.util.concurrent.ForkJoinTask.invoke(ForkJoinTask.java:726)
+	at o65.v.compute(Unknown Source:35)
+	at java.util.concurrent.RecursiveAction.exec(RecursiveAction.java:189)
+	at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:285)
+	at java.util.concurrent.ForkJoinTask.doInvoke(ForkJoinTask.java:397)
+	at java.util.concurrent.ForkJoinTask.invoke(ForkJoinTask.java:726)
+	at o65.w.transitLifecycleStatusOnDemand(Unknown Source:254)
+	at o65.n0.j(Unknown Source:20)
+	at o65.g0.run(Unknown Source:23)
+	at java.util.concurrent.ForkJoinTask$RunnableExecuteAction.exec(ForkJoinTask.java:1411)
+	at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java

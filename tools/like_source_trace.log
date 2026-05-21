@@ -1,0 +1,25 @@
+﻿     ____
+    / _  |   Frida 17.9.10 - A world-class dynamic instrumentation toolkit
+   | (_| |
+    > _  |   Commands:
+   /_/ |_|       help      -> Displays the help system
+   . . . .       object?   -> Display information about 'object'
+   . . . .       exit/quit -> Exit
+   . . . .
+   . . . .   More info at https://frida.re/docs/home/
+   . . . .
+   . . . .   Connected to MI 9 (id=609b4b18)
+Attaching...
+[like_src] \u23f1 30s 窗口开始 — 定向 SnsStorage hook，无 ANR
+[like_src] w1 loaded
+[like_src] w1 hooked 0 write methods
+[like_src] w1.E1 change-monitor hooked
+[MI 9::PID::7129 ]-> [SRC:w1.E1] unread: -1 → 1 (+30391ms)
+
+[like_src] \u2705 捕获窗口结束 (30s)
+[like_src] 新原始载体: 0 个
+[like_src] \u26a0\ufe0f  无命中 → 互动通知可能走 SyncKey 路径而非 Storage.add
+[like_src]    下一步：hook com.tencent.mm.sdk.platformtools.Util.readObject
+[SRC:w1.E1] unread: 1 → 2 (+31604ms)
+[SRC:w1.E1] unread: 2 → 3 (+32630ms)
+

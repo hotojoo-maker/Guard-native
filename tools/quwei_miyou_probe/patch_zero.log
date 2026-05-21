@@ -1,0 +1,19 @@
+﻿STDOUT:
+     ____
+    / _  |   Frida 17.9.10 - A world-class dynamic instrumentation toolkit
+   | (_| |
+    > _  |   Commands:
+   /_/ |_|       help      -> Displays the help system
+   . . . .       object?   -> Display information about 'object'
+   . . . .       exit/quit -> Exit
+   . . . .
+   . . . .   More info at https://frida.re/docs/home/
+   . . . .
+   . . . .   Connected to MI 9 (id=609b4b18)
+Attaching...
+[MI 9::PID::28818 ]-> [BEFORE] sns_control_flag=1
+[AFTER]  sns_control_flag=0
+[OK] 现在强杀微信重启，看红点是否消失
+
+STDERR:
+

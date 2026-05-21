@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GUARD NATIVE · State Machine System</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:monospace;background:#080808;color:#ccc}
+
+/* ── 三栏布局 ── */
+#app{display:flex;height:100vh;gap:0}
+
+/* 左侧功能面板 */
+#panel{width:220px;min-width:220px;background:#0d0d0d;border-right:1px solid #222;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:10px}
+
+/* 中间 + 右侧日志区 */
+#logs{flex:1;display:flex;gap:0;overflow:hidden}
+#log-left,#log-right{flex:1;display:flex;flex-direction:column;overflow:hidden;border-left:1px solid #1a1a1a}
+
+/* 各日志头 */
+.log-header{padding:6px 10px;background:#111;border-bottom:1px solid #222;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.log-header h2{font-size:11px;color:#0f0;flex:1}
+.log-body{flex:1;overflow-y:auto;font-size:10px;font-family:monospace;padding:6px 8px;background:#050505}
+
+/* 卡片 */
+.card{background:#111;border:1px solid #222;border-radius:4px;padding:8px}
+.card h3{font-size:11px;color:#0f0;margin-bottom:6px}
+.label{color:#666;font-size:10px}
+.value{color:#0f0;font-size:16px;font-weight:bold}
+
+/* 按钮 */
+.btn{padding:5px 10px;border:1px solid #444;background:#1a1a1a;color:#aaa;cursor:pointer;font-family:monospace;font-size:11px;border-radius:3px}
+.btn:hover{border-color:#0f0;color:#0f0;background:#111}
+.btn.danger{border-color:#600;color:#f66}.btn.danger:hover{background:#200}
+.btn.active{border-color:#0f0;color:#0f0;background:#051005}
+.btn-row{display:flex;flex-wrap:wrap;gap:4px}
+
+/* 输入 */
+input[type=text]{width:100%;padding:5px 6px;background:#111;border:1px solid #444;color:#ccc;font-family:monospace;font-size:11px;border-radius:3px;margin-bottom:4px}
+input[type=text]:focus{outline:none;border-color:#0f0}
+
+/* 状态 */
+.state-hidden{color:#f44}.state-visible{color:#0f0}.state-unlocking{color:#ff0}
+
+/* 日志行 */
+.log-line{padding:1px 0;line-height:1.5;white-space:pre-wrap;word-break:break-all}
+.log-line:nth-child(even){background:#0a0a0a}
+
+/* 好友行 */
+.friend-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid #111}
+
+/* 滚动条 */
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
+
+/* 详情弹窗 */
+#detail-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center}
+#detail-modal.show{display:flex}
+#detail-box{background:#111;border:1px solid #0f0;border-radius:6px;width:600px;max-width:95vw;max-height:80vh;display:flex;flex-direction:column}
+#detail-head{padding:8px 12px;border-bottom:1px solid #222;display:flex;align-items:center;gap:8px}
+#detail-title{flex:1;color:#0f0;font-size:12px}
+#detail-body{flex:1;overflow-y:auto;padding:10px 12px;font-size:11px;white-space:pre-wrap;color:#8f8;line-height:1.6}
+
+/* 筛选栏 */
+.filter-bar{padding:4px 8px;background:#0d0d0d;border-bottom:1px solid #1a1a1a;display:flex;gap:6px;flex-shrink:0}
+.filter-bar input{flex:1;padding:3px 6px;background:#111;border:1px solid #333;color:#aaa;font-size:10px;font-family:monospace;border-radius:2px}
+.filter-bar input:focus{outline:none;border-color:#0f0}
+
+/* 六面板 Tab */
+.tab-btn{padding:5px 10px;background:transparent;border:none;border-bottom:2px solid transparent;color:#555;cursor:pointer;font-family:monospace;font-size:10px;white-space:nowrap;flex-shrink:0}
+.tab-btn:hover{color:#aaa}.tab-btn.active{color:#0f0;border-bottom-color:#0f0;background:#050505}
+.tab-panel{display:flex;flex-direction:column;flex:1;overflow:hidden}
+.tab-panel.hidden{display:none}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ══════════════ 左侧面板 ══════════════ -->
+<div id="panel">
+  <div style="padding:2px 0 8px;border-bottom:1px solid #222">
+    <div style="color:#0f0;font-size:14px;font-weight:bold;letter-spacing:1px">GUARD NATIVE</div>
+    <div style="color:#444;font-size:9px;letter-spacing:2px;margin-top:1px">STATE MACHINE SYSTEM</div>
+  </div>
+
+  <!-- 状态机 -->
+<div class="card">
+    <h3>状态机</h3>
+    <div class="label">当前</div>
+      <div class="value" id="state-name">--</div>
+    <div style="margin-top:6px" class="btn-row">
+      <button class="btn" onclick="apiTrigger('toggle')">切换</button>
+      <button class="btn" onclick="apiTrigger('enter')">隐藏</button>
+      <button class="btn" onclick="apiTrigger('show')">显示</button>
+    </div>
+  </div>
+
+  <!-- 当前界面 V2 -->
+  <div class="card">
+    <h3>当前界面 <span style="color:#555;font-size:9px">V2</span></h3>
+    <div class="label">page</div>
+    <div class="value" id="ui-page" style="font-size:13px">--</div>
+    <div class="label" style="margin-top:4px">feed / wxids</div>
+    <div style="font-size:10px;color:#8f8" id="ui-feed">--</div>
+    <div class="label" style="margin-top:4px">通道指标</div>
+    <div id="ui-metrics" style="font-size:9px;color:#666;max-height:90px;overflow-y:auto">(DEV模式)</div>
+  </div>
+
+  <!-- 计数器 -->
+  <div class="card">
+    <h3>拦截统计</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+      <div><div class="label">总计</div><div class="value" id="ct-total">0</div></div>
+      <div><div class="label">F05 朋友圈</div><div class="value" id="ct-f05">0</div></div>
+      <div><div class="label">F04 会话</div><div class="value" id="ct-f04">0</div></div>
+      <div><div class="label">F07 通讯录</div><div class="value" id="ct-f07">0</div></div>
+    </div>
+  </div>
+
+  <!-- 我的wxid -->
+  <div class="card">
+    <h3>我的 wxid <span style="color:#555;font-size:9px">D2/D3</span></h3>
+    <input type="text" id="my-wxid" placeholder="wxid_xxx">
+    <div class="btn-row">
+      <button class="btn" onclick="saveMyWxid()">保存</button>
+      <span style="color:#888;font-size:10px" id="my-wxid-status"></span>
+    </div>
+</div>
+
+  <!-- 会话 Seen -->
+<div class="card">
+    <h3>会话 Seen <span style="color:#555;font-size:9px" id="conv-count"></span></h3>
+    <div id="conv-list" style="max-height:150px;overflow-y:auto">
+      <span style="color:#444;font-size:10px">(滑动聊天列表后出现)</span>
+    </div>
+  </div>
+
+  <!-- 隐藏列表 -->
+  <div class="card" style="flex:1">
+    <h3>密友列表 <span style="color:#888;font-size:10px" id="hl-count"></span></h3>
+    <input type="text" id="hl-wxid" placeholder="wxid 或微信号">
+    <button class="btn" style="width:100%;margin-bottom:6px" onclick="addHidden()">+ 加入隐藏</button>
+    <div id="hl-list" style="max-height:200px;overflow-y:auto">
+      <span style="color:#444;font-size:10px">(空)</span>
+</div>
+</div>
+
+  <!-- 配置 -->
+<div class="card">
+    <h3>配置</h3>
+    <div class="label" style="margin-bottom:3px">模式</div>
+    <select id="cfg-mode" onchange="setMode(this.value)" style="width:100%;padding:4px;background:#111;border:1px solid #444;color:#ccc;font-size:11px;border-radius:3px">
+        <option value="DEV">DEV</option>
+        <option value="PROD">PROD</option>
+        <option value="HONEY">HONEY</option>
+      </select>
+    </div>
+</div>
+
+<!-- ══════════════ 日志区 ══════════════ -->
+<div id="logs">
+
+  <!-- 中栏：addAll 流水 -->
+  <div id="log-left">
+    <div class="log-header">
+      <h2>⚡ addAll 流水</h2>
+      <span style="color:#555;font-size:10px" id="raw-count">0</span>
+      <button class="btn" style="padding:2px 6px;font-size:9px" onclick="clearRaw()">清</button>
+      <button class="btn" style="padding:2px 6px;font-size:9px" id="raw-pause-btn" onclick="toggleRawPause()">暂停</button>
+    </div>
+    <!-- 类名统计徽章 -->
+    <div id="raw-stats" style="padding:5px 8px;background:#0a0a0a;border-bottom:1px solid #1a1a1a;display:flex;flex-wrap:wrap;gap:5px;min-height:28px"></div>
+    <!-- 快速过滤按钮 -->
+    <div style="padding:4px 8px;background:#0c0c0c;border-bottom:1px solid #1a1a1a;display:flex;gap:4px;align-items:center;flex-wrap:wrap">
+      <span style="color:#555;font-size:9px">过滤:</span>
+      <button class="btn active" id="qf-all"    style="padding:1px 7px;font-size:9px" onclick="setQuickFilter('')">全部</button>
+      <button class="btn"        id="qf-mf"     style="padding:1px 7px;font-size:9px" onclick="setQuickFilter('[MF')">🌸 朋友圈</button>
+      <button class="btn"        id="qf-cf"     style="padding:1px 7px;font-size:9px" onclick="setQuickFilter('[CF')">💬 会话</button>
+      <button class="btn"        id="qf-diag"   style="padding:1px 7px;font-size:9px" onclick="setQuickFilter('diag')">🔍 诊断</button>
+      <button class="btn"        id="qf-block"  style="padding:1px 7px;font-size:9px" onclick="setQuickFilter('removed|blocked')">🚫 拦截</button>
+      <input type="text" id="raw-filter" placeholder="自定义关键词…" oninput="onManualFilter()" style="flex:1;min-width:80px;margin:0">
+    </div>
+    <div class="log-body" id="raw-list">(滑动朋友圈/会话后出现)</div>
+  </div>
+
+  <!-- 右栏：六面板 Tab -->
+  <div id="log-right">
+    <!-- Tab bar -->
+    <div style="display:flex;background:#0d0d0d;border-bottom:1px solid #222;flex-shrink:0;overflow-x:auto">
+      <button class="tab-btn active" id="tab-btn-moments"  onclick="switchTab('moments')" >🌸朋友圈</button>
+      <button class="tab-btn"        id="tab-btn-lc"       onclick="switchTab('lc')"      >👍赞评</button>
+      <button class="tab-btn"        id="tab-btn-badge"    onclick="switchTab('badge')"   >🔴气泡</button>
+      <button class="tab-btn"        id="tab-btn-conv"     onclick="switchTab('conv')"    >💬会话</button>
+      <button class="tab-btn"        id="tab-btn-tracker"  onclick="switchTab('tracker')" >🔍追踪</button>
+      <button class="tab-btn"        id="tab-btn-noise"    onclick="switchTab('noise')"   >🔇噪音</button>
+    </div>
+
+    <!-- 朋友圈面板 -->
+    <div class="tab-panel" id="panel-moments">
+      <div style="padding:5px 8px;background:#090909;border-bottom:1px solid #1a1a1a;font-size:10px;color:#0f0">
+        朋友圈发现 <span style="color:#555" id="feed-count"></span>
+      </div>
+      <div id="feed-list" style="max-height:140px;overflow-y:auto;font-size:10px;padding:4px 8px">
+        <span style="color:#444">(滑动朋友圈后出现)</span>
+      </div>
+      <div id="ch-metrics-moments" style="padding:4px 8px;font-size:9px;color:#555;border-top:1px solid #111;border-bottom:1px solid #111;background:#0a0a0a"></div>
+      <div class="log-body" id="ch-events-moments" style="flex:1">(等待事件…)</div>
+    </div>
+
+    <!-- 赞评面板 -->
+    <div class="tab-panel hidden" id="panel-lc">
+      <div id="ch-metrics-lc" style="padding:4px 8px;font-size:9px;color:#555;background:#0a0a0a;border-bottom:1px solid #111"></div>
+      <div class="log-body" id="ch-events-lc" style="flex:1">(等待事件…)</div>
+    </div>
+
+    <!-- 气泡面板 -->
+    <div class="tab-panel hidden" id="panel-badge">
+      <div id="ch-metrics-badge" style="padding:4px 8px;font-size:9px;color:#555;background:#0a0a0a;border-bottom:1px solid #111"></div>
+      <div class="log-body" id="ch-events-badge" style="flex:1">(等待事件…)</div>
+    </div>
+
+    <!-- 会话面板 -->
+    <div class="tab-panel hidden" id="panel-conv">
+      <div id="ch-metrics-conv" style="padding:4px 8px;font-size:9px;color:#555;background:#0a0a0a;border-bottom:1px solid #111"></div>
+      <div class="log-body" id="ch-events-conv" style="flex:1">(等待事件…)</div>
+    </div>
+
+    <!-- 字段追踪面板 -->
+    <div class="tab-panel hidden" id="panel-tracker" style="flex-direction:column">
+      <div style="padding:4px 8px;font-size:10px;color:#88f;border-bottom:1px solid #1a1a1a;background:#090909;display:flex;align-items:center;gap:8px;flex-shrink:0">
+        字段追踪 Field Tracker
+        <button class="btn" style="padding:1px 6px;font-size:9px;margin-left:auto" onclick="clearTracker()">清空</button>
+      </div>
+      <div style="overflow-y:auto;flex:1" id="field-tracker">(等待 dump 数据)</div>
+    </div>
+
+    <!-- 噪音面板 -->
+    <div class="tab-panel hidden" id="panel-noise">
+      <div id="ch-metrics-noise" style="padding:4px 8px;font-size:9px;color:#555;background:#0a0a0a;border-bottom:1px solid #111"></div>
+      <div class="log-body" id="ch-events-noise" style="flex:1">(等待事件…)</div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- 详情弹窗 -->
+<div id="detail-modal" onclick="if(event.target===this)closeDetail()">
+  <div id="detail-box">
+    <div id="detail-head">
+      <span id="detail-title">字段详情</span>
+      <button class="btn" style="padding:2px 8px;font-size:10px" onclick="closeDetail()">关闭</button>
+  </div>
+    <div id="detail-body">(加载中...)</div>
+  </div>
+</div>
+
+<script>
+const BASE = '';
+var _rawLines = [];
+var _rawPaused = false;
+var _rawRenderedLen = -1;
+
+// ──── raw feed ────
+function toggleRawPause() {
+  _rawPaused = !_rawPaused;
+  document.getElementById('raw-pause-btn').textContent = _rawPaused ? '继续' : '暂停';
+  document.getElementById('raw-pause-btn').className = _rawPaused ? 'btn active' : 'btn';
+}
+function clearRaw() { _rawLines = []; renderRaw(); }
+
+// ──── 快速过滤按钮 ────
+var _quickFilter = '';
+function setQuickFilter(kw) {
+  _quickFilter = kw;
+  document.getElementById('raw-filter').value = '';
+  // 更新按钮状态
+  ['qf-all','qf-mf','qf-cf','qf-diag','qf-block'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.className = 'btn';
+  });
+  var activeId = kw === '' ? 'qf-all' : kw === '[MF' ? 'qf-mf' : kw === '[CF' ? 'qf-cf'
+      : kw === 'diag' ? 'qf-diag' : kw === 'removed|blocked' ? 'qf-block' : null;
+  if (activeId) { var el = document.getElementById(activeId); if (el) el.className = 'btn active'; }
+  renderRaw(true);
+}
+function onManualFilter() {
+  _quickFilter = '';
+  ['qf-all','qf-mf','qf-cf','qf-diag','qf-block'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.className = 'btn';
+  });
+  renderRaw(true);
+}
+
+var CLASS_COLORS = {'na4.b':'#0f0','la4.p':'#88f','blocked':'#f44',
+  '[CF':'#4af','[MF':'#fa4'};
+function classColor(cn) {
+  if (CLASS_COLORS[cn]) return CLASS_COLORS[cn];
+  // 稳定色：hash → hue
+  var h = 0; for (var i=0;i<cn.length;i++) h = (h*31 + cn.charCodeAt(i)) & 0xffff;
+  return 'hsl(' + (h % 360) + ',70%,60%)';
+}
+
+function renderRaw(force) {
+  if (_rawPaused) return;
+  var manualFilter = document.getElementById('raw-filter').value.trim().toLowerCase();
+  var filter = _quickFilter ? _quickFilter.toLowerCase() : manualFilter;
+  if (!force && _rawLines.length === _rawRenderedLen && !filter) return;
+  _rawRenderedLen = _rawLines.length;
+
+  // 统计每种类名条数（按 " sz=" 前的词提取）
+  var counts = {};
+  _rawLines.forEach(function(line) {
+    var m = line.match(/\d{2}:\d{2}:\d{2}\.\d{3} (\S+) sz=/);
+    var cls = m ? m[1] : null;
+    if (cls) counts[cls] = (counts[cls] || 0) + 1;
+  });
+
+  // 渲染统计徽章（按条数降序）
+  var statsEl = document.getElementById('raw-stats');
+  var sorted = Object.keys(counts).sort(function(a,b){return counts[b]-counts[a];});
+  statsEl.innerHTML = sorted.map(function(cls) {
+    var col = classColor(cls);
+    return '<span onclick="filterClass(\'' + cls + '\')" style="cursor:pointer;padding:2px 7px;border-radius:10px;border:1px solid ' + col + ';color:' + col + ';font-size:10px;white-space:nowrap" title="点击过滤">' +
+      cls + ' <b>' + counts[cls] + '</b></span>';
+  }).join('');
+
+  // 渲染日志行
+  var lines = filter ? _rawLines.filter(function(l){return l.toLowerCase().indexOf(filter)>=0;}) : _rawLines;
+  var el = document.getElementById('raw-list');
+  el.innerHTML = lines.slice().reverse().map(function(line, idx) {
+    var m = line.match(/\d{2}:\d{2}:\d{2}\.\d{3} (\S+)/);
+    var cls = m ? m[1] : '';
+    var color = cls ? classColor(cls) : '#666';
+    if (line.indexOf('[MF')>=0) color='#fa8';       // 朋友圈 — 橙
+    if (line.indexOf('[CF')>=0) color='#4af';       // 会话 — 蓝
+    if (line.indexOf('removed')>=0||line.indexOf('blocked')>=0||line.indexOf('D2/D3')>=0) color='#f44';
+    var html = line.replace(/wxid_\S+/g, function(w){return '<span style="color:#0ff;font-weight:bold">'+w+'</span>';});
+    var clsAttr = cls ? ' data-cls="'+cls+'"' : '';
+    return '<div class="log-line" style="color:'+color+';cursor:pointer"'+clsAttr+' onclick="showDetail(this)">'+html+'</div>';
+  }).join('');
+  el.scrollTop = 0;
+  document.getElementById('raw-count').textContent = lines.length + (filter ? '/'+_rawLines.length : '') + ' 条';
+}
+
+function filterClass(cls) {
+  document.getElementById('raw-filter').value = cls;
+  renderRaw(true);
+}
+
+// ──── 点击弹出字段详情 ────
+async function showDetail(el) {
+  var cls = el.getAttribute('data-cls') || '';
+  var line = el.textContent;
+  document.getElementById('detail-title').textContent = cls || '详情';
+  document.getElementById('detail-modal').classList.add('show');
+  var body = document.getElementById('detail-body');
+  body.textContent = '加载中...';
+  // 从 dumps 里找这个类的最新 dump
+  try {
+    var r = await fetch(BASE + '/api/dumps');
+    var j = await r.json();
+    var found = (j.dumps||[]).filter(function(d){ return d.indexOf('class='+cls) >= 0; });
+    if (found.length > 0) {
+      body.textContent = found[found.length-1];
+    } else {
+      body.textContent = '暂无字段 dump\n\n原始行：\n' + line + '\n\n提示：该类尚未加入 dump 列表，滑动朋友圈触发一次或联系开发者添加。';
+    }
+  } catch(e) { body.textContent = '请求失败: ' + e; }
+}
+function closeDetail() {
+  document.getElementById('detail-modal').classList.remove('show');
+}
+
+async function pollRawFeed() {
+  try {
+    let r = await fetch(BASE + '/api/rawfeed');
+    let j = await r.json();
+    if (j.lines) { _rawLines = j.lines; renderRaw(); }
+  } catch(e) {}
+}
+
+// ──── feed wxids ────
+async function pollFeedWxids() {
+  try {
+    let r = await fetch(BASE + '/api/feed-wxids');
+    let j = await r.json();
+    let list = j.list || [];
+    document.getElementById('feed-count').textContent = '(' + list.length + ')';
+    let el = document.getElementById('feed-list');
+    if (list.length > 0) {
+      el.innerHTML = list.map(item => {
+        let badge = item.hidden
+          ? '<span style="color:#555;font-size:9px">已隐藏</span>'
+          : '<button class="btn" style="padding:1px 6px;font-size:9px" onclick="quickAdd(\'' + item.wxid + '\')">隐藏</button>';
+        let label = item.nick
+          ? '<span style="color:#0f0">' + item.nick + '</span> <span style="color:#444;font-size:9px">' + item.wxid + '</span>'
+          : '<span style="color:#ccc">' + item.wxid + '</span>';
+        return '<div class="friend-row"><span>' + label + '</span>' + badge + '</div>';
+      }).join('');
+    } else {
+      el.innerHTML = '<span style="color:#444;font-size:10px">(滑动朋友圈后出现)</span>';
+    }
+  } catch(e) {}
+}
+
+// ──── events ────
+async function pollCounters() {
+  try {
+    let r = await fetch(BASE + '/api/counters');
+    let j = await r.json();
+    document.getElementById('ct-total').textContent = j.total || 0;
+    document.getElementById('ct-f04').textContent = j.f04 || 0;
+    document.getElementById('ct-f05').textContent = j.f05 || 0;
+    document.getElementById('ct-f07').textContent = j.f07 || 0;
+    let el = document.getElementById('events');
+    if (j.events && j.events.length > 0) {
+      el.innerHTML = j.events.map(e =>
+        '<div class="log-line"><span style="color:#555">' + e.t + '</span> <span style="color:#ff0">' + e.type + '</span> <span>' + e.d + '</span></div>'
+      ).join('');
+    }
+  } catch(e) {}
+}
+
+// ──── state ────
+async function pollState() {
+  try {
+    let r = await fetch(BASE + '/api/state');
+    let j = await r.json();
+    let el = document.getElementById('state-name');
+    el.textContent = j.state;
+    el.className = 'value state-' + j.state.toLowerCase();
+  } catch(e) {}
+}
+
+// ──── config ────
+async function pollConfig() {
+  try {
+    let r = await fetch(BASE + '/api/config');
+    let j = await r.json();
+    document.getElementById('cfg-mode').value = j.mode || 'DEV';
+  } catch(e) {}
+}
+
+// ──── hidden ────
+async function pollConvWxids() {
+  try {
+    let r = await fetch(BASE + '/api/conv-wxids');
+    let j = await r.json();
+    let el = document.getElementById('conv-list');
+    let cnt = document.getElementById('conv-count');
+    if (j.list && j.list.length > 0) {
+      cnt.textContent = '(' + j.list.length + ')';
+      el.innerHTML = j.list.map(function(item) {
+        var badge = item.hidden
+          ? '<span style="color:#f44;font-size:9px">隐藏中</span>'
+          : '<button class="btn" style="padding:1px 6px;font-size:9px" onclick="quickAdd(\'' + item.wxid + '\')">隐藏</button>';
+        var label = item.nick
+          ? '<span style="color:#0f0">' + item.nick + '</span> <span style="color:#444;font-size:9px">' + item.wxid + '</span>'
+          : '<span style="color:#ccc">' + item.wxid + '</span>';
+        return '<div class="friend-row"><span>' + label + '</span>' + badge + '</div>';
+      }).join('');
+    } else {
+      el.innerHTML = '<span style="color:#444;font-size:10px">(滑动聊天列表后出现)</span>';
+    }
+  } catch(e) {}
+}
+
+async function pollHidden() {
+  try {
+    let r = await fetch(BASE + '/api/hidden');
+    let j = await r.json();
+    document.getElementById('hl-count').textContent = '(' + j.count + ')';
+    let el = document.getElementById('hl-list');
+    if (j.list && j.list.length > 0) {
+      el.innerHTML = j.list.map(w =>
+        '<div class="friend-row"><span style="font-size:10px;color:#ccc">' + w + '</span>' +
+        '<button class="btn danger" style="padding:1px 6px;font-size:9px" onclick="removeHidden(\'' + w + '\')">×</button></div>'
+      ).join('');
+    } else {
+      el.innerHTML = '<span style="color:#444;font-size:10px">(空)</span>';
+    }
+  } catch(e) {}
+}
+
+// ──── field tracker ────
+var _fieldHistory = {}; // {cls.field: {val, time, changed}}
+var _dumpHash = '';
+
+function parseDump(text) {
+  var result = [];
+  var cls = '?';
+  var lines = text.split('\n');
+  for (var i = 0; i < lines.length; i++) {
+    var l = lines[i].trim();
+    if (l.startsWith('class=')) { cls = l.substring(6); continue; }
+    var m = l.match(/^\.([\w$]+)\s+\(([^)]+)\)\s+=\s+(.+)$/);
+    if (!m) { m = l.match(/^\.([\w$]+)\s+=\s+(.+)$/); if (m) result.push({cls, field: m[1], type:'?', val: m[2]}); continue; }
+    result.push({cls, field: m[1], type: m[2], val: m[3]});
+  }
+  return result;
+}
+
+function updateTracker(dumps) {
+  var now = new Date();
+  var timeStr = now.getHours().toString().padStart(2,'0') + ':' +
+                now.getMinutes().toString().padStart(2,'0') + ':' +
+                now.getSeconds().toString().padStart(2,'0') + '.' +
+                now.getMilliseconds().toString().padStart(3,'0');
+  var changed = false;
+  dumps.forEach(function(text) {
+    var fields = parseDump(text);
+    fields.forEach(function(f) {
+      var key = f.cls.split('.').pop() + '.' + f.field;
+      var prev = _fieldHistory[key];
+      var isNew = !prev || prev.val !== f.val;
+      _fieldHistory[key] = {val: f.val, type: f.type, cls: f.cls, time: isNew ? timeStr : (prev ? prev.time : timeStr), changed: isNew};
+      if (isNew) changed = true;
+    });
+  });
+  if (!changed) return;
+  renderTracker();
+}
+
+function renderTracker() {
+  var keys = Object.keys(_fieldHistory);
+  if (!keys.length) return;
+  // 按最新变化时间排序
+  keys.sort(function(a,b) {
+    var ta = _fieldHistory[a].time, tb = _fieldHistory[b].time;
+    return tb > ta ? 1 : tb < ta ? -1 : 0;
+  });
+  var html = '<table style="width:100%;border-collapse:collapse;font-size:10px">' +
+    '<tr style="background:#111;color:#555;position:sticky;top:0"><th style="padding:3px 6px;text-align:left">字段</th><th style="padding:3px 6px;text-align:left">值</th><th style="padding:3px 6px;text-align:left;white-space:nowrap">时间</th></tr>';
+  keys.forEach(function(k) {
+    var f = _fieldHistory[k];
+    var rowBg = f.changed ? '#0a1a0a' : '';
+    var fieldColor = f.changed ? '#0f0' : '#666';
+    var valColor = '#aaa';
+    if (f.val && f.val.indexOf('wxid_') >= 0) valColor = '#0ff';
+    else if (f.val && (f.val.startsWith('true') || f.val.startsWith('false'))) valColor = '#fa0';
+    var valShort = f.val && f.val.length > 50 ? f.val.substring(0,50)+'…' : (f.val||'');
+    html += '<tr style="background:'+rowBg+';border-bottom:1px solid #111">' +
+      '<td style="padding:2px 6px;color:'+fieldColor+';white-space:nowrap">'+k+'</td>' +
+      '<td style="padding:2px 6px;color:'+valColor+'">'+valShort+'</td>' +
+      '<td style="padding:2px 6px;color:#555;white-space:nowrap">'+f.time+'</td>' +
+      '</tr>';
+    // 下次渲染时 changed 重置（仅高亮一次）
+    _fieldHistory[k].changed = false;
+  });
+  html += '</table>';
+  document.getElementById('field-tracker').innerHTML = html;
+}
+
+async function pollDumps() {
+  try {
+    let r = await fetch(BASE + '/api/dumps');
+    let j = await r.json();
+    if (j.dumps && j.dumps.length > 0) {
+      updateTracker(j.dumps);  // 每次都更新，tracker 内部 diff
+    } else {
+      let el = document.getElementById('field-tracker');
+      if (el.innerHTML.indexOf('table') < 0) el.innerHTML = '<span style="color:#444;padding:8px;display:block">滑动朋友圈后自动出现</span>';
+    }
+  } catch(e) {}
+}
+function clearTracker() { _fieldHistory = {}; _dumpHash = ''; document.getElementById('field-tracker').innerHTML = '(已清空)'; }
+function clearDumps() { clearTracker(); }
+
+// ──── actions ────
+async function apiTrigger(action) {
+  try { await fetch(BASE + '/api/trigger', {method:'POST', body:JSON.stringify({action,password:'1111'})}); pollState(); } catch(e) {}
+}
+async function setMode(mode) {
+  try { await fetch(BASE + '/api/mode', {method:'POST', body:JSON.stringify({mode})}); pollConfig(); } catch(e) {}
+}
+async function addHidden() {
+  let wxid = document.getElementById('hl-wxid').value.trim();
+  if (!wxid) return;
+  try { await fetch(BASE + '/api/hidden', {method:'POST', body:JSON.stringify({action:'add', wxid})}); document.getElementById('hl-wxid').value=''; pollHidden(); } catch(e) {}
+}
+async function removeHidden(wxid) {
+  try { await fetch(BASE + '/api/hidden', {method:'POST', body:JSON.stringify({action:'remove', wxid})}); pollHidden(); } catch(e) {}
+}
+async function quickAdd(wxid) {
+  document.getElementById('hl-wxid').value = wxid;
+  await addHidden();
+  pollFeedWxids();
+}
+async function saveMyWxid() {
+  let wxid = document.getElementById('my-wxid').value.trim();
+  try {
+    await fetch(BASE + '/api/mywxid', {method:'POST', body:JSON.stringify({wxid})});
+    document.getElementById('my-wxid-status').textContent = wxid ? '✓' : '已清';
+  } catch(e) {}
+}
+async function loadMyWxid() {
+  try {
+    let r = await fetch(BASE + '/api/mywxid');
+    let j = await r.json();
+    if (j.wxid) { document.getElementById('my-wxid').value = j.wxid; document.getElementById('my-wxid-status').textContent = '✓'; }
+  } catch(e) {}
+}
+
+// ──── 六面板 Tab ────
+var _activeTab = 'moments';
+var TAB_CHANNELS = {moments:'moments', lc:'like_comment', badge:'badge', conv:'conv', noise:'noise'};
+
+function switchTab(tab) {
+  _activeTab = tab;
+  ['moments','lc','badge','conv','tracker','noise'].forEach(function(t) {
+    var btn = document.getElementById('tab-btn-' + t);
+    var panel = document.getElementById('panel-' + t);
+    if (btn)   btn.className   = 'tab-btn' + (t === tab ? ' active' : '');
+    if (panel) panel.className = 'tab-panel' + (t === tab ? '' : ' hidden');
+  });
+  renderChannelPanel(tab);
+}
+
+function chEventColor(kind) {
+  if (kind.indexOf('blocked') >= 0) return '#f44';
+  if (kind.indexOf('removed') >= 0) return '#f80';
+  if (kind.indexOf('seen') >= 0 || kind.indexOf('feed') >= 0) return '#4a8';
+  return '#666';
+}
+
+function renderChannelPanel(tab) {
+  var ch = TAB_CHANNELS[tab];
+  if (!ch) return; // tracker has no channel
+  var elEvents = document.getElementById('ch-events-' + tab);
+  if (!elEvents) return;
+  // metrics bar
+  var elMetrics = document.getElementById('ch-metrics-' + tab);
+  if (elMetrics && _lastTelemetry && _lastTelemetry.metrics) {
+    var m = _lastTelemetry.metrics[ch];
+    if (m) {
+      elMetrics.innerHTML = 'seen=<b style="color:#8f8">' + m.seen + '</b> ' +
+        'parsed=<b>' + m.parsed + '</b> matched=<b style="color:#0ff">' + m.matched + '</b> ' +
+        'blocked=<b style="color:#f44">' + m.blocked + '</b> removed=<b style="color:#f80">' + m.removed + '</b> ' +
+        'dropped=<b style="color:#555">' + m.dropped + '</b>';
+    }
+  }
+}
+
+var _lastTelemetry = null;
+var _chEventCache = {}; // {channel: [events]}
+
+async function pollChannelEvents() {
+  var ch = TAB_CHANNELS[_activeTab];
+  if (!ch) return;
+  try {
+    var r = await fetch(BASE + '/api/telemetry/events?channel=' + ch + '&limit=80');
+    var j = await r.json();
+    var events = j.events || [];
+    _chEventCache[_activeTab] = events;
+    var elEvents = document.getElementById('ch-events-' + _activeTab);
+    if (!elEvents) return;
+    if (events.length === 0) { elEvents.innerHTML = '<span style="color:#333;padding:8px;display:block">(暂无事件)</span>'; return; }
+    var html = events.map(function(e) {
+      var fields = e.fields || {};
+      var fstr = Object.keys(fields).map(function(k){
+        var v = fields[k];
+        var vc = v.indexOf('wxid_') === 0 ? '#0ff' : '#aaa';
+        return '<span style="color:#555">' + k + '=</span><span style="color:' + vc + '">' + v + '</span>';
+      }).join(' ');
+      var kc = chEventColor(e.kind);
+      return '<div class="log-line"><span style="color:#444">' + e.ts + '</span> ' +
+             '<span style="color:' + kc + ';font-weight:bold">' + e.kind + '</span> ' + fstr + '</div>';
+    }).join('');
+    elEvents.innerHTML = html;
+  } catch(e) {}
+}
+
+// ──── telemetry V2 ────
+async function pollTelemetry() {
+  try {
+    let r = await fetch(BASE + '/api/telemetry');
+    let j = await r.json();
+    if (!j.page) return;
+    _lastTelemetry = j;
+    document.getElementById('ui-page').textContent = j.page.page || '--';
+    let wx = (j.page.visible_wxids || []).map(function(x){ return x.wxid + (x.hidden?' [H]':''); }).join(', ');
+    document.getElementById('ui-feed').textContent =
+      'count=' + (j.page.visible_feed_count||0) + (wx ? ' | ' + wx : '');
+    let m = j.metrics || {};
+    let html = '';
+    Object.keys(m).forEach(function(ch) {
+      let x = m[ch];
+      let bCol = x.blocked > 0 ? '#f44' : '#555';
+      html += '<div style="margin-bottom:2px"><span style="color:#0f0">'+ch+'</span> ' +
+        '<span style="color:#888">s='+x.seen+' p='+x.parsed+' m='+x.matched+'</span> ' +
+        '<span style="color:'+bCol+'">b='+x.blocked+'</span> ' +
+        '<span style="color:#f80">r='+x.removed+'</span></div>';
+    });
+    document.getElementById('ui-metrics').innerHTML = html || '(无事件)';
+    // 更新当前活跃 tab 的 metrics bar
+    renderChannelPanel(_activeTab);
+  } catch(e) {}
+}
+
+// ──── poll schedule ────
+setInterval(function(){ pollCounters(); pollRawFeed(); pollFeedWxids(); pollTelemetry(); pollChannelEvents(); }, 500);
+setInterval(function(){ pollState(); pollConfig(); pollHidden(); pollConvWxids(); pollDumps(); }, 2000);
+
+pollState(); pollCounters(); pollConfig(); pollHidden(); pollConvWxids(); pollFeedWxids(); pollRawFeed(); pollDumps(); pollTelemetry();
+loadMyWxid();
+</script>
+</body>
+</html>

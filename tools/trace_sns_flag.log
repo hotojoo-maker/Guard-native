@@ -1,0 +1,213 @@
+﻿STDOUT:
+     ____
+    / _  |   Frida 17.9.10 - A world-class dynamic instrumentation toolkit
+   | (_| |
+    > _  |   Commands:
+   /_/ |_|       help      -> Displays the help system
+   . . . .       object?   -> Display information about 'object'
+   . . . .       exit/quit -> Exit
+   . . . .
+   . . . .   More info at https://frida.re/docs/home/
+   . . . .
+   . . . .   Connected to MI 9 (id=609b4b18)
+Spawning `com.tencent.mm`...
+Spawned `com.tencent.mm`. Resuming main thread!
+[MI 9::com.tencent.mm ]-> [SP] getInt/getBoolean hooked
+[SP-EDITOR] hooked
+[INIT] done
+[SP-GBOOL] deferred_analytics_collection=true
+STACK:
+java.lang.Exception: trace
+	at android.app.SharedPreferencesImpl.getBoolean(Native Method)
+	at com.google.android.gms.internal.measurement.zzfr.zzje(Unknown Source:10)
+	at com.google.android.gms.internal.measurement.zzfb.zzbi(Unknown Source:170)
+	at com.google.android.gms.internal.measurement.zzii.zzk(Unknown Source:16)
+	at com.google.android.gms.internal.measurement.zzii.zza(SourceFile:6)
+	at com.google.android.gms.internal.measurement.zzgl.start(Unknown Source:446)
+	at com.google.android.gms.internal.measurement.zzgm.run(Unknown Source:9)
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:462)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+	at com.google.android.gms.internal.measurement.zzgk.run(Unknown Source:49)
+
+[SP-GET] sns_control_flag=3
+STACK:
+java.lang.Exception: trace
+	at android.app.SharedPreferencesImpl.getInt(Native Method)
+	at com.tencent.mm.plugin.sns.model.d6.k(Unknown Source:41)
+	at com.tencent.mm.plugin.sns.model.l4.onAccountInitialized(Unknown Source:338)
+	at o65.w.access$1100(Unknown Source:16)
+	at o65.u.compute(Unknown Source:205)
+	at java.util.concurrent.RecursiveAction.exec(RecursiveAction.java:189)
+	at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:285)
+	at java.util.concurrent.ForkJoinTask.doInvoke(ForkJoinTask.java:397)
+	at java.util.concurrent.ForkJoinTask.invoke(ForkJoinTask.java:726)
+	at o65.v.compute(Unknown Source:35)
+	at java.util.concurrent.RecursiveAction.exec(RecursiveAction.java:189)
+	at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:285)
+	at java.util.concurrent.ForkJoinTask.d
+[SP-FILES] error: ReferenceError: 'java' is not defined
+[SP-GET] soter_triggered_oom_count37b30bfe3a249b6339c7cf66dd9e0bf7=0
+STACK:
+java.lang.Exception: trace
+	at android.app.SharedPreferencesImpl.getInt(Native Method)
+	at lq5.l0.b(Unknown Source:13)
+	at yp5.a.f(Unknown Source:5)
+	at lq5.n0.<init>(Unknown Source:66)
+	at hc4.b.call(Unknown Source:47)
+	at oi5.f.run(Unknown Source:44)
+	at android.os.Handler.handleCallback(Handler.java:938)
+	at android.os.Handler.dispatchMessage(Handler.java:99)
+	at android.os.Looper.loop(Looper.java:236)
+	at android.os.HandlerThread.run(HandlerThread.java:67)
+
+[SP-GET] soter_triggered_oom_count37b30bfe3a249b6339c7cf66dd9e0bf7=0
+STACK:
+java.lang.Exception: trace
+	at android.app.SharedPreferencesImpl.getInt(Native Method)
+	at lq5.l0.b(Unknown Source:13)
+	at cq5.j.m(Unknown Source:2)
+	at yp5.a.l(Unknown Source:15)
+	at lq5.n0.<init>(Unknown Source:155)
+	at hc4.b.call(Unknown Source:47)
+	at oi5.f.run(Unknown Source:44)
+	at android.os.Handler.handleCallback(Handler.java:938)
+	at android.os.Handler.dispatchMessage(Handler.java:99)
+	at android.os.Looper.loop(Looper.java:236)
+	at android.os.HandlerThread.run(HandlerThread.java:67)
+
+[SP-GET] soter_triggered_oom_count37b30bfe3a249b6339c7cf66dd9e0bf7=0
+STACK:
+java.lang.Exception: trace
+	at android.app.SharedPreferencesImpl.getInt(Native Method)
+	at lq5.l0.b(Unknown Source:13)
+	at cq5.j.m(Unknown Source:2)
+	at yp5.a.l(Unknown Source:15)
+	at com.tencent.soter.core.biometric.BiometricManagerCompat.initImpl(Unknown Source:0)
+	at com.tencent.soter.core.biometric.BiometricManagerCompat.<init>(Unknown Source:7)
+	at com.tencent.soter.core.biometric.BiometricManagerCompat.from(Unknown Source:2)
+	at yp5.a.n(Unknown Source:5)
+	at lq5.n0.<init>(Unknown Source:161)
+	at hc4.b.call(Unknown Source:47)
+	at oi5.f.run(Unknown Source:44)
+	at android.os.Handler.handleCallback(Handler.java:938)
+	at android.os.Handler.dispatchMessage(Handler.java:99)
+	at android.os.Looper.loop(Looper.java:236)
+	at android.os.HandlerThread.run(HandlerThread.java:67)
+
+[SP-GET] soter_triggered_oom_count37b30bfe3a249b6339c7cf66dd9e0bf7=0
+STACK:
+java.lang.Exception: trace
+	at android.app.SharedPreferencesImpl.getInt(Native Method)
+	at lq5.l0.b(Unknown Source:13)
+	at cq5.j.m(Unknown Source:2)
+	at yp5.a.l(Unknown Source:15)
+	at com.tencent.soter.core.biometric.BiometricManagerCompat.initImpl(Unknown Source:44)
+	at com.tencent.soter.core.biometric.BiometricManagerCompat.<init>(Unknown Source:7)
+	at com.tencent.soter.core.biometric.BiometricManagerCompat.from(Unknown Source:2)
+	at yp5.a.n(Unknown Source:5)
+	at lq5.n0.<init>(Unknown Source:161)
+	at hc4.b.call(Unknown Source:47)
+	at oi5.f.run(Unknown Source:44)
+	at android.os.Handler.handleCallback(Handler.java:938)
+	at android.os.Handler.dispatchMessage(Handler.java:99)
+	at android.os.Looper.loop(Looper.java:236)
+	at android.os.HandlerThread.run(HandlerThread.java:67)
+
+[SP-GET] soter_triggered_oom_count37b30bfe3a249b6339c7cf66dd9e0bf7=0
+STACK:
+java.lang.Exception: trace
+	at android.app.SharedPreferencesImpl.getInt(Native Method)
+	at lq5.l0.b(Unknown Source:13)
+	at cq5.j.m(Unknown Source:2)
+	at cq5.j.h(Unknown Source:10)
+	at yp5.a.i(Unknown Source:15)
+	at hc4.k.call(Unknown Source:11)
+	at oi5.f.run(Unknown Source:44)
+	at android.os.Handler.handleCallback(Handler.java:938)
+	at android.os.Handler.dispatchMessage(Handler.java:99)
+	at android.os.Looper.loop(Looper.java:236)
+	at android.os.HandlerThread.run(HandlerThread.java:67)
+
+[SP-GET] soter_triggered_oom_count37b30bfe3a249b6339c7cf66dd9e0bf7=0
+STACK:
+java.lang.Exception: trace
+	at android.app.SharedPreferencesImpl.getInt(Native Method)
+	at lq5.l0.b(Unknown Source:13)
+	at cq5.j.m(Unknown Source:2)
+	at cq5.j.h(Unknown Source:10)
+	at yp5.a.i(Unknown Source:15)
+	at hc4.k.call(Unknown Source:15)
+	at oi5.f.run(Unknown Source:44)
+	at android.os.Handler.handleCallback(Handler.java:938)
+	at android.os.Handler.dispatchMessage(Handler.java:99)
+	at android.os.Looper.loop(Looper.java:236)
+	at android.os.HandlerThread.run(HandlerThread.java:67)
+
+[SP-GET] soter_triggered_oom_count37b30bfe3a249b6339c7cf66dd9e0bf7=0
+STACK:
+java.lang.Exception: trace
+	at android.app.SharedPreferencesImpl.getInt(Native Method)
+	at lq5.l0.b(Unknown Source:13)
+	at cq5.j.m(Unknown Source:2)
+	at cq5.j.p(Unknown Source:10)
+	at yp5.a.s(Unknown Source:21)
+	at hc4.k.call(Unknown Source:74)
+	at oi5.f.run(Unknown Source:44)
+	at android.os.Handler.handleCallback(Handler.java:938)
+	at android.os.Handler.dispatchMessage(Handler.java:99)
+	at android.os.Looper.loop(Looper.java:236)
+	at android.os.HandlerThread.run(HandlerThread.java:67)
+
+[SP-GET] soter_triggered_oom_count37b30bfe3a249b6339c7cf66dd9e0bf7=0
+STACK:
+java.lang.Exception: trace
+	at android.app.SharedPreferencesImpl.getInt(Native Method)
+	at lq5.l0.b(Unknown Source:13)
+	at cq5.j.m(Unknown Source:2)
+	at cq5.j.p(Unknown Source:10)
+	at yp5.a.s(Unknown Source:21)
+	at hc4.k.call(Unknown Source:82)
+	at oi5.f.run(Unknown Source:44)
+	at android.os.Handler.handleCallback(Handler.java:938)
+	at android.os.Handler.dispatchMessage(Handler.java:99)
+	at android.os.Looper.loop(Looper.java:236)
+	at android.os.HandlerThread.run(HandlerThread.java:67)
+
+[SP-GET] soter_triggered_oom_count37b30bfe3a249b6339c7cf66dd9e0bf7=0
+STACK:
+java.lang.Exception: trace
+	at android.app.SharedPreferencesImpl.getInt(Native Method)
+	at lq5.l0.b(Unknown Source:13)
+	at cq5.j.m(Unknown Source:2)
+	at cq5.j.d(Unknown Source:10)
+	at yp5.a.c(Unknown Source:16)
+	at hc4.l.call(Unknown Source:91)
+	at oi5.f.run(Unknown Source:44)
+	at android.os.Handler.handleCallback(Handler.java:938)
+	at android.os.Handler.dispatchMessage(Handler.java:99)
+	at android.os.Looper.loop(Looper.java:236)
+	at android.os.HandlerThread.run(HandlerThread.java:67)
+
+[SP-GET] sns_respone_count=10
+STACK:
+java.lang.Exception: trace
+	at android.app.SharedPreferencesImpl.getInt(Native Method)
+	at o74.z0.Q(Unknown Source:24)
+	at com.tencent.mm.plugin.sns.model.d6.i(Unknown Source:13)
+	at com.tencent.mm.plugin.sns.model.v2.<init>(Unknown Source:74)
+	at dd0.y5.callback(Unknown Source:283)
+	at com.tencent.mm.sdk.event.d.d(Unknown Source:268)
+	at com.tencent.mm.sdk.event.IEvent.e(Unknown Source:3)
+	at com.tencent.mm.plugin.sns.model.y2.run(Unknown Source:277)
+	at zq5.o.dispatchMessage(Unknown Source:10)
+	at com.tencent.mm.sdk.platformtools.j3.dispatchMessage(Unknown Source:9)
+	at zq5.e.dispatchMessage(Unknown Source:2)
+	at zq5.n.run(Unknown Source:88)
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:462)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+	at yq5.l.r
+[CHOOSE-LATE] looking for w1...
+[CHOOSE-LATE] done
+
+STDERR:
+

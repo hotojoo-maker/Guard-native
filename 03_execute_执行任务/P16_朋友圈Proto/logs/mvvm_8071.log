@@ -1,0 +1,64 @@
+     ____
+    / _  |   Frida 17.9.8 - A world-class dynamic instrumentation toolkit
+   | (_| |
+    > _  |   Commands:
+   /_/ |_|       help      -> Displays the help system
+   . . . .       object?   -> Display information about 'object'
+   . . . .       exit/quit -> Exit
+   . . . .
+   . . . .   More info at https://frida.re/docs/home/
+   . . . .
+   . . . .   Connected to MI 9 (id=609b4b18)
+Attaching...
+[PROBE2] ready ¡ª É¨ MvvmList È«×Ö¶Î
+[MI 9::PID::30716 ]-> 
+[MVVM] hash=195842964 class=com.tencent.mm.plugin.mvvmlist.MvvmList
+[MVVM] ¹² 22 ¸ö×Ö¶Î£º
+  .d : jk3.f [actual=na4.e] = na4.e@1ea373e
+  .e : ik3.n0 [actual=ik3.n0] = ik3.n0@582999f
+  .f : androidx.lifecycle.y [actual=com.tencent.mm.plugin.sns.ui.improve.ImproveSnsTimelineUI] = com.tencent.mm.plugin.sns.ui.improve.ImproveSnsTimelineUI@8e
+  .g : c45.i [actual=com.tencent.mm.sdk.coroutines.LifecycleScope] = com.tencent.mm.sdk.coroutines.LifecycleScope@6217be7
+  .h : java.util.List [actual=java.util.ArrayList] = [ImproveInfo(name=Ìð¹Ï, snsID='14925071284018557485', ad:false
+  .i : boolean [actual=java.lang.Boolean] = true
+  .m : boolean [actual=java.lang.Boolean] = false
+  .n : int [actual=java.lang.Integer] = 2
+  .o : java.util.ArrayList [actual=java.util.ArrayList] = [ImproveInfo(name=Ìð¹Ï, snsID='14925071284018557485', ad:false
+  .p : java.util.ArrayList [actual=java.util.ArrayList] = [ImproveInfo(name=Ìð¹Ï, snsID='14925071284018557485', ad:false
+  .q : ik3.m0 [actual=com.tencent.mm.plugin.sns.ui.improve.component.g2] = com.tencent.mm.plugin.sns.ui.improve.component.g2@51d0677
+  .r : androidx.lifecycle.j0 [actual=androidx.lifecycle.j0] = androidx.lifecycle.j0@3640aec
+  .s : kotlinx.coroutines.flow.h2 [actual=kotlinx.coroutines.flow.p2] = kotlinx.coroutines.flow.p2@b74beb5
+  .t : long [actual=java.lang.Long] = 100
+  .u : androidx.lifecycle.g0 [actual=androidx.lifecycle.j0] = androidx.lifecycle.j0@3640aec
+  .v : kotlinx.coroutines.flow.m2 [actual=kotlinx.coroutines.flow.p2] = kotlinx.coroutines.flow.p2@b74beb5
+  .w : java.util.concurrent.atomic.AtomicInteger [actual=java.util.concurrent.atomic.AtomicInteger] = 0
+  .x : qu5.g [actual=qu5.n] = ik3.n@7ce894a
+  .y : qu5.g [actual=qu5.n] = com.tencent.mm.sdk.event.pending.UIPendingEventNotifier@6a34
+  .z : qu5.g [actual=qu5.n] = androidx.lifecycle.b0@a0130bb
+  .shadow$_klass_ : java.lang.Class [actual=java.lang.Class] = class com.tencent.mm.plugin.mvvmlist.MvvmList
+  .shadow$_monitor_ : int [actual=java.lang.Integer] = -1951640684
+
+[MVVM] hash=51924767 class=com.tencent.mm.plugin.mvvmlist.MvvmList
+[MVVM] ¹² 22 ¸ö×Ö¶Î£º
+  .d : jk3.f [actual=na4.e] = na4.e@afce9d8
+  .e : ik3.n0 [actual=ik3.n0] = ik3.n0@1ff9131
+  .f : androidx.lifecycle.y [actual=com.tencent.mm.plugin.sns.ui.improve.ImproveSnsTimelineUI] = com.tencent.mm.plugin.sns.ui.improve.ImproveSnsTimelineUI@f2
+  .g : c45.i [actual=com.tencent.mm.sdk.coroutines.LifecycleScope] = com.tencent.mm.sdk.coroutines.LifecycleScope@6edb579
+  .h : java.util.List [actual=ru5.p0] = []
+  .i : boolean [actual=java.lang.Boolean] = true
+  .m : boolean [actual=java.lang.Boolean] = false
+  .n : int [actual=java.lang.Integer] = 5
+  .o : java.util.ArrayList [actual=java.util.ArrayList] = [ImproveInfo(name=Ìð¹Ï, snsID='14925071284018557485', ad:false
+  .p : java.util.ArrayList [actual=java.util.ArrayList] = []
+  .q : ik3.m0 [actual=com.tencent.mm.plugin.sns.ui.improve.component.g2] = com.tencent.mm.plugin.sns.ui.improve.component.g2@3a68452
+  .r : androidx.lifecycle.j0 [actual=androidx.lifecycle.j0] = androidx.lifecycle.j0@4f3f016
+  .s : kotlinx.coroutines.flow.h2 [actual=kotlinx.coroutines.flow.p2] = kotlinx.coroutines.flow.p2@6081d97
+  .t : long [actual=java.lang.Long] = 100
+  .u : androidx.lifecycle.g0 [actual=androidx.lifecycle.j0] = androidx.lifecycle.j0@4f3f016
+  .v : kotlinx.coroutines.flow.m2 [actual=kotlinx.coroutines.flow.p2] = kotlinx.coroutines.flow.p2@6081d97
+  .w : java.util.concurrent.atomic.AtomicInteger [actual=java.util.concurrent.atomic.AtomicInteger] = 2
+  .x : qu5.g [actual=qu5.n] = ik3.n@442cb84
+  .y : qu5.g [actual=qu5.n] = com.tencent.mm.sdk.event.pending.UIPendingEventNotifier@9f37
+  .z : qu5.g [actual=qu5.n] = androidx.lifecycle.b0@68b0f6d
+  .shadow$_klass_ : java.lang.Class [actual=java.lang.Class] = class com.tencent.mm.plugin.mvvmlist.MvvmList
+  .shadow$_monitor_ : int [actual=java.lang.Integer] = -2095558881
+[PROBE2] done

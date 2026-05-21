@@ -1,0 +1,188 @@
+     ____
+    / _  |   Frida 17.9.10 - A world-class dynamic instrumentation toolkit
+   | (_| |
+    > _  |   Commands:
+   /_/ |_|       help      -> Displays the help system
+   . . . .       object?   -> Display information about 'object'
+   . . . .       exit/quit -> Exit
+   . . . .
+   . . . .   More info at https://frida.re/docs/home/
+   . . . .
+   . . . .   Connected to 127.0.0.1:27042 (id=socket@127.0.0.1:27042)
+Attaching...
+[W1] total methods: 16
+[W1] method: B1(boolean) → int
+[W1] method: C2() → boolean
+[W1] method: E1() → int
+[W1] method: G1() → String
+[W1] method: N1() → Cursor
+[W1] method: O1(int) → Cursor
+[W1] method: a2(int) → Cursor
+[W1] method: f() → int
+[W1] method: j2() → int
+[W1] method: o1(long) → boolean
+[W1] method: o2(int) → int
+[W1] method: p1(long, long, int) → boolean
+[W1] method: q1(long, long, int) → v1
+[W1] method: t2(int) → int
+[W1] method: v2(long, String, int, String) → boolean
+[W1] method: w2(long, boolean) → boolean
+[W1] ready — 让密友点赞，观察哪个方法被调用 + fromUserName 在哪个字段
+[Remote::PID::11264 ]-> 
+[W1:CALL] v2 args=4
+  arg[0] = -3521543110388346400
+  arg[1] = wxid_lzd2va16jd1622
+  arg[2] = 1779366255
+  arg[3] = 14925200963321205462_2_wcc:wxid_lzd2va16jd1622-1779366254-1
+
+[W1:CALL] w2 args=2
+  arg[0] = -3521543110388346400
+  arg[1] = false
+
+[W1:CALL] v2 args=4
+  arg[0] = -3521543110388346400
+  arg[1] = wxid_lzd2va16jd1622
+  arg[2] = 1779366254
+  arg[3] = 14925200963321205462_2_wcc:wxid_lzd2va16jd1622-1779366253-1
+
+[W1:CALL] w2 args=2
+  arg[0] = -3521543110388346400
+  arg[1] = false
+
+[W1:CALL] v2 args=4
+  arg[0] = -3521543110388346400
+  arg[1] = wxid_lzd2va16jd1622
+  arg[2] = 1779366253
+  arg[3] = 14925200963321205462_2_wcc:wxid_lzd2va16jd1622-1779366253-0
+
+[W1:CALL] w2 args=2
+  arg[0] = -3521543110388346400
+  arg[1] = false
+
+[W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] v2 args=4
+  arg[0] = -3521543110388346400
+  arg[1] = wxid_lzd2va16jd1622
+  arg[2] = 1779366254
+  arg[3] = 14925200963321205462_2_wcc:wxid_lzd2va16jd1622-1779366253-1
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] v2 args=4
+  arg[0] = -3521543110388346400
+  arg[1] = wxid_lzd2va16jd1622
+  arg[2] = 1779366291
+  arg[3] = 14925200963321205462_2_wcc:wxid_lzd2va16jd1622-1779366290-0
+
+[W1:CALL] w2 args=2
+  arg[0] = -3521543110388346400
+  arg[1] = false
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] v2 args=4
+  arg[0] = -3521543110388346400
+  arg[1] = wxid_lzd2va16jd1622
+  arg[2] = 1779366291
+  arg[3] = 14925200963321205462_2_wcc:wxid_lzd2va16jd1622-1779366291-1
+
+[W1:CALL] w2 args=2
+  arg[0] = -3521543110388346400
+  arg[1] = false
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] v2 args=4
+  arg[0] = -3521543110388346400
+  arg[1] = wxid_lzd2va16jd1622
+  arg[2] = 1779366284
+  arg[3] = 14925200963321205462_2_wcc:wxid_lzd2va16jd1622-1779366283-0
+
+[W1:CALL] w2 args=2
+  arg[0] = -3521543110388346400
+  arg[1] = false
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] v2 args=4
+  arg[0] = -3521543110388346400
+  arg[1] = wxid_lzd2va16jd1622
+  arg[2] = 1779366292
+  arg[3] = 14925200963321205462_2_wcc:wxid_lzd2va16jd1622-1779366291-2
+
+[W1:CALL] w2 args=2
+  arg[0] = -3521543110388346400
+  arg[1] = false
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0

@@ -1,0 +1,20 @@
+﻿STDOUT:
+     ____
+    / _  |   Frida 17.9.10 - A world-class dynamic instrumentation toolkit
+   | (_| |
+    > _  |   Commands:
+   /_/ |_|       help      -> Displays the help system
+   . . . .       object?   -> Display information about 'object'
+   . . . .       exit/quit -> Exit
+   . . . .
+   . . . .   More info at https://frida.re/docs/home/
+   . . . .
+   . . . .   Connected to MI 9 (id=609b4b18)
+Attaching...
+[MI 9::PID::27358 ]-> [SP] scanning 76 SP files...
+[FOUND] file=com.tencent.mm_preferences  sns_control_flag=3 (0b11)
+[PATCHED] 3 -> 1
+[OK] 现在 kill 微信再重启，互动红点应该消失
+
+STDERR:
+
