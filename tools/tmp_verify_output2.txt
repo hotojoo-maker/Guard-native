@@ -1,0 +1,809 @@
+     ____
+    / _  |   Frida 17.9.10 - A world-class dynamic instrumentation toolkit
+   | (_| |
+    > _  |   Commands:
+   /_/ |_|       help      -> Displays the help system
+   . . . .       object?   -> Display information about 'object'
+   . . . .       exit/quit -> Exit
+   . . . .
+   . . . .   More info at https://frida.re/docs/home/
+   . . . .
+   . . . .   Connected to MI 9 (id=609b4b18)
+Attaching...
+[VFY] e(List) hooked, target=wxid_lzd2va16jd1622
+[VFY] === verify_e2.js 就绪 ===
+[MI 9::PID::18797 ]-> [VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+[VFY] === MvvmList.e(List) sz=10 ===
+[VFY] [0] wxid=officialaccounts name=公众号 HIT=false
+[VFY]   field dump:   field_username=officialaccounts (in i2)
+[VFY] [1] wxid=gh_43f2581f6fd6 name=微信运动 HIT=false
+[VFY]   field dump:   field_username=gh_43f2581f6fd6 (in i2)
+[VFY] [2] wxid=weixin name=微信团队 HIT=false
+[VFY]   field dump:   field_username=weixin (in i2)
+[VFY] [3] wxid=wxid_ap12jelohkt322 name=三妹小豆腐芳芳\U0001f342 HIT=false
+[VFY]   field dump:   field_username=wxid_ap12jelohkt322 (in i2)
+[VFY] [4] wxid=newsapp name=腾讯新闻 HIT=false
+[VFY]   field dump:   field_username=newsapp (in i2)
+[VFY] [5] wxid=wxid_19apza6t9j7s12 name=Mark HIT=false
+[VFY]   field dump:   field_username=wxid_19apza6t9j7s12 (in i2)
+[VFY] [6] wxid=service_officialaccounts name=服务号 HIT=false
+[VFY]   field dump:   field_username=service_officialaccounts (in i2)
+[VFY] [7] wxid=mao554788921 name=阿信先生 HIT=false
+[VFY]   field dump:   field_username=mao554788921 (in i2)
+[VFY] [8] wxid=gh_3dfda90e39d6 name=微信支付 HIT=false
+[VFY]   field dump:   field_username=gh_3dfda90e39d6 (in i2)
+[VFY] [9] wxid=wxid_lzd2va16jd1622 name=熵 HIT=true
+[VFY]   field dump:   field_username=wxid_lzd2va16jd1622 (in i2)
+[VFY] ★★★ HIT! ★★★
+Process terminated
+
+Thank you for using Frida!

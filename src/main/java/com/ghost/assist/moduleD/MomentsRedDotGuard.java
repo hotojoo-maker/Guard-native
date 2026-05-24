@@ -77,6 +77,10 @@ public class MomentsRedDotGuard {
     // LauncherUI.onResume 用它来调 g1() 清视觉红点
     private static volatile Object sFMFInstance = null;
 
+    // 冷启动时 FMF 懒加载未就绪：LauncherUI.onResume 设 pending=true，
+    // FMF.onResume 首次触发时发现 pending=true 则立即清除红点。
+    private static volatile boolean sPendingClearBadge = false;
+
     // 8.0.71 dump 实证（2026-05-21）：红点 Event 没有全局 EventCenter,
     // 每个 Event 类有自己的发布渠道。下面是 4 个目标类，先 dump 字段/方法，
     // 下一轮根据 dump 结果精准 hook。
@@ -122,7 +126,7 @@ public class MomentsRedDotGuard {
         if (sInstalled) return;
         sInstalled = true;
 
-        // v2 兜底：Event ctor + View（已改为精准 wxid 过滤，非盲拦截）
+        // v2 兜底：Event ctor + View（精准 wxid 过滤）
         installEventBlocker(lpparam, CLS_WECHAT_TAB_EVT);
         installEventBlocker(lpparam, CLS_TAB_CHANGE_EVT);
         installFinderRedDotViewBlocker(lpparam);
@@ -133,51 +137,163 @@ public class MomentsRedDotGuard {
         // v10 精准路径：w1 写入拦截
         installW1InteractionFilter(lpparam);
 
-        // v11 出口封堵：SnsCommentStorage int/long getter → 0
+        // v11 出口封堵：SnsCommentStorage int/long getter → 0 + 捕获 sW1Instance
         installSnsCommentStorageHook(lpparam);
 
-        // v12 新增：SnsMsgUIWithAll 进入时过滤密友列表 + 同步清零
+        // v15 Catfish 主线：hookSnsMsgList → addBlackList2（黑名单注入）+ SnsMsgUI 消费层
+        installCatfishSnsMsgListHook(lpparam);
         installSnsMsgUIFilter(lpparam);
+        installAdapterGetCountBlocker(lpparam);
+
+        // v18 tab 角标计数器清零：TabRedDotChangeEvent int 字段 → 0（发现 tab 数字）
+        installTabBadgeCounterSuppressor(lpparam);
 
         // boot-time 追溯清零
         retroactiveZeroOnBoot(lpparam);
 
-        Log.i(TAG, "[MRD] install done (v12: +SnsMsgUIFilter +onResume refresh)");
+        Log.i(TAG, "[MRD] install done (v18: tab badge counter suppressor)");
+    }
+
+    // -------------------------------------------------------------------------
+    // v15 Catfish 翻译：MainEntry.hookSnsMsgList() → addBlackList2(ArrayList)
+    //   隐藏态：把密友 wxid 并入微信侧黑名单 List，供 SnsMsg 过滤/计数使用
+    //   参考：refs/MainEntry.java hookSnsMsgList + P19 brief addBlackList2 语义
+    // -------------------------------------------------------------------------
+    private static final String[] CATFISH_SNSMSG_SCAN_CLASSES = {
+            SNS_COMMENT_STORAGE,                                           // w1
+            "com.tencent.mm.plugin.sns.ui.SnsMsgUI",                       // 父类
+            "com.tencent.mm.plugin.sns.ui.SnsMsgUIWithAll",
+            "com.tencent.mm.plugin.sns.ui.SnsMsgUIWithRelevance",
+            "com.tencent.mm.plugin.sns.model.SnsLogic",
+    };
+
+    private static void installCatfishSnsMsgListHook(XC_LoadPackage.LoadPackageParam lpparam) {
+        int total = 0;
+        for (String cn : CATFISH_SNSMSG_SCAN_CLASSES) {
+            try {
+                Class<?> cls = lpparam.classLoader.loadClass(cn);
+                for (Method m : cls.getDeclaredMethods()) {
+                    if (!snsMsgMergeCandidate(m)) continue;
+                    final String mn = m.getName();
+                    final String fcn = cn;
+                    XposedBridge.hookMethod(m, new XC_MethodHook() {
+                        @Override
+                        protected void beforeHookedMethod(MethodHookParam param) {
+                            if (!shouldCatfishSnsMsgFilter()) return;
+                            for (int i = 0; i < param.args.length; i++) {
+                                if (param.args[i] instanceof java.util.ArrayList) {
+                                    @SuppressWarnings("unchecked")
+                                    java.util.ArrayList<String> al =
+                                            (java.util.ArrayList<String>) param.args[i];
+                                    int before = al.size();
+                                    purgeMergeList(al);
+                                    if (sDiagSeen.add("mrg_" + fcn + "." + mn)) {
+                                        Log.i(TAG, "[MRD:merge] merge " + fcn + "." + mn
+                                                + " sz " + before + "→" + al.size());
+                                    }
+                                } else if (param.args[i] instanceof java.util.List) {
+                                    @SuppressWarnings("unchecked")
+                                    java.util.List<String> li = (java.util.List<String>) param.args[i];
+                                    int before = li.size();
+                                    purgeMergeListItems(li);
+                                    if (sDiagSeen.add("mrgL_" + fcn + "." + mn)) {
+                                        Log.i(TAG, "[MRD:merge] mergeList " + fcn + "." + mn
+                                                + " sz " + before + "→" + li.size());
+                                    }
+                                }
+                            }
+                        }
+                        @Override
+                        protected void afterHookedMethod(MethodHookParam param) {
+                            if (!shouldCatfishSnsMsgFilter()) return;
+                            Object r = param.getResult();
+                            if (r instanceof java.util.ArrayList) {
+                                @SuppressWarnings("unchecked")
+                                java.util.ArrayList<String> al = (java.util.ArrayList<String>) r;
+                                int before = al.size();
+                                purgeMergeList(al);
+                                if (before != al.size() && sDiagSeen.add("ret_" + fcn + "." + mn)) {
+                                    Log.i(TAG, "[MRD:merge] ret-merge " + fcn + "." + mn
+                                            + " sz " + before + "→" + al.size());
+                                }
+                            }
+                        }
+                    });
+                    total++;
+                }
+            } catch (ClassNotFoundException e) {
+                Log.w(TAG, "[MRD:merge] class not found: " + cn);
+            } catch (Throwable t) {
+                Log.w(TAG, "[MRD:merge] " + cn + " failed: " + t);
+            }
+        }
+        Log.i(TAG, "[MRD:merge] snsmsg blacklist hooks=" + total);
+    }
+
+    private static boolean snsMsgMergeCandidate(Method m) {
+        Class<?>[] pt = m.getParameterTypes();
+        if (pt.length == 1 && (java.util.ArrayList.class.isAssignableFrom(pt[0])
+                || java.util.List.class.isAssignableFrom(pt[0]))) {
+            return true;
+        }
+        if (pt.length == 0 && java.util.ArrayList.class.isAssignableFrom(m.getReturnType())) {
+            String mn = m.getName().toLowerCase();
+            return mn.contains("black") || mn.contains("filter") || mn.contains("msg")
+                    || mn.contains("list");
+        }
+        return false;
+    }
+
+    private static boolean shouldCatfishSnsMsgFilter() {
+        return AppConfig.getInstance().isMomentsRedDotEnabled()
+                && StateMachine.getInstance().isActive()
+                && !Bridge.getInstance().getWxids().isEmpty();
+    }
+
+    /** Catfish addBlackList2：密友 wxid 并入黑名单（不是 remove） */
+    private static void purgeMergeList(java.util.ArrayList<String> list) {
+        if (list == null) return;
+        java.util.Set<String> hidden = Bridge.getInstance().getWxids();
+        for (String wxid : hidden) {
+            if (wxid != null && !wxid.isEmpty() && !list.contains(wxid)) {
+                list.add(wxid);
+            }
+        }
+    }
+
+    private static void purgeMergeListItems(java.util.List<String> list) {
+        if (list == null) return;
+        java.util.Set<String> hidden = Bridge.getInstance().getWxids();
+        for (String wxid : hidden) {
+            if (wxid != null && !wxid.isEmpty() && !list.contains(wxid)) {
+                list.add(wxid);
+            }
+        }
     }
 
     /**
-     * v5 主路径：hook SnsMsgUI 父类（不是子类），onCreate/onResume after 过滤 List。
-     * 同时对 SnsMsgUIWithRelevance 也挂（covers 两个入口）。
+     * v15：hook SnsMsgUI 父类生命周期（hookAllMethods，覆盖 WithAll/WithRelevance 子类）。
+     * Catfish 消费链：进互动列表 → 读 w1 计数归零 → tab/气泡红点灭。
      */
     private static void installSnsMsgUIFilter(XC_LoadPackage.LoadPackageParam lpparam) {
-        String[] candidates = {
-                // 用户实证 2026-05-21：进入红点消费界面的真实类
-                "com.tencent.mm.plugin.sns.ui.SnsMsgUIWithAll",
-                "com.tencent.mm.plugin.sns.ui.SnsMsgUI",
-                "com.tencent.mm.plugin.sns.ui.SnsMsgUIWithRelevance",
-        };
-        for (String cn : candidates) {
-            try {
-                Class<?> cls = lpparam.classLoader.loadClass(cn);
-                int hooked = 0;
-                for (Method m : cls.getDeclaredMethods()) {
-                    String mn = m.getName();
-                    if (!("onCreate".equals(mn) || "onResume".equals(mn))) continue;
-                    if (m.getParameterTypes().length > 1) continue;
-                    XposedBridge.hookMethod(m, new XC_MethodHook() {
+        // v17: 与 UiContextTracker 同款 — hookAllMethods(Activity.class, "onResume")
+        // 再按 class name 过滤 SnsMsgUI*。
+        // 实证：hookAllMethods(子类, onResume) 在 ART JIT 下不触发（v15/v16 均证伪），
+        //       Activity.class 级别 hook 是唯一已实证有效的路径。
+        try {
+            XposedBridge.hookAllMethods(android.app.Activity.class, "onResume",
+                    new XC_MethodHook() {
                         @Override
                         protected void afterHookedMethod(MethodHookParam param) {
-                            handleSnsMsgUIEnter(param.thisObject, mn, cn);
+                            String cn = param.thisObject.getClass().getName();
+                            if (!cn.contains("SnsMsgUI")) return;
+                            Log.i(TAG, "[MRD:smsg:enter] " + cn + ".onResume");
+                            handleSnsMsgUIEnter(param.thisObject, "onResume", cn);
                         }
                     });
-                    hooked++;
-                }
-                Log.i(TAG, "[MRD:smsg] " + cn + " hooked " + hooked);
-            } catch (ClassNotFoundException e) {
-                Log.w(TAG, "[MRD:smsg] class not found: " + cn);
-            } catch (Throwable t) {
-                Log.w(TAG, "[MRD:smsg] " + cn + " failed: " + t);
-            }
+            Log.i(TAG, "[MRD:smsg] Activity.onResume → SnsMsgUI* filter installed (v17)");
+        } catch (Throwable t) {
+            Log.w(TAG, "[MRD:smsg] v17 hook failed: " + t);
         }
     }
 
@@ -198,6 +314,48 @@ public class MomentsRedDotGuard {
             Log.i(TAG, "[MRD:smsg:filter] " + method + "@" + className
                     + " removed=" + totalRemoved);
             InterceptCounter.getInstance().incF05("MRD-smsg(x" + totalRemoved + ")");
+        }
+        // 进互动列表后主动清零 badge（无论是否过滤到密友，均尝试归零）
+        // 因为 w1.y 由 :push 进程写入（Layer1 不可达），必须进列表时主动清零
+        zeroSmsgBadge(instance, totalRemoved);
+    }
+
+    /**
+     * 进互动列表后清零 badge 计数（w1.y → 0）。
+     * 两条路径：
+     *   1. SnsMsgUI.s 字段（类型 e8/k4，可能 = SnsCommentStorage）
+     *   2. sW1Instance（由 getter 或 v2 hook 捕获）
+     * 激进策略（v1）：有密友且 isActive 即清零，非精准递减。
+     */
+    private static void zeroSmsgBadge(Object smsgInstance, int removedCount) {
+        if (!isFilteringActive()) return;
+        boolean done = false;
+        // 路径1：SnsMsgUI.s 字段（SnsCommentStorage 或其包装类）
+        try {
+            Object s = getFieldRecursive(smsgInstance, "s");
+            if (s != null && !(s instanceof String)) {
+                zeroW1FieldY(s);
+                Log.i(TAG, "[MRD:smsg:badge] zeroed via smsg.s="
+                        + s.getClass().getSimpleName() + " removed=" + removedCount);
+                done = true;
+            }
+        } catch (Throwable ignored) {}
+        // 路径2：全局 sW1Instance
+        if (sW1Instance != null) {
+            zeroW1FieldY(sW1Instance);
+            if (!done) {
+                Log.i(TAG, "[MRD:smsg:badge] zeroed via sW1Instance removed=" + removedCount);
+            }
+            done = true;
+        }
+        if (done) {
+            com.ghost.assist.debug.DebugTelemetry.getInstance().addBlocked("badge");
+            com.ghost.assist.debug.DebugTelemetry.getInstance().emit(
+                    "badge", "smsg-filter",
+                    com.ghost.assist.debug.DebugTelemetry.fields(
+                            "removed", String.valueOf(removedCount)));
+        } else {
+            Log.w(TAG, "[MRD:smsg:badge] no storage instance — badge not zeroed yet");
         }
     }
 
@@ -946,7 +1104,7 @@ public class MomentsRedDotGuard {
                         });
                     }
                 }
-                // getCount → 0 in HIDDEN
+                // getCount：Catfish 不做盲归零，只记录；计数由 blacklist 注入 + 列表过滤承担
                 for (Method m : cls.getMethods()) {
                     if (!"getCount".equals(m.getName())) continue;
                     if (m.getParameterTypes().length != 0) continue;
@@ -954,18 +1112,34 @@ public class MomentsRedDotGuard {
                     if (m.getDeclaringClass() == Object.class) continue;
                     XposedBridge.hookMethod(m, new XC_MethodHook() {
                         @Override
-                        protected void beforeHookedMethod(MethodHookParam param) {
-                            if (sDiagSeen.add("adapter_getCount")) {
-                                Log.i(TAG, "[MRD:adapter:diag] getCount, state="
-                                        + StateMachine.getInstance().getStateName());
+                        protected void afterHookedMethod(MethodHookParam param) {
+                            if (sDiagSeen.add("adapter_getCount_" + adapterClass)) {
+                                Log.i(TAG, "[MRD:adapter] getCount=" + param.getResult()
+                                        + " state=" + StateMachine.getInstance().getStateName());
                             }
-                            if (!AppConfig.getInstance().isMomentsRedDotEnabled()) return;
-                            if (!StateMachine.getInstance().isActive()) return;
-                            param.setResult(0);
-                            if (sDiagSeen.add("adapter_block")) {
-                                Log.i(TAG, "[MRD:adapter] getCount → 0");
-                            }
-                            InterceptCounter.getInstance().incF05("MRD-adapter-getCount");
+                        }
+                    });
+                }
+                // getItem：Catfish 列表项过滤 — 命中密友 wxid 打日志（下一轮 setResult 待探针确认 item 类）
+                for (Method m : cls.getMethods()) {
+                    if (m.getDeclaringClass() == Object.class) continue;
+                    String mn = m.getName();
+                    Class<?>[] pt = m.getParameterTypes();
+                    if (pt.length != 1 || pt[0] != int.class) continue;
+                    if (m.getReturnType() == void.class) continue;
+                    if (!"getItem".equals(mn) && !"get".equals(mn) && !"l".equals(mn)) continue;
+                    final String fmn = mn;
+                    XposedBridge.hookMethod(m, new XC_MethodHook() {
+                        @Override
+                        protected void afterHookedMethod(MethodHookParam param) {
+                            if (!shouldCatfishSnsMsgFilter()) return;
+                            Object result = param.getResult();
+                            if (result == null) return;
+                            String wxid = extractWxidFromSmsgItem(result);
+                            if (wxid == null || !Bridge.getInstance().shouldHideId(wxid)) return;
+                            Log.i(TAG, "[MRD:adapter:" + fmn + "] hidden wxid=" + wxid
+                                    + " item=" + result.getClass().getName());
+                            InterceptCounter.getInstance().incF05("MRD-adapter-item");
                         }
                     });
                 }
@@ -1039,49 +1213,60 @@ public class MomentsRedDotGuard {
      * iOS 实证：StatusAffManager 底层计数字段 ↔ E1()/getToNotifyCount。
      * 激进策略（v1）：有密友名单就清零，含非密友互动；进发现 tab 后 L1 会从 DB 恢复非密友部分。
      */
+    /**
+     * 反射置零 w1 实例上的 unread 计数字段。
+     * 8.0.71 实证：w1 直接字段为 d(i0)/e(boolean)/f(String[])，无 int 字段 y。
+     *   → 策略改为：扫所有层 int/long 字段，值 > 0 即清零（不限字段名）。
+     *   → 兜底：若目标是 w1，也尝试进入 d(i0) 查找 int 计数。
+     */
     private static void zeroW1FieldY(Object inst) {
+        if (inst == null) return;
+        boolean zeroed = false;
         Class<?> cls = inst.getClass();
-        for (int d = 0; cls != null && cls != Object.class && d < 4; d++) {
+        for (int depth = 0; cls != null && cls != Object.class && depth < 4; depth++) {
             for (java.lang.reflect.Field f : cls.getDeclaredFields()) {
-                if (!"y".equals(f.getName())) continue;
                 if (f.getType() != int.class && f.getType() != long.class) continue;
                 try {
                     f.setAccessible(true);
-                    int before = f.getInt(inst);
+                    long before = f.getLong(inst);
                     if (before > 0) {
-                        f.setInt(inst, 0);
-                        Log.i(TAG, "[MRD:boot:w1] f178674y retroactive zero: "
-                                + before + " → 0");
+                        f.setLong(inst, 0L);
+                        Log.i(TAG, "[MRD:w1:zero] " + inst.getClass().getSimpleName()
+                                + "." + f.getName() + " " + before + "→0");
                         InterceptCounter.getInstance().incF05("MRD-boot-w1");
-                    } else {
-                        Log.i(TAG, "[MRD:boot:w1] f178674y already 0, skip");
+                        zeroed = true;
                     }
-                    return;
-                } catch (Throwable t) {
-                    Log.w(TAG, "[MRD:boot:w1] field y zero err: " + t);
-                    return;
-                }
+                } catch (Throwable ignored) {}
             }
             cls = cls.getSuperclass();
         }
-        // 字段 y 未找到：dump 全部 int 字段供定位
-        if (sDiagSeen.add("w1_field_y_not_found")) {
-            StringBuilder sb = new StringBuilder(
-                    "[MRD:boot:w1] ⚠ field y not found on " + inst.getClass().getName()
-                    + ", all int fields:\n");
-            Class<?> dc = inst.getClass();
-            for (int d = 0; dc != null && dc != Object.class && d < 4; d++) {
-                for (java.lang.reflect.Field f : dc.getDeclaredFields()) {
-                    if (f.getType() != int.class && f.getType() != long.class) continue;
-                    try {
-                        f.setAccessible(true);
-                        sb.append("  [d").append(d).append("] ")
-                          .append(f.getName()).append(" = ").append(f.getInt(inst)).append("\n");
-                    } catch (Throwable ignored) {}
+        // 8.0.71: w1.d 是包装对象(i0)，递归一层查 int 字段
+        if (!zeroed) {
+            try {
+                java.lang.reflect.Field dField = inst.getClass().getDeclaredField("d");
+                dField.setAccessible(true);
+                Object inner = dField.get(inst);
+                if (inner != null) {
+                    Class<?> ic = inner.getClass();
+                    for (java.lang.reflect.Field f : ic.getDeclaredFields()) {
+                        if (f.getType() != int.class && f.getType() != long.class) continue;
+                        try {
+                            f.setAccessible(true);
+                            long v = f.getLong(inner);
+                            if (v > 0) {
+                                f.setLong(inner, 0L);
+                                Log.i(TAG, "[MRD:w1:zero] w1.d." + f.getName() + " " + v + "→0");
+                                zeroed = true;
+                            }
+                        } catch (Throwable ignored) {}
+                    }
                 }
-                dc = dc.getSuperclass();
-            }
-            Log.w(TAG, sb.toString());
+            } catch (NoSuchFieldException ignored) {
+            } catch (Throwable ignored2) {}
+        }
+        if (!zeroed && sDiagSeen.add("w1_zero_noop")) {
+            Log.w(TAG, "[MRD:w1:zero] no int/long field found on "
+                    + inst.getClass().getName() + " (no-op)");
         }
     }
 
@@ -1133,96 +1318,192 @@ public class MomentsRedDotGuard {
                         fmfHooked++;
                     }
                 }
-                // v12: hook FindMoreFriendsUI.onResume（进发现页时刷新）
-                for (Method m : fmfUi.getMethods()) {
-                    if (!"onResume".equals(m.getName()) || m.getParameterTypes().length != 0) continue;
-                    XposedBridge.hookMethod(m, new XC_MethodHook() {
-                        @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
-                            // 缓存 FMF 实例
-                            if (sFMFInstance == null) sFMFInstance = param.thisObject;
-                            boolean en2 = AppConfig.getInstance().isMomentsRedDotEnabled();
-                            boolean act2 = StateMachine.getInstance().isActive();
-                            Log.i(TAG, "[MRD:fmf:onResume] en=" + en2 + " act=" + act2
-                                    + " wxids=" + Bridge.getInstance().getWxids().size());
-                            if (!en2) return;
-                            if (!act2) return;
-                            if (Bridge.getInstance().getWxids().isEmpty()) return;
-                            suppressRedDotIfHiddenFriend(param.thisObject, nsC, finalWw2C);
-                            Log.i(TAG, "[MRD:discover] FindMoreFriends.onResume badge refresh");
-                        }
-                    });
-                    Log.i(TAG, "[MRD:ns.c] FindMoreFriendsUI.onResume() hooked (v12)");
+                // v16: FMF 是 Fragment，不是 Activity → 直接 hookAllMethods(fmfUi, "onResume")
+                try {
+                    final String fmfCn = "com.tencent.mm.ui.FindMoreFriendsUI";
+                    Class<?> fmfUiForResume = lpparam.classLoader.loadClass(fmfCn);
+                    XposedBridge.hookAllMethods(fmfUiForResume, "onResume",
+                            new XC_MethodHook() {
+                                @Override
+                                protected void afterHookedMethod(MethodHookParam param) {
+                                    try {
+                                        if (sFMFInstance == null) sFMFInstance = param.thisObject;
+                                        boolean en2 = AppConfig.getInstance().isMomentsRedDotEnabled();
+                                        boolean act2 = StateMachine.getInstance().isActive();
+                                        int wxN2 = Bridge.getInstance().getWxids().size();
+                                        Log.i(TAG, "[MRD:fmf:onResume] en=" + en2 + " act=" + act2
+                                                + " wxids=" + wxN2 + " pending=" + sPendingClearBadge);
+                                        if (sPendingClearBadge && en2 && act2 && wxN2 > 0) {
+                                            sPendingClearBadge = false;
+                                            clearFMFBadgeIfNeeded(param.thisObject, "fmf-pending");
+                                        }
+                                        if (!en2 || !act2 || wxN2 == 0) return;
+                                        suppressRedDotIfHiddenFriend(param.thisObject, nsC, finalWw2C);
+                                    } catch (Throwable inner) {
+                                        Log.w(TAG, "[MRD:fmf:onResume] ex: " + inner);
+                                    }
+                                }
+                            });
+                    Log.i(TAG, "[MRD:ns.c] FindMoreFriendsUI.onResume() hooked (v16 Fragment direct)");
                     fmfHooked++;
-                    break;
+                } catch (Throwable t2) {
+                    Log.w(TAG, "[MRD:ns.c] FMF.onResume hook failed: " + t2);
                 }
-                if (fmfHooked == 0) Log.w(TAG, "[MRD:ns.c] FindMoreFriendsUI: no methods hooked");
+                if (fmfHooked == 0) Log.w(TAG, "[MRD:ns.c] FindMoreFriendsUI: L1 not found");
             } catch (Throwable t) {
                 Log.w(TAG, "[MRD:ns.c] L1/onResume hook failed: " + t);
             }
 
-            // v13: hook LauncherUI.onResume → 冷启动时通过 sFMFInstance 调 g1() 清 tab 红点
-            // 修复：ns.c.b 在 8.0.71 不控制视觉红点（find_reddot_field.js 实证），
-            //       必须在 FMF 实例上调 g1("album_dyna_photo_ui_title", false) 才有效。
-            // 冷启动时序：LauncherUI.onResume → (之后) FMF.L1 / FMF.onResume
-            // 若 sFMFInstance 尚未就绪则延迟 300ms 重试一次（tab lazy init）
+            // v14d: Activity.onResume hookAllMethods（与 UiContextTracker 同款，保证触发）
+            // findAndHookMethod 在 LauncherUI 无自身 onResume 时 hook 中间类可能条件失败，
+            // hookAllMethods(Activity.class, onResume) 是唯一已实证能在 LauncherUI 触发的写法。
             try {
-                Class<?> launcher = lpparam.classLoader.loadClass(
-                        "com.tencent.mm.ui.LauncherUI");
-                for (Method m : launcher.getMethods()) {
-                    if (!"onResume".equals(m.getName()) || m.getParameterTypes().length != 0) continue;
-                    final Class<?> fFmfUi = finalFmfClass;
-                    XposedBridge.hookMethod(m, new XC_MethodHook() {
-                        @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
-                            // 诊断入口日志（每次 onResume 都打，帮助确认 hook 在执行）
-                            boolean en = AppConfig.getInstance().isMomentsRedDotEnabled();
-                            boolean act = StateMachine.getInstance().isActive();
-                            int wxN = Bridge.getInstance().getWxids().size();
-                            Object fmfSnap = sFMFInstance;
-                            Log.i(TAG, "[MRD:launcher:entry] en=" + en + " act=" + act
-                                    + " wxids=" + wxN + " fmf=" + (fmfSnap != null ? "ready" : "null"));
-                            if (!en) return;
-                            if (!act) return;
-                            if (wxN == 0) return;
-                            // 尝试立即清除（sFMFInstance 有值时）
-                            Object fmf = sFMFInstance;
-                            if (fmf != null) {
-                                clearFMFBadgeIfNeeded(fmf, "launcher-immediate");
-                                return;
-                            }
-                            // sFMFInstance 为 null：冷启动 FMF tab 尚未初始化
-                            // 延迟 300ms 等 tab lazy init 完成后再试
-                            final Object launcherInst = param.thisObject;
-                            android.os.Handler h = new android.os.Handler(
-                                    android.os.Looper.getMainLooper());
-                            h.postDelayed(new Runnable() {
-                                @Override public void run() {
-                                    Object fmf2 = sFMFInstance;
-                                    if (fmf2 != null) {
-                                        clearFMFBadgeIfNeeded(fmf2, "launcher-delayed");
+                final Class<?> fFmfUi = finalFmfClass;
+                final String launcherCn = "com.tencent.mm.ui.LauncherUI";
+                XposedBridge.hookAllMethods(android.app.Activity.class, "onResume",
+                        new XC_MethodHook() {
+                            @Override
+                            protected void afterHookedMethod(MethodHookParam param) {
+                                // 只处理 LauncherUI 进入前台
+                                if (!launcherCn.equals(
+                                        param.thisObject.getClass().getName())) return;
+                                try {
+                                    boolean en = AppConfig.getInstance().isMomentsRedDotEnabled();
+                                    boolean act = StateMachine.getInstance().isActive();
+                                    int wxN = Bridge.getInstance().getWxids().size();
+                                    Object fmfSnap = sFMFInstance;
+                                    String ts0 = new java.text.SimpleDateFormat(
+                                            "HH:mm:ss.SSS", java.util.Locale.US).format(new java.util.Date());
+                                    String entryLine = ts0 + " [MRD:launcher:entry] en=" + en
+                                            + " act=" + act + " wxids=" + wxN
+                                            + " fmf=" + (fmfSnap != null ? "ready" : "null");
+                                    Bridge.getInstance().addRawFeedLine(entryLine);
+                                    Log.i(TAG, "[MRD:launcher:entry] en=" + en + " act=" + act
+                                            + " wxids=" + wxN + " fmf="
+                                            + (fmfSnap != null ? "ready" : "null"));
+                                    if (!en || !act || wxN == 0) return;
+                                    Object fmf = sFMFInstance;
+                                    if (fmf != null) {
+                                        clearFMFBadgeIfNeeded(fmf, "launcher-immediate");
                                         return;
                                     }
-                                    // 最后手段：从 LauncherUI 字段中扫描 FMF 实例
-                                    Object found = findFMFFromLauncher(launcherInst, fFmfUi);
-                                    if (found != null) {
-                                        sFMFInstance = found;
-                                        clearFMFBadgeIfNeeded(found, "launcher-scan");
-                                    } else if (sDiagSeen.add("fmf_not_found_launcher")) {
-                                        Log.w(TAG, "[MRD:launcher] FMF instance not found after 300ms");
-                                    }
+                                    // FMF 懒加载未就绪 → 每 300ms 重试一次，最多 15 次（4.5s）
+                                    // WeChat 初始化完成后约 1s 会自己把红点重新设上，
+                                    // 必须在 FMF 出现且 E=true 时立刻清。
+                                    sPendingClearBadge = true;
+                                    Log.i(TAG, "[MRD:launcher] fmf null, pending=true, starting retry loop");
+                                    final Object launcherInst = param.thisObject;
+                                    final android.os.Handler h2 = new android.os.Handler(
+                                            android.os.Looper.getMainLooper());
+                                    final int[] attempts = {0};
+                                    final int MAX_ATTEMPTS = 15;
+                                    final Runnable[] retryRef = {null};
+                                    retryRef[0] = new Runnable() {
+                                        @Override public void run() {
+                                            if (!sPendingClearBadge) return; // 已被消费
+                                            if (attempts[0]++ >= MAX_ATTEMPTS) {
+                                                Log.w(TAG, "[MRD:retry] gave up after " + MAX_ATTEMPTS + " attempts");
+                                                return;
+                                            }
+                                            Object fmf2 = sFMFInstance;
+                                            if (fmf2 == null) {
+                                                fmf2 = findFMFFromLauncher(launcherInst, fFmfUi);
+                                                if (fmf2 != null) sFMFInstance = fmf2;
+                                            }
+                                            if (fmf2 != null) {
+                                                boolean fmfE = getBooleanFieldOnInstance(fmf2, "E");
+                                                String tsR = new java.text.SimpleDateFormat(
+                                                        "HH:mm:ss.SSS", java.util.Locale.US).format(new java.util.Date());
+                                                Bridge.getInstance().addRawFeedLine(
+                                                        tsR + " [MRD:retry#" + attempts[0] + "] fmfE=" + fmfE);
+                                                Log.i(TAG, "[MRD:retry#" + attempts[0] + "] fmfE=" + fmfE);
+                                                if (fmfE) {
+                                                    sPendingClearBadge = false;
+                                                    clearFMFBadgeIfNeeded(fmf2, "retry-" + attempts[0]);
+                                                    return;
+                                                }
+                                                // FMF 存在但 E=false，红点还没设 → 继续等
+                                            }
+                                            h2.postDelayed(retryRef[0], 300);
+                                        }
+                                    };
+                                    h2.postDelayed(retryRef[0], 300);
+                                } catch (Throwable inner) {
+                                    Log.w(TAG, "[MRD:launcher:entry] ex: " + inner);
                                 }
-                            }, 300);
-                        }
-                    });
-                    Log.i(TAG, "[MRD:ns.c] LauncherUI.onResume() hooked (v13 g1-based)");
-                    break;
-                }
+                            }
+                        });
+                Log.i(TAG, "[MRD:ns.c] LauncherUI.onResume hooked via Activity hookAllMethods (v14d)");
             } catch (Throwable t2) {
                 Log.w(TAG, "[MRD:ns.c] LauncherUI.onResume hook failed: " + t2);
             }
 
             Log.i(TAG, "[MRD:ns.c] aggregation blocker v12b installed");
+
+            // ── v14f: hook FMF.g1(String,boolean) 本体 ──────────────────────────────
+            // 以前我们靠"找到 FMF 实例再调 g1(false)"来清除红点，
+            // 但 FMF 懒加载导致实例永远找不到。
+            // 正确做法：直接 hook g1() 入口，当 show=true 且 key=album 时直接 setResult(null) 跳过。
+            // 这样无论谁、何时调 g1(true)，都被我们拦在门口。
+            try {
+                final String FMF_CN = "com.tencent.mm.ui.FindMoreFriendsUI";
+                final String BADGE_KEY = "album_dyna_photo_ui_title";
+                Class<?> fmfClz = lpparam.classLoader.loadClass(FMF_CN);
+                int g1Hooked = 0;
+                for (java.lang.reflect.Method m : fmfClz.getDeclaredMethods()) {
+                    if (!"g1".equals(m.getName())) continue;
+                    java.lang.reflect.Parameter[] params = m.getParameters();
+                    if (params.length != 2) continue;
+                    if (!params[0].getType().equals(String.class)) continue;
+                    if (!params[1].getType().equals(boolean.class)) continue;
+                    m.setAccessible(true);
+                    XposedBridge.hookMethod(m, new XC_MethodHook() {
+                        @Override
+                        protected void beforeHookedMethod(MethodHookParam param) {
+                            try {
+                                String key  = (String) param.args[0];
+                                boolean show = (Boolean) param.args[1];
+                                // 记入 rawfeed 实时可见
+                                String ts = new java.text.SimpleDateFormat(
+                                        "HH:mm:ss.SSS", java.util.Locale.US)
+                                        .format(new java.util.Date());
+                                boolean fmfE = getBooleanFieldOnInstance(param.thisObject, "E");
+                                com.ghost.assist.core.Bridge.getInstance().addRawFeedLine(
+                                        ts + " [MRD:g1] key=" + key + " show=" + show + " fmfE=" + fmfE);
+                                Log.i(TAG, "[MRD:g1] key=" + key + " show=" + show + " fmfE=" + fmfE);
+                                if (!BADGE_KEY.equals(key) || !show) return;
+                                boolean en = AppConfig.getInstance().isMomentsRedDotEnabled();
+                                boolean act = StateMachine.getInstance().isActive();
+                                int wxN = Bridge.getInstance().getWxids().size();
+                                Log.i(TAG, "[MRD:g1:intercept] en=" + en + " act=" + act + " wxids=" + wxN);
+                                com.ghost.assist.core.Bridge.getInstance().addRawFeedLine(
+                                        ts + " [MRD:g1:intercept] en=" + en + " act=" + act + " wxids=" + wxN);
+                                if (!en || !act || wxN == 0) return;
+                                // 拦截：跳过 show=true，直接 suppress
+                                param.setResult(null);
+                                sPendingClearBadge = false;
+                                InterceptCounter.getInstance().incF05("MRD-g1-block");
+                                Log.i(TAG, "[MRD:g1:intercept] BLOCKED g1(" + key + ",true)");
+                                com.ghost.assist.core.Bridge.getInstance().addRawFeedLine(
+                                        ts + " [MRD:g1:BLOCKED] key=" + key);
+                                com.ghost.assist.debug.DebugTelemetry.getInstance().addBlocked("badge");
+                                com.ghost.assist.debug.DebugTelemetry.getInstance().emit(
+                                        "badge", "g1-blocked",
+                                        com.ghost.assist.debug.DebugTelemetry.fields(
+                                                "key", key, "wxids", String.valueOf(wxN)));
+                            } catch (Throwable inner) {
+                                Log.w(TAG, "[MRD:g1] ex: " + inner);
+                            }
+                        }
+                    });
+                    Log.i(TAG, "[MRD:g1] hooked FMF.g1(String,boolean)");
+                    g1Hooked++;
+                    break;
+                }
+                if (g1Hooked == 0) Log.w(TAG, "[MRD:g1] g1 method not found in FMF");
+            } catch (Throwable tg1) {
+                Log.w(TAG, "[MRD:g1] hook failed: " + tg1);
+            }
         } catch (Throwable t) {
             Log.w(TAG, "[MRD:ns.c] ns.c not found: " + t);
         }
@@ -1303,13 +1584,21 @@ public class MomentsRedDotGuard {
             int y = getIntField(fmf, "y");
             String x = getStringField(fmf, "x");
             Log.i(TAG, "[MRD:" + tag + "] FMF.E=" + fmfE + " x=" + x + " y=" + y);
-            if (!fmfE) return; // 红点没亮，不需要处理
+            if (!fmfE) {
+                com.ghost.assist.debug.DebugTelemetry.getInstance().emit(
+                        "badge", "clear-skip",
+                        com.ghost.assist.debug.DebugTelemetry.fields("tag", tag, "fmfE", "false"));
+                return; // 红点没亮，不需要处理
+            }
             // 直接清除（激进 v1）
             callG1OnUi(fmf, false);
             if (sDiagSeen.add("fmf_badge_cleared_" + tag)) {
                 Log.i(TAG, "[MRD:" + tag + "] FMF.E=true → g1(false) called (y=" + y + " x=" + x + ")");
             }
             InterceptCounter.getInstance().incF05("MRD-" + tag);
+            com.ghost.assist.debug.DebugTelemetry.getInstance().emit(
+                    "badge", "g1-cleared",
+                    com.ghost.assist.debug.DebugTelemetry.fields("tag", tag, "y", String.valueOf(y), "x", x != null ? x : ""));
         } catch (Throwable t) {
             Log.w(TAG, "[MRD:" + tag + "] clearFMFBadgeIfNeeded failed: " + t);
         }
@@ -1372,11 +1661,16 @@ public class MomentsRedDotGuard {
                     Class<?>[] pt = m.getParameterTypes();
                     if (pt.length == 2 && pt[0] == String.class && pt[1] == boolean.class) {
                         m.setAccessible(true);
+                        boolean eBefore = getBooleanFieldOnInstance(ui, "E");
                         m.invoke(ui, "album_dyna_photo_ui_title", show);
-                        if (sDiagSeen.add("g1_called_" + show)) {
-                            Log.i(TAG, "[MRD:g1] g1(album_dyna_photo_ui_title, " + show
-                                    + ") on " + c.getSimpleName());
-                        }
+                        boolean eAfter = getBooleanFieldOnInstance(ui, "E");
+                        String tsG = new java.text.SimpleDateFormat(
+                                "HH:mm:ss.SSS", java.util.Locale.US).format(new java.util.Date());
+                        com.ghost.assist.core.Bridge.getInstance().addRawFeedLine(
+                                tsG + " [MRD:g1] key=album_dyna_photo_ui_title show=" + show
+                                        + " fmfE_before=" + eBefore + " fmfE_after=" + eAfter);
+                        Log.i(TAG, "[MRD:g1] g1(album_dyna_photo_ui_title, " + show
+                                + ") fmfE " + eBefore + "→" + eAfter + " on " + c.getSimpleName());
                         return;
                     }
                 }
@@ -1508,15 +1802,27 @@ public class MomentsRedDotGuard {
                         if (param.args.length < 2) return;
                         String wxid = (param.args[1] instanceof String) ? (String) param.args[1] : null;
 
+                        String ts2 = new java.text.SimpleDateFormat(
+                                "HH:mm:ss.SSS", java.util.Locale.US).format(new java.util.Date());
+                        boolean isHidden = wxid != null && Bridge.getInstance().shouldHideId(wxid);
+                        // 每次 v2 调用都写 rawfeed（供控制台实时观测）
+                        com.ghost.assist.core.Bridge.getInstance().addRawFeedLine(
+                                ts2 + " [MRD:w1:v2] wxid=" + wxid + " hidden=" + isHidden);
                         if (sDiagSeen.add("w1_v2_first")) {
-                            Log.i(TAG, "[MRD:w1] v2 arg[1]=" + wxid);
+                            Log.i(TAG, "[MRD:w1] v2 arg[1]=" + wxid + " hidden=" + isHidden);
                         }
-                        if (wxid == null || !Bridge.getInstance().shouldHideId(wxid)) return;
+                        if (!isHidden) return;
 
                         // 密友互动 → 跳过 → w1.y 不递增 → ns.c.b 不被置 true → 红点不出现
                         param.setResult(Boolean.FALSE);
                         Log.i(TAG, "[MRD:w1] blocked v2 wxid=" + wxid);
+                        com.ghost.assist.core.Bridge.getInstance().addRawFeedLine(
+                                ts2 + " [MRD:w1:BLOCKED] wxid=" + wxid);
                         InterceptCounter.getInstance().incF05("MRD-w1-v2");
+                        com.ghost.assist.debug.DebugTelemetry.getInstance().addBlocked("badge");
+                        com.ghost.assist.debug.DebugTelemetry.getInstance().emit(
+                                "badge", "w1-v2-blocked",
+                                com.ghost.assist.debug.DebugTelemetry.fields("wxid", wxid));
                     }
                 });
                 Log.i(TAG, "[MRD:w1] hooked w1." + mn + "()");
@@ -1616,6 +1922,11 @@ public class MomentsRedDotGuard {
                 XposedBridge.hookMethod(m, new XC_MethodHook() {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) {
+                        // 捕获 sW1Instance（主进程 getter 调用时拿到实例，供 badge zero 用）
+                        if (sW1Instance == null && param.thisObject != null) {
+                            sW1Instance = param.thisObject;
+                            Log.i(TAG, "[MRD:scs] sW1Instance captured via " + fmn);
+                        }
                         // 诊断：每个 hook 首次调用时记录，无论模式
                         Object original = param.getResult();
                         if (sDiagSeen.add("scs_" + fmn)) {
@@ -1755,6 +2066,89 @@ public class MomentsRedDotGuard {
             if (n.equals(simpleName)) return true;
         }
         return false;
+    }
+
+    // -------------------------------------------------------------------------
+    // v18  tab 角标计数器清零
+    //
+    // 问题根因（2026-05-21 实证）：
+    //   badge "20" = w1.y，在 :push 进程写入，主进程不可 hook 写入路径（Layer1 跨进程）。
+    //   tab 角标数字通过 TabRedDotChangeEvent / WeChatTabRedDotEvent 广播，
+    //   不走 w1.E1() getter（zero-call 验证）。
+    //
+    // 策略：
+    //   A) TabRedDotChangeEvent / WeChatTabRedDotEvent  ctor 后置：
+    //      清零所有 int/long 字段 → 角标数字归 0。
+    //   B) 同步截获 sW1Instance（event 内部字段可能持有 SnsCommentStorage 引用）
+    //      → 一旦拿到 → zeroW1FieldY → w1.y=0 → 冷启动下次展示也为 0。
+    // -------------------------------------------------------------------------
+    private static void installTabBadgeCounterSuppressor(
+            XC_LoadPackage.LoadPackageParam lpparam) {
+        int installed = 0;
+        for (String evtCls : new String[]{CLS_TAB_CHANGE_EVT, CLS_WECHAT_TAB_EVT}) {
+            try {
+                Class<?> cls = lpparam.classLoader.loadClass(evtCls);
+                final String simpleName = cls.getSimpleName();
+                XposedBridge.hookAllConstructors(cls, new XC_MethodHook() {
+                    @Override
+                    protected void afterHookedMethod(MethodHookParam param) {
+                        if (!AppConfig.getInstance().isMomentsRedDotEnabled()) return;
+                        if (!StateMachine.getInstance().isActive()) return;
+                        if (Bridge.getInstance().getWxids().isEmpty()) return;
+
+                        Object evt = param.thisObject;
+                        Class<?> ec = evt.getClass();
+                        boolean zeroed = false;
+                        for (int d = 0; ec != null && ec != Object.class && d < 4; d++) {
+                            for (java.lang.reflect.Field f : ec.getDeclaredFields()) {
+                                // 捕获 SnsCommentStorage 引用
+                                if (sW1Instance == null
+                                        && f.getType().getName().equals(SNS_COMMENT_STORAGE)) {
+                                    try {
+                                        f.setAccessible(true);
+                                        Object ref = f.get(evt);
+                                        if (ref != null) {
+                                            sW1Instance = ref;
+                                            zeroW1FieldY(sW1Instance);
+                                            Log.i(TAG, "[MRD:tab] w1 ref captured from "
+                                                    + simpleName + "." + f.getName());
+                                        }
+                                    } catch (Throwable ignored) {}
+                                }
+                                // 清零 int/long 计数字段（角标数字 → 0）
+                                if (f.getType() != int.class && f.getType() != long.class) continue;
+                                try {
+                                    f.setAccessible(true);
+                                    long v = f.getLong(evt);
+                                    if (v > 0) {
+                                        f.setLong(evt, 0L);
+                                        if (!zeroed) {
+                                            Log.i(TAG, "[MRD:tab] " + simpleName
+                                                    + "." + f.getName() + " " + v + "→0");
+                                        }
+                                        zeroed = true;
+                                    }
+                                } catch (Throwable ignored) {}
+                            }
+                            ec = ec.getSuperclass();
+                        }
+                        if (zeroed) {
+                            InterceptCounter.getInstance().incF05("MRD-tab-badge");
+                            com.ghost.assist.debug.DebugTelemetry.getInstance().addBlocked("badge");
+                            com.ghost.assist.debug.DebugTelemetry.getInstance().emit(
+                                    "badge", "tab-zero",
+                                    com.ghost.assist.debug.DebugTelemetry.fields(
+                                            "evt", simpleName));
+                        }
+                    }
+                });
+                Log.i(TAG, "[MRD:tab] " + simpleName + " badge zeroing installed");
+                installed++;
+            } catch (Throwable t) {
+                Log.w(TAG, "[MRD:tab] " + evtCls + " hook failed: " + t);
+            }
+        }
+        Log.i(TAG, "[MRD:tab] tab badge counter suppressor: " + installed + " events hooked");
     }
 
     // -------------------------------------------------------------------------

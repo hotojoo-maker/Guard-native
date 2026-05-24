@@ -1,0 +1,28 @@
+     ____
+    / _  |   Frida 17.9.10 - A world-class dynamic instrumentation toolkit
+   | (_| |
+    > _  |   Commands:
+   /_/ |_|       help      -> Displays the help system
+   . . . .       object?   -> Display information about 'object'
+   . . . .       exit/quit -> Exit
+   . . . .
+   . . . .   More info at https://frida.re/docs/home/
+   . . . .
+   . . . .   Connected to MI 9 (id=609b4b18)
+Attaching...
+19:25:57 [VERIFY] MainTabUI.i() hooked OK
+19:25:57 [VERIFY] 请切到微信主界面，等 tab 数字刷新（约 3-5 次触发后归零）
+[MI 9::PID::21528 ]-> 19:26:02 [VERIFY] keepalive observeCount=0
+19:26:07 [VERIFY] keepalive observeCount=0
+19:26:12 [VERIFY] keepalive observeCount=0
+19:26:17 [VERIFY] keepalive observeCount=0
+19:26:22 [VERIFY] keepalive observeCount=0
+19:26:27 [VERIFY] keepalive observeCount=0
+Process terminated
+
+Thank you for using Frida!
+Fatal Python error: _enter_buffered_busy: could not acquire lock for <_io.BufferedReader name='<stdin>'> at interpreter shutdown, possibly due to daemon threads
+Python runtime state: finalizing (tstate=0x00007ffd3d132fe8)
+
+Current thread 0x0000c380 (most recent call first):
+  <no Python frame>

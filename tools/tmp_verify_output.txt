@@ -1,0 +1,56 @@
+     ____
+    / _  |   Frida 17.9.10 - A world-class dynamic instrumentation toolkit
+   | (_| |
+    > _  |   Commands:
+   /_/ |_|       help      -> Displays the help system
+   . . . .       object?   -> Display information about 'object'
+   . . . .       exit/quit -> Exit
+   . . . .
+   . . . .   More info at https://frida.re/docs/home/
+   . . . .
+   . . . .   Connected to MI 9 (id=609b4b18)
+Attaching...
+[VFY] e(List) hooks: 1
+[VFY] === verify_e.js 就绪 ===
+[VFY] 请发一条消息给密友，观察是否有 HIT=true
+[MI 9::PID::16827 ]-> [VFY] === MvvmList.e(List) sz=9 this=com.tencent.mm.ui.conversation.adapter.MvvmConvList ===
+[VFY] [0] wxid=null name=公众号 HIT=null
+[VFY] [1] wxid=null name=微信运动 HIT=null
+[VFY] [2] wxid=null name=微信团队 HIT=null
+[VFY] [3] wxid=null name=三妹小豆腐芳芳\U0001f342 HIT=null
+[VFY] [4] wxid=null name=腾讯新闻 HIT=null
+[VFY] [5] wxid=null name=Mark HIT=null
+[VFY] [6] wxid=null name=服务号 HIT=null
+[VFY] [7] wxid=null name=阿信先生 HIT=null
+[VFY] [8] wxid=null name=微信支付 HIT=null
+[VFY] === MvvmList.e(List) sz=9 this=com.tencent.mm.ui.conversation.adapter.MvvmConvList ===
+[VFY] [0] wxid=null name=公众号 HIT=null
+[VFY] [1] wxid=null name=微信运动 HIT=null
+[VFY] [2] wxid=null name=微信团队 HIT=null
+[VFY] [3] wxid=null name=三妹小豆腐芳芳\U0001f342 HIT=null
+[VFY] [4] wxid=null name=腾讯新闻 HIT=null
+[VFY] [5] wxid=null name=Mark HIT=null
+[VFY] [6] wxid=null name=服务号 HIT=null
+[VFY] [7] wxid=null name=阿信先生 HIT=null
+[VFY] [8] wxid=null name=微信支付 HIT=null
+[VFY] === MvvmList.e(List) sz=9 this=com.tencent.mm.ui.conversation.adapter.MvvmConvList ===
+[VFY] [0] wxid=null name=公众号 HIT=null
+[VFY] [1] wxid=null name=微信运动 HIT=null
+[VFY] [2] wxid=null name=微信团队 HIT=null
+[VFY] [3] wxid=null name=三妹小豆腐芳芳\U0001f342 HIT=null
+[VFY] [4] wxid=null name=腾讯新闻 HIT=null
+[VFY] [5] wxid=null name=Mark HIT=null
+[VFY] [6] wxid=null name=服务号 HIT=null
+[VFY] [7] wxid=null name=阿信先生 HIT=null
+[VFY] [8] wxid=null name=微信支付 HIT=null
+[VFY] === MvvmList.e(List) sz=10 this=com.tencent.mm.ui.conversation.adapter.MvvmConvList ===
+[VFY] [0] wxid=null name=公众号 HIT=null
+[VFY] [1] wxid=null name=微信运动 HIT=null
+[VFY] [2] wxid=null name=微信团队 HIT=null
+[VFY] [3] wxid=null name=三妹小豆腐芳芳\U0001f342 HIT=null
+[VFY] [4] wxid=null name=腾讯新闻 HIT=null
+[VFY] [5] wxid=null name=Mark HIT=null
+[VFY] [6] wxid=null name=服务号 HIT=null
+[VFY] [7] wxid=null name=阿信先生 HIT=null
+[VFY] [8] wxid=null name=微信支付 HIT=null
+[VFY] [9] wxid=null name=熵 HIT=null

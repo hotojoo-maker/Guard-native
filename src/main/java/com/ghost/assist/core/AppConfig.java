@@ -29,18 +29,32 @@ public class AppConfig {
     private static final String KEY_MRD      = "mrd";  // moments red dot
     private static final String KEY_URD      = "urd";  // update red dot
 
+    // One-time migration marker: "mv2" = migrated from old DEV-default to PROD-default.
+    private static final String KEY_MIG_V2 = "mv2";
+
     private static final AppConfig sInstance = new AppConfig();
     private SharedPreferences mPrefs;
-    private Mode mMode = Mode.DEV;
-    private boolean mLocalDevMode = true;
+    private Mode mMode = Mode.PROD;   // safe in-memory default before init()
+    private boolean mLocalDevMode = false;
     private int mServerPort = 8080;
 
     public static AppConfig getInstance() { return sInstance; }
 
     public void init(Application app) {
         mPrefs = app.getSharedPreferences(PREFS_NAME, 0);
-        String modeStr = mPrefs.getString(KEY_MODE, "DEV");
-        try { mMode = Mode.valueOf(modeStr); } catch (Exception e) { mMode = Mode.DEV; }
+
+        // Migration mv2: old installs persisted "DEV" as default; upgrade to "PROD" once.
+        if (!mPrefs.getBoolean(KEY_MIG_V2, false)) {
+            SharedPreferences.Editor ed = mPrefs.edit();
+            if ("DEV".equals(mPrefs.getString(KEY_MODE, ""))) {
+                ed.putString(KEY_MODE, "PROD");
+                android.util.Log.i("NCL", "[cfg] mv2 migrate DEV→PROD");
+            }
+            ed.putBoolean(KEY_MIG_V2, true).apply();
+        }
+
+        String modeStr = mPrefs.getString(KEY_MODE, "PROD");
+        try { mMode = Mode.valueOf(modeStr); } catch (Exception e) { mMode = Mode.PROD; }
         mLocalDevMode = mPrefs.getBoolean(KEY_LOCAL_DEV, mMode == Mode.DEV);
         mServerPort = mPrefs.getInt(KEY_SERVER_PORT, 8080);
     }

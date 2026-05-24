@@ -21,6 +21,8 @@ description: Guard Native 执行——写代码/跑脚本/设备调试/单个 P 
 | **⬜ 状态的条目只读名字，禁止展开细节** | ⬜ items: read name only, never expand or assume |
 | **不确定 = 不能写成结论，必须标 ❓ 并停下来问** | Uncertain = cannot be a conclusion; mark ❓ and ask |
 | **HOOKMAP / TASK_BOARD 状态不一致 → 停下来，报告矛盾，问用户** | Status conflict in docs → STOP, report conflict, ask |
+| **未经用户明确同意，禁止改任何 md 文档** | No md edits without explicit user approval |
+| **用户口述/截图/抓包片段 ≠ 已验证，禁止直接写入文档** | User paste ≠ verified; do not write to docs |
 
 **触发停止的具体场景：**
 - 想写"这个类应该是 X" → ❌ 停，问"请确认 X 类名是否正确"
@@ -128,10 +130,11 @@ description: Guard Native 执行——写代码/跑脚本/设备调试/单个 P 
 
 ### 5. 收尾
 
-- 写 `brief.md`（如不存在则新建，模板见下方）
-- 写 `result.md`：完成清单 / 验收结果 / KPI 数据 / 风险
-- 更新 `HOOKMAP.md` 对应行 ⬜→🟡 或 🟡→✅
-- 新失败教训 **报告给总调度归档**（不自己写 FAILURE_LOG）
+- **文档写入门控**：写/改 `worklog.md` `result.md` `brief.md` `HOOKMAP.md` `TASK_BOARD.md` 前，**必须先向用户展示拟写入草稿，等明确同意后再改**
+- 写 `brief.md`（如不存在则新建，模板见下方；须用户同意）
+- 写 `result.md`：完成清单 / 验收结果 / KPI 数据 / 风险（须用户同意）
+- 更新 `HOOKMAP.md` 对应行 ⬜→🟡 或 🟡→✅（须用户同意）
+- 新失败教训 **报告给总调度归档**（不自己写 FAILURE_LOG，除非用户明确同意）
 - 切到 `guard-review_质检门控` skill 自审
 
 ---
@@ -244,9 +247,26 @@ fields.forEach(function(f) {
 
 ---
 
+## 文档写入门控（强制）
+
+**默认只读；用户明确说「写入文档」「更新 worklog」等之前，禁止改 md。**
+
+**正确流程：**
+1. 回复里给出拟写入草稿
+2. 问：「确认写入 [文件名] 吗？」
+3. 用户同意后再改文件
+
+**禁止：**
+- ❌ 把用户聊天内容直接标成 ✅ L1 写入 worklog
+- ❌ 把 iOS/Android 跨端推断写成「必然等价」
+- ❌ 用户只提供半截抓包表格 → 自行补结论并归档
+
+---
+
 ## 反模式
 
 - ❌ 调试时不等用户回复就推进
+- ❌ **未经用户同意改 md 文档**
 - ❌ 同一方向失败 2 次不停，继续挖第 3 次
 - ❌ 卡住了去看 Catfish/8.0.70（换话题逃避）
 - ❌ logcat 没命中就假设 hook 成功

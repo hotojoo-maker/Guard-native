@@ -18,15 +18,27 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
 /**
  * A4 / B6 搜索框密码解锁
  *
- * 方案：hook EditText 构造函数，向每个 EditText 注入 TextWatcher。
- * 不依赖 onTextChanged（微信自定义子类可能不调 super）。
+ * 方案：hook android.view.View.onAttachedToWindow，过滤 EditText 子类后注入 TextWatcher。
+ *
+ * 为什么不 hook EditText.onAttachedToWindow：
+ *   PasterEditText 不声明 onAttachedToWindow，继承自 View，
+ *   XposedHelpers.findAndHookMethod(EditText.class, "onAttachedToWindow") 只挂
+ *   EditText 自身声明的版本，PasterEditText 实际走的是 View 的实现，不会命中。
+ *   必须 hook android.view.View.onAttachedToWindow 才能覆盖所有子类。
+ *
+ * 为什么不 hook 构造器：
+ *   PasterEditText.addTextChangedListener 覆写了父类实现，内部 LinkedList
+ *   在构造器阶段还是 null，onAttachedToWindow 之后才初始化，构造器时调会 NPE。
+ *
+ * 过滤策略：class name 包含 "EditText" 或等于已知候选（PasterEditText）。
+ * 去重：per-instance setTag(WATCHER_TAG) 防止 onAttachedToWindow 多次触发时重复注册。
  *
  * 触发条件：
- *  1. 当前状态 == HIDDEN（隐藏态下输入密码才解锁显形）
+ *  1. 当前状态 == HIDDEN
  *  2. EditText 文本精确等于密码（默认 "111111"）
  *
  * 触发后：
- *  - 清空 EditText（密码不留屏幕上）
+ *  - 清空 EditText
  *  - 关闭当前 Activity（回主界面）
  *  - 状态机切换 HIDDEN → UNLOCKING → VISIBLE
  */
@@ -34,54 +46,55 @@ public class SearchUnlock {
 
     private static final String TAG = "NCL";
     private static final String DEFAULT_PWD = "111111";
+    // Stable tag key for per-instance watcher dedup
+    private static final int WATCHER_TAG = 0x67757264; // "gurd"
+
+    // Known WeChat EditText class names that host search input
+    private static final String PASTER_EDIT_TEXT =
+            "com.tencent.mm.ui.widget.edittext.PasterEditText";
 
     public static void install(XC_LoadPackage.LoadPackageParam lpparam) {
-        // 初始化默认密码（只在首次启动且 MMKV 里没有值时写入）
         StateMachine sm = StateMachine.getInstance();
         String currentPwd = sm.getPassword();
         if (currentPwd == null || currentPwd.isEmpty() || "1111".equals(currentPwd)) {
             sm.setPassword(DEFAULT_PWD);
         }
 
-        // 三个构造器全盖（Context / Context+Attr / Context+Attr+Style）
-        XC_MethodHook injector = new XC_MethodHook() {
-            @Override
-            protected void afterHookedMethod(MethodHookParam param) {
-                final EditText et = (EditText) param.thisObject;
-                et.addTextChangedListener(new UnlockWatcher(et));
-            }
-        };
-
-        int hooked = 0;
+        // Hook android.view.View.onAttachedToWindow — covers all subclasses including
+        // PasterEditText which does NOT declare its own onAttachedToWindow.
         try {
-            XposedHelpers.findAndHookConstructor(
-                    EditText.class,
-                    android.content.Context.class,
-                    injector);
-            hooked++;
-        } catch (Throwable ignored) {}
-
-        try {
-            XposedHelpers.findAndHookConstructor(
-                    EditText.class,
-                    android.content.Context.class,
-                    android.util.AttributeSet.class,
-                    injector);
-            hooked++;
-        } catch (Throwable ignored) {}
-
-        try {
-            XposedHelpers.findAndHookConstructor(
-                    EditText.class,
-                    android.content.Context.class,
-                    android.util.AttributeSet.class,
-                    int.class,
-                    injector);
-            hooked++;
-        } catch (Throwable ignored) {}
-
-        Log.i(TAG, "[SU] SearchUnlock installed, ctors hooked=" + hooked
-                + " pwdLen=" + StateMachine.getInstance().getPassword().length());
+            XposedHelpers.findAndHookMethod(
+                    android.view.View.class, "onAttachedToWindow",
+                    new XC_MethodHook() {
+                        @Override
+                        protected void afterHookedMethod(MethodHookParam param) {
+                            Object obj = param.thisObject;
+                            // Fast reject: must be an EditText subclass
+                            if (!(obj instanceof EditText)) return;
+                            EditText et = (EditText) obj;
+                            String cls = et.getClass().getName();
+                            // Only known EditText candidates — avoids attaching to every
+                            // EditText in the app (message box, comment box, etc.)
+                            if (!cls.contains("EditText") && !cls.equals(PASTER_EDIT_TEXT)) return;
+                            // Per-instance dedup
+                            if (et.getTag(WATCHER_TAG) != null) return;
+                            et.setTag(WATCHER_TAG, Boolean.TRUE);
+                            Log.i(TAG, "[SU] view attached class=" + cls
+                                    + " id=0x" + Integer.toHexString(et.getId()));
+                            try {
+                                et.addTextChangedListener(new UnlockWatcher(et));
+                                Log.i(TAG, "[SU] watcher installed id=0x"
+                                        + Integer.toHexString(et.getId()));
+                            } catch (Throwable e) {
+                                Log.w(TAG, "[SU] addTextChangedListener fail cls=" + cls + " " + e);
+                            }
+                        }
+                    });
+            Log.i(TAG, "[SU] View.onAttachedToWindow hook ok pwdLen="
+                    + sm.getPassword().length());
+        } catch (Throwable e) {
+            Log.w(TAG, "[SU] View.onAttachedToWindow hook fail: " + e);
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -100,17 +113,21 @@ public class SearchUnlock {
             if (mClearing) return;
 
             String text = s.toString();
+            if (text.length() >= 4) {
+                Log.i(TAG, "[SU] afterTextChanged text=" + text + " len=" + text.length()
+                        + " cls=" + mEt.getClass().getSimpleName());
+            }
             String pwd = StateMachine.getInstance().getPassword();
             if (pwd == null || !pwd.equals(text)) return;
 
             // 只在 HIDDEN 状态响应；显形态/乱输均不改变状态。
             if (StateMachine.getInstance().getState() != StateMachine.State.HIDDEN) {
-                Log.i(TAG, "[SU] password matched but state="
+                Log.i(TAG, "[SU] unlock matched but state="
                         + StateMachine.getInstance().getStateName() + ", ignored");
                 return;
             }
 
-            Log.i(TAG, "[SU] password matched len=" + text.length() + " -> unlocking");
+            Log.i(TAG, "[SU] unlock matched text=" + text + " len=" + text.length());
 
             // 1. 清空输入框（主线程，设防递归）
             mClearing = true;
@@ -127,6 +144,7 @@ public class SearchUnlock {
             boolean ok = StateMachine.getInstance().attemptUnlock(text);
             Log.i(TAG, "[SU] unlock=" + ok
                     + " state=" + StateMachine.getInstance().getStateName());
+            if (ok) Log.i(TAG, "[UNLOCK:B6] success");
 
             // 3. 关闭当前 Activity → 回主界面
             new Handler(Looper.getMainLooper()).postDelayed(() -> {

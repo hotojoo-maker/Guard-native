@@ -186,3 +186,206 @@ Attaching...
 [W1:CALL] E1 args=0
 
 [W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] N1 args=0
+
+[W1:CALL] G1 args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] o2 args=1
+  arg[0] = 1
+
+[W1:CALL] O1 args=1
+  arg[0] = 1
+
+[W1:CALL] G1 args=0
+
+[W1:CALL] o2 args=1
+  arg[0] = 2
+
+[W1:CALL] O1 args=1
+  arg[0] = 2
+
+[W1:CALL] G1 args=0
+
+[W1:CALL] j2 args=0
+
+[W1:CALL] C2 args=0
+
+[W1:CALL] N1 args=0
+
+[W1:CALL] G1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+
+[W1:CALL] E1 args=0
+
+[W1:CALL] f args=0
+Process terminated
+
+Thank you for using Frida!

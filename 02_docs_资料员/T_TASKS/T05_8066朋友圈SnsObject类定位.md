@@ -8,8 +8,8 @@
 
 ## 输入
 
-- 微信 8.0.66 APK：`C:/Users/Me/Desktop/apk2/微密友8070官替稳定版-原版.apk`（或同级目录的官方 8.0.66 包）
-- jadx 反编译产物：`C:/Users/Me/Desktop/apk2/_4__samples/dynamic_fast/classes17_decompiled/jadx_out/`
+- 微信 8.0.66 APK：`I:/apk2/微密友8070官替稳定版-原版.apk`（或同级目录的官方 8.0.66 包）
+- jadx 反编译产物：`I:/apk2/_4__samples/dynamic_fast/classes17_decompiled/jadx_out/`
 - 8.0.70 参考：`./refs/MainEntry.java` 中 `SNSDATA_CLASS = "m05.g46"`
 - 8.0.65 静态分析：`./refs/VERSION_8065_ANALYSIS.md`
 

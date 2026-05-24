@@ -110,6 +110,10 @@ public class DebugServer {
                 response = apiCounters();
             } else if ("/api/events".equals(path)) {
                 response = apiEvents();
+            } else if ("/api/feature".equals(path)) {
+                response = "POST".equals(method) ? apiSetFeature(body) : apiGetFeature();
+            } else if ("/api/notify_policy".equals(path)) {
+                response = "POST".equals(method) ? apiSetNotifyPolicy(body) : apiGetNotifyPolicy();
             } else if ("/api/trigger".equals(path) && "POST".equals(method)) {
                 response = apiTrigger(body);
             } else if ("/api/mode".equals(path) && "POST".equals(method)) {
@@ -173,6 +177,32 @@ public class DebugServer {
         }
         sb.append("]");
         return jsonResponse(sb.toString());
+    }
+
+    private static byte[] apiGetFeature() {
+        boolean on = Bridge.getInstance().isFeatureEnabled();
+        return jsonResponse("{\"enabled\":" + on + "}");
+    }
+
+    private static byte[] apiSetFeature(String body) {
+        String val = extractJsonField(body, "enabled");
+        boolean on = !"false".equals(val);
+        Bridge.getInstance().setFeatureEnabled(on);
+        android.util.Log.i("NCL", "[DBG] feature=" + (on ? "ON" : "OFF"));
+        return jsonResponse("{\"enabled\":" + on + ",\"ok\":true}");
+    }
+
+    private static byte[] apiGetNotifyPolicy() {
+        String p = Bridge.getInstance().getNotifyPolicy().name();
+        return jsonResponse("{\"policy\":\"" + p + "\"}");
+    }
+
+    private static byte[] apiSetNotifyPolicy(String body) {
+        String val = extractJsonField(body, "policy");
+        Bridge.NotifyPolicy policy = Bridge.NotifyPolicy.fromString(val);
+        Bridge.getInstance().setNotifyPolicy(policy);
+        android.util.Log.i("NCL", "[DBG] notify_policy=" + policy.name());
+        return jsonResponse("{\"policy\":\"" + policy.name() + "\",\"ok\":true}");
     }
 
     private static byte[] apiTrigger(String body) {

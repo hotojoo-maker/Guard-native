@@ -1,120 +1,281 @@
-﻿# P21 工作日志 — 朋友圈小红点守护
+﻿# P21 工作日志 — 朋友圈气泡小红点守护
 
-> 更新时间：2026-05-21 v14（改为纯 Frida 方案，无需 LSPosed 模块）
->
-> ⚠️ **2026-05-21 待验证：用户指出红点控制逻辑在 .so 层。但 AI 未证明 Java 层无法消除红点——v1/v2 从未成功调用 g1()，无法排除 Java 方案。待装机验证。**
+> 更新时间：2026-05-22 **校准：私有化阶段补的是桌面角标，不是朋友圈红点**
+> 结论：**红点/气泡 = 独立 unread 链**；**badge = 本地 DB 状态（不随发送方删除同步）**；**Layer0b（SnsMsgUI 过滤）实证有效**（v17 Activity.class.onResume 方案）
 
 ---
 
 ## 当前状态
 
-✅ **v13 已 build 成功**，待装机验证。
+✅ **v17 Layer0b 实证有效**。进互动列表时 `[MRD:smsg:enter]` 命中，密友条目被过滤，badge 进入后归零。
 
-### v13 修复的三个 bug（jadx 8.0.71 + Frida 实证双重确认）
 
-| Bug | 问题 | 修复 |
-|-----|------|------|
-| B1 | `callG1OnUi()` 只搜 `getDeclaredMethods()`，g1 若在父类则漏掉 | 改为遍历整个继承链 |
-| B2 | `suppressRedDotIfHiddenFriend()` 在 `this.x` 为空时直接 return，g1 从未执行 | 新增 FMF.E 判断分支 + 冷启动激进清除路径 |
-| B3 | LauncherUI.onResume 清的是 `ns.c.b`（错字段），视觉不刷新 | 改为通过 sFMFInstance 调 g1(false)，300ms 延迟 fallback |
+| 层                 | Catfish 8.0.70                                  | Guard 8.0.71 v17                                                | 状态     |
+| ----------------- | ----------------------------------------------- | --------------------------------------------------------------- | ------ |
+| **Layer 0 黑名单注入** | `hookSnsMsgList()` → `addBlackList2(ArrayList)` | `installCatfishSnsMsgListHook` — 8.0.71 无匹配 ArrayList 入参       | ❌ 0 hooks（跳过） |
+| **Layer 0b 消费层**  | 进互动列表消红点                                        | v17: `Activity.class.onResume` 过滤 `SnsMsgUI*`，密友条目不显示 | ✅ **实证有效** |
+| **Layer 1 写入拦截**  | `hookSnsCommentOne` / 数据层                       | `w1.v2(arg[1]=wxid)` block — 写入在 `:push` 进程，主进程 hook 打不到 | ❌ 跨进程不可达 |
+| **Layer 2 视觉兜底**  | SnsObject 清零后 UI 自然不亮                           | `FMF.g1(..., false)` + g1(true) 拦截（已装，未触发）                | ⏳ 已装待触发 |
+| **时间线气泡**         | —                                               | `MomentsFilter` L0v3 `jw1.d` LinkedList.add（P16 已有）             | ✅ D1 侧 |
 
-### jadx 8.0.71 确认的关键信息
 
-- `FMF.g1("album_dyna_photo_ui_title", false)` = 正确的视觉刷新调用
-  - 来源：`cd5/j.java:67` `findMoreFriendsUI.g1("find_friends_by_finder_live", false)` 同模式
-  - `album_dyna_photo_ui_title` key 在 `ja2/v0.java:82`、`ja2/f.java:40` 确认对应朋友圈 tab
-- FMF.java 不在 jadx output（不同 dex），但 g1 接口通过 `cd5/*.java` import 确认
+---
+
+## chatfish版本实证链路（2026-05-21 用户展开 + 截屏）
+
+```
+发现 tab 角标 16 ═══ 朋友圈行角标 16（同一 unread 池）
+  ↓ 点朋友圈
+ImproveSnsTimelineUI
+  ↓ 顶部气泡
+「16条新消息」                    ← jw1.d / w1.y 计数
+  ↓ 点气泡
+SnsMsgUIWithRelevance             ← 「朋友的互动消息」
+  ↓ 进入/消费列表
+角标归零、tab 红点灭               ← Catfish 消费链
+```
+
+**Catfish 对应**（`refs/MainEntry.java`，禁止抄类名，只抄语义）：
+
+```java
+// 隐藏态：返回密友 wxid 黑名单，供微信 SnsMsg 过滤
+hookSnsMsgList() → addBlackList2(ArrayList)  // 并入 wxid，不是 remove
+// 显形态 isVipMode：透传空列表
+```
+
+P19 brief 确认：`addBlackList2` = **把密友 wxid 并入传入的 String 列表**，微信 UI 按黑名单过滤。
+
+---
+
+## ns.c 聚合桶 → 降级为理解层（非主路径）
+
+早期假设「8.0.71 红点走 `ns.c` 聚合桶」（见 `FINDINGS.md` 2026-05-21 14:05/16:00）：
+
+```
+FindMoreFriendsUI.L1()
+  → 读 this.x（新帖 wxid List）、this.y（w1.E1 计数）
+  → z19 = (!empty(x) || y != 0)
+  → 写 ns.c.b / ns.c.g
+```
+
+**设备实证推翻主路径价值**：
+
+
+| 事实                          | 含义              |
+| --------------------------- | --------------- |
+| Frida 反射清零 ns.c = 逻辑层可清     | 聚合模型本身成立        |
+| **红点亮时 ns.c.b = false**     | 视觉红点不读 ns.c.b   |
+| **红点亮时 FMF.E = true**       | UI 真正看 FMF 实例字段 |
+| ww2.c.b = undefined（8.0.71） | 镜像字段不存在         |
+
+
+**结论**：`ns.c` 保留作 jadx/链路理解参考；**Guard 实现不再 hook ns.c.b、不再以 L1 聚合为主路径**。wxid 精准过滤改走 `w1.v2(arg[1])`（探针已确认 wxid 直出，无需 L1 内部 List 漏斗）。
+
+---
+
+## 禁止继续（P21 范围外 / 已证伪）
+
+
+| 方向                                           | 原因                           |
+| -------------------------------------------- | ---------------------------- |
+| proto repeated count / SnsSyncResponse count | PBCoder 序列化计数 ≠ unread badge |
+| SnsObject count 字段                           | 与视觉红点无直接映射                   |
+| **ns.c.b 主路径**                               | 红点亮时 b 已为 false，改它无效         |
+| **w1.E1() getter**                           | 零调用                          |
+| **FinderRedDotTextView View 层**              | v2/v3 探针零命中                  |
+| ww2.c.b                                      | 8.0.71 字段不存在                 |
+| AbstractCursor / WCDB 逐层 dump                | 零命中 + ANR 风险                 |
+
+
+代码里 legacy hook（Event/View/E1/ns.c）保留作诊断兜底，**不再扩展、不再当验证主线**。
+
+---
+
+## 探针实证（probe_w1_fields.js）
+
+- `w1` 共 16 方法，**无 insertLike / insertComment**（全混淆）
+- `v2(long, String, int, String) → boolean` ← 互动写入，**arg[1] = wxid**
+- `w2(long, boolean) → boolean` ← v2 后镜像写入
+- 已命中：`arg[1] = wxid_lzd2va16jd1622`（密友 wxid ✅）
 
 ---
 
 ## 已验证事实（✅ 必须有日志原文）
 
-| 事实 | 证据 |
-|------|------|
-| D1 朋友圈隐藏密友有效 | `[MF] D1 blocked poster=wxid_lzd2va16jd1622` × 5 |
-| ns.c 全部字段值（红点亮时）| `a=false b=false c=false d=false e=1 f=0 g=0` |
-| **ns.c.b = false 但红点亮** ★ | find_reddot_field.log 直接确认 → ns.c 系列不控制红点 |
-| FMF.E = true（红点亮时）| find_reddot_field.log `[FMF:FIELD] *** E (boolean) = true` |
-| AbstractTabChildPreference.m = true | find_reddot_field.log |
-| AbstractTabChildPreference.p = true | find_reddot_field.log |
-| LauncherUI.o = true | find_reddot_field.log（候选，待确认是否红点相关） |
-| LauncherUI.p = true | find_reddot_field.log |
-| ns.c.e = 1 (int) | find_reddot_field.log（非零，但含义未知） |
-| ww2.c.b = undefined | find_reddot_field.log → ww2.c 在 8.0.71 无此字段或非 primitive |
-| FindMoreFriendsUI.L1 hook 有效 | `[FMF] L1 hooked (1 overload), 78 total` |
+
+| 事实                           | 证据                                               |
+| ---------------------------- | ------------------------------------------------ |
+| D1 朋友圈隐藏密友有效                 | `[MF] D1 blocked poster=wxid_lzd2va16jd1622` × 5 |
+| ns.c 全字段（红点气泡亮时）             | `a=false b=false c=false d=false e=1 f=0 g=0`    |
+| **ns.c.b = false** 红点气泡亮     | find_reddot_field.log → ns.c 不控视觉                |
+| **FMF.E = true（**红点气泡亮**时）** | find_reddot_field.log                            |
+| FindMoreFriendsUI.L1 hook 有效 | `[FMF] L1 hooked (1 overload), 78 total`         |
+| g1 方法存在（jadx）                | `FindMoreFriendsUI.g1(String, boolean)`          |
+
 
 ---
 
-## 已证伪路径
+## v14b 验证清单（装机产出）
 
-| 方案 | 结果 | 状态 |
-|------|------|------|
-| hook ns.c.b → false | ns.c 有 0 个方法，字段本来就是 false，红点照样亮 | ❌ 完全打空 |
-| retroactiveZeroOnBoot 清 ns.c.b | 清了也没用，ns.c.b 根本不控制红点 | ❌ |
-| hook w1.E1() → 0 | E1 未被调用 | ❌ |
-| hook LauncherUI.onResume 清 ns.c.b | 清了错字段 | ❌ |
-| 所有针对 ww2.c.b 的操作 | 8.0.71 ww2.c.b 为 undefined | ❌ |
+### 1. Layer1 — w1.v2 命中日志
 
----
+**操作**：隐藏态开启 + 密友给你的朋友圈点赞或评论。
 
-## 已解决假设（✅ v13 解决）
+**期望 logcat / rawfeed**：
 
-| 假设 | 结果 |
-|------|------|
-| 清零 FMF.E + ATCP.m/p → 红点消失 | ❌ 清字段无效，必须调 g1() 方法 |
-| g1("album_dyna_photo_ui_title", false) 是正确调用 | ✅ jadx `cd5/j.java:67` 确认 |
-| callG1OnUi 调用路径有问题 | ✅ 三个 bug 已修复（见上方 v13 修复记录） |
-
-## 当前假设（❓ 待验证）
-
-| 假设 | 依据 | 验证方法 |
-|------|------|---------|
-| ❓ g1() 在 v13 能成功找到并执行 | getDeclaredMethods → getMethods 改为继承链遍历 | 装机看 `[MRD:g1]` log |
-| ❓ 冷启动时 sFMFInstance 能在 300ms 内就绪 | FMF.L1 早于 LauncherUI.onResume+300ms | 装机看 `launcher-delayed` vs `launcher-immediate` |
-
----
-
-## 下一步（只列一步）
-
-**纯 Frida 方案验证（无需 LSPosed，无痕，重启即消失）：**
-
-保持微信主界面有红点：
-```powershell
-frida -U -n com.tencent.mm -l tools/reddot_clear.js
 ```
-attach 后等 3 秒，红点应消失。一次性清除完成后可 Ctrl+C detach。
-
-持久守护模式（持续自动清除）：
-```powershell
-frida -U -n com.tencent.mm -l tools/reddot_clear.js --persist
+[MRD:w1:v2] wxid=wxid_xxx hidden=true
+[MRD:w1] blocked v2 wxid=wxid_xxx
 ```
-hook LauncherUI.onResume + FMF.L1 + FMF.onResume，每次回主界面自动调 g1(false)。
+
+**判定**：
+
+- ✅ arg[1] 等于触发红点的密友 wxid
+- ✅ block 后红点**不出现**（或出现后 g1 层灭掉）
+- ❌ 若 v2 零命中 → 8.0.71 还有 parallel 写入路径，需补探针（w2 以外）
+
+### 2. Layer2 — g1 调用日志
+
+**期望**：
+
+```
+[MRD:g1] key=album_dyna_photo_ui_title show=true
+[MRD:g1:intercept] BLOCKED g1(album_dyna_photo_ui_title,true)
+  或
+[MRD:g1] g1(album_dyna_photo_ui_title, false) fmfE_before=true fmfE_after=false
+```
+
+**判定**：
+
+- ✅ key = `album_dyna_photo_ui_title`
+- ✅ `FMF.E` 从 true → false
+- ✅ 发现 tab 红点灭
+
+### 3. 复现 / 冷启动
+
+
+| 场景                         | 期望（Layer1 成功）       |
+| -------------------------- | ------------------- |
+| 点赞后立即看 tab                 | 红点不出现               |
+| 切后台回前台                     | 不复现                 |
+| 杀进程冷启动                     | 不复现（w1.y 未持久化增量）    |
+| 仅 Layer2 生效、Layer1 未 block | 可能短暂亮后 g1 灭；冷启动可能复现 |
+
+
+### 4. worklog 回填
+
+压测完成后在本文件「压测记录」节填写：时间、wxid、三层判定、原始 log 片段。
 
 ---
 
-## v14 策略变更
+## 压测记录
 
-**原因：用户怕封号不敢用正常账号登录，LSPosed 模块风险太高。**
 
-| 项 | v13 (LSPosed) | v14 (Frida) |
-|----|--------------|-------------|
-| 安装方式 | 需装 LSPosed 模块 | frida attach 即用 |
-| 持久性 | 重启仍存在 | 重启即消失，零痕迹 |
-| 封号风险 | 模块常驻，可被检测 | attach 完 detach，无残留 |
-| 核心调用 | 同 g1(false) | 同 g1(false) |
-| 验证成本 | 需 build + 装机 | 一条命令 |
+| 日期               | Layer0b smsg enter | Layer1 v2 block | Layer2 g1 + FMF.E | 红点灭 | 备注             |
+| ---------------- | --------------- | --------------- | ----------------- | --- | -------------- |
+| 2026-05-21 22:03 | ⏳ v15 未触发 | ⏳ 未触发           | ⏳ FMF 未加载         | —   | v15 方案，ART JIT 不触发子类 hook |
+| 2026-05-21 23:01 | ✅ **v17 命中** `SnsMsgUIWithRelevance.onResume` | ❌ 跨进程（:push 写入） | ⏳ 已装未触发 | ✅ 进列表后 badge 变化 | v17 Activity.class 方案有效 |
 
-`MomentsRedDotGuard.java` (LSPosed) 保留作为参考实现，但主线改为 Frida 方案。
+
+### 2026-05-21 v17 装机（最终测试）
+
+**环境**：小米9 · 微信 8.0.71 · LSPosed 已勾选
+
+
+| 步骤                                      | 结果                                                 |
+| --------------------------------------- | -------------------------------------------------- |
+| `gradlew assembleDebug + adb install`   | ✅ BUILD SUCCESSFUL                                 |
+| 模块 init v17                             | ✅ `[MRD] install done (v17)`                       |
+| 密友列表                                    | ✅ 2 个：`wxid_toghm7m6uqsr12`, `wxid_lzd2va16jd1622` |
+| Layer0b v17 安装日志                        | ✅ `Activity.onResume → SnsMsgUI* filter installed (v17)` |
+| Layer1 v2 block                         | ❌ 未命中（写入在 `:push` 进程）                             |
+| Layer2 g1                               | ⏳ 已装，FMF 加载后可触发                                    |
+| 进「互动列表」（SnsMsgUIWithRelevance）           | ✅ `[MRD:smsg:enter] ...SnsMsgUIWithRelevance.onResume` |
+| badge 进列表后状态                            | ✅ 变化（进入消费后归零）                                      |
+| 密友互动被过滤（不显示）                            | ✅ filterListFields 运行                               |
+
+**logcat 关键片段（2026-05-21 23:01:47）**：
+
+```
+[MRD] install done (v17)
+[MRD:smsg] Activity.onResume → SnsMsgUI* filter installed (v17)
+[MRD:smsg:enter] com.tencent.mm.plugin.sns.ui.SnsMsgUIWithRelevance.onResume
+```
+
+### 关键发现：badge 本地状态机制（2026-05-21 用户实证）
+
+```
+badge = 本地 DB 计数 (w1.y)
+     ≠ 服务端实时状态
+
+写入时机：收到推送 → :push 进程写 DB (w1.v2)   ← 跨进程，主进程 hook 不可达
+清除时机：进互动列表 → 消费 → w1.y 归零          ← Layer0b 入口正是此处
+断网/对方删除：不影响已写入的本地计数              ← 红点持久化实证
+```
+
+**v1 可接受行为**：
+- 进互动列表 → 密友条目不显示 → 退出 → badge 归零 ✅
+- 新密友互动到来 → `g1(show=true)` 被拦截（不增新红点）✅（未实测，待密友点赞触发）
+- 已存 badge 数字 → 进一次互动列表就消费掉 ✅
+
+---
+
+## 观测命令
+
+```powershell
+# 端口转发 + 浏览器调试台（推荐）
+adb forward tcp:8080 tcp:8080
+# 打开 http://localhost:8080 ，点「🔴 红点」过滤 rawfeed
+
+# logcat（标签是 NCL，不是 GhostAssist）
+adb logcat -s NCL:I 2>&1 | Select-String "MRD:w1|MRD:g1|MRD:v13|MRD:fmf"
+```
+
+浏览器调试台 rawfeed 同步可见 `[MRD:w1:v2]` / `[MRD:g1]` 行。
+
+---
+
+## 校准：私有化阶段补的是桌面角标，不是朋友圈红点（2026-05-22）
+
+**结论**：历史回查 `apk2/_1__B_rewrite/05_docs/PROGRESS.md`（23+ smali 改动），私有化阶段（Catfish 8.0.70 授权替换）补的红点/角标相关漏点是：
+
+- **Issue #23** — 桌面角标未过滤密友未读数：修复 `isVipMode()` 语义陷阱（`hookNewCon` 门控），确保 `sHiddenUnread` 始终被计算
+- **Issue #24** — 跨 DEX 注入角标过滤：`classes10.dex` 的 `h0.d(int)` 注入 `MainEntry.kc()`，OEM 桌面角标数字减去密友未读
+
+两处均为**桌面图标角标（会话未读数字）**，非朋友圈/发现 tab 红点。
+
+**Catfish `hookSnsMsgList`**：
+- 是原版 APK 自带的 Pine REPLACE 模式 hook（native SO 注册），**非私有化阶段新增**
+- 签名 `()Ljava/util/ArrayList;`，返回含密友 wxid 的黑名单 ArrayList
+- 目标微信类/方法名未知（需 Ghidra 反编译 `libwechatsd.so` native_start() 0x2349b8）
+
+**Guard 8.0.71 现状**：
+- `installCatfishSnsMsgListHook` 扫描 5 类，0 hooks（`[MRD:catfish] snsmsg blacklist hooks=0`）
+- 不再回查 Catfish 等价入口，P21 走自研三层方案
+
+---
+
+## 竞品确认（Catfish 甜密友）
+
+
+| 层   | Catfish 8.0.70                     | Guard 8.0.71 v14b                  |
+| --- | ---------------------------------- | ---------------------------------- |
+| 数据层 | `hookSnsCommentOne` 清 LikeUserList | `w1.v2` block（arg[1]=wxid）         |
+| 视觉层 | SnsObject 清零后 UI 自然不亮              | `FMF.g1(..., false)` + g1(true) 拦截 |
+
+
+> F-27 仅证 8.0.66 Java parseFrom 零命中；8.0.71 parseFrom 未验证，不得外推。
+
+**当前阻塞**：测试账号朋友圈受限，密友无法点赞 → 无法触发 v2。
+
+**解锁**：换正常账号 / 限制解除 → 密友点赞 → 跑验证清单。
 
 ---
 
 ## 关键文件
 
-- `tools/reddot_clear.js` — **v14 纯 Frida 红点清除（新，推荐）**
-- `tools/find_reddot_field.js` — 诊断脚本（红点亮时 dump 所有相关字段）
-- `tools/find_reddot_field.log` — 原始日志 222 行
-- `tools/test_clear_fmf_badge.js` — v1 验证脚本（字段清零，g1 未成功调用）
-- `tools/test_clear_badge_v2.js` — v2 验证脚本（g1 找到但 invoke 参数类型不匹配）
-- `tools/test_clear_fmf_badge.log` — v1 日志：字段清零成功，g1 未执行
-- `tools/test_clear_badge_v2.log` — v2 日志：g1(String,boolean) 确认存在，Frida invoke 报类型不匹配（已修复）
-- `src/main/java/com/ghost/assist/moduleD/MomentsRedDotGuard.java` — LSPosed 参考实现（不再主线）
+- `src/main/java/com/ghost/assist/moduleD/MomentsRedDotGuard.java` — v14b 实现
+- `tools/probe_w1_fields.js` — v2 + arg[1]=wxid 探针
+- `tools/probe_catfish_snsmsg.js` — 追 Catfish hookSnsMsgList 等价 ArrayList 织入点
+- `FINDINGS.md` — 聚合桶早期记录（已降级，以本 worklog 为准）
+

@@ -1,0 +1,18 @@
+     ____
+    / _  |   Frida 17.9.10 - A world-class dynamic instrumentation toolkit
+   | (_| |
+    > _  |   Commands:
+   /_/ |_|       help      -> Displays the help system
+   . . . .       object?   -> Display information about 'object'
+   . . . .       exit/quit -> Exit
+   . . . .
+   . . . .   More info at https://frida.re/docs/home/
+   . . . .
+   . . . .   Connected to MI 9 (id=609b4b18)
+Attaching...
+20:56:13 [ANCHOR] 进程=Java.Field{holder: ApplicationInfo{24c6b9c com.tencent.mm}, fieldType: 2, fieldReturnType: Ljava/lang/String;, value: com.tencent.mm}
+20:56:14 [ANCHOR] NotificationManager.notify hooked OK
+20:56:14 [ANCHOR] NotificationManager.notify(int,Notif) hooked OK
+20:56:14 [ANCHOR] === 请让密友 wxid_lzd2va16jd1622 发消息 ===
+20:56:14 [ANCHOR] 关注：调用栈里第1个 com.tencent.mm.* 类 = 实际通知入口
+[MI 9::PID::17889 ]-> 

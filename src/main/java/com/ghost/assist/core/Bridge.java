@@ -75,6 +75,48 @@ public class Bridge {
         return mPrefs.getStringSet(key, new java.util.HashSet<>());
     }
 
+    // --- 密友功能总开关 (key: "f1", default: true) ---
+    private static final String KEY_FEATURE = "f1";
+
+    /** 密友功能总开关。关闭时所有 Filter 短路，微信恢复原始行为。 */
+    public boolean isFeatureEnabled() {
+        return getBool(KEY_FEATURE, true);
+    }
+
+    public void setFeatureEnabled(boolean enabled) {
+        putBool(KEY_FEATURE, enabled);
+    }
+
+    // --- 通知策略 NotifyPolicy (key: "nfyp", default: OFF) ---
+    // OFF   = 完全静默（当前 PushFilter 行为）
+    // VIBRATE = 震动但无声（Phase 2 实现）
+    // SOUND   = 正常铃声（Phase 2 实现）
+    //
+    // v1: 存储已就绪；实际 VIBRATE/SOUND 动作 Phase 2 接入 PushFilter。
+
+    public enum NotifyPolicy {
+        OFF, VIBRATE, SOUND;
+
+        public static NotifyPolicy fromString(String s) {
+            if (s == null) return OFF;
+            switch (s.toUpperCase()) {
+                case "VIBRATE": return VIBRATE;
+                case "SOUND":   return SOUND;
+                default:        return OFF;
+            }
+        }
+    }
+
+    private static final String KEY_NOTIFY_POLICY = "nfyp";
+
+    public NotifyPolicy getNotifyPolicy() {
+        return NotifyPolicy.fromString(getString(KEY_NOTIFY_POLICY, "OFF"));
+    }
+
+    public void setNotifyPolicy(NotifyPolicy policy) {
+        putString(KEY_NOTIFY_POLICY, policy.name());
+    }
+
     // --- Hidden wxid list (A2 密友列表) ---
     private static final String KEY_HIDDEN_LIST = "hlst";
     // --- Hidden group list (A3 密群列表，`*@chatroom`) ---

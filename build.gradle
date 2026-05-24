@@ -24,6 +24,28 @@ android {
         targetSdk 34
         versionCode 1
         versionName "1.0"
+
+        // ── libguardcore.so ───────────────────────────────────
+        // Build for arm64-v8a (Xiaomi 9 primary) + armeabi-v7a (32-bit compat).
+        // x86/x86_64 omitted — we target physical devices only.
+        externalNativeBuild {
+            cmake {
+                abiFilters "arm64-v8a", "armeabi-v7a"
+                // Enable debug logging in debug builds only.
+                // Release builds: GUARD_DEBUG not set → LogLimiter is a no-op.
+                buildTypes {
+                    debug   { cppFlags "-DGUARD_DEBUG" }
+                    release { cppFlags "" }
+                }
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "native_core/CMakeLists.txt"
+            version "3.22.1"
+        }
     }
 
     buildTypes {
@@ -62,4 +84,7 @@ dependencies {
 
     // MMKV
     implementation 'com.tencent:mmkv:1.3.5'
+
+    // RecyclerView compileOnly removed: WeChat ProGuards the class name,
+    // causing NoClassDefFoundError at runtime. Use pure reflection instead.
 }

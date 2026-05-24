@@ -6,7 +6,7 @@
 > - 状态不明 → **停下来问用户，禁止猜测，禁止推断**
 >
 > 接手前看：[`CLAUDE.md`](./CLAUDE.md) + [`HOOKMAP.md`](./HOOKMAP.md)
-> 更新时间：2026-05-21
+> 更新时间：2026-05-22
 > **当前底座：微信 8.0.71**（D-014）
 > 维护人：guard-dispatch_总调度
 
@@ -16,8 +16,8 @@
 
 | 窗口 | 主题 | P 任务 | 状态 | 占用至 | 模型建议 |
 |:--:|------|-------|:--:|------|:----:|
-| **W1** | B模块触发器 + 搜索 | **P21/P20** | ⬜ 代码已写（TriggerGuard/SearchUnlock/SearchFilter）**待装机验证** | — | Sonnet |
-| **W2** | 朋友圈小红点 | **P21_朋友圈小红点** | ⬜ **未实现**（FMF.g1() 路径卡关，wxid 级漏斗未打通，LSPosed 主线） | — | Sonnet |
+| **W1** | B模块触发器 + 搜索 | **P20B/P20** | 🟡 **装机部分通过（2026-05-22）**：B2✅ B5✅ B6(6个1)✅ extractWxid(C0)✅ F-27冷启动HIDDEN✅；**Bug B (H→V自动刷新) ⬜ 待实现** | — | Sonnet |
+| **W2** | 朋友圈小红点 | **P21_朋友圈小红点** | ✅ **v18 装机**：Layer0b（SnsMsgUI 进列表过滤+badge zero）✅实证；Layer2（g1拦截）✅实证；v18 tab badge counter suppressor 已装机待触发 | — | Sonnet |
 | **W3** | 会话 LSPosed 翻译 | P17_会话LSPosed | ✅ 已完成（2026-05-20 会话隐藏验收通过）| — | Sonnet |
 | **W4** | 离线资料库采集 | P18_离线采集 | ⬜ 待领 | — | Haiku |
 
@@ -75,21 +75,28 @@ src/main/java/.../debug/ContactResolver.java   (查昵称头像)
 
 ---
 
-### ⬜ W2 朋友圈小红点（P21 当前未解决项）
+### ✅ W2 朋友圈小红点 P21（v18 装机实证）
 
-**状态**：⬜ **未实现**
+**状态**：✅ **核心功能实证通过**，v18 tab badge counter 已装机待触发
 
 **已完成（✅ 不动）**：
 - D1 密友帖整条隐藏 — `MomentsFilter.java` `addAll(na4.b)` ✅
 - D2 密友点赞隐藏 — `LinkedList.add(z15.e56)` ✅
 - D3 密友评论隐藏 — `LinkedList.add(cs5.di0)` ✅
 
-**未解决：朋友圈主界面小红点**：
-- 当前卡点：`FindMoreFriendsUI.L1()` 内部 List 字段名 + item 类名 + wxid 字段名三个值未拿到
-- 已证伪：ns.c 系列字段（根本不控制红点），ww2.c.b（8.0.71 不存在该字段）
-- 已确认：`FMF.E = true` 时红点亮；`g1("album_dyna_photo_ui_title", false)` 是视觉刷新调用
-- 实现路线：**LSPosed** hook `FindMoreFriendsUI.L1()` → 过滤密友 → 调 g1(false)
-- 前置条件：jadx 静态追溯 `FindMoreFriendsUI.L1()` 内部字段赋值
+**P21 v18 实证结果（2026-05-21）**：
+- **Layer0b 实证**：`Activity.class.onResume` 过滤 `SnsMsgUI*` ✅，进互动列表时密友条目被过滤
+- **Layer2 实证**：`FMF.g1("album_dyna_photo_ui_title", true)` 已拦截 ✅，防止朋友圈行新增红点
+- **badge 本地状态实证**：badge = `w1.y`（本地 DB），进互动列表消费后自然归零 ✅
+- **v18 新增**：`TabRedDotChangeEvent`/`WeChatTabRedDotEvent` ctor 清零 int 字段（tab 角标数字）；进互动列表后主动 `zeroW1FieldY`
+
+**已证伪、永久禁止**：
+- ❌ Layer1 `w1.v2` 跨进程不可达（`:push` 写入，主进程 hook 打不到）
+- ❌ ns.c 系列字段（不控制视觉红点，`ns.c.b=false` 时红点仍亮）
+- ❌ `ww2.c.b`（8.0.71 不存在）
+- ❌ `w1.E1()` getter（零调用，badge 不走 Java getter）
+
+**v18 待验证**：密友点赞 → 观察 `[MRD:tab] TabRedDotChangeEvent.xxx N→0` 日志
 
 **必读**：
 - `03_execute_执行任务/P21_MomentsRedDot/worklog.md`（所有已证实/证伪路径）
@@ -162,8 +169,8 @@ src/main/java/.../moduleD/ConvFilter.java
 **必读**：
 - [`CLAUDE.md`](./CLAUDE.md) §三 5.2 Proto 层 / §六 KPI 表 / §八 开发工具栈
 - [`TOOLS_INDEX.md`](./TOOLS_INDEX.md) §〇 + §七 ADB 命令模板
-- `C:/Users/Me/Desktop/apk2/_3__D_wechat_ban/official_wechat_ban_research/03_anti_frida/frida_stats.js`
-- `C:/Users/Me/Desktop/apk2/_3__D_wechat_ban/official_wechat_ban_research/03_anti_frida/COLLECTION_SOP.md`
+- `I:/apk2/_3__D_wechat_ban/official_wechat_ban_research/03_anti_frida/frida_stats.js`
+- `I:/apk2/_3__D_wechat_ban/official_wechat_ban_research/03_anti_frida/COLLECTION_SOP.md`
 
 **任务清单**：
 
@@ -252,8 +259,10 @@ W1 脚手架   ─→ 后续所有功能模块
 | P17 | 会话 LSPosed | ✅ | 2026-05-20 会话隐藏验收通过。链路：kc5.y.d(l4).h1() = wxid（HOOKMAP 已修 C0→h1），L4 notifyDataSetChanged 主门控。|
 | P18 | 离线采集 | ⬜ | — |
 | P19 | 通讯录隐藏 F07 | ✅ | 2026-05-20 装机验证。路径：ArrayList.addAll(fc5.g×30) → fc5.g.d→z3.c1()→wxid → remove。分段虚拟滚动，每段过滤。|
-| P20 | 搜索 + 密码入口 | ⬜ | 代码已写（`SearchUnlock`+`SearchFilter`），**未装机** |
+| P20 | 搜索 + 密码入口 | 🟡 | 2026-05-22 B6装机验证通过：6个1触发✅ `View.onAttachedToWindow` hook `ActionBarEditText`命中；`extractWxid C0`路径✅；F-27冷启动HIDDEN✅；**Bug B（H→V后密友不自动显示）⬜ 待实现** |
 | A3  | 密群（数据层 + Filter union）| ✅ | 2026-05-21 装机验证。`Bridge.getGroupIds/allHiddenIds/isGroupId`；4 Filter 切换到 `allHiddenIds()`。|
+| P_NC1 | native_core Batch 1 装机验证 | 🟡 | SO 编译通过 + 14 JNI 符号导出；ModuleMain 验证桩已接入（`runNativeBridgeVerification`）；**待装机跑 logcat，看 `[native] BATCH1_VERIFY PASS`**；通过后更新 ROADMAP Phase 1 ⬜→✅ |
+| **P22** | **PushFilter 通知策略层** | 🟡 | **2026-05-22 装机实证**：L1 block ✅；NM cancel 普通消息 gap=3ms ✅；NM voip channel cancel ✅；tinker classloader fix ✅；密友总开关 `Bridge.isFeatureEnabled()` 已接 🟡；CA 备用层 🟡（代码完成，因 NM voip cancel 先行，未实际触发）；**剩余坑**：L4b `MainTabUI.i()` 方法名需 jadx 重查 ❓；NotifyPolicy VIBRATE/SOUND 未实现 📋；DebugServer HTML 开关未加 📋；WeChatDND 归档 Phase 2 📋；frida_stats 未跑 ⚠️ |
 
 > 编号从 P15 起，是接续 apk2 项目 QE66 的 P14（保持跨项目可追溯）
 
@@ -269,12 +278,12 @@ W1 脚手架   ─→ 后续所有功能模块
   P16 朋友圈 D1/D2/D3
   P17 会话 LSPosed
   P19 通讯录 F07
-  P20 搜索 + 密码入口（部分）
+  P20 搜索 + 密码入口（B6装机✅；Bug B H→V刷新⬜）
   A3  密群数据层 + Filter union（2026-05-21 装机已验）
 
 🟡 v1 进行中（阶段 ①）
-  P21  状态机触发事件 B 模块（B1 摇一摇 / B2 切后台 / B5 锁屏）  ← 下一个
-  P22  A3 密群调试 UI tab（轻量，可与 P21 并行）
+  P20B 状态机触发事件 B 模块（B1 摇一摇 / B2 切后台 / B5 锁屏）
+  P22  PushFilter 通知策略层（2026-05-22 装机实证 L1/NM ✅；CA 🟡 未实际触发；剩余：L4b 重查 + NotifyPolicy VIBRATE/SOUND + DebugServer HTML 开关）
   P23  F08 防撤回（资料 T08 调研先行）
 
 🟡 v1 收尾（阶段 ② 替换/加密预热）

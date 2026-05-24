@@ -55,7 +55,8 @@ public class TriggerGuard {
 
         Log.i(TAG, "[TG] install done b1=" + AppConfig.getInstance().isB1Enabled()
                 + " b2=" + AppConfig.getInstance().isB2Enabled()
-                + " b5=" + AppConfig.getInstance().isB5Enabled());
+                + " b5=" + AppConfig.getInstance().isB5Enabled()
+                + " dev=" + AppConfig.getInstance().isDevMode());
     }
 
     // -------------------------------------------------------------------------
@@ -71,7 +72,10 @@ public class TriggerGuard {
             @Override
             public void onActivityStopped(Activity activity) {
                 if (sForegroundCount > 0) sForegroundCount--;
-                if (sForegroundCount == 0) {
+                // isChangingConfigurations() = true when Activity.recreate() is called or
+                // during screen rotation. Neither is a user "go to background" intent.
+                // Skip B2 to avoid false enterHidden during H→V recreate().
+                if (sForegroundCount == 0 && !activity.isChangingConfigurations()) {
                     onLeftForeground("B2-stopped:" + activity.getClass().getSimpleName());
                 }
             }

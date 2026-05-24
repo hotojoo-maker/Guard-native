@@ -57,6 +57,13 @@ public final class UiContextTracker {
                                     "title", title));
 
                     Log.i(TAG, "[UI] page=" + page + " activity=" + cn);
+
+                    // When LauncherUI comes back to foreground, ensure conv list is clean
+                    // if state=HIDDEN. BUS-H notifies while RecyclerView is off-screen;
+                    // this call fires when it's actually visible (onResume = on screen).
+                    if ("Main".equals(page)) {
+                        com.ghost.assist.moduleD.ConvFilter.triggerHideIfNeeded();
+                    }
                 }
             });
             Log.i(TAG, "[UI] UiContextTracker ok");

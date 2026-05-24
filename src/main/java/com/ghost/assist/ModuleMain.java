@@ -7,6 +7,7 @@ import android.util.Log;
 import com.ghost.assist.core.AppConfig;
 import com.ghost.assist.core.Bridge;
 import com.ghost.assist.core.InterceptCounter;
+import com.ghost.assist.core.NativeBridge;
 import com.ghost.assist.core.StateMachine;
 import com.ghost.assist.debug.DebugServer;
 import com.ghost.assist.debug.OverlayWindow;
@@ -14,13 +15,15 @@ import com.ghost.assist.debug.StatusNotification;
 import com.ghost.assist.debug.UiContextTracker;
 import com.ghost.assist.moduleB.SearchFilter;
 import com.ghost.assist.moduleB.SearchUnlock;
+import com.ghost.assist.moduleB.SettingsEntry;
 import com.ghost.assist.moduleB.TriggerGuard;
 import com.ghost.assist.moduleB.UpdateGuard;
+import com.ghost.assist.moduleC.PushFilter;
 import com.ghost.assist.moduleD.ContactFilter;
 import com.ghost.assist.moduleD.ConvFilter;
 import com.ghost.assist.moduleD.MomentsFilter;
 // MomentsRedDotGuard — 朋友圈小红点，LSPosed 方案卡关中，暂不注册（见 P21_MomentsRedDot/worklog.md）
-// import com.ghost.assist.moduleD.MomentsRedDotGuard;
+import com.ghost.assist.moduleD.MomentsRedDotGuard;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.IXposedHookZygoteInit;
@@ -46,12 +49,19 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
     // --- Load package: process whitelist FIRST ---
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) {
-        // F-16: process whitelist — MUST be first line of business logic
-        if (!WX_PKG.equals(lpparam.processName)) {
+        // F-16: process whitelist — main process and :push only.
+        // All other processes (sandboxed/isolated/appbrand) must be ignored.
+        boolean isMain = WX_PKG.equals(lpparam.processName);
+        boolean isPush = (WX_PKG + ":push").equals(lpparam.processName);
+        if (!isMain && !isPush) return;
+
+        // :push process — native init + push notification hooks
+        if (isPush) {
+            initPushGuard(lpparam);
             return;
         }
 
-        // Hook Application.onCreate to get the app context
+        // Main process — hook Application.onCreate to get app context
         try {
             XposedHelpers.findAndHookMethod(
                 Application.class,
@@ -68,11 +78,35 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         }
     }
 
+    /**
+     * :push process entry.
+     * F-27: nativeInit must complete before any hook registration.
+     * Iron rule 6: only push-gate / badge hooks allowed here.
+     */
+    private void initPushGuard(XC_LoadPackage.LoadPackageParam lpparam) {
+        try {
+            boolean ok     = NativeBridge.init(lpparam.processName, WX_PKG);
+            int role       = NativeBridge.getProcessRole();
+            boolean hidden = NativeBridge.isHidden();
+            Log.i(TAG, "[native:push] init=" + ok
+                    + " role=" + role + "(expect 2=PUSH)"
+                    + " hidden=" + hidden);
+            // F-27: nativeInit complete — now safe to install push hooks
+            PushFilter.installForPush(lpparam);
+        } catch (Throwable t) {
+            Log.e(TAG, "[native:push] init crash: " + t);
+        }
+    }
+
     private void onApplicationCreated(Application app, XC_LoadPackage.LoadPackageParam lpparam) {
         if (sInitialized) return;
         sInitialized = true;
 
         Log.i(TAG, "[init] pid=" + Process.myPid() + " proc=" + lpparam.processName);
+
+        // 0. NativeBridge — Batch 1 Phase 1 verification (before any hook registration)
+        //    Iron rule 27: nativeInit must complete before business hooks.
+        runNativeBridgeVerification(lpparam.processName);
 
         // 1. Init config (DEV/PROD/HONEY)
         AppConfig.getInstance().init(app);
@@ -103,31 +137,78 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         MomentsFilter.install(lpparam);
         ConvFilter.install(lpparam);
         ContactFilter.install(lpparam);
+        PushFilter.install(lpparam);
 
         // P21: 更新小红点 + 状态机自动触发器（代码已写，待装机验证）
-        // MomentsRedDotGuard.install(lpparam); // 朋友圈小红点卡关，LSPosed 路径未通，暂不注册
+        MomentsRedDotGuard.install(lpparam);
         UpdateGuard.install(lpparam);
         TriggerGuard.install(app);  // B1/B2/B5，Android API，不吃 lpparam
 
-        // 8. Start debug tools (DEV/HONEY modes only)
+        // 设置入口 — 微信「我→设置」顶部注入"密友设置 ›"行（仅 VISIBLE 态可见）
+        SettingsEntry.install(lpparam);
+
+        // 8a. HTTP debug server always starts so web dashboard works in PROD mode.
+        DebugServer.start();
+        Log.i(TAG, "[init] debug server started port=" + AppConfig.getInstance().getServerPort());
+
+        // 8b. UI debug tools (overlay + notification) only in DEV/HONEY.
         if (AppConfig.getInstance().isDebugEnabled()) {
             UiContextTracker.install(lpparam);
-            startDebugTools(app);
+            StatusNotification.show(app);
+            OverlayWindow.attach(app);
+            Log.i(TAG, "[init] debug UI tools started");
         }
 
         Log.i(TAG, "[init] ready — state=" + StateMachine.getInstance().getStateName());
     }
 
-    private void startDebugTools(Application app) {
-        // Notification — direct NotificationManager (no Service)
-        StatusNotification.show(app);
+    /**
+     * Batch 1 Phase 1 — NativeBridge smoke-test.
+     * Logs init result + 7 verification checks to logcat TAG "NCL".
+     * Remove or gate behind AppConfig.isDebugEnabled() after Phase 3 full integration.
+     */
+    private void runNativeBridgeVerification(String processName) {
+        try {
+            // (1) SO available?
+            Log.i(TAG, "[native] available=" + NativeBridge.isAvailable());
 
-        // Overlay — direct WindowManager.addView (no Service)
-        OverlayWindow.attach(app);
+            // (2) init
+            boolean ok = NativeBridge.init(processName, WX_PKG);
+            Log.i(TAG, "[native] init=" + ok);
 
-        // HTTP debug server
-        DebugServer.start();
+            // (3) processRole — must be ROLE_MAIN (1)
+            int role = NativeBridge.getProcessRole();
+            Log.i(TAG, "[native] role=" + role + " (expect 1=MAIN)");
 
-        Log.i(TAG, "[init] debug tools started");
+            // (4) isHidden — must be true (cold-start defaults to HIDDEN)
+            boolean hidden = NativeBridge.isHidden();
+            Log.i(TAG, "[native] isHidden=" + hidden + " (expect true)");
+
+            // (5) setHidden(false) then re-check — must flip to false
+            NativeBridge.setHidden(false);
+            boolean hiddenAfterFalse = NativeBridge.isHidden();
+            Log.i(TAG, "[native] isHidden after setHidden(false)=" + hiddenAfterFalse + " (expect false)");
+            NativeBridge.setHidden(true); // restore for real hooks
+
+            // (6) isHiddenWxid — pre-seeded test wxid must return true
+            boolean testWxidTrue = NativeBridge.isHiddenWxid("wxid_lzd2va16jd1622");
+            Log.i(TAG, "[native] isHiddenWxid(wxid_lzd2va16jd1622)=" + testWxidTrue + " (expect true)");
+
+            // (7) isHiddenWxid — unknown wxid must return false
+            boolean testWxidFalse = NativeBridge.isHiddenWxid("wxid_other");
+            Log.i(TAG, "[native] isHiddenWxid(wxid_other)=" + testWxidFalse + " (expect false)");
+
+            // (8) configVersion
+            int cfgVer = NativeBridge.getConfigVersion();
+            Log.i(TAG, "[native] configVersion=" + cfgVer + " (expect 1)");
+
+            // Summary line for quick grep
+            boolean allPass = ok && role == NativeBridge.ROLE_MAIN && hidden
+                    && !hiddenAfterFalse && testWxidTrue && !testWxidFalse && cfgVer == 1;
+            Log.i(TAG, "[native] BATCH1_VERIFY " + (allPass ? "PASS" : "FAIL"));
+        } catch (Throwable t) {
+            Log.e(TAG, "[native] verification crash: " + t);
+        }
     }
+
 }

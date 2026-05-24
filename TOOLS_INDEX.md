@@ -21,7 +21,7 @@
 **v1 整个项目都依赖 8.0.66 APK 文件，没它寸步难行：**
 
 1. **下载途径**（按优先）：
-   - apk2 项目库（如有）：`C:/Users/Me/Desktop/apk2/` 下 grep `8.0.66`
+   - apk2 项目库（如有）：`I:/apk2/` 下 grep `8.0.66`
    - E:/apk_diff/（只读样本库）下 grep `8066` / `8.0.66`
    - 历史构建：`I:/apk2_build/official/`
    - 第三方源：APKMirror / 旧版微信下载站（最后选项）
@@ -57,24 +57,24 @@
 
 | 脚本 | 路径 | 用途 |
 |------|------|------|
-| 反检测 16 指标采集 | `C:/Users/Me/Desktop/apk2/_3__D_wechat_ban/official_wechat_ban_research/03_anti_frida/frida_stats.js` | KPI 基线对比 |
+| 反检测 16 指标采集 | `I:/apk2/_3__D_wechat_ban/official_wechat_ban_research/03_anti_frida/frida_stats.js` | KPI 基线对比 |
 | 反检测 SOP | 同上目录 `COLLECTION_SOP.md` | 采集标准流程 |
-| 集合采集脚本 | `C:/Users/Me/Desktop/apk2/_tools/frida/` | 各种 hook 调研脚本 |
+| 集合采集脚本 | `I:/apk2/_tools/frida/` | 各种 hook 调研脚本 |
 
 ### 静态分析
 
 | 工具 | 路径 |
 |------|------|
-| jadx 反编译产物 (历史) | `C:/Users/Me/Desktop/apk2/_4__samples/dynamic_fast/classes17_decompiled/jadx_out/` |
-| Catfish 8070 反编译 | `C:/Users/Me/Desktop/apk2/_4__samples/dynamic_fast/HOOK_IMPLEMENTATION_ANALYSIS.md`（源码级注释）|
-| 历史版本索引 | `C:/Users/Me/Desktop/apk2/_4__samples/sample_history_research/VERSION_INDEX.md` |
+| jadx 反编译产物 (历史) | `I:/apk2/_4__samples/dynamic_fast/classes17_decompiled/jadx_out/` |
+| Catfish 8070 反编译 | `I:/apk2/_4__samples/dynamic_fast/HOOK_IMPLEMENTATION_ANALYSIS.md`（源码级注释）|
+| 历史版本索引 | `I:/apk2/_4__samples/sample_history_research/VERSION_INDEX.md` |
 
 ### ADB / Frida 模板
 
 | 文件 | 用途 |
 |------|------|
-| `C:/Users/Me/Desktop/apk2/_PROJECT_ENV/00_START_HERE.md` | ADB/Frida 环境规范 |
-| `C:/Users/Me/Desktop/apk2/_PROJECT_ENV/05_Frida运行规范.md` | spawn 失败 → warm-attach 流程 |
+| `I:/apk2/_PROJECT_ENV/00_START_HERE.md` | ADB/Frida 环境规范 |
+| `I:/apk2/_PROJECT_ENV/05_Frida运行规范.md` | spawn 失败 → warm-attach 流程 |
 
 ---
 
@@ -92,7 +92,7 @@
 | 路径 | 内容 |
 |------|------|
 | `E:/apk_diff/` | 7 个历史 APK |
-| `C:/Users/Me/Desktop/apk2/微密友8070官替稳定版-原版.apk` | 8.0.70 主样本（已无效，要换 8.0.66）|
+| `I:/apk2/微密友8070官替稳定版-原版.apk` | 8.0.70 主样本（已无效，要换 8.0.66）|
 
 > **8.0.66 官方 APK 落地** → 见 §〇 §A
 

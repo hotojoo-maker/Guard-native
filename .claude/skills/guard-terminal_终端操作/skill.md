@@ -177,7 +177,7 @@ frida -U -f com.tencent.mm --no-pause -l "C:\Users\Me\Desktop\guard_native\03_ex
 ## KPI 门控流程（场景 C，每个 P 任务关闭必做）
 
 ```powershell
-frida -U -f com.tencent.mm --no-pause -l "C:/Users/Me/Desktop/apk2/_3__D_wechat_ban/official_wechat_ban_research/03_anti_frida/frida_stats.js" 2>&1 | Tee-Object "logs\kpi.log"
+frida -U -f com.tencent.mm --no-pause -l "I:/apk2/_3__D_wechat_ban/official_wechat_ban_research/03_anti_frida/frida_stats.js" 2>&1 | Tee-Object "logs\kpi.log"
 ```
 
 对比红线：verifiedbootstate ≤ 38，PROP ≤ 220，normsg ≤ 5124，CONN ≤ 0.5
@@ -226,6 +226,12 @@ Get-Content "logs\xxx.log" | Select-Object -Last 200 | Set-Content "logs\part3.t
 ---
 
 ## 输出格式
+
+> **强制**：每次跑完命令、拉完日志、给出结果之前，必须先输出一行：
+> ```
+> 我是终端操作员ai，结果已出：
+> ```
+> 然后再贴日志/结果。不输出这行 = 违规。
 
 ```
 ✅ 步骤 N 完成：[一句话结果]

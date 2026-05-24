@@ -253,6 +253,104 @@
 
 ---
 
+---
+
+### F-32：ConvFilter L4 clean-before + WeChat 原生 notify → DiffUtil ItemAnimator 卡帧 → 左侧裂缝
+
+| 项 | 内容 |
+|----|------|
+| 日期 | 2026-05-23（P20C，小米9 Android 11，微信 8.0.71）|
+| 症状 | 冷启动后 20 秒内会话列表左侧出现约 20% 宽度的裂缝（LauncherUI 从聊天页背后透出），多次返回后消失 |
+| 根因 | WeChat 冷启动从 SQLite cache 恢复会话列表，走直接字段写入路径（绕过 L0/L1/La/L3/Le 全部 hook，0 命中）。密友 item 在 MvvmList.h/o/p 内存在约 26ms。当 WeChat 自发 `h0.notifyDataSetChanged` 时，L4 clean-before 先移除 hidden items，再放行 WeChat 的 notify。h0 adapter 内部走 DiffUtil 差值计算，对 2 条被移除的 item 发出 `notifyItemRemoved`，触发 ItemAnimator 删除动画。在 小米9 慢速 GPU 上，动画期间若用户打开聊天，转场与 ItemAnimator 叠加掉帧，slide-back 面板冻结在 ~20% → 持久左侧裂缝 |
+| 排查过程 | Step1 禁用 warm-attach clean：无效。Step2 禁用 D2D3 dump：不在时间窗口（+6.2s）。完整冷启动时序（844行）确认 L0addAll+L4 路径为唯一数据流，La/L1/L3 零命中 |
+| 修复方案 | **L4-NoDiff**（已实施）：`hookAdapterByClass.beforeHookedMethod` 中，clean 后若 removed>0，执行 `param.setResult(null)` 取消 WeChat 原生 notify，改由 `Handler.post { adapter.notifyDataSetChanged() }` 在下一帧发全量刷新。全量 notify 不触发 DiffUtil，ItemAnimator 无动画帧，<2ms 延迟 |
+| 回退方法 | 注释 `param.setResult(null)` 及 Handler.post 块，删除 `l4CleanAndCount()` 辅助方法，`cleanConvData("L4")` 的直接调用方式即为原版 clean-before |
+| 风险 | 极少数依赖 h0 DiffUtil 差值通知的内部逻辑可能不触发（目前实测未发现影响）|
+| 设备相关 | 小米9（慢 GPU）必现；新设备可能不可见，但修法对所有设备无害 |
+| 强制规则 | **禁止在 L4 hook 中同时让 WeChat 原生 DiffUtil-notify 和 hidden-item clean 共存**；clean 后必须 setResult(null) 接管 notify |
+
+---
+
+### F-33：V→H / H→V 刷新链路 — adapter ref 污染与 recreate 黑屏（2026-05-23 完整复盘）
+
+| 项 | 内容 |
+|----|------|
+| 日期 | 2026-05-23（P20C → ConvFilter 刷新专项，小米9，微信 8.0.71）|
+| 症状 | V→H 切后台回来密友未隐藏；H→V 输入 111111 密友未显示 |
+
+#### 根因链
+
+**sConvAdapterRef 全程 null（adapter discovery 冷启动时序差）**
+
+`installAdapterDiscovery` 把 hook 装在 `ConversationListView.setAdapter` 和 `View.onAttachedToWindow`。但微信冷启动时这两个事件在 LSPosed `handleLoadPackage` 完成前已发生，callback 永远未触发。`sConvAdapterRef` 全程 null。
+
+**sAdapterRef 被 h0 覆盖（L4 priming 误包含 h0）**
+
+`notifyConvAdapter` 降级到 `sAdapterRef`（L4 触发的最后一个 adapter）。L4 对 `kc5.v0` 和 `com.tencent.mm.ui.base.preference.h0` 都挂了 hook，h0 在 L4 中比 kc5.v0 **晚触发**，`sAdapterRef` 最终停在 h0。通知 h0 对会话 ListView 无效。
+
+**`recreate()` 方案副作用：B2 误触发（已废弃）**
+
+中途曾用 `act.recreate()` 作为无 ref 时的 nuclear 方案。`recreate()` 导致 `LauncherUI.onStop`，B2 的 `onActivityStopped` 计数归零，`enterHidden` 把 H→V 刚切好的 VISIBLE 态在 150ms 内打回 HIDDEN。`isChangingConfigurations()` 可压制该 B2 误触发，但 recreate 本身带黑屏，已废弃。
+
+#### 最终修复（两行，不得撤销）
+
+**修复 1 — L4 只用 kc5.v0 更新 sConvAdapterRef**（`ConvFilter.java` `hookAdapterByClass.beforeHookedMethod`）
+
+```java
+// 只认 kc5.v0，h0 / q2 均不写入
+if (ADAPTER_CLASS_71.equals(cn)) {
+    sConvAdapterRef = new WeakReference<>(adapter);
+    Object mv = findMvvmListOnAdapter(adapter);
+    if (mv != null) rememberMvvmList(mv);
+}
+```
+
+微信冷启动时 kc5.v0 必定调用 `notifyDataSetChanged` 渲染初始列表，L4 此时可靠捕获实例。比任何 setAdapter/onAttachedToWindow hook 都早且稳定。
+
+**修复 2 — notifyConvAdapter 最终 fallback 加类名守卫**（`ConvFilter.java` `notifyConvAdapter`）
+
+```java
+// sAdapterRef fallback：只接受 kc5.v0，h0/q2 拒绝
+if (ADAPTER_CLASS_71.equals(fallback.getClass().getName())) {
+    adapter = fallback;
+} else {
+    Log.w(TAG, "[BUS:...] sAdapterRef=" + cn + " is not v0, skip");
+}
+```
+
+#### 强制铁律
+
+| 条目 | 规则 |
+|------|------|
+| **禁止** | 在 L4 priming 中把 `ADAPTER_CLASS_71_H0`（h0）加入 sConvAdapterRef 更新条件 |
+| **禁止** | `notifyConvAdapter` 的任何 fallback 路径使用非 kc5.v0 的 adapter |
+| **禁止** | 用 `act.recreate()` 刷新会话列表（黑屏 + B2 误触发）|
+| **禁止** | 在 B2 `onActivityStopped` 里删除 `isChangingConfigurations()` 检查（删了旋转屏幕也会误触 enterHidden）|
+| **必须** | sConvAdapterRef 的唯一写入点为：L4 beforeHook（cn = kc5.v0）+ ConversationListView.setAdapter hook |
+| **必须** | sMvvmListRef 在 L4 priming 同步更新（`findMvvmListOnAdapter` → `rememberMvvmList`）|
+
+#### 验证基准（每次改动 ConvFilter 后必跑）
+
+```
+冷启动后：[CF:L4] entry adapter=v0 ... + [CF:mvvmref] remember MvvmConvList
+V→H 后：  [BUS:pendingHide] notified adapter=v0    ← 必须 v0，不能 h0/q2
+H→V 后：  [BUS:pendingRestore] notified adapter=v0 ← 同上
+```
+
+---
+
+### F-34：sConvCache 无条件清空 → H↔V 多轮后 cache=0 死循环
+
+| 项 | 内容 |
+|----|------|
+| 日期 | 2026-05-23 |
+| 症状 | 冷启动 H→V 第一次密友能显示；第二次及之后 `[CF:restore] cache=0`，密友无法注回 |
+| 根因 | BUS-H 回调里 `sConvCache.clear()` 无条件执行。此时 MvvmList 已无密友（已被上轮 clean 移走），后续 `cleanMvvmList` removed=0 → `putCache` 从不调用 → 缓存永远是空 |
+| 修复 | 把 `sConvCache.clear()` 从 BUS-H 移入 `cleanMvvmList` 内部，**lazy-clear**：第一次真正 remove 时才清，remove=0 时保留旧缓存 |
+| 强制规则 | **禁止在 BUS-H / BUS-V / 任何状态切换回调里无条件 `sConvCache.clear()`**；缓存只能由 `cleanMvvmList` 首次 remove 时清，或由 `restoreCachedItems` 过期时清 |
+
+---
+
 ## 三、铁律使用方法
 
 1. 写代码前先 grep 本文件查"我要做的事"是否已被否决

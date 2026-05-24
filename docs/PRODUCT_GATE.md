@@ -1,13 +1,41 @@
-# 产品总闸 — 状态机 / VIP / 密码入口
+# 产品总闸 — 授权 / 状态机 / 功能开关 / 通知策略
 
-> **权威口径**（2026-05-20 定稿）。所有 P 任务、hook、AI 实现必须读本文件再写代码。  
-> 关联：`StateMachine.java`、`Bridge.java`、`SearchUnlock.java`、`SearchFilter.java`
+> **权威口径**（2026-05-22 更新）。所有 P 任务、hook、AI 实现必须读本文件再写代码。  
+> 关联：`StateMachine.java`、`Bridge.java`、`SearchUnlock.java`、`SearchFilter.java`、`native_core/API.md`
+
+---
+
+## 零、产品总闸四层模型
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  Layer 1  授权状态（LicenseBox）                         │
+│           → 决定能不能用模块                              │
+│                                                          │
+│  Layer 2  功能开关（nativeCanUseFeature）                │
+│           → 决定能用哪些功能（基础 vs 隐私）              │
+│                                                          │
+│  Layer 3  隐藏状态（StateMachine / nativeIsHidden）      │
+│           → 决定密友/密群是否隐藏（id 过滤生效）           │
+│                                                          │
+│  Layer 4  通知策略（NotifyPolicy / SecretNotifyMode）    │
+│           → 决定隐藏后如何提醒（静默/震动/特殊音）         │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 四层规则
+
+1. **没有授权** → 所有功能不可用，完全透传微信
+2. **有授权** → 基础功能可用（防撤回、虚拟定位、语音转发、改余额显示），不受隐藏状态影响
+3. **有授权 + 隐私总开关打开 + 已添加密友/密群 + 当前 HIDDEN** → 密友/密群隐藏全面生效
+4. **有授权但隐私总开关关闭** → 基础功能可用，密友/密群过滤不生效
+5. **HIDDEN/VISIBLE 只影响 id 过滤类功能**，不影响防撤回/虚拟定位等基础工具功能
 
 ---
 
 ## 一、三句话
 
-1. **状态机 = 一切的总闸**（显形 / 隐藏 / 解锁中）。
+1. **状态机 = 密友隐藏的总闸**（显形 / 隐藏 / 解锁中）。
 2. **VIP = 授权**（客户有没有资格用模块），**不是**「隐藏开关」。
 3. **密码 = 入口手势**（主界面放大镜 → 全局搜索框），**不是**「输入监测用来藏人」。
 
@@ -33,19 +61,22 @@
 
 ```text
 shouldHide() =
-    LicenseGate.isOk()           // VIP 授权（v1 可默认 true，v2 接 server）
-    AND StateMachine.isActive()  // 状态机 = 隐藏态
+    NativeBridge.nativeIsAuthorized()        // 授权（v1 占位 true，v2 接 LicenseBox）
+    AND NativeBridge.nativeIsPrivacyEnabled() // 隐私总开关
+    AND NativeBridge.nativeIsHidden()         // 状态机 = 隐藏态
     AND ( !Bridge.getWxids().isEmpty()
-        OR !Bridge.getGroupIds().isEmpty() )   // 密友 OR 密群 任一非空即开闸
+        OR !Bridge.getGroupIds().isEmpty() )  // 密友 OR 密群 任一非空即开闸
     AND !AppConfig.isKillSwitch()
 
 // 单条 item 是否命中
 shouldHideId(String id) =
-    Bridge.getWxids().contains(id)             // 个人
-    OR Bridge.getGroupIds().contains(id)       // 群（id 以 @chatroom 结尾）
+    NativeBridge.nativeIsHiddenWxid(id)      // 个人 wxid
+    OR NativeBridge.nativeIsHiddenGroup(id)  // 群（id 以 @chatroom 结尾）
 ```
 
 不满足任一项 → **完全透传微信**，不删列表、不拦搜索。
+
+> v1 过渡期：`NativeBridge` Phase 1–2 未就绪前，继续用 `Bridge.getWxids().contains()` Java 路径；Phase 3 装机验收后统一切换。
 
 | 执行层 | 隐藏态下职责 | wxid | groupId |
 |--------|----------------|:---:|:---:|
@@ -216,9 +247,40 @@ stateDiagram-v2
 
 ---
 
+---
+
+## 十二、通知策略（SecretNotifyMode）
+
+### 12.1 配置项
+
+| 配置键 | 类型 | 默认 | 含义 |
+|--------|------|:----:|------|
+| `notify_mode` | int | 0 | 0=SILENT / 1=VIBRATE / 2=SPECIAL_SOUND |
+| `show_secret_unread_count` | bool | false | 解锁后/密友入口是否显示未读数 |
+
+### 12.2 规则
+
+- HIDDEN 态下，密友消息 / 密友来电 / 密友朋友圈互动 **默认全部静默**
+- 静默 = 不响铃、不震动、不弹横幅、不暴露联系人、不暴露内容
+- `show_secret_unread_count = true` 时：只能在**密友入口/解锁后**显示未读数，**不得污染微信原生 tab badge**
+- 密友消息、密友来电、密友朋友圈互动 → 全部走 `SecretNotifyMode`
+- `notify_mode = 2 SPECIAL_SOUND`：提示音**必须**与微信默认提示音不同
+
+### 12.3 接口
+
+```java
+NativeBridge.nativeGetNotifyMode()              // 0/1/2
+NativeBridge.nativeShouldShowSecretUnreadCount() // true/false
+NativeBridge.nativeShouldBlockBadge(wxid)        // :push 进程用
+NativeBridge.nativeShouldNotifySecret(wxid)      // 主进程通知判断
+```
+
+---
+
 **变更记录**
 
 | 日期 | 说明 |
 |------|------|
 | 2026-05-20 | 定稿：状态机总闸、VIP=授权、密码=入口、隐藏态藏一切 |
 | 2026-05-20 | A3 密群（`*@chatroom`）提为 v1 一等概念，`shouldHide()` 公式加密群分支 |
+| 2026-05-22 | 新增四层模型（授权/功能开关/隐藏状态/通知策略）；shouldHide() 接入 NativeBridge；新增通知策略 §十二 |

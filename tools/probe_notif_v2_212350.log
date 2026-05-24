@@ -1,0 +1,25 @@
+     ____
+    / _  |   Frida 17.9.10 - A world-class dynamic instrumentation toolkit
+   | (_| |
+    > _  |   Commands:
+   /_/ |_|       help      -> Displays the help system
+   . . . .       object?   -> Display information about 'object'
+   . . . .       exit/quit -> Exit
+   . . . .
+   . . . .   More info at https://frida.re/docs/home/
+   . . . .
+   . . . .   Connected to MI 9 (id=609b4b18)
+Attaching...
+21:23:50 [OK] NotificationItem.a hooked
+21:23:50 [x] 1 d() overload(s):
+    [0] static d(com.tencent.mm.booter.notification.x, java.lang.String, java.lang.String, int, int, boolean) : void
+21:23:50 [FAIL] x.d#0: Error: d(): specified argument types do not match any of:
+	.overload('com.tencent.mm.booter.notification.x', 'java.lang.String', 'java.lang.String', 'int', 'int', 'boolean')
+21:23:50 === 就绪，切后台让密友发消息 ===
+[MI 9::PID::17889 ]-> 21:24:14 [NI.a] this.h=wxid_lzd2va16jd1622 ★MATCH★ | toString=id: -525958226,msgId: 2566874929076451510,userName: wxid_lzd2va16jd1622,unreadCount: 209
+21:24:16 [NI.a] this.h=wxid_lzd2va16jd1622 ★MATCH★ | toString=id: -525958226,msgId: 6113465757694924900,userName: wxid_lzd2va16jd1622,unreadCount: 210
+21:24:16 [NI.a] this.h=wxid_lzd2va16jd1622 ★MATCH★ | toString=id: -525958226,msgId: 6925783141100470668,userName: wxid_lzd2va16jd1622,unreadCount: 212
+21:24:17 [NI.a] this.h=wxid_lzd2va16jd1622 ★MATCH★ | toString=id: -525958226,msgId: 6925783141100470668,userName: wxid_lzd2va16jd1622,unreadCount: 212
+21:24:17 [NI.a] this.h=wxid_lzd2va16jd1622 ★MATCH★ | toString=id: -525958226,msgId: 8659448107106171667,userName: wxid_lzd2va16jd1622,unreadCount: 214
+21:24:17 [NI.a] this.h=wxid_lzd2va16jd1622 ★MATCH★ | toString=id: -525958226,msgId: 8659448107106171667,userName: wxid_lzd2va16jd1622,unreadCount: 214
+21:24:18 [NI.a] this.h=wxid_lzd2va16jd1622 ★MATCH★ | toString=id: -525958226,msgId: 4639223209564213356,userName: wxid_lzd2va16jd1622,unreadCount: 215

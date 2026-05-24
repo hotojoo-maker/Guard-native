@@ -54,15 +54,19 @@ public class StateMachine {
 
     /** Restore state from persistent storage after Bridge is ready */
     public void restoreState() {
-        // First install defaults to HIDDEN (per §5.1: "授权下默认隐藏")
+        // F-27: startup always HIDDEN — native state takes priority.
+        // Never restore VISIBLE or UNLOCKING across cold-start boundaries.
         int savedCode = Bridge.getInstance().getInt(KEY_STATE, State.HIDDEN.code);
+        State restored = State.HIDDEN;
         for (State s : State.values()) {
-            if (s.code == savedCode) {
-                mState = s;
-                break;
-            }
+            if (s.code == savedCode) { restored = s; break; }
         }
-        mActive = (mState == State.HIDDEN);
+        if (restored != State.HIDDEN) {
+            Log.i(TAG, "[SM] restoreState: saved=" + restored.label + " → forced HIDDEN (F-27)");
+            restored = State.HIDDEN;
+        }
+        mState = restored;
+        mActive = true; // HIDDEN is always active
         mPassword = Bridge.getInstance().getString(KEY_PWD, DEFAULT_PASSWORD);
         Log.i(TAG, "[SM] restored state=" + mState.label);
     }
@@ -73,7 +77,20 @@ public class StateMachine {
     public int getStateCode() { return mState.code; }
 
     /** true when hidden mode is active */
-    public boolean isActive() { return mActive; }
+    /**
+     * 三层门控（顺序不可颠倒）：
+     *   1. isVipAuthorized()      — 授权门（v1 stub=true，v2 接 LicenseGate）
+     *   2. isFeatureEnabled()     — 密友功能总开关（Bridge MMKV key="f1"）
+     *   3. mActive                — 状态机 HIDDEN 态
+     */
+    public boolean isActive() {
+        return isVipAuthorized()
+            && Bridge.getInstance().isFeatureEnabled()
+            && mActive;
+    }
+
+    /** v1 stub — 始终授权；v2 替换为 LicenseGate.check() */
+    public boolean isVipAuthorized() { return true; }
     /** true when module is disabled (non-prod mode) */
     public boolean isDisabled() { return !AppConfig.getInstance().isProdMode(); }
 
@@ -165,16 +182,25 @@ public class StateMachine {
         if (!mListeners.contains(listener)) mListeners.add(listener);
     }
 
+    /** Named variant — logs registration for diagnostics. */
+    public void addListener(String name, StateListener listener) {
+        addListener(listener);
+        Log.i(TAG, "[SM] listener registered " + name);
+    }
+
     public void removeListener(StateListener listener) {
         mListeners.remove(listener);
     }
 
     private void notifyListeners(State oldState, State newState) {
+        Log.i(TAG, "[SM] notify old=" + oldState.label + " new=" + newState.label);
         for (StateListener l : mListeners) {
             try { l.onStateChanged(oldState, newState); } catch (Throwable e) {
                 Log.e(TAG, "[SM] listener error: " + e.getMessage());
             }
         }
+        // Drive hot-reload: RefreshBus dispatches to all registered Filter callbacks.
+        RefreshBus.getInstance().notifyHiddenChanged(newState != State.VISIBLE);
     }
 
     // --- Persist ---

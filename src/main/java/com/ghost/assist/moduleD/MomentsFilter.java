@@ -5,6 +5,7 @@ import android.util.Log;
 import com.ghost.assist.core.AppConfig;
 import com.ghost.assist.core.Bridge;
 import com.ghost.assist.core.InterceptCounter;
+import com.ghost.assist.core.RefreshBus;
 import com.ghost.assist.core.StateMachine;
 import com.ghost.assist.debug.DebugTelemetry;
 
@@ -124,6 +125,22 @@ public class MomentsFilter {
                                 }
                                 Log.i(TAG, sb.toString());
                                 Bridge.getInstance().addRawFeedLine(sb.toString());
+
+                                // diag: NotificationItem ClassLoader check
+                                if ("com.tencent.mm.booter.notification.NotificationItem".equals(cn)) {
+                                    Class<?> nic = item.getClass();
+                                    Log.i(TAG, "[MF:LLadd:DIAG] NotificationItem.classLoader=" + nic.getClassLoader());
+                                    for (Method mm : nic.getDeclaredMethods()) {
+                                        if ("a".equals(mm.getName()) && mm.getParameterTypes().length == 1)
+                                            Log.i(TAG, "[MF:LLadd:DIAG] a(Context) found: " + mm.toGenericString());
+                                    }
+                                    // h field
+                                    try {
+                                        Field hf = nic.getDeclaredField("h");
+                                        hf.setAccessible(true);
+                                        Log.i(TAG, "[MF:LLadd:DIAG] this.h=" + hf.get(item));
+                                    } catch (Throwable ignored) {}
+                                }
                             }
 
                             // 过滤：wxid 在密友名单 → 阻止 add
@@ -149,7 +166,19 @@ public class MomentsFilter {
             installD3Hook(lpparam);
             installUnreadHooks(lpparam);
 
-            Log.i(TAG, "[MF] v20 ready (8.0.71)");
+            // Hot-reload: state listener (registration log) + RefreshBus callback.
+        StateMachine.getInstance().addListener("MomentsFilter",
+                (oldState, newState) -> { /* log only — RefreshBus driven by StateMachine */ });
+        RefreshBus.getInstance().register("MomentsFilter", hidden -> {
+            // Moments feed is driven by WeChat's own scroll/refresh — we can't force reload here.
+            // Best-effort: clear any stale pending counters on state change so the next
+            // WeChat-initiated addAll call starts with a clean slate.
+            sPendingRemoved.set(0);
+            sPendingMsgRemoved.set(0);
+            Log.i(TAG, "[BUS] refresh MomentsFilter pending-counters reset hidden=" + hidden);
+        });
+
+        Log.i(TAG, "[MF] v20 ready (8.0.71)");
 
         } catch (Throwable t) {
             Log.e(TAG, "[MF] install FAILED: " + t);

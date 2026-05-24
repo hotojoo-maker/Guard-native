@@ -47,12 +47,22 @@
 | **L0v2 朋友圈过滤 D1** | `ArrayList.addAll(na4.b)` → `la4.p` → **`la4.p.field_userName` 直读**（fallback 主路径） → remove post | ✅ 装机确认 2026-05-21 | ⭐⭐⭐ | `h1()` 路径 null miss（F-31）；fallback 命中 5 次实证；**禁止改回 h1() 主路径** |
 | **L0v4 赞评过滤 D2/D3** | `LinkedList.add(z15.e56/cs5.di0/i84.y)` → `entry.d`（或 `f435583d`）=wxid → block | ✅ 装机确认 2026-05-20 | ⭐⭐⭐ | 4 字段轮询：`d / f435583d / username / field_userName`；getCommentList/LikeUserList 走 JNI 不可用 |
 | **F07 通讯录 8.0.71** | `ArrayList.addAll` → `fc5.g` → `g.d`（z3 实例）→ `z3.c1()` → remove | ✅ P19 2026-05-20 | ⭐⭐⭐ | **仅通讯录**；类常量 `com.tencent.mm.storage.z3`；`MvvmList.n/u` 零触发 |
-| **朋友圈小红点**      | 未知 — `FMF.g1()`路径卡关（见 P21 worklog） | ⬜ **未实现** | ⭐⭐⭐ | FindMoreFriendsUI.L1() 入口，wxid 级漏斗未打通 |
+| **朋友圈小红点 P21** | **Layer0b**：`Activity.onResume` 过滤 `SnsMsgUI*`（互动列表入口，进列表后密友条目不显示 + `w1.y` 归零）；**Layer2**：`FMF.g1("album_dyna_photo_ui_title", true)` 拦截（朋友圈行红点）；**v18 tab badge**：`TabRedDotChangeEvent`/`WeChatTabRedDotEvent` ctor int 字段清零 | ✅ **Layer0b/Layer2 装机实证 2026-05-21**；v18 tab badge 已装机待触发 | ⭐⭐⭐ | ❌ Layer1 `w1.v2` **跨进程不可达**（`:push` 进程写，主进程 hook 打不到）；badge 本地状态，进互动列表消费后自然归零；`w1.E1()` getter 零调用（badge 不走 getter）；`g1(true)` 已拦截（阻止新红点）|
 | **L1 MvvmList.n/m** | `MvvmList.n(List,bool)` 8.0.71 / `.m` 8.0.66 → `kc5.v0` 适配器 / `kc5.y` item → `y.d`（l4 实例）→ `l4.h1()` | ✅ **装机确认 2026-05-20** | ⭐⭐⭐ | 会话主线；getter 候选 `h1/j1/i1/k1/getUsername/getUserName` 轮询 |
 | **L2 MvvmList.s** | `MvvmList.s(List)`                         | ✅ Frida 验证 | ⭐⭐⭐    | 会话备用      |
-| **L4 notify**     | `f45.s0.notifyDataSetChanged` clean-before | ✅ Frida 验证 | ⭐⭐     | 渲染前兜底     |
+| **L4 notify**     | `kc5.v0.notifyDataSetChanged` clean-before → L4-NoDiff（setResult null + Handler.post 全量刷）| ✅ **装机实证 2026-05-23**（F-32 DiffUtil 卡帧修复） | ⭐⭐⭐ | 渲染前兜底；L4 beforeHook 同步更新 `sConvAdapterRef`（仅 kc5.v0）+ `sMvvmListRef`；**禁止把 h0 加入 sConvAdapterRef 更新条件** |
+| **V↔H 实时刷新**  | V→H：`sPendingHide` → LauncherUI.onResume → `cleanConvData` + `notifyConvAdapter(v0)`；H→V：`sPendingRestore` → `restoreCachedItems` + `notifyConvAdapter(v0)` | ✅ **装机实证 2026-05-23**（密友 H↔V 立刻刷新，无黑屏） | ⭐⭐⭐⭐ | sConvAdapterRef 由 L4 首次命中 kc5.v0 时写入，之后稳定；h0/q2 任何路径均不得覆盖；见 F-33 |
 | INIT              | warm-attach 首次进入清理                         | ✅ Frida 验证 | ⭐⭐⭐    | 老数据清理     |
 | 实例轮询              | 3s 检查 hashCode 防 StateFlow 替换              | ✅ Frida 验证 | ⭐⭐⭐    | 朋友圈 o/p   |
+| **PushFilter L1** | `LinkedList.add(NotificationItem)` → `this.h` = talker wxid → `shouldHideId` → setResult(false) | ✅ **装机实证 2026-05-22**（普通消息拦截 block+cancel 双层生效） | ⭐⭐⭐ | 主进程；tinker classloader — 用 `obj.getClass().getDeclaredField("h")` 绕开 |
+| **PushFilter NM** | `NM.notify(tag,id,Notification)` → ① voip channel → HIDDEN 直接 cancel；② L1 block 后 200ms 内 cancel bypass | ✅ **装机实证 2026-05-22**（普通消息 gap=3ms；语音/视频 ch=voip_norify_channel_silent* cancel） | ⭐⭐⭐ | 主进程；voip channel 名含 `voip`/`ringtone` 即拦 |
+| **PushFilter CA** | `Activity.onCreate` 模糊匹配 voip/call/video → HIDDEN 直接 finish | 🟡 代码已写（备用层，voip NM cancel 生效时 Activity 不启动） | ⭐⭐ | 主进程；8.0.71 Flutter VOIP — wxid 不在 Intent/字段，全局静音策略 |
+| **PushFilter L4b** | `MainTabUI.i()` afterHook → 隐藏态 return 0 | ❓ 代码已写，装机未触发（无 `[PF:L4b] real=` 日志）— 方法名可能 8.0.71 已变 | ⭐⭐ | 主进程；底部 tab 未读数字；**方法名需 jadx 重查** |
+| **PushFilter L4c** | `h0.d(int)` beforeHook → `max(0, in - sHiddenBlocked)` 减法 | 🟡 代码已改（减法逻辑），待装机验证 | ⭐⭐ | 主进程；OEM 桌面角标；全归零有误（非密友角标消失），改为减法；`sHiddenBlocked` 仅计本 session 拦截数 |
+| **WeChatDND（规划）** | 密友加入时自动开官方「消息免打扰」→ 角标/tab 天然不计入 | 📋 设计确认，待 Frida trace 调用链 | ⭐⭐⭐⭐ | 可替代 L4b/L4c；Layer 1 防线；需找内部方法名 |
+| **NotifyPolicy（规划）** | OFF/VIBRATE/SOUND 三档，Bridge/MMKV 存储，默认 OFF | 📋 方案已出，待 Phase 2 实现 | ⭐⭐⭐ | OFF 已完成；VIBRATE/SOUND 依赖 Phase 2 |
+| ❌ ~~x.a(f9)~~     | ~~`booter.notification.x.a(f9)`~~ — 8.0.71 零命中证伪 | ❌ 永久废弃 | — | hook 注册成功但运行时零触发，不走此路径 |
+| ❌ ~~NotificationItem.a(Context)~~ | ~~`final` 方法 + ART AOT 内联~~ | ❌ 永久废弃 | — | Xposed 无法拦截；Frida 可以但模块不用 |
 | **搜索拦截**          | `SearchFilter` addAll + `hookSearchContact` | ⬜ 代码已写 P20 未装机 | ⭐⭐ | 隐藏态藏 FTS |
 | **进程白名单**         | LSPosed 启动只 hook com.tencent.mm 主          | ⬜ 待实现      | ⭐⭐⭐⭐⭐  | F-16 铁律   |
 
@@ -195,7 +205,7 @@
 
 | 功能          | 主拦截层                           | 兜底层                       | 状态         |
 | ----------- | ------------------------------ | ------------------------- | ---------- |
-| F04 会话隐藏    | L1 **MvvmList.n** (8.0.71) / .m (8.0.66) | L4 `kc5.v0.notifyDataSetChanged` + INIT | ✅ 8.0.71 装机（P17） |
+| F04 会话隐藏    | L1 **MvvmList.n** (8.0.71) / .m (8.0.66) | L4 `kc5.v0.notifyDataSetChanged` + INIT + **V↔H 实时刷新**（pendingHide/pendingRestore → LauncherUI.onResume） | ✅ 8.0.71 装机（P17）；**V↔H 刷新 2026-05-23 完结** |
 | F05 朋友圈隐藏   | **L0v2 addAll D1**             | `e2.getItemCount` 防跳顶   | ✅ W2 装机确认 |
 | F05.2 朋友圈点赞 | L0v4 `LinkedList.add`           | getter after 过滤          | ✅ L1 |
 | F05.3 朋友圈评论 | L0v4 `LinkedList.add`           | getter after 过滤          | ✅ L1 |

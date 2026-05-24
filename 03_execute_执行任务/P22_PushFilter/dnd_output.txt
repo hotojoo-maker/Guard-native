@@ -1,0 +1,4 @@
+[DND] L1 SQLite hooks ready
+[DND] L2 MMKV hooks ready (com.tencent.mmkv.MMKV)
+[DND] L3 SharedPreferences hooks ready
+Failed to load script: timeout was reached

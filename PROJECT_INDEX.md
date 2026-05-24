@@ -86,7 +86,7 @@ guard_native/
 ### apk2 项目（D 线封号研究 / 历史版本研究）
 
 ```
-C:/Users/Me/Desktop/apk2/
+I:/apk2/
 ├── _3__D_wechat_ban/official_wechat_ban_research/03_anti_frida/
 │   ├── TECH_SYNC_SUMMARY.md             4 版本×3 场景全对照
 │   ├── logs/OFFICIAL_DENSITY_COMPARISON_66_68_70.md
@@ -122,16 +122,16 @@ I:/miyou-server/
 
 | 版本 | 路径 | 大小 |
 |------|------|------|
-| 8.0.38 | `C:/Users/Me/Desktop/apk2/_3__D_wechat_ban/official_wechat_ban_research/apks/微信8.0.38-2023-6-28.apk` | 263MB |
+| 8.0.38 | `I:/apk2/_3__D_wechat_ban/official_wechat_ban_research/apks/微信8.0.38-2023-6-28.apk` | 263MB |
 | 8.0.51 | `同上目录/微信8.0.51-2024-9-27.apk` | 276MB |
 | 8.0.56 | `同上目录/微信8.0.56-2025-1-23.apk` | 261MB |
 | 8.0.60 | `同上目录/微信8.0.60-2025-6-10.apk` | 258MB |
 | 8.0.63 | `同上目录/微信8.0.63-2025-9-12.apk` | 256MB |
 | **8.0.66** | **`同上目录/官方原版8.0.66-2025-12-06.apk`** | **255MB** |
 | 8.0.68 | `同上目录/官方原版8.0.68-2026-1-68.apk` | 255MB |
-| 8.0.70 | `C:/Users/Me/Desktop/apk2/_1__B_rewrite/00_original_apk/微信8.0.70官方原版.apk` | 244MB |
+| 8.0.70 | `I:/apk2/_1__B_rewrite/00_original_apk/微信8.0.70官方原版.apk` | 244MB |
 
-> 基准目录: `C:/Users/Me/Desktop/apk2/_3__D_wechat_ban/official_wechat_ban_research/apks/`
+> 基准目录: `I:/apk2/_3__D_wechat_ban/official_wechat_ban_research/apks/`
 > 每个版本有 `{版本}_benchmark/` 子目录存放 SO 提取产物 + Ghidra 输出
 
 ### 密友/改版样本（E:/apk_diff/）
@@ -144,7 +144,7 @@ E:/apk_diff/
 ├── 微密友63/                   8063 三件套首集齐
 ├── 甜蜜友-版本重点研究价值/    8061 轻量线 (Catfish 同源)
 ├── 衍生蜘蛛密友版本/           Flutter 引擎版
-└── 主样本 → C:/Users/Me/Desktop/apk2/微密友8070官替稳定版-原版.apk
+└── 主样本 → I:/apk2/微密友8070官替稳定版-原版.apk
 ```
 
 ### iOS 参考

@@ -6,6 +6,7 @@ import android.os.Looper;
 import android.util.Log;
 
 import com.ghost.assist.core.Bridge;
+import com.ghost.assist.core.RefreshBus;
 import com.ghost.assist.core.StateMachine;
 import com.ghost.assist.debug.UiContextTracker;
 
@@ -14,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Set;
 
 import de.robv.android.xposed.XC_MethodHook;
@@ -82,6 +84,35 @@ public class SearchFilter {
         } catch (Throwable t) {
             Log.w(TAG, "[SF] install fail: " + t);
         }
+
+        // B6 unlock path via LinkedList.add: z15.ef6 items flow through LinkedList.add
+        // (not ArrayList.addAll). Hook LinkedList.add so tryUnlockFromSearchResults sees them.
+        try {
+            XposedBridge.hookMethod(
+                    LinkedList.class.getMethod("add", Object.class),
+                    new XC_MethodHook() {
+                        @Override
+                        protected void beforeHookedMethod(MethodHookParam param) {
+                            Object item = param.args[0];
+                            if (item == null) return;
+                            if (!FTS_RESULT_ITEM.equals(item.getClass().getName())) return;
+                            Log.i(TAG, "[SF:LLadd] z15.ef6 seen");
+                            java.util.List<Object> single = new ArrayList<>(1);
+                            single.add(item);
+                            tryUnlockFromSearchResults(single);
+                        }
+                    });
+            Log.i(TAG, "[SF] LinkedList.add hook for B6 installed");
+        } catch (Throwable t) {
+            Log.w(TAG, "[SF] LinkedList.add hook fail: " + t);
+        }
+
+        // Hot-reload: registration log only. Search results are ephemeral (re-filtered on
+        // every new query), so no adapter ref or forced re-render is needed.
+        StateMachine.getInstance().addListener("SearchFilter",
+                (oldState, newState) -> { /* log only */ });
+        RefreshBus.getInstance().register("SearchFilter", hidden ->
+                Log.i(TAG, "[BUS] refresh SearchFilter hidden=" + hidden + " (next query re-filtered)"));
     }
 
     /**

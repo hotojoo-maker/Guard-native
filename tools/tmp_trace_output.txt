@@ -1,0 +1,58 @@
+     ____
+    / _  |   Frida 17.9.10 - A world-class dynamic instrumentation toolkit
+   | (_| |
+    > _  |   Commands:
+   /_/ |_|       help      -> Displays the help system
+   . . . .       object?   -> Display information about 'object'
+   . . . .       exit/quit -> Exit
+   . . . .
+   . . . .   More info at https://frida.re/docs/home/
+   . . . .
+   . . . .   Connected to MI 9 (id=609b4b18)
+Attaching...
+[INFO] kc5.v0 methods hooked: 42
+[INFO] MvvmConvList methods hooked: 1
+[INFO] notifyDataSetChanged hooked
+[INFO] === tmp_trace_wxid.js 就绪 ===
+[INFO] 现在发消息给密友，观察 kc5.v0 上哪些方法被调用，参数是什么
+[MI 9::PID::4906 ]-> [WXIDTRACE] kc5.v0.i(?, com.tencent.mm.storage.m4, "wxid_lzd2va16jd1622")
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+[WXIDTRACE] kc5.v0.c()
+Process terminated
+
+Thank you for using Frida!

@@ -9,4 +9,10 @@
 [2026-05-20 01:xx] iOS Moma逆向 P0-P2 完成 | 证据：WCDataItem ↔ Android SnsInfo 字段映射表已确认（username→field_userName, likeUsers→field_likeList, commentUsers→field_commentList），WCUserComment type字段区分赞/评论 | 下一步：D模块 P2 点赞评论屏蔽参考此映射
 [2026-05-21 14:00] 屏蔽更新小红点 8.0.71 类名调研完成 | 证据：fl4.o + SettingsAboutMicroMsgUI + SettingsUI.P7() | 8.0.66 对应类 gd4.o（混淆名不同）| 下一步：B7 UpdateGuard.java 写 hook
 [2026-05-21 14:05] 朋友圈小红点 8.0.71 类名调研完成 | 证据：FindMoreFriendsUI.M1()/l0() + SnsCommentStorage.E1() + FriendSnsPreference | 设备实测：7条旧路径全部零触发，8.0.71 红点走 ns.c 聚合桶 | 下一步：追 wxid 级漏斗
+[2026-05-22 15:30] hookSnsMsgList Pine目标方法无法定位：libwechatsd.so 0字符串（stripped）；全smali扫描 `()Ljava/util/ArrayList;` 44候选零SNS引用；无原始8.0.70做diff。唯二路径：原始8.0.70 APK diff 或 Ghidra逆向 libwechatsd.so native_start() 0x2349b8 | 证据：strings=0, grep="()Ljava/util/ArrayList;"×40全扫描, SNS类型引用=0 | 下一步：不再回查此线，P21走自研三层
+
+[2026-05-23 19:30] 调研启动：微信「消息免打扰」内部方法名 | 证据：HOOKMAP.md WeChatDND（规划）待 Frida trace 调用链 | P22_PushFilter/probe_dnd_toggle.js 已写，6 条探针线（l4 setter / ChattingUI / WCDB rconversation / MMKV / 延迟类枚举 / model.aj~bk）| 下一步：用户设备跑 probe → 手动切换免打扰 → 发回 [DND] 命中日志
+
+[2026-05-22 15:00] 校准：私有化阶段补的是桌面角标/未读数字，不是朋友圈发现 tab 红点 | 证据：`apk2/_1__B_rewrite/05_docs/PROGRESS.md` Issue #23 (isVipMode语义修复) + #24 (h0.d角标注入) 均为桌面图标角标；Catfish hookSnsMsgList 是原版 Pine hook，非私有化新增；Guard P21 在 8.0.71 扫描 hookSnsMsgList 等价入口 = 0 hooks，不再回查，走自研 Layer0b+Layer2+v18 | 下一步：P21 继续按自研三层验证
+
 [2026-05-21 16:00] 朋友圈小红点 wxid 漏斗 — 卡关总结 | 已证实：① ns.c 聚合桶归零=全屏蔽（Frida 直接反射 OK）；② FindMoreFriendsUI.L1() 入口（`com.tencent.mm.ui.FindMoreFriendsUI`），无参数，内部读 this 某 List → 算 y → 写 ns.c.g；③ bm.b.call() 是上游瓶颈但未 dump 到内部 List。已证伪：7 条旧路径全零触发；AbstractCursor.getString 零命中（微信 WCDB 自有 Cursor 不走 Android AbstractCursor）；逐层 Frida dump 字段太慢。卡点：L1() 内部的 List 字段名 + item 类名 + wxid 字段名三个值未拿到 | 建议：资料员 jadx 静态追溯 FindMoreFriendsUI.L1() → 字段赋值 → 上游数据源，比设备逐层 dump 快

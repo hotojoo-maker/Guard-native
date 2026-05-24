@@ -21,6 +21,8 @@ description: Guard Native 总调度——制定 P 任务计划/分配 4 窗口/�
 | **⬜ 状态只读名字，禁止展开** | ⬜ items: name only, never expand |
 | **文档状态矛盾 → 停下来报告，问用户仲裁** | Doc conflict → STOP, report, ask user to resolve |
 | **不确定 = 不分配任务，先问清楚** | Uncertain = do not assign; clarify first |
+| **未经用户明确同意，禁止改任何 md 文档** | No md edits without explicit user approval |
+| **用户口述/截图/抓包片段 ≠ 已验证，禁止直接写入文档** | User paste ≠ verified; do not write to docs |
 
 **接手新会话时必须做的 3 件事（缺一不做）：**
 1. 读 `TASK_BOARD.md` §一，只看 ✅ 和有装机日志的条目当作"已完成"
@@ -60,8 +62,9 @@ description: Guard Native 总调度——制定 P 任务计划/分配 4 窗口/�
 
 ### 5. 收尾
 - 跑 `frida_stats.js` 对比基线（F-22 铁律）
-- 更新 `HOOKMAP.md` 对应行状态 ⬜→🟡 或 🟡→✅
-- 在 `04_review_审稿复核/W<N>_<日期>.md` 写 5-10 行交接快照
+- **文档写入门控**：改 `HOOKMAP.md` / `TASK_BOARD.md` / `worklog.md` / `result.md` / `FAILURE_LOG.md` 前，**必须先向用户展示拟写入内容，等明确同意后再改**
+- 更新 `HOOKMAP.md` 对应行状态 ⬜→🟡 或 🟡→✅（仅用户同意后）
+- 在 `04_review_审稿复核/W<N>_<日期>.md` 写 5-10 行交接快照（仅用户同意后）
 - 释放 `TASK_BOARD.md` §一占用
 
 ---
@@ -139,9 +142,29 @@ adb logcat -d 2>&1 | findstr "NCL"
 
 ---
 
+## 文档写入门控（强制）
+
+**以下文件，默认只读；用户说「写入文档」「更新 HOOKMAP」「归档」等明确指令前，禁止改：**
+- 根目录：`HOOKMAP.md` `TASK_BOARD.md` `FAILURE_LOG.md` `CLAUDE.md`
+- P 任务：`03_execute_执行任务/**/worklog.md` `result.md` `brief.md`
+- 审稿：`04_review_审稿复核/**`
+
+**正确流程：**
+1. 在回复里先给出「拟写入草稿」（表格/段落）
+2. 问用户：「确认写入 [文件名] 吗？」
+3. 用户明确同意后，才执行文件修改
+
+**禁止：**
+- ❌ 用户聊天里提到一条信息 → 顺手写进 worklog
+- ❌ 用户口述 iOS 抓包/竞品结论 → 标成 L1 实证写入
+- ❌ 跨版本推断（如 8.0.66 的 F-27 套到 8.0.71）写入文档
+
+---
+
 ## 反模式
 
 - ❌ 不读 CLAUDE.md 就接手
+- ❌ **未经用户同意改 md 文档**
 - ❌ 不更新 TASK_BOARD 就开干
 - ❌ 跑多窗口都改根目录 md
 - ❌ 关任务不跑 frida_stats.js

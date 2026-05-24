@@ -5,8 +5,10 @@ import android.os.Looper;
 import android.util.Log;
 
 import com.ghost.assist.core.Bridge;
+import com.ghost.assist.core.RefreshBus;
 import com.ghost.assist.core.StateMachine;
 
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -60,6 +62,32 @@ public class ContactFilter {
         installAddAllHook();           // 8.0.71 通讯录入口：ArrayList.addAll(fc5.g×30)
         installAdapterHook(lpparam);   // 兜底：notifyDataSetChanged clean-before
         installFragResumeHook(lpparam); // 兜底：onResume/onHiddenChanged
+
+        // Hot-reload: state listener (registration log) + RefreshBus callback.
+        StateMachine.getInstance().addListener("ContactFilter",
+                (oldState, newState) -> { /* log only — RefreshBus driven by StateMachine */ });
+        RefreshBus.getInstance().register("ContactFilter", hidden -> {
+            Object liveList = sLiveListRef;
+            if (liveList == null) {
+                Log.i(TAG, "[BUS] refresh ContactFilter skipped no-livelist");
+                return;
+            }
+            // In HIDDEN: cleanLiveList removes items from MvvmList internal array.
+            cleanLiveList(liveList, "bus");
+            // Notify adapter to re-render.
+            Object adapter = sAdapterRef != null ? sAdapterRef.get() : null;
+            if (adapter != null) {
+                try {
+                    adapter.getClass().getMethod("notifyDataSetChanged").invoke(adapter);
+                    Log.i(TAG, "[BUS] refresh ContactFilter done hidden=" + hidden);
+                } catch (Throwable t) {
+                    Log.w(TAG, "[BUS] refresh ContactFilter notify err: " + t);
+                }
+            } else {
+                Log.i(TAG, "[BUS] refresh ContactFilter no-adapter (livelist cleaned)");
+            }
+        });
+
         Log.i(TAG, "[CTF] ContactFilter installed");
     }
 
@@ -158,6 +186,7 @@ public class ContactFilter {
     // 使用 getMethods()（含继承），只 hook 生命周期方法
     // ------------------------------------------------------------------
     private static volatile Object sLiveListRef = null; // 缓存最近见到的 AddressLiveList
+    private static volatile WeakReference<Object> sAdapterRef; // 通讯录 Adapter 弱引用
 
     private static void installFragResumeHook(XC_LoadPackage.LoadPackageParam lpparam) {
         try {
@@ -307,12 +336,11 @@ public class ContactFilter {
             XposedBridge.hookMethod(nds, new XC_MethodHook() {
                 @Override
                 protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                    String cls = param.thisObject.getClass().getName();
-                    boolean match = adapterCls.isInstance(param.thisObject);
-                    if (match) {
-                        Log.i(TAG, "[CTF:L4fire] cls=" + cls);
-                        cleanAdapter(param.thisObject);
-                    }
+                    if (!adapterCls.isInstance(param.thisObject)) return;
+                    // Update weak ref so RefreshBus can drive hot-reload.
+                    sAdapterRef = new WeakReference<>(param.thisObject);
+                    Log.i(TAG, "[CTF:L4fire] cls=" + param.thisObject.getClass().getName());
+                    cleanAdapter(param.thisObject);
                 }
             });
             Log.i(TAG, "[CTF] L4 hooked: notifyDataSetChanged on "
