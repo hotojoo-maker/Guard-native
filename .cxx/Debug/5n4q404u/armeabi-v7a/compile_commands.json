@@ -1,0 +1,42 @@
+[
+{
+  "directory": "C:/Users/Me/Desktop/guard_native/.cxx/Debug/5n4q404u/armeabi-v7a",
+  "command": "C:\\Users\\Me\\AppData\\Local\\Android\\Sdk\\ndk\\25.1.8937393\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang++.exe --target=armv7-none-linux-androideabi27 --sysroot=C:/Users/Me/AppData/Local/Android/Sdk/ndk/25.1.8937393/toolchains/llvm/prebuilt/windows-x86_64/sysroot -Dguardcore_EXPORTS -IC:/Users/Me/Desktop/guard_native/native_core/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -DGUARD_DEBUG -fno-rtti -fno-exceptions -fno-limit-debug-info  -fPIC -std=gnu++17 -o CMakeFiles\\guardcore.dir\\src\\guard_core.cpp.o -c C:\\Users\\Me\\Desktop\\guard_native\\native_core\\src\\guard_core.cpp",
+  "file": "C:\\Users\\Me\\Desktop\\guard_native\\native_core\\src\\guard_core.cpp"
+},
+{
+  "directory": "C:/Users/Me/Desktop/guard_native/.cxx/Debug/5n4q404u/armeabi-v7a",
+  "command": "C:\\Users\\Me\\AppData\\Local\\Android\\Sdk\\ndk\\25.1.8937393\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang++.exe --target=armv7-none-linux-androideabi27 --sysroot=C:/Users/Me/AppData/Local/Android/Sdk/ndk/25.1.8937393/toolchains/llvm/prebuilt/windows-x86_64/sysroot -Dguardcore_EXPORTS -IC:/Users/Me/Desktop/guard_native/native_core/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -DGUARD_DEBUG -fno-rtti -fno-exceptions -fno-limit-debug-info  -fPIC -std=gnu++17 -o CMakeFiles\\guardcore.dir\\src\\core_init.cpp.o -c C:\\Users\\Me\\Desktop\\guard_native\\native_core\\src\\core_init.cpp",
+  "file": "C:\\Users\\Me\\Desktop\\guard_native\\native_core\\src\\core_init.cpp"
+},
+{
+  "directory": "C:/Users/Me/Desktop/guard_native/.cxx/Debug/5n4q404u/armeabi-v7a",
+  "command": "C:\\Users\\Me\\AppData\\Local\\Android\\Sdk\\ndk\\25.1.8937393\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang++.exe --target=armv7-none-linux-androideabi27 --sysroot=C:/Users/Me/AppData/Local/Android/Sdk/ndk/25.1.8937393/toolchains/llvm/prebuilt/windows-x86_64/sysroot -Dguardcore_EXPORTS -IC:/Users/Me/Desktop/guard_native/native_core/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -DGUARD_DEBUG -fno-rtti -fno-exceptions -fno-limit-debug-info  -fPIC -std=gnu++17 -o CMakeFiles\\guardcore.dir\\src\\process_router.cpp.o -c C:\\Users\\Me\\Desktop\\guard_native\\native_core\\src\\process_router.cpp",
+  "file": "C:\\Users\\Me\\Desktop\\guard_native\\native_core\\src\\process_router.cpp"
+},
+{
+  "directory": "C:/Users/Me/Desktop/guard_native/.cxx/Debug/5n4q404u/armeabi-v7a",
+  "command": "C:\\Users\\Me\\AppData\\Local\\Android\\Sdk\\ndk\\25.1.8937393\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang++.exe --target=armv7-none-linux-androideabi27 --sysroot=C:/Users/Me/AppData/Local/Android/Sdk/ndk/25.1.8937393/toolchains/llvm/prebuilt/windows-x86_64/sysroot -Dguardcore_EXPORTS -IC:/Users/Me/Desktop/guard_native/native_core/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -DGUARD_DEBUG -fno-rtti -fno-exceptions -fno-limit-debug-info  -fPIC -std=gnu++17 -o CMakeFiles\\guardcore.dir\\src\\state_machine.cpp.o -c C:\\Users\\Me\\Desktop\\guard_native\\native_core\\src\\state_machine.cpp",
+  "file": "C:\\Users\\Me\\Desktop\\guard_native\\native_core\\src\\state_machine.cpp"
+},
+{
+  "directory": "C:/Users/Me/Desktop/guard_native/.cxx/Debug/5n4q404u/armeabi-v7a",
+  "command": "C:\\Users\\Me\\AppData\\Local\\Android\\Sdk\\ndk\\25.1.8937393\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang++.exe --target=armv7-none-linux-androideabi27 --sysroot=C:/Users/Me/AppData/Local/Android/Sdk/ndk/25.1.8937393/toolchains/llvm/prebuilt/windows-x86_64/sysroot -Dguardcore_EXPORTS -IC:/Users/Me/Desktop/guard_native/native_core/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -DGUARD_DEBUG -fno-rtti -fno-exceptions -fno-limit-debug-info  -fPIC -std=gnu++17 -o CMakeFiles\\guardcore.dir\\src\\wxid_matcher.cpp.o -c C:\\Users\\Me\\Desktop\\guard_native\\native_core\\src\\wxid_matcher.cpp",
+  "file": "C:\\Users\\Me\\Desktop\\guard_native\\native_core\\src\\wxid_matcher.cpp"
+},
+{
+  "directory": "C:/Users/Me/Desktop/guard_native/.cxx/Debug/5n4q404u/armeabi-v7a",
+  "command": "C:\\Users\\Me\\AppData\\Local\\Android\\Sdk\\ndk\\25.1.8937393\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang++.exe --target=armv7-none-linux-androideabi27 --sysroot=C:/Users/Me/AppData/Local/Android/Sdk/ndk/25.1.8937393/toolchains/llvm/prebuilt/windows-x86_64/sysroot -Dguardcore_EXPORTS -IC:/Users/Me/Desktop/guard_native/native_core/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -DGUARD_DEBUG -fno-rtti -fno-exceptions -fno-limit-debug-info  -fPIC -std=gnu++17 -o CMakeFiles\\guardcore.dir\\src\\push_guard.cpp.o -c C:\\Users\\Me\\Desktop\\guard_native\\native_core\\src\\push_guard.cpp",
+  "file": "C:\\Users\\Me\\Desktop\\guard_native\\native_core\\src\\push_guard.cpp"
+},
+{
+  "directory": "C:/Users/Me/Desktop/guard_native/.cxx/Debug/5n4q404u/armeabi-v7a",
+  "command": "C:\\Users\\Me\\AppData\\Local\\Android\\Sdk\\ndk\\25.1.8937393\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang++.exe --target=armv7-none-linux-androideabi27 --sysroot=C:/Users/Me/AppData/Local/Android/Sdk/ndk/25.1.8937393/toolchains/llvm/prebuilt/windows-x86_64/sysroot -Dguardcore_EXPORTS -IC:/Users/Me/Desktop/guard_native/native_core/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -DGUARD_DEBUG -fno-rtti -fno-exceptions -fno-limit-debug-info  -fPIC -std=gnu++17 -o CMakeFiles\\guardcore.dir\\src\\anti_tamper.cpp.o -c C:\\Users\\Me\\Desktop\\guard_native\\native_core\\src\\anti_tamper.cpp",
+  "file": "C:\\Users\\Me\\Desktop\\guard_native\\native_core\\src\\anti_tamper.cpp"
+},
+{
+  "directory": "C:/Users/Me/Desktop/guard_native/.cxx/Debug/5n4q404u/armeabi-v7a",
+  "command": "C:\\Users\\Me\\AppData\\Local\\Android\\Sdk\\ndk\\25.1.8937393\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang++.exe --target=armv7-none-linux-androideabi27 --sysroot=C:/Users/Me/AppData/Local/Android/Sdk/ndk/25.1.8937393/toolchains/llvm/prebuilt/windows-x86_64/sysroot -Dguardcore_EXPORTS -IC:/Users/Me/Desktop/guard_native/native_core/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security  -DGUARD_DEBUG -fno-rtti -fno-exceptions -fno-limit-debug-info  -fPIC -std=gnu++17 -o CMakeFiles\\guardcore.dir\\src\\log_limiter.cpp.o -c C:\\Users\\Me\\Desktop\\guard_native\\native_core\\src\\log_limiter.cpp",
+  "file": "C:\\Users\\Me\\Desktop\\guard_native\\native_core\\src\\log_limiter.cpp"
+}
+]

@@ -9,8 +9,11 @@ import com.ghost.assist.core.StateMachine;
 import android.app.Activity;
 import android.app.Notification;
 import android.content.Intent;
+import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -82,6 +85,8 @@ public class PushFilter {
         installL1(lpparam);
         installNmDiag(lpparam);
         installCallActivityBlock(lpparam);
+        installMediaPlayerBlock(lpparam);
+        installVibratorBlock(lpparam);
         installL4b(lpparam);
         installL4c(lpparam);
         Log.i(TAG, "[PF] PushFilter installed");
@@ -124,6 +129,16 @@ public class PushFilter {
                     param.setResult(false); // block queue entry
                     Log.i(TAG, "[PF:L1] block LL.add talker=" + talker
                             + " hiddenBlocked=" + sHiddenBlocked);
+
+                    // Fire out-of-band alert (VIBRATE/SOUND) per policy — no banner, no NM.notify()
+                    try {
+                        android.app.Application ctx = (android.app.Application)
+                            Class.forName("android.app.ActivityThread")
+                                 .getMethod("currentApplication").invoke(null);
+                        NotifyRouter.fireAlert(ctx, NotifyRouter.EventType.MSG);
+                    } catch (Throwable t) {
+                        Log.w(TAG, "[PF:L1] fireAlert err: " + t);
+                    }
                 }
             });
             Log.i(TAG, "[PF:L1] LinkedList.add hook ok");
@@ -276,6 +291,79 @@ public class PushFilter {
         // zeroing non-hidden friends' badges. Will be replaced by WeChatDND (官方免打扰)
         // which natively excludes hidden friends from badge count.
         Log.i(TAG, "[PF:L4c] disabled (pending WeChatDND)");
+    }
+
+    // =========================================================================
+    // MP — MediaPlayer.start(): foreground message "ding" + video hang-up tone
+    //
+    // Frida-confirmed (2026-05-25): WeChat plays notification sound via MediaPlayer
+    // when the app is in the foreground.  Block all start() calls when HIDDEN so
+    // no "ding" leaks even if the notification itself was already blocked by L1.
+    //
+    // Exception: NotifyRouter.SOUND mode creates its own MediaPlayer.
+    // NotifyRouter.sOurSound is set true around that call so we skip it here.
+    // =========================================================================
+
+    private static void installMediaPlayerBlock(XC_LoadPackage.LoadPackageParam lpparam) {
+        try {
+            XposedHelpers.findAndHookMethod(
+                    MediaPlayer.class, "start",
+                    new XC_MethodHook() {
+                        @Override
+                        protected void beforeHookedMethod(MethodHookParam param) {
+                            if (NotifyRouter.sOurSound) return;
+                            if (!StateMachine.getInstance().isActive()) return;
+                            param.setResult(null);
+                            Log.i(TAG, "[PF:MP] blocked MediaPlayer.start");
+                        }
+                    });
+            Log.i(TAG, "[PF:MP] hooked");
+        } catch (Throwable t) {
+            Log.w(TAG, "[PF:MP] hook fail: " + t);
+        }
+    }
+
+    // =========================================================================
+    // VV — Vibrator.vibrate(): suppress WeChat's default notification vibration
+    //
+    // When HIDDEN, block all Vibrator.vibrate() calls EXCEPT the custom pattern
+    // fired by NotifyRouter.fireAlert() (guarded by NotifyRouter.sOurVibration).
+    // This ensures VIBRATE policy produces only our two-pulse pattern, not WeChat's.
+    // =========================================================================
+
+    private static void installVibratorBlock(XC_LoadPackage.LoadPackageParam lpparam) {
+        try {
+            // API 26+ overload: vibrate(VibrationEffect)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                XposedHelpers.findAndHookMethod(
+                        Vibrator.class, "vibrate", VibrationEffect.class,
+                        new XC_MethodHook() {
+                            @Override
+                            protected void beforeHookedMethod(MethodHookParam param) {
+                                if (NotifyRouter.sOurVibration) return;
+                                if (!StateMachine.getInstance().isActive()) return;
+                                param.setResult(null);
+                                Log.i(TAG, "[PF:VV] blocked vibrate(VibrationEffect)");
+                            }
+                        });
+            }
+            // Legacy overload: vibrate(long[], int)
+            //noinspection deprecation
+            XposedHelpers.findAndHookMethod(
+                    Vibrator.class, "vibrate", long[].class, int.class,
+                    new XC_MethodHook() {
+                        @Override
+                        protected void beforeHookedMethod(MethodHookParam param) {
+                            if (NotifyRouter.sOurVibration) return;
+                            if (!StateMachine.getInstance().isActive()) return;
+                            param.setResult(null);
+                            Log.i(TAG, "[PF:VV] blocked vibrate(long[])");
+                        }
+                    });
+            Log.i(TAG, "[PF:VV] hooked");
+        } catch (Throwable t) {
+            Log.w(TAG, "[PF:VV] hook fail: " + t);
+        }
     }
 
     // =========================================================================

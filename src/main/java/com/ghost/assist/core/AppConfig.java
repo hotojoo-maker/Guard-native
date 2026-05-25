@@ -32,6 +32,9 @@ public class AppConfig {
     // One-time migration marker: "mv2" = migrated from old DEV-default to PROD-default.
     private static final String KEY_MIG_V2 = "mv2";
 
+    /** Official purchase URL shown in PiracyNotice and DebugServer dashboard. */
+    public static final String SHOP_URL = "https://zxmqq.shop";
+
     private static final AppConfig sInstance = new AppConfig();
     private SharedPreferences mPrefs;
     private Mode mMode = Mode.PROD;   // safe in-memory default before init()

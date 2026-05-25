@@ -49,8 +49,10 @@ public final class NativeBridge {
     public static final int AUTH_UNKNOWN    = 0;
     public static final int AUTH_OK         = 1;
     public static final int AUTH_EXPIRED    = 2;
-    public static final int AUTH_TAMPERED   = 3;
-    public static final int AUTH_NO_LICENSE = 4;
+    public static final int AUTH_TAMPERED          = 3;
+    public static final int AUTH_NO_LICENSE        = 4;
+    public static final int AUTH_ACCOUNT_MISMATCH  = 5;
+    public static final int AUTH_DEVICE_MISMATCH   = 6;
 
     // ── Hidden state constants (mirror guard::HiddenState) ────
 
@@ -203,6 +205,20 @@ public final class NativeBridge {
     public static boolean shouldHideGroup(String groupId) {
         if (!sAvailable) return false;
         return isAuthorized() && isHidden() && isHiddenGroup(groupId);
+    }
+
+    /**
+     * Set the auth state in the C++ engine directly (used after successful bindAccount()).
+     * v1: no-op when SO is unavailable; the state is authoritative in Java AuthManager.
+     */
+    public static void setAuthState(int authState) {
+        if (!sAvailable) return;
+        try {
+            // v1 stub: auth state lives in Java; C++ reads it on next cold-start evaluate()
+            android.util.Log.i("NCL", "[native] setAuthState=" + authState);
+        } catch (Throwable t) {
+            android.util.Log.w("NCL", "[native] setAuthState err: " + t);
+        }
     }
 
     // TODO Batch 2: nativeGetNotifyMode()

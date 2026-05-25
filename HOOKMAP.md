@@ -1,4 +1,4 @@
-﻿# HOOKMAP — 功能模块总图
+# HOOKMAP — 功能模块总图
 
 > ⛔ **AI 读此文件的绝对铁律 / AI HARD RULES FOR THIS FILE**
 > 1. ✅ = 有 logcat/Frida 日志原文的才算 — 无日志不得标 ✅

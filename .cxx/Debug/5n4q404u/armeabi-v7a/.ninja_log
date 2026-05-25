@@ -1,0 +1,10 @@
+# ninja log v5
+56	490	8014189151686900	CMakeFiles/guardcore.dir/src/state_machine.cpp.o	7947a0f2e8e87c54
+1	620	8014189152928256	CMakeFiles/guardcore.dir/src/wxid_matcher.cpp.o	99cdf24d21257049
+223	673	8014189153439795	CMakeFiles/guardcore.dir/src/push_guard.cpp.o	cc30f841b7cd0d6
+168	763	8014189154219713	CMakeFiles/guardcore.dir/src/log_limiter.cpp.o	6d6fb45ee18d8ffa
+286	769	8014189154430153	CMakeFiles/guardcore.dir/src/anti_tamper.cpp.o	8c639bfb50f63d94
+345	883	8014189155607224	CMakeFiles/guardcore.dir/src/guard_core.cpp.o	2b53c1a029a47c32
+112	884	8014189155597231	CMakeFiles/guardcore.dir/src/process_router.cpp.o	98a8301322adeb98
+409	935	8014189155943990	CMakeFiles/guardcore.dir/src/core_init.cpp.o	3a546a7fc6762a84
+935	1338	8014189159556822	C:/Users/Me/Desktop/guard_native/build/intermediates/cxx/Debug/5n4q404u/obj/armeabi-v7a/libguardcore.so	a17a1ef1549278bd

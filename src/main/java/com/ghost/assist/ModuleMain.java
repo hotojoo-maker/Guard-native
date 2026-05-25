@@ -18,6 +18,7 @@ import com.ghost.assist.moduleB.SearchUnlock;
 import com.ghost.assist.moduleB.SettingsEntry;
 import com.ghost.assist.moduleB.TriggerGuard;
 import com.ghost.assist.moduleB.UpdateGuard;
+import com.ghost.assist.moduleC.AntiRecall;
 import com.ghost.assist.moduleC.PushFilter;
 import com.ghost.assist.moduleD.ContactFilter;
 import com.ghost.assist.moduleD.ConvFilter;
@@ -132,6 +133,7 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         StateMachine.getInstance().restoreState();
 
         // 7. Install module hooks
+        AntiRecall.install(lpparam);
         SearchUnlock.install(lpparam);
         SearchFilter.install(lpparam);
         MomentsFilter.install(lpparam);

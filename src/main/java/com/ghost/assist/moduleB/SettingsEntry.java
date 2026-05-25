@@ -245,8 +245,8 @@ public class SettingsEntry {
         try {
             // 1. getItemCount
             XposedBridge.hookAllMethods(adapterCls, "getItemCount", new XC_MethodHook() {
-                @Override
-                protected void afterHookedMethod(MethodHookParam param) {
+                        @Override
+                        protected void afterHookedMethod(MethodHookParam param) {
                     if (!sHeaderVisible) return;
                     Object r = param.getResult();
                     if (r instanceof Integer) param.setResult((Integer) r + 1);
@@ -280,15 +280,15 @@ public class SettingsEntry {
                             View itemView = (View) holder.getClass()
                                     .getField("itemView").get(holder);
                             customizeGuardHeader(itemView);
-                        } catch (Throwable t) {
+                } catch (Throwable t) {
                             Log.w(TAG, "[SET:hook] customize failed: " + t);
                         }
                         param.setResult(null); // skip original binding for position 0
                     } else {
                         param.args[1] = pos - 1;
-                    }
                 }
-            });
+            }
+        });
 
             // 4. getItemId — give header a unique stable id (-1)
             XposedBridge.hookAllMethods(adapterCls, "getItemId", new XC_MethodHook() {
@@ -513,7 +513,7 @@ public class SettingsEntry {
                                 Log.i(TAG, "[SET] dialog -> exitHidden");
                             }
                         });
-            } else {
+                    } else {
                 builder.setNegativeButton("\u5207\u6362\u9690\u85cf",
                         new DialogInterface.OnClickListener() {
                             @Override public void onClick(DialogInterface d, int w) {
@@ -605,7 +605,7 @@ public class SettingsEntry {
         if (v instanceof TextView) return (TextView) v;
         if (v instanceof ViewGroup) {
             ViewGroup vg = (ViewGroup) v;
-            for (int i = 0; i < vg.getChildCount(); i++) {
+        for (int i = 0; i < vg.getChildCount(); i++) {
                 TextView found = findFirstTextView(vg.getChildAt(i));
                 if (found != null) return found;
             }

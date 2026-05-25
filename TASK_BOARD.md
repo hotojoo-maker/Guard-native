@@ -6,7 +6,7 @@
 > - 状态不明 → **停下来问用户，禁止猜测，禁止推断**
 >
 > 接手前看：[`CLAUDE.md`](./CLAUDE.md) + [`HOOKMAP.md`](./HOOKMAP.md)
-> 更新时间：2026-05-22
+> 更新时间：2026-05-25
 > **当前底座：微信 8.0.71**（D-014）
 > 维护人：guard-dispatch_总调度
 
@@ -16,7 +16,7 @@
 
 | 窗口 | 主题 | P 任务 | 状态 | 占用至 | 模型建议 |
 |:--:|------|-------|:--:|------|:----:|
-| **W1** | B模块触发器 + 搜索 | **P20B/P20** | 🟡 **装机部分通过（2026-05-22）**：B2✅ B5✅ B6(6个1)✅ extractWxid(C0)✅ F-27冷启动HIDDEN✅；**Bug B (H→V自动刷新) ⬜ 待实现** | — | Sonnet |
+| **W1** | B模块触发器 + 搜索 | **P20B/P20** | 🟡 B2✅ B5✅ B6(111111)✅ F-27✅；**Bug B H→V 热切 ✅**（ConvHotReload+RefreshBus，用户确认装机验证 2026-05-25；HOOKMAP V↔H 2026-05-23 实证）| — | Sonnet |
 | **W2** | 朋友圈小红点 | **P21_朋友圈小红点** | ✅ **v18 装机**：Layer0b（SnsMsgUI 进列表过滤+badge zero）✅实证；Layer2（g1拦截）✅实证；v18 tab badge counter suppressor 已装机待触发 | — | Sonnet |
 | **W3** | 会话 LSPosed 翻译 | P17_会话LSPosed | ✅ 已完成（2026-05-20 会话隐藏验收通过）| — | Sonnet |
 | **W4** | 离线资料库采集 | P18_离线采集 | ⬜ 待领 | — | Haiku |
@@ -259,7 +259,7 @@ W1 脚手架   ─→ 后续所有功能模块
 | P17 | 会话 LSPosed | ✅ | 2026-05-20 会话隐藏验收通过。链路：kc5.y.d(l4).h1() = wxid（HOOKMAP 已修 C0→h1），L4 notifyDataSetChanged 主门控。|
 | P18 | 离线采集 | ⬜ | — |
 | P19 | 通讯录隐藏 F07 | ✅ | 2026-05-20 装机验证。路径：ArrayList.addAll(fc5.g×30) → fc5.g.d→z3.c1()→wxid → remove。分段虚拟滚动，每段过滤。|
-| P20 | 搜索 + 密码入口 | 🟡 | 2026-05-22 B6装机验证通过：6个1触发✅ `View.onAttachedToWindow` hook `ActionBarEditText`命中；`extractWxid C0`路径✅；F-27冷启动HIDDEN✅；**Bug B（H→V后密友不自动显示）⬜ 待实现** |
+| P20 | 搜索 + 密码入口 | ✅ | B6(111111)✅ F-27✅；**Bug B H→V 热切 ✅**（用户确认装机验证 2026-05-25；代码 ConvHotReload + HOOKMAP 2026-05-23 实证）|
 | A3  | 密群（数据层 + Filter union）| ✅ | 2026-05-21 装机验证。`Bridge.getGroupIds/allHiddenIds/isGroupId`；4 Filter 切换到 `allHiddenIds()`。|
 | P_NC1 | native_core Batch 1 装机验证 | 🟡 | SO 编译通过 + 14 JNI 符号导出；ModuleMain 验证桩已接入（`runNativeBridgeVerification`）；**待装机跑 logcat，看 `[native] BATCH1_VERIFY PASS`**；通过后更新 ROADMAP Phase 1 ⬜→✅ |
 | **P22** | **PushFilter 通知策略层** | 🟡 | **2026-05-22 装机实证**：L1 block ✅；NM cancel 普通消息 gap=3ms ✅；NM voip channel cancel ✅；tinker classloader fix ✅；密友总开关 `Bridge.isFeatureEnabled()` 已接 🟡；CA 备用层 🟡（代码完成，因 NM voip cancel 先行，未实际触发）；**剩余坑**：L4b `MainTabUI.i()` 方法名需 jadx 重查 ❓；NotifyPolicy VIBRATE/SOUND 未实现 📋；DebugServer HTML 开关未加 📋；WeChatDND 归档 Phase 2 📋；frida_stats 未跑 ⚠️ |
@@ -278,7 +278,7 @@ W1 脚手架   ─→ 后续所有功能模块
   P16 朋友圈 D1/D2/D3
   P17 会话 LSPosed
   P19 通讯录 F07
-  P20 搜索 + 密码入口（B6装机✅；Bug B H→V刷新⬜）
+  P20 搜索 + 密码入口（B6✅；Bug B H→V 热切 ✅ 装机验证 2026-05-25）
   A3  密群数据层 + Filter union（2026-05-21 装机已验）
 
 🟡 v1 进行中（阶段 ①）

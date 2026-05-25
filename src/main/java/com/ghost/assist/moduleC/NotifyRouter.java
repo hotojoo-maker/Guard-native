@@ -53,6 +53,12 @@ public final class NotifyRouter {
      */
     static volatile boolean sOurVibration = false;
 
+    /**
+     * Set to true while fireAlert() is calling mp.start() in SOUND mode so the
+     * PushFilter MP hook skips our own MediaPlayer and only blocks WeChat's.
+     */
+    static volatile boolean sOurSound = false;
+
     public enum EventType { MSG, CALL, HANGUP }
 
     /** Routing result returned to PushFilter. */
@@ -145,8 +151,12 @@ public final class NotifyRouter {
                     android.media.MediaPlayer mp = new android.media.MediaPlayer();
                     mp.setDataSource(ctx, Uri.parse(uriStr));
                     mp.setAudioStreamType(AudioManager.STREAM_NOTIFICATION);
-                    mp.setOnCompletionListener(android.media.MediaPlayer::release);
+                    mp.setOnCompletionListener(player -> {
+                        sOurSound = false;
+                        player.release();
+                    });
                     mp.prepare();
+                    sOurSound = true;
                     mp.start();
                     Log.i(TAG, "[NR] fireAlert SOUND uri=" + uriStr);
                     return;

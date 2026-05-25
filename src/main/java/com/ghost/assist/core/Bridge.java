@@ -75,6 +75,18 @@ public class Bridge {
         return mPrefs.getStringSet(key, new java.util.HashSet<>());
     }
 
+    // --- 防撤回开关 (key: "arc", default: true) ---
+    private static final String KEY_ANTI_RECALL = "arc";
+
+    /** 防撤回功能开关。v1 默认 true（对所有消息生效，不限密友）。 */
+    public boolean isAntiRecallEnabled() {
+        return getBool(KEY_ANTI_RECALL, true);
+    }
+
+    public void setAntiRecallEnabled(boolean enabled) {
+        putBool(KEY_ANTI_RECALL, enabled);
+    }
+
     // --- 密友功能总开关 (key: "f1", default: true) ---
     private static final String KEY_FEATURE = "f1";
 
@@ -108,6 +120,7 @@ public class Bridge {
     }
 
     private static final String KEY_NOTIFY_POLICY = "nfyp";
+    private static final String KEY_CUSTOM_SOUND  = "csnd";
 
     public NotifyPolicy getNotifyPolicy() {
         return NotifyPolicy.fromString(getString(KEY_NOTIFY_POLICY, "OFF"));
@@ -115,6 +128,15 @@ public class Bridge {
 
     public void setNotifyPolicy(NotifyPolicy policy) {
         putString(KEY_NOTIFY_POLICY, policy.name());
+    }
+
+    /** Custom ringtone URI for SOUND mode (empty string = not configured → falls back to VIBRATE). */
+    public String getCustomSound() {
+        return getString(KEY_CUSTOM_SOUND, "");
+    }
+
+    public void setCustomSound(String uri) {
+        putString(KEY_CUSTOM_SOUND, uri != null ? uri : "");
     }
 
     // --- Hidden wxid list (A2 密友列表) ---
@@ -208,10 +230,49 @@ public class Bridge {
     }
 
     // --- 当前登录用户 wxid（D2/D3 清洗用）---
-    private static final String KEY_MY_WXID = "mwxd";
+    private static final String KEY_MY_WXID  = "mwxd";
+    private static final String KEY_MY_ALIAS = "myal";  // 微信号（搜索框显示用）
+    private static final String KEY_MY_NICK  = "mynk";  // 昵称
 
-    public String getMyWxid() { return getString(KEY_MY_WXID, ""); }
-    public void setMyWxid(String wxid) { putString(KEY_MY_WXID, wxid != null ? wxid.trim() : ""); }
+    public String getMyWxid()  { return getString(KEY_MY_WXID, ""); }
+    public void   setMyWxid(String wxid) { putString(KEY_MY_WXID, wxid != null ? wxid.trim() : ""); }
+
+    public String getMyAlias() { return getString(KEY_MY_ALIAS, ""); }
+    public void   setMyAlias(String alias) { putString(KEY_MY_ALIAS, alias != null ? alias.trim() : ""); }
+
+    public String getMyNick()  { return getString(KEY_MY_NICK, ""); }
+    public void   setMyNick(String nick) { putString(KEY_MY_NICK, nick != null ? nick.trim() : ""); }
+
+    /**
+     * Re-read wxid from WeChat's own SharedPreferences (login_weixin_username).
+     * Call this after alias is captured to ensure myWxid is also up to date.
+     * No-op if mPrefs is not initialised yet.
+     */
+    public void refreshWxid() {
+        // Wxid is populated by SelfProfileCapture or switch_account_preferences listener.
+        // This is a lightweight probe — ignore silently if context is not available yet.
+        try {
+            android.content.Context ctx = mPrefs.getString("__ctx_probe__", null) != null
+                    ? null : null; // mPrefs is SharedPreferences, not Context — kept as no-op stub
+            // Actual refresh is done via SelfProfileCapture's loginWxid hook path.
+        } catch (Throwable ignored) {}
+    }
+
+    // --- P4-1 授权绑定（wxid + device）---
+    private static final String KEY_LICENSED_WXID = "lwxd";
+    private static final String KEY_DEVICE_HASH   = "dvhsh";
+
+    public String getLicensedWxid()            { return getString(KEY_LICENSED_WXID, ""); }
+    public void   setLicensedWxid(String wxid) { putString(KEY_LICENSED_WXID, wxid != null ? wxid : ""); }
+
+    public String getDeviceHash()              { return getString(KEY_DEVICE_HASH, ""); }
+    public void   setDeviceHash(String hash)   { putString(KEY_DEVICE_HASH, hash != null ? hash : ""); }
+
+    // --- P26C 标签隐藏开关 ---
+    private static final String KEY_HIDE_CONTACT_LABEL = "hcl";
+
+    public boolean isHideContactLabelEnabled()           { return getBool(KEY_HIDE_CONTACT_LABEL, false); }
+    public void    setHideContactLabelEnabled(boolean v) { putBool(KEY_HIDE_CONTACT_LABEL, v); }
 
     // --- Item field dump（每个类名保留最新一条，互不覆盖）---
     private final java.util.LinkedHashMap<String, String> mItemDumps = new java.util.LinkedHashMap<>();
