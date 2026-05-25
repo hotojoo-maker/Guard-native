@@ -1,0 +1,80 @@
+05-24 14:30:05.774 17393 17393 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 14:30:05.775 17393 17393 I NCL     : [BUS:start-H] notified adapter=v0 cache=0
+05-24 14:30:05.913 17393 17393 I NCL     : [MRD:launcher:entry] en=true act=true wxids=3 fmf=null
+05-24 14:30:05.913 17393 17393 I NCL     : [MRD:launcher] fmf null, pending=true, starting retry loop
+05-24 14:30:06.040 17393 17492 I NCL     : [MF] addAll firstItem=z15.pz0 size=10
+05-24 14:30:06.041 17393 17492 I NCL     : [MF] addAll firstItem=z15.ke0 size=18
+05-24 14:30:06.045 17393 17452 I NCL     : [MF:LLadd cls=z15.p94]
+05-24 14:30:06.287 17393 17454 I NCL     : [MF] addAll firstItem=qu5.l size=1
+05-24 14:30:06.477 17393 17393 I NCL     : [CF:focus] LauncherUI focus HIDDEN → clean+notify
+05-24 14:30:06.477 17393 17393 I NCL     : [CF:clean] start ids=4 src=focus-H mvvm=MvvmConvList
+05-24 14:30:06.477 17393 17393 I NCL     : [CF:group] chatroom=44786160583@chatroom name=熵、马孔多在下雨、Yy
+05-24 14:30:06.478 17393 17393 I NCL     : [CF:group] chatroom=54525031375@chatroom name=A、马孔多在下雨
+05-24 14:30:06.479 17393 17393 I NCL     : [CF:filter] label=L4collect active=true items=14
+05-24 14:30:06.485 17393 17393 I NCL     : [CF:clean] removed=0 src=focus-H
+05-24 14:30:06.485 17393 17393 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 14:30:06.490 17393 17393 I NCL     : [CF:L4] cleaned=0
+05-24 14:30:06.490 17393 17393 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 14:30:06.491 17393 17393 I NCL     : [BUS:focus-H] notified adapter=v0 cache=0
+05-24 14:30:06.510 17393 17795 I NCL     : [MF:LLadd cls=z15.f8] e=wxca8d4b8e8feedc2a,4025,1,369,1,1
+05-24 14:30:06.519 17393 17488 I NCL     : [MF:LLadd cls=com.tencent.mm.plugin.appbrand.appstorage.x]
+05-24 14:30:06.558 17393 17393 I NCL     : [MF:LLadd cls=z15.mw2]
+05-24 14:30:06.938 17393 17393 W NCL     : [MRD:retry] gave up after 15 attempts
+05-24 14:30:11.051 17393 17393 W NCL     : [MRD:retry] gave up after 15 attempts
+05-24 14:30:12.620 17393 17485 I NCL     : [MF] addAll firstItem=com.ghost.assist.core.InterceptCounter$Event size=2
+05-24 14:30:38.725 17393 17434 I NCL     : [MF:LLadd cls=gy1.a] field_appId=ilinkres_55e88e46libmmwcwss field_channelId= field_downloadUrl=https://dldir1v6.qq.com/weixin/liteappconfig/boU8Ci4l_oFrpUoSrhXwZ_8595a74584324f5cb341f6c40786c8f7.res field_extInfo= field_fileName=1d72ea223491d7b47a4595985abf308e field_filePath=/data/user/0/com.tencent.mm/MicroMsg/WebNetFile/e7afab0166a2a244da9196a74177848a_1779203652734_5 field_md5= field_notificationTitle= field_packageName= field_rawAppId= field_secondaryUrl= field_userSessionId= COL_ROWID=rowid FIELD_PREFIX=field_ SYSTEM_ROWID_FIELD=rowid TAG=MicroMsg.SDK.IAutoDBItem
+05-24 14:31:04.717 17393 17393 I NCL     : [MF:LLadd cls=z15.oj5]
+05-24 14:31:04.765 17393 17393 I NCL     : [CF:focus] LauncherUI focus HIDDEN → clean+notify
+05-24 14:31:04.765 17393 17393 I NCL     : [CF:clean] start ids=4 src=focus-H mvvm=MvvmConvList
+05-24 14:31:04.766 17393 17393 I NCL     : [CF:group] chatroom=44786160583@chatroom name=熵、马孔多在下雨、Yy
+05-24 14:31:04.766 17393 17393 I NCL     : [CF:group] chatroom=54525031375@chatroom name=A、马孔多在下雨
+05-24 14:31:04.767 17393 17393 I NCL     : [CF:filter] label=L4collect active=true items=14
+05-24 14:31:04.773 17393 17393 I NCL     : [CF:clean] removed=0 src=focus-H
+05-24 14:31:04.773 17393 17393 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 14:31:04.777 17393 17492 I NCL     : [MF] addAll firstItem=z15.p94 size=3
+05-24 14:31:04.777 17393 17393 I NCL     : [CF:L4] cleaned=0
+05-24 14:31:04.777 17393 17393 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 14:31:04.778 17393 17393 I NCL     : [BUS:focus-H] notified adapter=v0 cache=0
+05-24 14:31:05.170 17393 17393 I NCL     : [CF:focus] LauncherUI focus HIDDEN → clean+notify
+05-24 14:31:05.170 17393 17393 I NCL     : [CF:clean] start ids=4 src=focus-H mvvm=MvvmConvList
+05-24 14:31:05.170 17393 17393 I NCL     : [CF:group] chatroom=44786160583@chatroom name=熵、马孔多在下雨、Yy
+05-24 14:31:05.171 17393 17393 I NCL     : [CF:group] chatroom=54525031375@chatroom name=A、马孔多在下雨
+05-24 14:31:05.172 17393 17393 I NCL     : [CF:filter] label=L4collect active=true items=14
+05-24 14:31:05.178 17393 17393 I NCL     : [CF:clean] removed=0 src=focus-H
+05-24 14:31:05.178 17393 17393 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 14:31:05.183 17393 17393 I NCL     : [CF:L4] cleaned=0
+05-24 14:31:05.183 17393 17393 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 14:31:05.184 17393 17393 I NCL     : [BUS:focus-H] notified adapter=v0 cache=0
+05-24 14:31:06.051 17393 17429 I NCL     : [MF] addAll firstItem=z15.wi5 size=5
+05-24 14:31:06.975 17393 17572 I NCL     : [MF:LLadd cls=mw.r2]
+05-24 14:31:07.297 17393 17473 I NCL     : [SF:conv] pass wxid=gh_f6fcbd8d9e67
+05-24 14:31:07.298 17393 17473 I NCL     : [SF:conv] pass wxid=44786160583@chatroom
+05-24 14:31:07.298 17393 17473 I NCL     : [SF:conv] pass wxid=54525031375@chatroom
+05-24 14:31:07.298 17393 17473 I NCL     : [SF:conv] pass wxid=wxid_19apza6t9j7s12
+05-24 14:31:07.298 17393 17473 I NCL     : [SF:conv] pass wxid=wxid_ahvd1wejo02f22
+05-24 14:31:07.298 17393 17473 I NCL     : [SF:conv] pass wxid=wxid_gsqvrh3c7s8e22
+05-24 14:31:07.298 17393 17473 I NCL     : [SF:conv] pass wxid=weixin
+05-24 14:31:07.298 17393 17473 I NCL     : [SF:conv] pass wxid=wxid_9qcj2r1ok39x12
+05-24 14:31:07.298 17393 17473 I NCL     : [SF:conv] pass wxid=wxid_lt7j4iwu7o3e21
+05-24 14:31:07.298 17393 17473 I NCL     : [SF:conv] pass wxid=gh_43f2581f6fd6
+05-24 14:31:07.298 17393 17473 I NCL     : [SF:conv] pass wxid=wxid_ap12jelohkt322
+05-24 14:31:07.299 17393 17473 I NCL     : [CF:group] chatroom=44786160583@chatroom name=熵、马孔多在下雨、Yy
+05-24 14:31:07.300 17393 17473 I NCL     : [CF:group] chatroom=54525031375@chatroom name=A、马孔多在下雨
+05-24 14:31:07.300 17393 17473 I NCL     : [CF:filter] label=L0addAll active=true items=14
+05-24 14:31:07.403 17393 17393 I NCL     : [SF:conv] pass wxid=gh_f6fcbd8d9e67
+05-24 14:31:07.403 17393 17393 I NCL     : [SF:conv] pass wxid=44786160583@chatroom
+05-24 14:31:07.404 17393 17393 I NCL     : [SF:conv] pass wxid=54525031375@chatroom
+05-24 14:31:07.404 17393 17393 I NCL     : [SF:conv] pass wxid=wxid_19apza6t9j7s12
+05-24 14:31:07.404 17393 17393 I NCL     : [SF:conv] pass wxid=wxid_ahvd1wejo02f22
+05-24 14:31:07.404 17393 17393 I NCL     : [SF:conv] pass wxid=wxid_gsqvrh3c7s8e22
+05-24 14:31:07.404 17393 17393 I NCL     : [SF:conv] pass wxid=weixin
+05-24 14:31:07.404 17393 17393 I NCL     : [SF:conv] pass wxid=wxid_9qcj2r1ok39x12
+05-24 14:31:07.404 17393 17393 I NCL     : [SF:conv] pass wxid=wxid_lt7j4iwu7o3e21
+05-24 14:31:07.404 17393 17393 I NCL     : [SF:conv] pass wxid=gh_43f2581f6fd6
+05-24 14:31:07.404 17393 17393 I NCL     : [SF:conv] pass wxid=wxid_ap12jelohkt322
+05-24 14:31:07.405 17393 17393 I NCL     : [CF:group] chatroom=44786160583@chatroom name=熵、马孔多在下雨、Yy
+05-24 14:31:07.405 17393 17393 I NCL     : [CF:group] chatroom=54525031375@chatroom name=A、马孔多在下雨
+05-24 14:31:07.406 17393 17393 I NCL     : [CF:filter] label=L0addAll active=true items=14
+05-24 14:31:07.408 17393 17393 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 14:31:07.412 17393 17393 I NCL     : [CF:L4] cleaned=0
+05-24 14:31:07.412 17393 17393 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H

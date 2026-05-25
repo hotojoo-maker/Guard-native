@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "defaultMode": "bypassPermissions",
+    "allow": [
+      "Bash(adb shell *)",
+      "Bash(adb push *)",
+      "Bash(MSYS_NO_PATHCONV=1 adb push *)",
+      "Bash(MSYS_NO_PATHCONV=1 frida *)",
+      "Bash(MSYS2_ARG_CONV_EXCL='-l' MSYS_NO_PATHCONV=1 frida *)",
+      "Bash(powershell *)",
+      "Bash(frida *)",
+      "Bash(.\\\\gradlew assembleDebug)",
+      "Bash(Select-String \"error:|cannot|symbol|BUILD\")",
+      "Bash(adb logcat *)",
+      "Bash(./gradlew assembleDebug)",
+      "Bash(adb install *)",
+      "Bash(Test-Path *)",
+      "Bash(tee \"c:/Users/Me/Desktop/guard_native/03_execute_执行任务/P22_PushFilter/logs/sw_push.log\")",
+      "Bash(pkill -f \"frida\")",
+      "Bash(adb forward *)",
+      "Bash(tee \"C:/Users/Me/Desktop/audio_probe.log\")",
+      "Read(//c/Users/Me/Desktop/**)",
+      "Bash(awk '{print $2}')"
+    ]
+  }
+}

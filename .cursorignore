@@ -1,0 +1,67 @@
+﻿# Guard Native — AI 上下文隔离（.cursorignore）
+# 作用：这些路径不会被 Cursor 索引 / @ 引用 / 自动带入上下文
+# 需要时仍可手动指定路径打开；隔离 ≠ 删除
+#
+# 分层说明见 PROJECT_INDEX.md §「AI 上下文隔离」
+
+# ── L0 构建产物（永远不用读，可再生成）────────────────────────
+.cxx/
+build/
+.gradle/
+**/build/
+*.apk
+*.aab
+*.dex
+*.class
+**/CMakeFiles/
+**/compile_commands.json.bin
+**/configure_fingerprint.bin
+hs_err_pid*.log
+
+# jadx 反编译 dump（大、可再生成；查 hook 点用 docs/HOOK_POINTS.md）
+jadx_8071_out/
+**/wechat_*_jadx/
+**/apk_samples/
+
+# ── L1 运行日志 / 探针输出（按需读，默认不进上下文）────────────
+03_execute_执行任务/**/logs/*.log
+03_execute_执行任务/**/logs/*.txt
+**/frida_stats_*.log
+**/logcat_*.txt
+**/dump_*.log
+**/proto_dump.log
+**/network.pcap
+
+# ── L2 根目录临时 scratch（历史试错残留，非产品代码）──────────
+/ConvFilter_*.java
+/check_*.py
+/debug_*.py
+/fix_convfilter_*.py
+/analyze_*.py
+/*_log.txt
+/build_err.txt
+/build_out.txt
+/best_event.txt
+
+# ── L3 归档 / 镜像 / 本地配置（默认不读）────────────────────────
+07_archive_归档/
+.claude/
+.claude/settings.local.json
+
+# Skill 镜像：日常只编辑 .cursor/skills/，.claude 为 sync 副本
+.claude/skills/
+
+# 发布产物与签名（安全 + 无代码参考价值）
+08_release_发布/**/*.apk
+08_release_发布/**/*.keystore
+08_release_发布/**/*.jks
+
+# 竞品 native 三件套（铁律禁止引入，只读文档 CATFISH_REVERSE.md 即可）
+pine/
+
+# ── L4 大体积参考资料（按需 @ 打开，不自动索引）────────────────
+06_refs_参考资料/采集快照_dump_snapshots/
+06_refs_参考资料/**/wechat_*.apk
+
+# 全景手册 = CLAUDE.md 的 ChatGPT 导出副本，避免双份铁律占上下文
+CHATGPT_项目全景手册.md

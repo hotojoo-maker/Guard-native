@@ -1,0 +1,255 @@
+05-24 05:55:20.154 19248 19248 W NCL     : [CF] Lh0 no List/Collection method on h0
+05-24 05:55:20.155 19248 19248 I NCL     : [CF] La hooked: public final void kc5.a.a(java.util.List)
+05-24 05:55:20.158 19248 19248 I NCL     : [CF] L1 hooked: public final void com.tencent.mm.plugin.mvvmlist.MvvmList.m(ik3.d,boolean)
+05-24 05:55:20.160 19248 19248 I NCL     : [CF] L1 hooked: public final void com.tencent.mm.plugin.mvvmlist.MvvmList.n(java.util.List,boolean)
+05-24 05:55:20.164 19248 19248 I NCL     : [CF] L2 hooked: public final void com.tencent.mm.plugin.mvvmlist.MvvmList.s(java.lang.String)
+05-24 05:55:20.166 19248 19248 I NCL     : [CF] L3 hooked: public final void com.tencent.mm.plugin.mvvmlist.MvvmList.d(fv5.l)
+05-24 05:55:20.167 19248 19248 I NCL     : [CF] L3 hooked: public final void com.tencent.mm.plugin.mvvmlist.MvvmList.r(ik3.d)
+05-24 05:55:20.168 19248 19248 I NCL     : [CF] L3 hooked: public final void com.tencent.mm.plugin.mvvmlist.MvvmList.t(java.util.List)
+05-24 05:55:20.171 19248 19248 I NCL     : [CF] L3 hooked: public final void com.tencent.mm.plugin.mvvmlist.MvvmList.w(ik3.o0)
+05-24 05:55:20.172 19248 19248 I NCL     : [CF] L3 hooked: public final void com.tencent.mm.plugin.mvvmlist.MvvmList.x(fv5.l)
+05-24 05:55:20.172 19248 19248 I NCL     : [CF] L3 total hooked=5
+05-24 05:55:20.173 19248 19248 I NCL     : [CF] Le hooked: public java.util.List com.tencent.mm.plugin.mvvmlist.MvvmList.e(java.util.List)
+05-24 05:55:20.173 19248 19248 I NCL     : [CF] Le total hooked=1
+05-24 05:55:20.174 19248 19248 I NCL     : [CF] MvvmConvList.c() hooked
+05-24 05:55:20.174 19248 19248 W NCL     : [CF] MvvmConvList no n/m(?,boolean). methods: c(0)
+05-24 05:55:20.180 19248 19248 I NCL     : [CF] MvvmConvList ctor hooked count=1
+05-24 05:55:20.180 19248 19248 I NCL     : [CF] ArrayList.addAll(Collection) hook ok
+05-24 05:55:20.182 19248 19248 I NCL     : [CF] ArrayList.addAll(int,Collection) hook ok
+05-24 05:55:20.192 19248 19248 I NCL     : [CF] adapter discovery: hooked ListView.setAdapter(Adapter)
+05-24 05:55:20.194 19248 19248 I NCL     : [CF] adapter discovery: hooked ListView.setAdapter(ListAdapter)
+05-24 05:55:20.196 19248 19248 I NCL     : [CF] adapter discovery: hooked AbsListView.setAdapter(Adapter)
+05-24 05:55:20.197 19248 19248 I NCL     : [CF] adapter discovery: hooked AbsListView.setAdapter(ListAdapter)
+05-24 05:55:20.201 19248 19248 I NCL     : [CF] adapter discovery hooks installed (4)
+05-24 05:55:20.202 19248 19248 I NCL     : [CF] onAttachedToWindow hook ok
+05-24 05:55:20.214 19248 19248 I NCL     : [CF] L4 notifyDataSetChanged hooked: kc5.v0
+05-24 05:55:20.214 19248 19248 I NCL     : [CF] L4 hooked hardcode kc5.v0
+05-24 05:55:20.215 19248 19248 I NCL     : [CF] L4 notifyDataSetChanged hooked: com.tencent.mm.ui.base.preference.h0
+05-24 05:55:20.215 19248 19248 I NCL     : [CF] L4 hooked hardcode com.tencent.mm.ui.base.preference.h0
+05-24 05:55:20.223 19248 19248 I NCL     : [CF] pendingHide LauncherUI resume hook installed
+05-24 05:55:20.230 19248 19248 I NCL     : [CF] onStart hook installed
+05-24 05:55:20.232 19248 19248 I NCL     : [CF] onWindowFocusChanged hook installed
+05-24 05:55:20.232 19248 19248 I NCL     : [CF] ConvFilter installed
+05-24 05:55:20.894 19248 19248 I NCL     : [CF:cold-init] sweep @500ms
+05-24 05:55:21.010 19248 19248 I NCL     : [CF:start] LauncherUI onStart HIDDEN → clean+notify
+05-24 05:55:23.348 19248 19309 I NCL     : [CF:itemdump cls=kc5.y] .d[com.tencent.mm.storage.l4].S0()=620757041.getTableName()=rconversation.h1()=officialaccounts.getTableName()=rconversation .f=公众号 .g=凌晨3:55 .i=-1 .m=13 .n=0 .o=0 .p=false .q=false .r=false .s=false .t=false .u=true .v=false .w[z15.fe7] .x=false .z=1
+05-24 05:55:23.348 19248 19309 I NCL     : [CF:diag] item class=kc5.y
+05-24 05:55:23.350 19248 19309 I NCL     : [CF:filter] label=L0addAll active=true items=12
+05-24 05:55:23.356 19248 19292 I NCL     : [CF:filter] label=L0addAll active=true items=12
+05-24 05:55:24.073 19248 19248 I NCL     : [CF:cold-init] sweep @1500ms
+05-24 05:55:24.097 19248 19248 I NCL     : [CF:cold-init] sweep @3000ms
+05-24 05:55:24.125 19248 19248 I NCL     : [CF:filter] label=L0addAll active=true items=12
+05-24 05:55:24.131 19248 19248 I NCL     : [CF:mvvmref] remember com.tencent.mm.ui.conversation.adapter.MvvmConvList
+05-24 05:55:24.131 19248 19248 I NCL     : [CF:cold] HIDDEN cold-start scheduled (100ms+300ms)
+05-24 05:55:24.132 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:24.133 19248 19248 W NCL     : [CF:diag-clean] field=o sz=12 hidden=5 [y wxid=null inHidden=false] [y wxid=wxid_ahvd1wejo02f22 inHidden=false] [y wxid=wxid_19apza6t9j7s12 inHidden=false]
+05-24 05:55:24.135 19248 19248 I NCL     : [CF:cache] save wxid=44786160583@chatroom index=2 field=p
+05-24 05:55:24.135 19248 19248 I NCL     : [CF:cache] save wxid=wxid_lzd2va16jd1622 index=2 field=p
+05-24 05:55:24.137 19248 19248 I NCL     : [CF:cache] save wxid=44786160583@chatroom index=2 field=h
+05-24 05:55:24.137 19248 19248 I NCL     : [CF:cache] save wxid=wxid_lzd2va16jd1622 index=2 field=h
+05-24 05:55:24.140 19248 19248 I NCL     : [CF:L4] cleaned=4
+05-24 05:55:24.140 19248 19248 I NCL     : [CF:L4] sync-notify ok
+05-24 05:55:24.375 19248 19248 I NCL     : [CF:focus] LauncherUI focus HIDDEN → clean+notify
+05-24 05:55:24.375 19248 19248 I NCL     : [CF:clean] start ids=5 src=focus-H mvvm=MvvmConvList
+05-24 05:55:24.376 19248 19248 I NCL     : [CF:mvvmdump cls=com.tencent.mm.ui.conversation.adapter.MvvmConvList] .d:f .e:n0 .f:y .g:i .h[List sz=12 item=kc5.y] .i:boolean .m:boolean .n:int .o[List sz=12 item=kc5.y] .p[List sz=12 item=kc5.y] .q:m0 .r:j0 .s:h2 .t:long .u:g0 .v:m2 .w:AtomicInteger .x:g .y:g .z:g
+05-24 05:55:24.376 19248 19248 I NCL     : [CF:L4diag] field=o sz=12 itemCls=kc5.y
+05-24 05:55:24.376 19248 19248 I NCL     : [CF:itemdump cls=kc5.y] .d[com.tencent.mm.storage.l4].S0()=620757041.getTableName()=rconversation.h1()=officialaccounts.getTableName()=rconversation .f=公众号 .g=凌晨3:55 .i=-1 .m=13 .n=0 .o=0 .p=false .q=false .r=false .s=false .t=false .u=true .v=false .w[z15.fe7] .x=false .z=1
+05-24 05:55:24.378 19248 19248 I NCL     : [CF:filter] label=L4collect active=true items=12
+05-24 05:55:24.383 19248 19248 W NCL     : [CF:diag-clean] field=p sz=12 hidden=5 [y wxid=null inHidden=false] [y wxid=wxid_ahvd1wejo02f22 inHidden=false] [y wxid=wxid_19apza6t9j7s12 inHidden=false]
+05-24 05:55:24.388 19248 19248 I NCL     : [CF:clean] removed=0 src=focus-H
+05-24 05:55:24.389 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:24.399 19248 19248 W NCL     : [CF:diag-clean] field=h sz=12 hidden=5 [y wxid=null inHidden=false] [y wxid=wxid_ahvd1wejo02f22 inHidden=false] [y wxid=wxid_19apza6t9j7s12 inHidden=false]
+05-24 05:55:24.400 19248 19393 I NCL     : [CF:filter] label=L0addAll active=true items=12
+05-24 05:55:24.401 19248 19248 I NCL     : [CF:L4] cleaned=0
+05-24 05:55:24.402 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:24.832 19248 19248 I NCL     : [CF:clean] start ids=5 src=cold-100 mvvm=MvvmConvList
+05-24 05:55:24.834 19248 19248 I NCL     : [CF:filter] label=L4collect active=true items=12
+05-24 05:55:24.839 19248 19248 I NCL     : [CF:clean] removed=0 src=cold-100
+05-24 05:55:24.839 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:24.853 19248 19248 I NCL     : [CF:L4] cleaned=0
+05-24 05:55:24.854 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:24.885 19248 19248 I NCL     : [CF:clean] start ids=5 src=cold-300 mvvm=MvvmConvList
+05-24 05:55:24.886 19248 19248 I NCL     : [CF:filter] label=L4collect active=true items=12
+05-24 05:55:24.895 19248 19248 I NCL     : [CF:clean] removed=0 src=cold-300
+05-24 05:55:24.895 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:24.896 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:24.929 19248 19248 I NCL     : [CF:filter] label=L0addAll active=true items=12
+05-24 05:55:24.931 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:24.931 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:24.936 19248 19295 I NCL     : [CF:filter] label=L0addAll active=true items=12
+05-24 05:55:25.400 19248 19343 I NCL     : [CF:addAll] new conv cls: com.tencent.mm.plugin.appbrand.appusage.AppBrandRecentTaskInfo
+05-24 05:55:25.400 19248 19343 I NCL     : [CF:diag] item class=com.tencent.mm.plugin.appbrand.appusage.AppBrandRecentTaskInfo
+05-24 05:55:25.473 19248 19343 I NCL     : [CF:filter] label=L0addAll active=true items=32
+05-24 05:55:25.473 19248 19354 I NCL     : [CF:filter] label=L0addAll active=true items=32
+05-24 05:55:25.613 19248 19296 I NCL     : [CF:filter] label=L0addAll active=true items=12
+05-24 05:55:25.645 19248 19248 I NCL     : [CF:filter] label=L0addAll active=true items=12
+05-24 05:55:25.648 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:25.654 19248 19248 I NCL     : [CF:L4] cleaned=0
+05-24 05:55:25.654 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:27.546 19248 19308 I NCL     : [CF:filter] label=L0addAll active=true items=32
+05-24 05:55:28.348 19248 19562 I NCL     : [CF:filter] label=L0addAll active=true items=32
+05-24 05:55:28.350 19248 19248 I NCL     : [CF:L4] entry adapter=d0 cleaning=false state=H
+05-24 05:55:28.356 19248 19248 I NCL     : [CF:L4] entry adapter=d0 cleaning=false state=H
+05-24 05:55:28.436 19248 19248 I NCL     : [CF:L4] entry adapter=d0 cleaning=false state=H
+05-24 05:55:28.444 19248 19248 I NCL     : [CF:L4] entry adapter=d0 cleaning=false state=H
+05-24 05:55:28.601 19248 19288 I NCL     : [CF:filter] label=L0addAll active=true items=12
+05-24 05:55:28.801 19248 19248 I NCL     : [CF:filter] label=L0addAll active=true items=12
+05-24 05:55:28.803 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:28.815 19248 19248 I NCL     : [CF:L4] cleaned=0
+05-24 05:55:28.815 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:30.155 19248 19288 I NCL     : [CF:filter] label=L0addAll active=true items=12
+05-24 05:55:30.171 19248 19248 I NCL     : [CF:start] LauncherUI onStart HIDDEN → clean+notify
+05-24 05:55:30.171 19248 19248 I NCL     : [CF:clean] start ids=5 src=start-H mvvm=MvvmConvList
+05-24 05:55:30.173 19248 19248 I NCL     : [CF:filter] label=L4collect active=true items=12
+05-24 05:55:30.182 19248 19248 I NCL     : [CF:clean] removed=0 src=start-H
+05-24 05:55:30.182 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:30.190 19248 19248 I NCL     : [CF:L4] cleaned=0
+05-24 05:55:30.190 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:30.392 19248 19248 I NCL     : [CF:filter] label=L0addAll active=true items=12
+05-24 05:55:30.394 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:30.401 19248 19248 I NCL     : [CF:L4] cleaned=0
+05-24 05:55:30.401 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:30.461 19248 19248 I NCL     : [CF:focus] LauncherUI focus HIDDEN → clean+notify
+05-24 05:55:30.461 19248 19248 I NCL     : [CF:clean] start ids=5 src=focus-H mvvm=MvvmConvList
+05-24 05:55:30.463 19248 19248 I NCL     : [CF:filter] label=L4collect active=true items=12
+05-24 05:55:30.480 19248 19248 I NCL     : [CF:clean] removed=0 src=focus-H
+05-24 05:55:30.480 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:30.480 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:30.917 19248 19248 I NCL     : [CF:diag] item class=com.tencent.mm.ui.conversation.MainUI
+05-24 05:55:30.918 19248 19248 I NCL     : [CF:diag] item class=com.tencent.mm.ui.contact.address.MvvmAddressUIFragment
+05-24 05:55:30.919 19248 19248 I NCL     : [CF:diag] item class=com.tencent.mm.ui.FindMoreFriendsUI
+05-24 05:55:30.934 19248 19248 I NCL     : [CF:diag] item class=com.tencent.mm.ui.MoreTabUI
+05-24 05:55:30.947 19248 19248 I NCL     : [CF:filter] label=L0addAll active=true items=4
+05-24 05:55:31.512 19248 19296 I NCL     : [CF:filter] label=L0addAll active=true items=12
+05-24 05:55:31.541 19248 19300 I NCL     : [CF:filter] label=L0addAll active=true items=12
+05-24 05:55:32.022 19248 19248 I NCL     : [CF:filter] label=L0addAll active=true items=12
+05-24 05:55:32.024 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:32.029 19248 19248 I NCL     : [CF:L4] cleaned=0
+05-24 05:55:32.029 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:34.127 19248 19287 I NCL     : [CF:filter] label=L0addAll active=true items=12
+05-24 05:55:34.248 19248 19248 I NCL     : [CF:filter] label=L0addAll active=true items=12
+05-24 05:55:34.250 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:34.256 19248 19248 I NCL     : [CF:L4] cleaned=0
+05-24 05:55:34.256 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:36.238 19248 19288 I NCL     : [CF:filter] label=L0addAll active=true items=12
+05-24 05:55:36.343 19248 19248 I NCL     : [CF:filter] label=L0addAll active=true items=12
+05-24 05:55:36.346 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:36.353 19248 19248 I NCL     : [CF:L4] cleaned=0
+05-24 05:55:36.353 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:38.589 19248 19248 I NCL     : [CF:start] LauncherUI onStart HIDDEN → clean+notify
+05-24 05:55:38.589 19248 19248 I NCL     : [CF:clean] start ids=5 src=start-H mvvm=MvvmConvList
+05-24 05:55:38.591 19248 19248 I NCL     : [CF:filter] label=L4collect active=true items=12
+05-24 05:55:38.599 19248 19248 I NCL     : [CF:clean] removed=0 src=start-H
+05-24 05:55:38.600 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:38.606 19248 19248 I NCL     : [CF:L4] cleaned=0
+05-24 05:55:38.606 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:39.089 19248 19248 I NCL     : [CF:focus] LauncherUI focus HIDDEN → clean+notify
+05-24 05:55:39.089 19248 19248 I NCL     : [CF:clean] start ids=5 src=focus-H mvvm=MvvmConvList
+05-24 05:55:39.091 19248 19248 I NCL     : [CF:filter] label=L4collect active=true items=12
+05-24 05:55:39.099 19248 19248 I NCL     : [CF:clean] removed=0 src=focus-H
+05-24 05:55:39.099 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:39.105 19248 19248 I NCL     : [CF:L4] cleaned=0
+05-24 05:55:39.105 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:40.996 19248 19248 I NCL     : [CF:L4] entry adapter=q2 cleaning=false state=H
+05-24 05:55:40.997 19248 19248 I NCL     : [CF:L4] entry adapter=q2 cleaning=false state=H
+05-24 05:55:41.032 19248 19248 I NCL     : [CF:L4] entry adapter=q2 cleaning=false state=H
+05-24 05:55:41.034 19248 19248 I NCL     : [CF:L4] entry adapter=q2 cleaning=false state=H
+05-24 05:55:41.091 19248 19248 I NCL     : [CF:L4] entry adapter=q2 cleaning=false state=H
+05-24 05:55:41.093 19248 19248 I NCL     : [CF:L4] entry adapter=q2 cleaning=false state=H
+05-24 05:55:41.316 19248 19248 I NCL     : [CF:L4] entry adapter=q2 cleaning=false state=H
+05-24 05:55:41.326 19248 19248 I NCL     : [CF:L4] entry adapter=q2 cleaning=false state=H
+05-24 05:55:41.347 19248 19248 I NCL     : [CF:L4] entry adapter=q2 cleaning=false state=H
+05-24 05:55:41.402 19248 19248 I NCL     : [CF:L4] entry adapter=q2 cleaning=false state=H
+05-24 05:55:41.429 19248 19248 I NCL     : [CF:L4] entry adapter=q2 cleaning=false state=H
+05-24 05:55:41.540 19248 19248 I NCL     : [CF:L4] entry adapter=q2 cleaning=false state=H
+05-24 05:55:41.922 19248 19248 I NCL     : [CF:L4] entry adapter=q2 cleaning=false state=V
+05-24 05:55:41.924 19248 19248 I NCL     : [CF:L4] entry adapter=q2 cleaning=false state=V
+05-24 05:55:41.943 19248 19248 I NCL     : [CF:restore] state=V cache=2
+05-24 05:55:41.943 19248 19248 I NCL     : [CF:restore] mvvm=MvvmConvList
+05-24 05:55:41.945 19248 19248 I NCL     : [CF:restore] inject wxid=44786160583@chatroom index=2 field=o
+05-24 05:55:41.947 19248 19248 I NCL     : [CF:restore] inject wxid=44786160583@chatroom index=2 field=p
+05-24 05:55:41.949 19248 19248 I NCL     : [CF:restore] inject wxid=44786160583@chatroom index=2 field=h
+05-24 05:55:41.951 19248 19248 I NCL     : [CF:restore] inject wxid=wxid_lzd2va16jd1622 index=2 field=o
+05-24 05:55:41.953 19248 19248 I NCL     : [CF:restore] inject wxid=wxid_lzd2va16jd1622 index=2 field=p
+05-24 05:55:41.955 19248 19248 I NCL     : [CF:restore] inject wxid=wxid_lzd2va16jd1622 index=2 field=h
+05-24 05:55:41.955 19248 19248 I NCL     : [CF:restore] done injected=2 / 2
+05-24 05:55:41.955 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=V
+05-24 05:55:41.955 19248 19248 I NCL     : [CF:L4] cleaned=0
+05-24 05:55:41.956 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=V
+05-24 05:55:42.139 19248 19248 I NCL     : [CF:pendingRestore] LauncherUI resumed in VISIBLE → restore+notify
+05-24 05:55:42.185 19248 19248 I NCL     : [CF:L4] entry adapter=h0 cleaning=false state=V
+05-24 05:55:42.185 19248 19248 I NCL     : [CF:L4] cleaned=0
+05-24 05:55:42.186 19248 19248 I NCL     : [CF:L4] entry adapter=h0 cleaning=false state=V
+05-24 05:55:42.188 19248 19248 I NCL     : [CF:L4] entry adapter=h0 cleaning=false state=V
+05-24 05:55:42.189 19248 19248 I NCL     : [CF:L4] entry adapter=h0 cleaning=false state=V
+05-24 05:55:42.222 19248 19248 I NCL     : [CF:L4] entry adapter=q2 cleaning=false state=V
+05-24 05:55:42.223 19248 19248 I NCL     : [CF:L4] entry adapter=q2 cleaning=false state=V
+05-24 05:55:42.298 19248 19248 W NCL     : [CF:refresh] ConvListView not found in DecorView hierarchy
+05-24 05:55:42.298 19248 19248 I NCL     : [CF:restore] state=V cache=2
+05-24 05:55:42.298 19248 19248 I NCL     : [CF:restore] mvvm=MvvmConvList
+05-24 05:55:42.299 19248 19248 I NCL     : [CF:restore] skip duplicate wxid=44786160583@chatroom field=o
+05-24 05:55:42.300 19248 19248 I NCL     : [CF:restore] skip duplicate wxid=44786160583@chatroom field=p
+05-24 05:55:42.300 19248 19248 I NCL     : [CF:restore] skip duplicate wxid=44786160583@chatroom field=h
+05-24 05:55:42.301 19248 19248 I NCL     : [CF:restore] skip duplicate wxid=wxid_lzd2va16jd1622 field=o
+05-24 05:55:42.301 19248 19248 I NCL     : [CF:restore] skip duplicate wxid=wxid_lzd2va16jd1622 field=p
+05-24 05:55:42.302 19248 19248 I NCL     : [CF:restore] skip duplicate wxid=wxid_lzd2va16jd1622 field=h
+05-24 05:55:42.302 19248 19248 I NCL     : [CF:restore] done injected=0 / 2
+05-24 05:55:42.302 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=V
+05-24 05:55:42.302 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=V
+05-24 05:55:42.325 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=V
+05-24 05:55:42.325 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=V
+05-24 05:55:43.971 19248 19248 I NCL     : [CF:clean] start ids=5 src=BUS-H mvvm=MvvmConvList
+05-24 05:55:43.973 19248 19248 I NCL     : [CF:group] chatroom=44786160583@chatroom name=熵、马孔多在下雨、Yy
+05-24 05:55:43.976 19248 19248 I NCL     : [CF:filter] label=L4collect active=true items=14
+05-24 05:55:43.978 19248 19248 I NCL     : [CF:cache] save wxid=wxid_lzd2va16jd1622 index=2 field=pre-list
+05-24 05:55:43.978 19248 19248 I NCL     : [CF] L4collect removed wxid=wxid_lzd2va16jd1622
+05-24 05:55:43.978 19248 19248 I NCL     : [CF:cache] save wxid=44786160583@chatroom index=2 field=pre-list
+05-24 05:55:43.979 19248 19248 I NCL     : [CF] L4collect removed wxid=44786160583@chatroom
+05-24 05:55:43.991 19248 19248 I NCL     : [CF:cache] save wxid=wxid_lzd2va16jd1622 index=2 field=p
+05-24 05:55:43.991 19248 19248 I NCL     : [CF:cache] save wxid=44786160583@chatroom index=2 field=p
+05-24 05:55:43.996 19248 19248 I NCL     : [CF:cache] save wxid=wxid_lzd2va16jd1622 index=2 field=h
+05-24 05:55:43.996 19248 19248 I NCL     : [CF:cache] save wxid=44786160583@chatroom index=2 field=h
+05-24 05:55:43.998 19248 19248 I NCL     : [CF:clean] removed=4 src=BUS-H
+05-24 05:55:44.087 19248 19248 I NCL     : [CF:start] LauncherUI onStart HIDDEN → clean+notify
+05-24 05:55:44.087 19248 19248 I NCL     : [CF:clean] start ids=5 src=start-H mvvm=MvvmConvList
+05-24 05:55:44.095 19248 19248 I NCL     : [CF:filter] label=L4collect active=true items=12
+05-24 05:55:44.129 19248 19248 I NCL     : [CF:clean] removed=0 src=start-H
+05-24 05:55:44.129 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:44.154 19248 19248 I NCL     : [CF:L4] cleaned=0
+05-24 05:55:44.154 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:44.200 19248 19248 I NCL     : [CF:pendingHide] LauncherUI resumed in HIDDEN → multi-shot clean
+05-24 05:55:44.650 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:44.655 19248 19248 I NCL     : [CF:L4] cleaned=0
+05-24 05:55:44.655 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:44.661 19248 19248 W NCL     : [CF:refresh] ConvListView not found in DecorView hierarchy
+05-24 05:55:44.662 19248 19248 I NCL     : [CF:clean] start ids=5 src=pendingHide-0 mvvm=MvvmConvList
+05-24 05:55:44.663 19248 19248 I NCL     : [CF:filter] label=L4collect active=true items=12
+05-24 05:55:44.670 19248 19248 I NCL     : [CF:clean] removed=0 src=pendingHide-0
+05-24 05:55:44.670 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:44.670 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:44.692 19248 19248 W NCL     : [CF:refresh] ConvListView not found in DecorView hierarchy
+05-24 05:55:44.692 19248 19248 I NCL     : [CF:clean] start ids=5 src=pendingHide-150 mvvm=MvvmConvList
+05-24 05:55:44.697 19248 19248 I NCL     : [CF:filter] label=L4collect active=true items=12
+05-24 05:55:44.703 19248 19248 I NCL     : [CF:clean] removed=0 src=pendingHide-150
+05-24 05:55:44.703 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:44.703 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:44.742 19248 19248 W NCL     : [CF:refresh] ConvListView not found in DecorView hierarchy
+05-24 05:55:44.742 19248 19248 I NCL     : [CF:clean] start ids=5 src=pendingHide-400 mvvm=MvvmConvList
+05-24 05:55:44.746 19248 19248 I NCL     : [CF:filter] label=L4collect active=true items=12
+05-24 05:55:44.755 19248 19248 I NCL     : [CF:clean] removed=0 src=pendingHide-400
+05-24 05:55:44.755 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:44.755 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:47.517 19248 19248 I NCL     : [CF:start] LauncherUI onStart HIDDEN → clean+notify
+05-24 05:55:47.518 19248 19248 I NCL     : [CF:clean] start ids=5 src=start-H mvvm=MvvmConvList
+05-24 05:55:47.524 19248 19248 I NCL     : [CF:filter] label=L4collect active=true items=12
+05-24 05:55:47.554 19248 19248 I NCL     : [CF:clean] removed=0 src=start-H
+05-24 05:55:47.554 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:47.578 19248 19248 I NCL     : [CF:L4] cleaned=0
+05-24 05:55:47.579 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:47.984 19248 19248 I NCL     : [CF:focus] LauncherUI focus HIDDEN → clean+notify
+05-24 05:55:47.984 19248 19248 I NCL     : [CF:clean] start ids=5 src=focus-H mvvm=MvvmConvList
+05-24 05:55:47.986 19248 19248 I NCL     : [CF:filter] label=L4collect active=true items=12
+05-24 05:55:47.993 19248 19248 I NCL     : [CF:clean] removed=0 src=focus-H
+05-24 05:55:47.994 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+05-24 05:55:48.000 19248 19248 I NCL     : [CF:L4] cleaned=0
+05-24 05:55:48.000 19248 19248 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H

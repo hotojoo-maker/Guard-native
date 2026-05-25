@@ -1,0 +1,233 @@
+package com.ghost.assist.moduleC;
+
+import android.app.Notification;
+import android.media.AudioManager;
+import android.net.Uri;
+import android.os.Build;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
+import android.util.Log;
+
+import com.ghost.assist.core.Bridge;
+
+/**
+ * NotifyRouter — single responsibility: map (talker, event-type) → OFF|VIBRATE|SOUND
+ * and apply the resulting policy to a Notification object or Vibrator.
+ *
+ * PushFilter calls eval() and executes the returned Action.  This class has
+ * zero state and zero side-effects beyond what the caller explicitly asks for.
+ *
+ * Policy source: Bridge.getNotifyPolicy() (MMKV key "nfyp").
+ *
+ * Table (mirrors Catfish §16.3 three-tier design):
+ *
+ *  ┌───────────────┬──────────────────────────┬──────────────────────┬──────────────────────────┐
+ *  │   event       │          OFF             │       VIBRATE        │          SOUND           │
+ *  ├───────────────┼──────────────────────────┼──────────────────────┼──────────────────────────┤
+ *  │ MSG (message) │ BLOCK                    │ BLOCK + vibrate      │ BLOCK + custom sound     │
+ *  ├───────────────┼──────────────────────────┼──────────────────────┼──────────────────────────┤
+ *  │ CALL (VoIP)   │ BLOCK (always)           │ BLOCK (always)       │ BLOCK (always)           │
+ *  ├───────────────┼──────────────────────────┼──────────────────────┼──────────────────────────┤
+ *  │ HANGUP        │ no action                │ no action            │ no action                │
+ *  └───────────────┴──────────────────────────┴──────────────────────┴──────────────────────────┘
+ *
+ *  VoIP calls are ALWAYS fully silent — policy does NOT apply to calls.
+ *  Three-tier policy applies to regular messages only.
+ */
+public final class NotifyRouter {
+
+    private static final String TAG = "NCL";
+
+    // Vibration pattern for message alert: two short pulses
+    static final long[] VIB_MSG = {0, 80, 60, 80};
+
+    /**
+     * Set to true while fireAlert() is calling vib.vibrate() so the PushFilter VV hook
+     * (which intercepts ALL Vibrator.vibrate() calls in WeChat's process) can skip our
+     * own vibration and only block WeChat's VoIP-related vibrations.
+     *
+     * Thread safety: fireAlert() always runs on the main thread (sMainHandler.post()),
+     * and VV hook also fires on whatever thread WeChat calls vibrate() from.
+     * The volatile guarantee is sufficient; no need for a lock since we only need
+     * to protect one specific call site.
+     */
+    static volatile boolean sOurVibration = false;
+
+    public enum EventType { MSG, CALL, HANGUP }
+
+    /** Routing result returned to PushFilter. */
+    public enum Action {
+        /** Block entirely — cancel notification, no sound, no vibration. */
+        BLOCK,
+        /** Pass the notification through after stripping original sound and applying
+         *  our vibration pattern (no audible ring). */
+        VIBRATE,
+        /** Pass through after replacing original sound with the custom ringtone URI
+         *  stored in Bridge.KEY_CUSTOM_SOUND (falls back to VIBRATE if unset). */
+        SOUND,
+        /** Fully pass through — used only for non-hidden friends in SOUND mode. */
+        PASS
+    }
+
+    private NotifyRouter() {}
+
+    // -------------------------------------------------------------------------
+    // eval — map policy + talker → Action
+    // -------------------------------------------------------------------------
+
+    /**
+     * Determine what to do with a notification.
+     *
+     * @param talker wxid of the sender (null → treat as non-hidden friend → PASS)
+     * @param type   event type
+     * @return action to take; BLOCK for OFF, VIBRATE/SOUND for the respective modes
+     */
+    public static Action eval(String talker, EventType type) {
+        if (talker == null) return Action.PASS;
+        if (!Bridge.getInstance().shouldHideId(talker)) return Action.PASS;
+
+        // VoIP calls are ALWAYS fully silent, regardless of user policy.
+        // Policy (VIBRATE/SOUND) only applies to regular messages.
+        if (type == EventType.CALL || type == EventType.HANGUP) return Action.BLOCK;
+
+        Bridge.NotifyPolicy policy = Bridge.getInstance().getNotifyPolicy();
+        switch (policy) {
+            case VIBRATE: return Action.VIBRATE;
+            case SOUND:   return Action.SOUND;
+            default:      return Action.BLOCK;  // OFF
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // applyVibrate — strip WeChat sound, arm our vibration
+    // -------------------------------------------------------------------------
+
+    /**
+     * Modify a Notification in-place: remove WeChat's original sound + vibration,
+     * then inject our custom vibration pattern.
+     * Call this when action == VIBRATE and the notification is being passed through.
+     */
+    public static void applyVibrate(Notification n, EventType type) {
+        // Strip WeChat's own sound and vibration
+        n.sound = null;
+        n.defaults &= ~Notification.DEFAULT_SOUND;
+        n.defaults &= ~Notification.DEFAULT_VIBRATE;
+        n.vibrate = null;
+
+        // Inject our pattern as the notification's vibration
+        long[] pattern = VIB_MSG; // calls always silent; only MSG reaches fireAlert
+        n.defaults |= Notification.DEFAULT_VIBRATE;
+        n.vibrate = pattern;
+        Log.i(TAG, "[NR] applyVibrate type=" + type);
+    }
+
+    /**
+     * Fire a message/call alert directly — no notification, no banner, no system popup.
+     *
+     * Must be called AFTER blocking the notification in L1 (setResult false).
+     * This is the core of the "no-banner" guarantee: we never let a notification
+     * reach NM.notify(); instead we fire our own Vibrator/sound out-of-band.
+     *
+     * @param ctx  Application context (Bridge.getInstance().getApp())
+     * @param type MSG or CALL
+     */
+    public static void fireAlert(android.content.Context ctx, EventType type) {
+        Bridge.NotifyPolicy policy = Bridge.getInstance().getNotifyPolicy();
+        if (policy == Bridge.NotifyPolicy.OFF) return;
+        if (ctx == null) return;
+
+        // Phase 2: play custom sound when policy == SOUND and URI is configured.
+        // For now falls back to vibration (Phase 1).
+        if (policy == Bridge.NotifyPolicy.SOUND) {
+            String uriStr = Bridge.getInstance().getCustomSound();
+            if (uriStr != null && !uriStr.isEmpty()) {
+                try {
+                    android.media.MediaPlayer mp = new android.media.MediaPlayer();
+                    mp.setDataSource(ctx, Uri.parse(uriStr));
+                    mp.setAudioStreamType(AudioManager.STREAM_NOTIFICATION);
+                    mp.setOnCompletionListener(android.media.MediaPlayer::release);
+                    mp.prepare();
+                    mp.start();
+                    Log.i(TAG, "[NR] fireAlert SOUND uri=" + uriStr);
+                    return;
+                } catch (Throwable t) {
+                    Log.w(TAG, "[NR] fireAlert SOUND err, fallback vib: " + t);
+                }
+            }
+            // No custom sound configured → fall through to vibration
+        }
+
+        // VIBRATE (or SOUND fallback)
+        Vibrator vib = (Vibrator) ctx.getSystemService(android.content.Context.VIBRATOR_SERVICE);
+        if (vib == null || !vib.hasVibrator()) {
+            Log.w(TAG, "[NR] fireAlert no vibrator");
+            return;
+        }
+        long[] pattern = VIB_MSG; // calls always silent; only MSG reaches fireAlert
+        try {
+            // Set flag BEFORE calling vibrate() so the PushFilter VV hook
+            // (which intercepts ALL Vibrator.vibrate() in WeChat's process) skips it.
+            sOurVibration = true;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vib.vibrate(VibrationEffect.createWaveform(pattern, -1));
+            } else {
+                //noinspection deprecation
+                vib.vibrate(pattern, -1);
+            }
+            Log.i(TAG, "[NR] fireAlert type=" + type + " policy=" + policy);
+        } catch (Throwable t) {
+            Log.w(TAG, "[NR] fireAlert vib err: " + t);
+        } finally {
+            sOurVibration = false;
+        }
+    }
+
+
+    // -------------------------------------------------------------------------
+    // applySound — replace WeChat ringtone with custom URI
+    // -------------------------------------------------------------------------
+
+    /**
+     * Modify a Notification in-place: replace WeChat's ringtone with the custom
+     * sound URI stored in Bridge, strip vibration pattern.
+     * Falls back to applyVibrate() if no custom sound is configured.
+     */
+    public static void applySound(Notification n, EventType type) {
+        String uriStr = Bridge.getInstance().getCustomSound();
+        if (uriStr == null || uriStr.isEmpty()) {
+            // No custom sound configured yet → fall back to vibrate
+            applyVibrate(n, type);
+            return;
+        }
+        n.sound = Uri.parse(uriStr);
+        n.defaults &= ~Notification.DEFAULT_SOUND;
+        n.defaults &= ~Notification.DEFAULT_VIBRATE;
+        n.vibrate = null;
+        Log.i(TAG, "[NR] applySound type=" + type + " uri=" + uriStr);
+    }
+
+    /**
+     * True if the notification looks like a VoIP/call event (used to decide EventType).
+     * Checks fullScreenIntent, channel name, and notification text.
+     */
+    public static EventType detectEventType(Notification n) {
+        if (n == null) return EventType.MSG;
+        if (n.fullScreenIntent != null) return EventType.CALL;
+        String ch = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) ? n.getChannelId() : "";
+        if (ch != null && (ch.contains("voip") || ch.contains("ringtone")
+                || ch.contains("call") || ch.contains("reminder"))) {
+            return EventType.CALL;
+        }
+        if (n.extras != null) {
+            CharSequence txt = n.extras.getCharSequence(Notification.EXTRA_TEXT, "");
+            CharSequence ttl = n.extras.getCharSequence(Notification.EXTRA_TITLE, "");
+            String body = (txt != null ? txt.toString() : "") + (ttl != null ? ttl.toString() : "");
+            if (body.contains("通话") || body.contains("通話")
+                    || body.contains("call") || body.contains("语音")
+                    || body.contains("视频")) {
+                return EventType.CALL;
+            }
+        }
+        return EventType.MSG;
+    }
+}
