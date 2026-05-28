@@ -99,6 +99,20 @@ public class Bridge {
         putBool(KEY_FEATURE, enabled);
     }
 
+    // --- 启动防层模式 (key: "hpm", default: false 均衡模式) ---
+    // false = 均衡：冷启动 / 锁屏亮屏显示白色遮罩 (ConvFilter.showColdStartOverlay)
+    // true  = 高性能：跳过遮罩、响应更快、要求微信常驻后台不被杀
+    // SETTINGS_UI_V2 §7.1 接入
+    private static final String KEY_HIGH_PERF_MODE = "hpm";
+
+    public boolean isHighPerfMode() {
+        return getBool(KEY_HIGH_PERF_MODE, false);
+    }
+
+    public void setHighPerfMode(boolean enabled) {
+        putBool(KEY_HIGH_PERF_MODE, enabled);
+    }
+
     // --- 通知策略 NotifyPolicy (key: "nfyp", default: OFF) ---
     // OFF   = 完全静默（当前 PushFilter 行为）
     // VIBRATE = 震动但无声（Phase 2 实现）
@@ -128,6 +142,19 @@ public class Bridge {
 
     public void setNotifyPolicy(NotifyPolicy policy) {
         putString(KEY_NOTIFY_POLICY, policy.name());
+    }
+
+    // --- 语音/视频通话通知策略 CallNotifyPolicy (key: "cnfy", default: OFF) ---
+    // 来电只有两态：OFF = 静默（默认），VIBRATE = 震动。
+    // 来电永不放铃声（反暴露）；SOUND 不作为来电选项，若误存按震动处理。
+    private static final String KEY_CALL_NOTIFY_POLICY = "cnfy";
+
+    public NotifyPolicy getCallNotifyPolicy() {
+        return NotifyPolicy.fromString(getString(KEY_CALL_NOTIFY_POLICY, "OFF"));
+    }
+
+    public void setCallNotifyPolicy(NotifyPolicy policy) {
+        putString(KEY_CALL_NOTIFY_POLICY, policy.name());
     }
 
     /** Custom ringtone URI for SOUND mode (empty string = not configured → falls back to VIBRATE). */
@@ -303,6 +330,22 @@ public class Bridge {
 
     public synchronized java.util.List<String> getRawFeed() {
         return new java.util.ArrayList<>(mRawFeed);
+    }
+
+    // --- UIN → wxid 映射（ConvFilter 写入，SearchFilter 读取）---
+    // fz2.e.g 字段在 8.0.71 是纯 UIN 字符串，不含 wxid。
+    // 从会话列表 l4 contact 对象拿到 UIN(S0()) + wxid(C0()) 对，存到此表。
+    private final java.util.concurrent.ConcurrentHashMap<String, String> mUinToWxid =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
+    public void putUinMapping(String uin, String wxid) {
+        if (uin == null || uin.isEmpty() || wxid == null || wxid.isEmpty()) return;
+        mUinToWxid.put(uin, wxid);
+    }
+
+    public String getWxidByUin(String uin) {
+        if (uin == null || uin.isEmpty()) return null;
+        return mUinToWxid.get(uin);
     }
 
     // --- Feed-seen wxids (in-memory ring, max 50, not persisted) ---

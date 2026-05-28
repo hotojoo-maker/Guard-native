@@ -3,18 +3,32 @@ package com.ghost.assist.moduleB;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.DialogInterface;
 import android.graphics.Color;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.InputType;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
+import android.widget.Button;
+import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
+import android.widget.ScrollView;
+import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.ghost.assist.core.Bridge;
 import com.ghost.assist.core.StateMachine;
@@ -50,6 +64,13 @@ public class SettingsEntry {
 
     private static final String MAIN_SETTINGS_CLASS =
             "com.tencent.mm.plugin.setting.ui.setting_new.MainSettingsUI";
+    // P_SE5: 8.0.71 实测设置页是 CommonSettingsUI（不是 MainSettingsUI）。
+    // 两个都监听以兼容不同版本入口。
+    private static final String COMMON_SETTINGS_CLASS =
+            "com.tencent.mm.plugin.setting.ui.setting_new.CommonSettingsUI";
+    private static final String LAUNCHER_UI_CLASS =
+            "com.tencent.mm.ui.LauncherUI";
+    private static final int MORE_PROFILE_TAG = 0x67757072; // "gupr"
 
     private static volatile boolean sInstalled      = false;
     private static volatile boolean sDiagDone       = false;
@@ -65,10 +86,73 @@ public class SettingsEntry {
     // Path B: RecyclerView weak ref
     private static volatile WeakReference<View> sRvRef;
 
+    // P_SE7 (2026-05-28): banner 跟随 RV 滚动 —— OnScrollChangedListener + computeVerticalScrollOffset。
+    // sScrollFollowRvRef: 已挂监听的 RV；sScrollListenerRef: 监听器强引用（VTO 内部是 weak ref，
+    // 必须 GC 防护）；removeLlHeader / syncLlHeader 删除分支必须先 detachScrollFollow。
+    private static volatile WeakReference<View> sScrollFollowRvRef;
+    private static volatile android.view.ViewTreeObserver.OnScrollChangedListener sScrollListenerRef;
+
     // B2: Xposed adapter hooks state
     private static volatile boolean               sAdapterHooked   = false;
     private static volatile WeakReference<Object> sKnownAdapterRef = null;
     private static volatile boolean               sHeaderVisible   = false;
+    // Cached original WeChat item count — our header is appended at pos == sLastOrigCount.
+    // Updated on every getItemCount call to stay in sync with RecyclerView state.
+    private static volatile int                   sLastOrigCount   = 0;
+
+    // P_SE5 (2026-05-28): 切回 INJECT 模式（5-25 原版方案）。
+    // hijack 路径在 8.0.71 上有两个无法解决的难题：
+    //   1. pz3.g.onBindViewHolder afterHook 是死路径（实测 0 命中）
+    //   2. WeChat 的 click dispatch 走 RecyclerView.OnItemTouchListener、不是 OnClickListener
+    //      → H 态 delegate original 永远拿到 null 或 self-ref、点击不响应
+    // INJECT 模式不动"个人资料"行、只在 pos=1 注入"密友设置 ›"新行，H 态点"个人资料"
+    // 走 RecyclerView 原生 dispatch 100% 工作。
+    private static volatile boolean sUseInjectMode    = true;
+
+    // P_SE5: overlay 显示期间禁止状态机 enterHidden。
+    // 用户在密友设置面板里配置密友时不应被误触发拉回 H。
+    // TriggerGuard 各 enterHidden 路径检查这个 flag、true 时跳过。
+    private static volatile boolean sOverlayActive    = false;
+
+    /** TriggerGuard 用：overlay 显示中？显示时所有 enterHidden 触发都跳过。 */
+    public static boolean isOverlayActive() {
+        return sOverlayActive;
+    }
+
+    /**
+     * P_SE5: 状态机切换时主动刷 banner（不依赖 onResume 重新 fire）。
+     * TriggerGuard 触发 enterHidden 后、overlay 状态切换按钮 dismiss 后调本方法。
+     */
+    public static void onStateChanged() {
+        if (!sUseInjectMode) return;
+        final ViewGroup ll = sLlRef != null ? sLlRef.get() : null;
+        if (ll == null) return;
+        final boolean shouldShow = StateMachine.getInstance().getState()
+                == StateMachine.State.VISIBLE;
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override public void run() {
+                try {
+                    Activity act = unwrapActivity(ll.getContext());
+                    if (act == null) return;
+                    syncLlHeader(ll, act, shouldShow);
+                    Log.i(TAG, "[SET] onStateChanged sync shouldShow=" + shouldShow);
+                } catch (Throwable t) {
+                    Log.w(TAG, "[SET] onStateChanged failed: " + t);
+                }
+            }
+        });
+    }
+    private static final int        PROFILE_ROW_TAG   = 0x67757a72; // "guzr"
+    private static final int        PROFILE_ORIG_TAG  = 0x67757a73; // "guzs" — cache 原 onClick listener
+    private static final String     PROFILE_TEXT      = "\u4e2a\u4eba\u8d44\u6599"; // 个人资料
+    private static final String     MIYOU_TEXT        = "\u91cf\u5b50\u5bc6\u53cb"; // 量子密友 — V 态下"个人资料"行替换文字
+
+    // "我" tab top profile row replacement.
+    private static volatile WeakReference<View> sMoreProfileRowRef;
+    private static volatile WeakReference<TextView> sMoreTitleRef;
+    private static volatile WeakReference<View.OnClickListener> sMoreOriginalClickRef;
+    private static volatile String sMoreOriginalTitle;
+
 
     // -----------------------------------------------------------------------
     // Install hook
@@ -87,17 +171,82 @@ public class SettingsEntry {
                         @Override
                         protected void afterHookedMethod(MethodHookParam param) {
                             Activity activity = (Activity) param.thisObject;
-                            if (!MAIN_SETTINGS_CLASS.equals(activity.getClass().getName())) return;
+                            String cls = activity.getClass().getName();
                             try {
-                                syncEntry(activity);
+                                if (MAIN_SETTINGS_CLASS.equals(cls)
+                                        || COMMON_SETTINGS_CLASS.equals(cls)) {
+                                    syncEntry(activity);
+                                } else if (LAUNCHER_UI_CLASS.equals(cls)) {
+                                    scheduleMoreTabProfileProbe(activity);
+                                }
                             } catch (Throwable t) {
                                 Log.w(TAG, "[SET] syncEntry error: " + t);
                             }
                         }
                     });
-            Log.i(TAG, "[SET] entry installed class=" + MAIN_SETTINGS_CLASS);
+            Log.i(TAG, "[SET] entry installed class=" + MAIN_SETTINGS_CLASS
+                    + " more=" + LAUNCHER_UI_CLASS);
         } catch (Throwable t) {
             Log.w(TAG, "[SET] install failed: " + t);
+        }
+
+        try {
+            XposedHelpers.findAndHookMethod(
+                    android.view.View.class,
+                    "onAttachedToWindow",
+                    new XC_MethodHook() {
+                        @Override
+                        protected void afterHookedMethod(MethodHookParam param) {
+                            Object obj = param.thisObject;
+                            if (!(obj instanceof TextView)) return;
+                            TextView tv = (TextView) obj;
+                            CharSequence text = tv.getText();
+                            if (text == null || !text.toString().contains("微信号")) return;
+                            try {
+                                syncMoreTabProfileEntryFromWxid(tv);
+                            } catch (Throwable t) {
+                                Log.w(TAG, "[SET:more] attach probe failed: " + t);
+                            }
+                        }
+                    });
+            Log.i(TAG, "[SET:more] TextView attach hook installed");
+        } catch (Throwable t) {
+            Log.w(TAG, "[SET:more] attach hook failed: " + t);
+        }
+
+        // P_SE3: 量子密友文字防覆写 hook。
+        // syncMoreTabProfileEntryFromWxid 把 title.setText("量子密友") 后，WeChat 内部 binder
+        // 可能在后续 layout/refresh 中再次 setText 把文字改回去（如 "昵称"/"用户名"）。
+        // 装一个 TextView.setText(CharSequence) 的 before hook，专门拦 sMoreTitleRef 这一个实例：
+        //   - 仅在 VISIBLE 状态下生效
+        //   - 仅当 this == sMoreTitleRef.get()
+        //   - 当 args[0] != "量子密友" 时强制改回，并打 [SET:more:guard] 日志
+        // 性能：每次 TextView.setText 进 hook 都做一次实例比对，开销可忽略。
+        try {
+            XposedHelpers.findAndHookMethod(
+                    TextView.class,
+                    "setText",
+                    CharSequence.class,
+                    new XC_MethodHook() {
+                        @Override
+                        protected void beforeHookedMethod(MethodHookParam param) {
+                            TextView title = sMoreTitleRef != null ? sMoreTitleRef.get() : null;
+                            if (title == null) return;
+                            if (param.thisObject != title) return;
+                            if (StateMachine.getInstance().getState()
+                                    != StateMachine.State.VISIBLE) return;
+                            CharSequence incoming = (CharSequence) param.args[0];
+                            String expected = "\u91cf\u5b50\u5bc6\u53cb";
+                            if (incoming == null || !expected.contentEquals(incoming)) {
+                                param.args[0] = expected;
+                                Log.i(TAG, "[SET:more:guard] setText intercept "
+                                        + incoming + " -> 量子密友");
+                            }
+                        }
+                    });
+            Log.i(TAG, "[SET:more:guard] setText anti-overwrite hook installed");
+        } catch (Throwable t) {
+            Log.w(TAG, "[SET:more:guard] setText hook failed: " + t);
         }
     }
 
@@ -118,6 +267,8 @@ public class SettingsEntry {
             sDiagDone = true;
             diagViewTree(root);
         }
+        // P_SE1 hijack: delayed — RecyclerView not laid out until after onResume
+        scheduleProfileRowHijack(root);
 
         boolean shouldShow = StateMachine.getInstance().getState() == StateMachine.State.VISIBLE;
 
@@ -139,23 +290,217 @@ public class SettingsEntry {
     }
 
     // -----------------------------------------------------------------------
+    // P_SE1 hijack: delayed scan for "个人资料" row → hijack onClick
+    // -----------------------------------------------------------------------
+
+    /**
+     * P_SE5: 扫"个人资料"行 → 根据状态机做差异化处理。
+     *
+     * 8.0.71 pz3.g.onBindViewHolder hook 死路径，所以 view-tree 扫描是唯一路径。
+     *
+     * - VISIBLE: 文字 → "量子密友"，装 hijack listener 整行热区 → 弹 overlay
+     * - HIDDEN:  文字 → "个人资料"，**卸**所有 hijack listener，让 RecyclerView.OnItemTouchListener
+     *            自然处理 click → 走 WeChat 原生跳 ContactInfo Fragment
+     *
+     * 2 波重试：100ms 早探 + 800ms 兜底；conditional setText 防闪烁。
+     */
+    private static void scheduleProfileRowHijack(final ViewGroup root) {
+        // P_SE5: INJECT 模式下不动"个人资料"行（走 5-25 路线，只注入新行）。
+        if (sUseInjectMode) return;
+        final int[] delays = {100, 800};
+        Handler h = new Handler(Looper.getMainLooper());
+        for (final int delay : delays) {
+            h.postDelayed(new Runnable() {
+                @Override public void run() { tryPatchProfileRow(root, delay); }
+            }, delay);
+        }
+    }
+
+    private static void tryPatchProfileRow(final ViewGroup root, final int waveTag) {
+        try {
+            TextView profileTv = findProfileRowTitle(root);
+            if (profileTv == null) {
+                if (waveTag == 800) {
+                    Log.w(TAG, "[SET:hijack:zir] wave-" + waveTag + "ms: no profile row found");
+                }
+                return;
+            }
+            // walk up to RecyclerView's direct child (the full row item)
+            View row = profileTv;
+            ViewParent p = profileTv.getParent();
+            while (p instanceof View
+                    && !p.getClass().getName().contains("RecyclerView")) {
+                row = (View) p;
+                p = p.getParent();
+            }
+
+            final TextView titleTvFinal = profileTv;
+            final View rowRef = row;
+            boolean visible = StateMachine.getInstance().getState()
+                    == StateMachine.State.VISIBLE;
+            final String desired = visible ? MIYOU_TEXT : PROFILE_TEXT;
+
+            // Q4: conditional setText 防闪烁（文字已经对就不动）。
+            if (!desired.contentEquals(titleTvFinal.getText())) {
+                titleTvFinal.setText(desired);
+            }
+            // 防 WeChat 异步覆写：250ms / 700ms 兜底重写两次。
+            Handler hf = new Handler(Looper.getMainLooper());
+            hf.postDelayed(new Runnable() {
+                @Override public void run() {
+                    if (!desired.contentEquals(titleTvFinal.getText())) {
+                        titleTvFinal.setText(desired);
+                    }
+                }
+            }, 250);
+            hf.postDelayed(new Runnable() {
+                @Override public void run() {
+                    if (!desired.contentEquals(titleTvFinal.getText())) {
+                        titleTvFinal.setText(desired);
+                    }
+                }
+            }, 700);
+
+            if (visible) {
+                // VISIBLE: 装 hijack listener，整行热区 → overlay
+                row.setClickable(true);
+                View.OnClickListener hijack = new View.OnClickListener() {
+                    @Override public void onClick(View v) {
+                        Log.i(TAG, "[SET:hijack:zir] click VISIBLE -> overlay");
+                        showGuardOverlay(v.getContext());
+                    }
+                };
+                row.setOnClickListener(hijack);
+                attachHijackToAllDescendants(row, hijack);
+                Log.i(TAG, "[SET:hijack:zir] wave-" + waveTag + "ms VISIBLE patched"
+                        + " rowClass=" + row.getClass().getName());
+            } else {
+                // HIDDEN: 卸所有 hijack，让 RecyclerView.OnItemTouchListener 自然处理 click。
+                // 8.0.71 ContactInfo 是 CommonSettingsUI 的 Fragment，原生 click dispatch 走 RV。
+                detachHijackFromAllDescendants(row);
+                row.setOnClickListener(null);
+                row.setClickable(false);
+                Log.i(TAG, "[SET:hijack:zir] wave-" + waveTag + "ms HIDDEN unpatched (native)"
+                        + " rowClass=" + row.getClass().getName());
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "[SET:hijack:zir] wave-" + waveTag + "ms failed: " + t);
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // "我" tab profile row entry
+    // -----------------------------------------------------------------------
+
+    private static void scheduleMoreTabProfileProbe(final Activity activity) {
+        Handler h = new Handler(Looper.getMainLooper());
+        h.post(new Runnable() {
+            @Override public void run() { syncMoreTabProfileEntry(activity); }
+        });
+        h.postDelayed(new Runnable() {
+            @Override public void run() { syncMoreTabProfileEntry(activity); }
+        }, 300);
+        h.postDelayed(new Runnable() {
+            @Override public void run() { syncMoreTabProfileEntry(activity); }
+        }, 900);
+    }
+
+    private static void syncMoreTabProfileEntry(Activity activity) {
+        if (activity == null || !LAUNCHER_UI_CLASS.equals(activity.getClass().getName())) return;
+
+        if (StateMachine.getInstance().getState() != StateMachine.State.VISIBLE) {
+            restoreMoreTabProfileEntry();
+            return;
+        }
+
+        ViewGroup root = getContentRoot(activity);
+        if (root == null) return;
+        TextView wxidText = findTextViewContaining(root, "微信号");
+        if (wxidText == null) return;
+        syncMoreTabProfileEntryFromWxid(wxidText);
+    }
+
+    private static void syncMoreTabProfileEntryFromWxid(TextView wxidText) {
+        if (wxidText == null) return;
+        if (StateMachine.getInstance().getState() != StateMachine.State.VISIBLE) {
+            restoreMoreTabProfileEntry();
+            return;
+        }
+
+        ViewGroup row = findProfileRowAncestor(wxidText);
+        if (row == null) return;
+
+        TextView title = findProfileTitle(row, wxidText);
+        if (title == null) return;
+
+        if (row.getTag(MORE_PROFILE_TAG) == null) {
+            sMoreOriginalTitle = title.getText() != null ? title.getText().toString() : "";
+            View.OnClickListener originalClick = getCurrentOnClickListener(row);
+            if (originalClick != null) {
+                sMoreOriginalClickRef = new WeakReference<>(originalClick);
+            }
+        }
+
+        title.setText("\u91cf\u5b50\u5bc6\u53cb"); // 量子密友
+        row.setTag(MORE_PROFILE_TAG, Boolean.TRUE);
+        row.setClickable(true);
+        row.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                Log.i(TAG, "[SET:more] profile row clicked");
+                showGuardOverlay(v.getContext());
+            }
+        });
+        sMoreProfileRowRef = new WeakReference<View>(row);
+        sMoreTitleRef = new WeakReference<TextView>(title);
+        Log.i(TAG, "[SET:more] profile row patched");
+    }
+
+    private static void restoreMoreTabProfileEntry() {
+        View row = sMoreProfileRowRef != null ? sMoreProfileRowRef.get() : null;
+        TextView title = sMoreTitleRef != null ? sMoreTitleRef.get() : null;
+        if (title != null && sMoreOriginalTitle != null) {
+            title.setText(sMoreOriginalTitle);
+        }
+        if (row != null && row.getTag(MORE_PROFILE_TAG) != null) {
+            View.OnClickListener originalClick =
+                    sMoreOriginalClickRef != null ? sMoreOriginalClickRef.get() : null;
+            row.setOnClickListener(originalClick);
+            row.setTag(MORE_PROFILE_TAG, null);
+            Log.i(TAG, "[SET:more] profile row restored");
+        }
+        sMoreProfileRowRef = null;
+        sMoreTitleRef = null;
+        sMoreOriginalClickRef = null;
+        sMoreOriginalTitle = null;
+    }
+
+    // -----------------------------------------------------------------------
     // Path B dispatch
     // -----------------------------------------------------------------------
 
     private static void handleRecyclerView(View rv, Activity activity, boolean shouldShow) {
-        // B2 hooks active: just sync visibility + notify
-        if (sAdapterHooked) {
-            if (sHeaderVisible != shouldShow) {
+        // P_SE5 (2026-05-28): 8.0.71 实测 pz3.g.onBindViewHolder hook 0 命中（死路径），
+        // INJECT 模式的核心也无法靠 B2 hook 注入新行。改为依赖 B1 grandparent injection
+        // 注入 banner 到 RV 同层级 LinearLayout —— 这条路径不依赖 adapter hook、稳定可靠。
+        if (sUseInjectMode) {
+            // P_SE7: 保存 RV 引用让 syncLlHeader 给 scroll-follow 监听器用。
+            sRvRef = new WeakReference<>(rv);
+            ViewGroup ll = findRvContainerLinearLayout(rv);
+            if (ll != null) {
+                syncLlHeader(ll, activity, shouldShow);
+            }
+            // 同时让 B2 hook 试一次（万一某个版本 onBindViewHolder 真触发）
+            if (sAdapterHooked && sHeaderVisible != shouldShow) {
                 sHeaderVisible = shouldShow;
                 refreshAdapterNotify();
             }
             return;
         }
 
-        // B1: fixed header until B2 is ready
-        ViewGroup ll = findRvContainerLinearLayout(rv);
-        if (ll != null) {
-            syncLlHeader(ll, activity, shouldShow);
+        // hijack 模式（已弃用）：每次 onResume 强制 rebind
+        if (sAdapterHooked) {
+            refreshAdapterNotify();
+            return;
         }
 
         // Schedule one-time adapter probe → installs B2 hooks
@@ -241,67 +586,177 @@ public class SettingsEntry {
     //                                       pos>0 → shift pos-1
     // -----------------------------------------------------------------------
 
+    // Position of our injected guard entry in the settings RecyclerView.
+    // pos 0 is WeChat's search box (viewType=6); we inject at pos 1 so the
+    // entry appears right at the top of the visible settings list.
+    private static final int INJECT_POS = 1;
+
     private static void installAdapterHooks(final Class<?> adapterCls, boolean initialShow) {
         try {
-            // 1. getItemCount
+            // Inject our guard entry at INJECT_POS (= 1, after the search box at pos 0).
+            // Total count becomes N+1; positions INJECT_POS+1 … N are WeChat's items
+            // shifted by 1 — achieved by rewriting pos in getItemViewType / onBindViewHolder
+            // / getItemId before the original method runs.
+
+            // 1. getItemCount — advertise N+1 items. (legacy inject mode only)
             XposedBridge.hookAllMethods(adapterCls, "getItemCount", new XC_MethodHook() {
-                        @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
+                @Override
+                protected void afterHookedMethod(MethodHookParam param) {
+                    if (!sUseInjectMode) return;
                     if (!sHeaderVisible) return;
                     Object r = param.getResult();
-                    if (r instanceof Integer) param.setResult((Integer) r + 1);
+                    if (r instanceof Integer) {
+                        param.setResult((Integer) r + 1);
+                    }
                 }
             });
 
-            // 2. getItemViewType — shift positions for items after the header
+            // 2. getItemViewType — our slot returns viewType 1; shifted slots delegate. (legacy)
             XposedBridge.hookAllMethods(adapterCls, "getItemViewType", new XC_MethodHook() {
                 @Override
                 protected void beforeHookedMethod(MethodHookParam param) {
+                    if (!sUseInjectMode) return;
                     if (!sHeaderVisible
                             || param.args.length < 1
                             || !(param.args[0] instanceof Integer)) return;
                     int pos = (int) param.args[0];
-                    if (pos > 0) param.args[0] = pos - 1;
-                    // pos 0: no-op → original returns type of item[0]; WeChat creates matching ViewHolder
+                    if (pos == INJECT_POS) {
+                        param.setResult(1); // normal row ViewHolder type
+                    } else if (pos > INJECT_POS) {
+                        param.args[0] = pos - 1; // shift → WeChat handles original pos-1
+                    }
+                    // pos 0 (search box): unchanged
                 }
             });
 
-            // 3. onBindViewHolder — pos 0: override; pos 1..N: shift
+            // 3. onBindViewHolder — bind our entry at INJECT_POS; shift the rest. (legacy)
             XposedBridge.hookAllMethods(adapterCls, "onBindViewHolder", new XC_MethodHook() {
                 @Override
                 protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                    if (!sUseInjectMode) return;
                     if (!sHeaderVisible
                             || param.args.length < 2
                             || !(param.args[1] instanceof Integer)) return;
                     int pos = (int) param.args[1];
-                    if (pos == 0) {
+                    if (pos == INJECT_POS) {
                         Object holder = param.args[0];
                         try {
                             View itemView = (View) holder.getClass()
                                     .getField("itemView").get(holder);
                             customizeGuardHeader(itemView);
-                } catch (Throwable t) {
+                        } catch (Throwable t) {
                             Log.w(TAG, "[SET:hook] customize failed: " + t);
                         }
-                        param.setResult(null); // skip original binding for position 0
-                    } else {
-                        param.args[1] = pos - 1;
+                        param.setResult(null); // skip WeChat's original bind
+                    } else if (pos > INJECT_POS) {
+                        param.args[1] = pos - 1; // shift
+                    }
                 }
-            }
-        });
+            });
 
-            // 4. getItemId — give header a unique stable id (-1)
+            // 4. getItemId — stable id for our slot; shift the rest. (legacy)
             XposedBridge.hookAllMethods(adapterCls, "getItemId", new XC_MethodHook() {
                 @Override
                 protected void beforeHookedMethod(MethodHookParam param) {
+                    if (!sUseInjectMode) return;
                     if (!sHeaderVisible
                             || param.args.length < 1
                             || !(param.args[0] instanceof Integer)) return;
                     int pos = (int) param.args[0];
-                    if (pos == 0) {
+                    if (pos == INJECT_POS) {
                         param.setResult(-1L);
-                    } else {
-                        param.args[0] = pos - 1;
+                    } else if (pos > INJECT_POS) {
+                        param.args[0] = pos - 1; // shift
+                    }
+                }
+            });
+
+            // 5. P_SE1 hijack: 在每次 onBindViewHolder 完成后扫"个人资料"行，接管 onClick。
+            //    VISIBLE → showGuardDialog；HIDDEN → 委托给原始 onClickListener（走 ContactInfoUI）。
+            //    R1 整行热区：itemView 自身 + 所有后代 View 都装 hijack listener。
+            //    无论 Android 把 click 派发到哪个子 View，触发的都是同一个 hijack 决策点。
+            //    原始 onClick 在首次 patch 时用 findFirstOnClickListener 抓出来，
+            //    缓存在 PROFILE_ORIG_TAG，避免后续 bind 误把我们的 hijack 当原始递归装。
+            XposedBridge.hookAllMethods(adapterCls, "onBindViewHolder", new XC_MethodHook() {
+                @Override
+                protected void afterHookedMethod(MethodHookParam param) {
+                    if (sUseInjectMode) return;
+                    if (param.args.length < 2) return;
+                    try {
+                        Object holder = param.args[0];
+                        if (holder == null) return;
+                        View itemView = (View) holder.getClass().getField("itemView").get(holder);
+                        if (itemView == null) return;
+                        TextView titleTv = findProfileRowTitle(itemView);
+                        if (titleTv == null) return;
+
+                        // Q4: VISIBLE 下文字替换为"量子密友"，HIDDEN 还原"个人资料"。
+                        // 三次 post 对抗 WeChat 在 onBindViewHolder 之后的异步 setText 覆盖。
+                        boolean visibleNow = StateMachine.getInstance().getState()
+                                == StateMachine.State.VISIBLE;
+                        final String desiredText = visibleNow ? MIYOU_TEXT : PROFILE_TEXT;
+                        final TextView titleTvF = titleTv;
+                        titleTvF.setText(desiredText);
+                        Handler h5 = new Handler(Looper.getMainLooper());
+                        h5.postDelayed(new Runnable() {
+                            @Override public void run() {
+                                if (!desiredText.contentEquals(titleTvF.getText())) {
+                                    titleTvF.setText(desiredText);
+                                }
+                            }
+                        }, 100);
+                        h5.postDelayed(new Runnable() {
+                            @Override public void run() {
+                                if (!desiredText.contentEquals(titleTvF.getText())) {
+                                    titleTvF.setText(desiredText);
+                                }
+                            }
+                        }, 400);
+
+                        // 拿原始 onClick：首次从子树扫，之后从 tag 缓存读，避免 hijack 自己递归装自己。
+                        Object cached = itemView.getTag(PROFILE_ORIG_TAG);
+                        final View.OnClickListener original;
+                        if (cached instanceof View.OnClickListener) {
+                            original = (View.OnClickListener) cached;
+                        } else {
+                            original = findFirstOnClickListener(itemView);
+                            if (original != null) {
+                                itemView.setTag(PROFILE_ORIG_TAG, original);
+                            }
+                        }
+
+                        final View itemViewRef = itemView;
+                        final View.OnClickListener hijack = new View.OnClickListener() {
+                            @Override public void onClick(View v) {
+                                boolean visible = StateMachine.getInstance().getState()
+                                        == StateMachine.State.VISIBLE;
+                                if (visible) {
+                                    Log.i(TAG, "[SET:hijack:zir] click VISIBLE -> overlay");
+                                    showGuardOverlay(v.getContext());
+                                } else {
+                                    Log.i(TAG, "[SET:hijack:zir] click HIDDEN  -> delegate original (on itemView)");
+                                    // H2 修复：8.0.71 ContactInfo 是 CommonSettingsUI Fragment，
+                                    // 原 listener 内部要从 itemView 拿 adapterPosition 才能跳 Fragment。
+                                    // 必须传 itemViewRef，否则传子 View 时 getChildAdapterPosition(v) == -1，listener no-op。
+                                    if (original != null) original.onClick(itemViewRef);
+                                }
+                            }
+                        };
+
+                        // R1 整行：自身 + 全后代都装 hijack listener，无论 WeChat 把 clickable
+                        // 设在哪个子 View，触发的都是 hijack。
+                        itemView.setClickable(true);
+                        itemView.setOnClickListener(hijack);
+                        attachHijackToAllDescendants(itemView, hijack);
+
+                        // P_SE5: 不再用 firstTime 门控、每次都打 orig 日志，方便诊断 H 态点不动问题。
+                        // PROFILE_ROW_TAG 已不再控制 patched 日志、保留 setTag 用于其他可能的复用。
+                        itemView.setTag(PROFILE_ROW_TAG, Boolean.TRUE);
+                        Log.i(TAG, "[SET:hijack:zir] hook5 patched orig="
+                                + (original != null ? original.getClass().getName() : "null")
+                                + " state=" + StateMachine.getInstance().getStateName());
+                    } catch (Throwable t) {
+                        Log.w(TAG, "[SET:hijack:zir] afterHook failed: " + t);
                     }
                 }
             });
@@ -309,11 +764,11 @@ public class SettingsEntry {
             sAdapterHooked = true;
             sHeaderVisible = initialShow;
             Log.i(TAG, "[SET:hook] adapter hooks installed on " + adapterCls.getName()
-                    + " visible=" + initialShow);
+                    + " visible=" + initialShow + " hijack=" + !sUseInjectMode);
 
-            // Remove B1 fixed header (B2 takes over)
-            removeLlHeader();
-            // Trigger redraw with new item count
+            // P_SE5: 不再移除 B1 banner —— 8.0.71 上 B2 onBindViewHolder hook 死路径，
+            // B1 banner 必须长期保留作为唯一注入路径。removeLlHeader 保留作为状态切换工具。
+            // Trigger redraw with new item count（B2 hook 若工作则切换 visibility）
             refreshAdapterNotify();
 
         } catch (Throwable t) {
@@ -334,7 +789,7 @@ public class SettingsEntry {
         itemView.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 Log.i(TAG, "[SET] entry clicked");
-                showGuardDialog(v.getContext());
+                showGuardOverlay(v.getContext());
             }
         });
     }
@@ -358,6 +813,7 @@ public class SettingsEntry {
         final View row = sHeaderRowRef != null ? sHeaderRowRef.get() : null;
         sHeaderRowRef = null;
         sLlRef = null;
+        detachScrollFollow();
         if (row == null) return;
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override public void run() {
@@ -396,14 +852,36 @@ public class SettingsEntry {
                 try { ((ViewGroup) knownRow.getParent()).removeView(knownRow); }
                 catch (Throwable ignored) {}
             }
+            detachScrollFollow();
             View row = buildGuardRow(activity);
-            int idx = Math.min(1, ll.getChildCount());
+            // P_SE5: banner 放在 RecyclerView 之前（搜索框下方、"账号"分组上方）。
+            // 5-25 老代码用 idx=1 → 把 banner 加在搜索框上方，用户体感"悬浮"。
+            int rvIdx = -1;
+            for (int i = 0; i < ll.getChildCount(); i++) {
+                View c = ll.getChildAt(i);
+                if (c != null && c.getClass().getName().contains("RecyclerView")) {
+                    rvIdx = i;
+                    break;
+                }
+            }
+            // P_SE7: 顶部呼吸感由 buildGuardRow 内部 8dp 灰色 spacer 提供，不再外挂 topMargin。
+            int idx = rvIdx >= 0 ? rvIdx : Math.min(1, ll.getChildCount());
             ll.addView(row, idx);
             sLlRef        = new WeakReference<>(ll);
             sHeaderRowRef = new WeakReference<>(row);
             Log.i(TAG, "[SET] B1 entry row added idx=" + idx
                     + " llChildCount=" + ll.getChildCount());
+
+            // P_SE7: 把 banner 绑定到 RV 滚动 —— 跟随内容上滑、滑过 bannerHeight 后停在屏上方。
+            // 直接复用 sRvRef（handleRecyclerView 已经存好的真 RV），不再扫 ll children。
+            View rvForScroll = sRvRef != null ? sRvRef.get() : null;
+            if (rvForScroll != null) {
+                attachScrollFollow(rvForScroll, row);
+            } else {
+                Log.w(TAG, "[SET] scroll-follow not attached: sRvRef null");
+            }
         } else {
+            detachScrollFollow();
             if (knownRow != null && knownRow.getParent() != null) {
                 try {
                     ((ViewGroup) knownRow.getParent()).removeView(knownRow);
@@ -415,11 +893,68 @@ public class SettingsEntry {
         }
     }
 
+    /**
+     * P_SE7: 在 RV 上挂 ViewTreeObserver.OnScrollChangedListener。
+     * 每次 RV 滚动 → 读 computeVerticalScrollOffset → 把 banner 的 translationY
+     * 设为 -min(offset, bannerHeight)，让 banner "跟随" RV 一起向上滑动，
+     * 滑过 banner 高度后停止（不会无限漂出屏幕）。
+     */
+    private static void attachScrollFollow(final View rv, final View banner) {
+        try {
+            final WeakReference<View> rvWeak = new WeakReference<>(rv);
+            final WeakReference<View> bannerWeak = new WeakReference<>(banner);
+            android.view.ViewTreeObserver.OnScrollChangedListener listener =
+                    new android.view.ViewTreeObserver.OnScrollChangedListener() {
+                        @Override public void onScrollChanged() {
+                            View rvNow = rvWeak.get();
+                            View bannerNow = bannerWeak.get();
+                            if (rvNow == null || bannerNow == null) return;
+                            try {
+                                // View.computeVerticalScrollOffset() 是 protected，但 RecyclerView
+                                // 重写为 public，反射调用拿运行时实际方法（不受静态类型限制）。
+                                Object offsetObj = XposedHelpers.callMethod(
+                                        rvNow, "computeVerticalScrollOffset");
+                                int offset = (offsetObj instanceof Integer)
+                                        ? ((Integer) offsetObj).intValue() : 0;
+                                int bh = bannerNow.getHeight();
+                                if (bh <= 0) return;
+                                int clamped = Math.min(offset, bh);
+                                bannerNow.setTranslationY(-clamped);
+                            } catch (Throwable ignored) {}
+                        }
+                    };
+            rv.getViewTreeObserver().addOnScrollChangedListener(listener);
+            sScrollFollowRvRef = new WeakReference<>(rv);
+            sScrollListenerRef = listener;
+            Log.i(TAG, "[SET] scroll-follow attached rv=" + rv.getClass().getSimpleName());
+        } catch (Throwable t) {
+            Log.w(TAG, "[SET] scroll-follow attach failed: " + t);
+        }
+    }
+
+    private static void detachScrollFollow() {
+        try {
+            View rv = sScrollFollowRvRef != null ? sScrollFollowRvRef.get() : null;
+            android.view.ViewTreeObserver.OnScrollChangedListener listener = sScrollListenerRef;
+            if (rv != null && listener != null) {
+                rv.getViewTreeObserver().removeOnScrollChangedListener(listener);
+                Log.i(TAG, "[SET] scroll-follow detached");
+            }
+        } catch (Throwable ignored) {
+        } finally {
+            sScrollFollowRvRef = null;
+            sScrollListenerRef = null;
+        }
+    }
+
     // -----------------------------------------------------------------------
     // Path A: ListView header injection
     // -----------------------------------------------------------------------
 
     private static void syncListViewHeader(ListView lv, Activity activity, boolean shouldShow) {
+        if (!sUseInjectMode) {
+            return;
+        }
         ListView knownLv  = sListViewRef  != null ? sListViewRef.get()  : null;
         View     knownRow = sHeaderRowRef != null ? sHeaderRowRef.get() : null;
 
@@ -450,97 +985,642 @@ public class SettingsEntry {
     // Guard row View (native WeChat item style)
     // -----------------------------------------------------------------------
 
+    /**
+     * P_SE7: banner 视觉对齐 WeChat 8.0.71 设置行原生样式 + 顶部 8dp 灰色 spacer 呼吸感。
+     *
+     * 返回结构：
+     *   outer (vertical LinearLayout)
+     *     ├── topSpacer  8dp gray (#EFEFEF, 与设置页分组间隙同色)
+     *     └── rowWrapper FrameLayout 白底
+     *           ├── row    水平 LinearLayout 标题 + ›
+     *           └── divider 底部 1dp #E0E0E0
+     */
     private static View buildGuardRow(Context context) {
-        FrameLayout wrapper = new FrameLayout(context);
-        wrapper.setBackgroundColor(Color.WHITE);
-
-        TextView tv = new TextView(context);
-        tv.setText("\u5bc6\u53cb\u8bbe\u7f6e \u203a"); // 密友设置 ›
-        tv.setTextColor(Color.parseColor("#191919"));
-        tv.setTextSize(16f);
+        LinearLayout row = new LinearLayout(context);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setBackgroundColor(Color.WHITE);
+        row.setGravity(Gravity.CENTER_VERTICAL);
         int ph = dp(context, 16);
         int pv = dp(context, 14);
-        tv.setPadding(ph, pv, ph, pv);
-        tv.setOnClickListener(new View.OnClickListener() {
+        row.setPadding(ph, pv, ph, pv);
+        row.setClickable(true);
+        row.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 Log.i(TAG, "[SET] entry clicked");
-                showGuardDialog(v.getContext());
+                showGuardOverlay(v.getContext());
             }
         });
-        wrapper.addView(tv, new FrameLayout.LayoutParams(
+
+        TextView title = new TextView(context);
+        title.setText("\u91cf\u5b50\u5bc6\u53cb\u8bbe\u7f6e"); // 量子密友设置
+        title.setTextColor(Color.parseColor("#191919"));
+        title.setTextSize(17f);
+        LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        row.addView(title, titleLp);
+
+        TextView arrow = new TextView(context);
+        arrow.setText("\u203a"); // ›
+        arrow.setTextColor(Color.parseColor("#C7C7CC"));
+        arrow.setTextSize(18f);
+        row.addView(arrow);
+
+        // 包一层 FrameLayout 加底部分隔线
+        FrameLayout rowWrapper = new FrameLayout(context);
+        rowWrapper.setBackgroundColor(Color.WHITE);
+        rowWrapper.addView(row, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT));
 
         View divider = new View(context);
-        divider.setBackgroundColor(Color.parseColor("#e5e5e5"));
+        divider.setBackgroundColor(Color.parseColor("#E0E0E0"));
         FrameLayout.LayoutParams dlp = new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 1));
-        dlp.gravity = android.view.Gravity.BOTTOM;
-        wrapper.addView(divider, dlp);
+                ViewGroup.LayoutParams.MATCH_PARENT, 1);
+        dlp.gravity = Gravity.BOTTOM;
+        rowWrapper.addView(divider, dlp);
 
-        return wrapper;
+        // P_SE7: 外层 vertical LL 提供顶部分组样式（仿"账号/通用/功能"分组）。
+        // 结构：
+        //   [topSpacer 8dp gray]
+        //   [groupHeader "隐私功能" — small gray text, 同 WeChat 分组 header 样式]
+        //   [rowWrapper 白底行]
+        LinearLayout outer = new LinearLayout(context);
+        outer.setOrientation(LinearLayout.VERTICAL);
+        outer.setBackgroundColor(Color.parseColor("#EFEFEF"));
+
+        View topSpacer = new View(context);
+        LinearLayout.LayoutParams spacerLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 8));
+        outer.addView(topSpacer, spacerLp);
+
+        TextView groupHeader = new TextView(context);
+        groupHeader.setText("\u9690\u79c1\u529f\u80fd"); // 隐私功能
+        // P_SE7: 颜色对齐 WeChat 设置页"账号 / 通用 / 功能"分组 header（实测 #9A9A9A）
+        groupHeader.setTextColor(Color.parseColor("#9A9A9A"));
+        groupHeader.setTextSize(13f);
+        int ghPh = dp(context, 16);
+        int ghPv = dp(context, 6);
+        groupHeader.setPadding(ghPh, ghPv, ghPh, ghPv);
+        LinearLayout.LayoutParams ghLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        outer.addView(groupHeader, ghLp);
+
+        LinearLayout.LayoutParams wrapperLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        outer.addView(rowWrapper, wrapperLp);
+
+        return outer;
     }
 
     // -----------------------------------------------------------------------
-    // AlertDialog (v1 click behavior)
+    // P_SE4: 量子密友设置 — 全屏 overlay 注入到 Activity DecorView
+    //
+    // 8.0.71 ContactInfoUI 是 CommonSettingsUI 的 Fragment、无法 startActivity 跳转；
+    // 模块自己的 Activity 又无法在 WeChat 进程注册。所以走 overlay 注入路线：
+    //   - addView 一个全屏 LinearLayout 到 Activity.getWindow().getDecorView()
+    //   - clickable=true 拦截穿透、setOnKeyListener 拦截 BACK
+    //   - 顶栏返回按钮 + 滚动内容区
+    // 单进程、单 ClassLoader、不依赖 manifest，最稳。
     // -----------------------------------------------------------------------
 
-    private static void showGuardDialog(final Context context) {
+    private static final int OVERLAY_TAG = 0x67756f76; // "guov"
+
+    private static void showGuardOverlay(final Context ctx) {
         try {
-            final StateMachine sm     = StateMachine.getInstance();
-            final Bridge       br     = Bridge.getInstance();
-            final boolean      isH    = sm.getState() == StateMachine.State.HIDDEN;
-            final boolean      featOn = br.isFeatureEnabled();
-            final String       policy = br.getNotifyPolicy().name();
-            final int          count  = br.getCount();
-
-            String msg = "\u5f53\u524d\u72b6\u6001\uff1a" + sm.getStateName() + "\n"
-                    + "\u5bc6\u53cb\u6570\u91cf\uff1a" + count + " \u4e2a\n"
-                    + "\u5bc6\u53cb\u529f\u80fd\uff1a" + (featOn ? "\u5df2\u5f00\u542f" : "\u5df2\u5173\u95ed") + "\n"
-                    + "\u901a\u77e5\u7b56\u7565\uff1a" + policy + "  (Phase 2 \u63a5\u5165)";
-
-            AlertDialog.Builder builder = new AlertDialog.Builder(context);
-            builder.setTitle("\u5bc6\u53cb\u8bbe\u7f6e");
-            builder.setMessage(msg);
-
-            if (isH) {
-                builder.setNegativeButton("\u5207\u6362\u663e\u5f62",
-                        new DialogInterface.OnClickListener() {
-                            @Override public void onClick(DialogInterface d, int w) {
-                                sm.exitHidden(false);
-                                sHeaderVisible = true;
-                                if (sAdapterHooked) refreshAdapterNotify();
-                                Log.i(TAG, "[SET] dialog -> exitHidden");
-                            }
-                        });
-                    } else {
-                builder.setNegativeButton("\u5207\u6362\u9690\u85cf",
-                        new DialogInterface.OnClickListener() {
-                            @Override public void onClick(DialogInterface d, int w) {
-                                sm.enterHidden();
-                                sHeaderVisible = false;
-                                if (sAdapterHooked) refreshAdapterNotify();
-                                Log.i(TAG, "[SET] dialog -> enterHidden");
-                            }
-                        });
+            Activity activity = unwrapActivity(ctx);
+            if (activity == null) {
+                Log.w(TAG, "[SET:overlay] no Activity in context " + ctx);
+                return;
             }
-
-            builder.setNeutralButton(
-                    "\u5bc6\u53cb\u529f\u80fd: " + (featOn ? "ON\u2192\u5173" : "OFF\u2192\u5f00"),
-                    new DialogInterface.OnClickListener() {
-                        @Override public void onClick(DialogInterface d, int w) {
-                            br.setFeatureEnabled(!featOn);
-                            Log.i(TAG, "[SET] dialog -> feature=" + !featOn);
-                        }
-                    });
-
-            builder.setPositiveButton("\u5173\u95ed", null);
-            builder.show();
-            Log.i(TAG, "[SET] guard dialog shown state=" + sm.getStateName()
-                    + " count=" + count);
+            final ViewGroup decor = (ViewGroup) activity.getWindow().getDecorView();
+            // 重复点击：已显示则不再叠加
+            if (decor.findViewWithTag(OVERLAY_TAG) != null) {
+                Log.i(TAG, "[SET:overlay] already shown, skip");
+                return;
+            }
+            View panel = buildGuardOverlay(activity, decor);
+            decor.addView(panel, new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT));
+            panel.requestFocus();
+            sOverlayActive = true;  // P_SE5: 让 TriggerGuard 各 enterHidden 跳过
+            Log.i(TAG, "[SET:overlay] shown state="
+                    + StateMachine.getInstance().getStateName());
         } catch (Throwable t) {
-            Log.w(TAG, "[SET] dialog show failed: " + t);
+            Log.w(TAG, "[SET:overlay] show failed: " + t);
         }
+    }
+
+    private static View buildGuardOverlay(final Activity activity, final ViewGroup decor) {
+        final Bridge br = Bridge.getInstance();
+        final StateMachine sm = StateMachine.getInstance();
+
+        // 根容器：竖直 LinearLayout，白底，拦截点击穿透
+        final LinearLayout root = new LinearLayout(activity);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setBackgroundColor(Color.parseColor("#F7F7F7"));
+        root.setClickable(true);
+        root.setFocusable(true);
+        root.setFocusableInTouchMode(true);
+        root.setTag(OVERLAY_TAG);
+
+        // BACK 键 → 移除自己
+        root.setOnKeyListener(new View.OnKeyListener() {
+            @Override public boolean onKey(View v, int keyCode, KeyEvent event) {
+                if (event.getAction() == KeyEvent.ACTION_UP
+                        && keyCode == KeyEvent.KEYCODE_BACK) {
+                    dismissOverlay(decor);
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        // 顶栏 ── 返回 + 标题 + 状态
+        LinearLayout topBar = new LinearLayout(activity);
+        topBar.setOrientation(LinearLayout.HORIZONTAL);
+        topBar.setBackgroundColor(Color.WHITE);
+        topBar.setGravity(Gravity.CENTER_VERTICAL);
+        topBar.setPadding(dp(activity, 12), dp(activity, 10), dp(activity, 16), dp(activity, 10));
+
+        TextView back = new TextView(activity);
+        back.setText("\u2190");  // ←
+        back.setTextColor(Color.parseColor("#191919"));
+        back.setTextSize(22f);
+        back.setPadding(dp(activity, 8), dp(activity, 4), dp(activity, 16), dp(activity, 4));
+        back.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { dismissOverlay(decor); }
+        });
+        topBar.addView(back);
+
+        TextView title = new TextView(activity);
+        title.setText("\u91cf\u5b50\u5bc6\u53cb"); // 量子密友
+        title.setTextColor(Color.parseColor("#191919"));
+        title.setTextSize(18f);
+        LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        topBar.addView(title, titleLp);
+
+        TextView stateBadge = new TextView(activity);
+        stateBadge.setText(sm.getState() == StateMachine.State.VISIBLE
+                ? "V" : "H");
+        stateBadge.setTextColor(Color.parseColor("#888888"));
+        stateBadge.setTextSize(13f);
+        topBar.addView(stateBadge);
+
+        root.addView(topBar, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        // 内容区（ScrollView 包裹）
+        ScrollView sv = new ScrollView(activity);
+        LinearLayout content = new LinearLayout(activity);
+        content.setOrientation(LinearLayout.VERTICAL);
+
+        // 1. 开启密友（总开关）
+        content.addView(buildSwitchRow(activity, "\u5f00\u542f\u5bc6\u53cb",
+                "\u5bc6\u53cb\u529f\u80fd\u603b\u5f00\u5173", br.isFeatureEnabled(),
+                new CompoundButton.OnCheckedChangeListener() {
+                    @Override public void onCheckedChanged(CompoundButton b, boolean checked) {
+                        br.setFeatureEnabled(checked);
+                        Log.i(TAG, "[SET:overlay] feature=" + checked);
+                    }
+                }));
+
+        // 2. 启动防层模式（SETTINGS_UI_V2 §7.1）
+        // 均衡（默认）：冷启动 / 锁屏亮屏 ConvFilter 白色遮罩
+        // 高性能：跳过遮罩、响应更快，要求微信常驻后台
+        content.addView(buildSwitchRow(activity, "\u9ad8\u6027\u80fd\u6a21\u5f0f",
+                "\u8df3\u8fc7\u51b7\u542f\u52a8\u767d\u5c4f\u906e\u7f69 / \u8981\u6c42\u5fae\u4fe1\u5e38\u9a7b\u540e\u53f0",
+                br.isHighPerfMode(),
+                new CompoundButton.OnCheckedChangeListener() {
+                    @Override public void onCheckedChanged(CompoundButton b, boolean checked) {
+                        br.setHighPerfMode(checked);
+                        Log.i(TAG, "[SET:overlay] highPerf=" + checked);
+                    }
+                }));
+
+        // 3. 密友列表
+        content.addView(buildButtonRow(activity, "\u5bc6\u53cb\u5217\u8868",
+                "\u67e5\u770b " + br.getWxidCount() + " \u4e2a",
+                new View.OnClickListener() {
+                    @Override public void onClick(View v) { showWxidListDialog(activity); }
+                }));
+
+        // 4. 添加密友
+        content.addView(buildButtonRow(activity, "\u6dfb\u52a0\u5bc6\u53cb",
+                "\u8f93\u5165 wxid",
+                new View.OnClickListener() {
+                    @Override public void onClick(View v) { showAddWxidDialog(activity); }
+                }));
+
+        // 5. 密群列表
+        content.addView(buildButtonRow(activity, "\u5bc6\u7fa4\u5217\u8868",
+                "\u67e5\u770b " + br.getGroupCount() + " \u4e2a",
+                new View.OnClickListener() {
+                    @Override public void onClick(View v) { showGroupListDialog(activity); }
+                }));
+
+        // 6. 密友消息通知开关 + 模式三选一
+        content.addView(buildSectionHeader(activity, "\u5bc6\u53cb\u6d88\u606f\u901a\u77e5"));
+        Bridge.NotifyPolicy policy = br.getNotifyPolicy();
+        boolean notifyOn = policy != Bridge.NotifyPolicy.OFF;
+        content.addView(buildSwitchRow(activity, "\u901a\u77e5\u5f00\u5173",
+                "\u5bc6\u53cb\u6d88\u606f\u662f\u5426\u63a8\u9001", notifyOn,
+                new CompoundButton.OnCheckedChangeListener() {
+                    @Override public void onCheckedChanged(CompoundButton b, boolean checked) {
+                        if (!checked) {
+                            br.setNotifyPolicy(Bridge.NotifyPolicy.OFF);
+                        } else if (br.getNotifyPolicy() == Bridge.NotifyPolicy.OFF) {
+                            br.setNotifyPolicy(Bridge.NotifyPolicy.VIBRATE);
+                        }
+                        Log.i(TAG, "[SET:overlay] notify=" + br.getNotifyPolicy());
+                    }
+                }));
+
+        // 通知模式三选一
+        content.addView(buildNotifyModeRow(activity, br));
+
+        // 6.5 语音/视频通话通知（静默/震动，默认静默；来电永不放铃声）
+        content.addView(buildSectionHeader(activity, "\u8bed\u97f3/\u89c6\u9891\u901a\u77e5"));
+        content.addView(buildCallNotifyModeRow(activity, br));
+
+        // 7. 防撤回开关（空壳——AntiRecall 模块已存在，开关接通）
+        content.addView(buildSwitchRow(activity, "\u9632\u64a4\u56de",
+                "\u62e6\u622a\u5fae\u4fe1\u64a4\u56de\u6d88\u606f", br.isAntiRecallEnabled(),
+                new CompoundButton.OnCheckedChangeListener() {
+                    @Override public void onCheckedChanged(CompoundButton b, boolean checked) {
+                        br.setAntiRecallEnabled(checked);
+                        Log.i(TAG, "[SET:overlay] antiRecall=" + checked);
+                    }
+                }));
+
+        // 隐藏指定标签（Bridge.isHideContactLabelEnabled，已有 ContactLabelHideGuard 接入）
+        content.addView(buildSwitchRow(activity, "\u9690\u85cf\u6307\u5b9a\u6807\u7b7e",
+                "\u8054\u7cfb\u4eba\u6807\u7b7e\u9690\u85cf\u5165\u53e3",
+                br.isHideContactLabelEnabled(),
+                new CompoundButton.OnCheckedChangeListener() {
+                    @Override public void onCheckedChanged(CompoundButton b, boolean checked) {
+                        br.setHideContactLabelEnabled(checked);
+                        Log.i(TAG, "[SET:overlay] hideLabel=" + checked);
+                    }
+                }));
+
+        // 8. 虚拟定位（占位）
+        content.addView(buildSwitchRow(activity, "\u865a\u62df\u5b9a\u4f4d",
+                "\u4f2a\u9020 GPS \u4f4d\u7f6e (\u5360\u4f4d)", false, null));
+
+        // 9. 状态切换
+        content.addView(buildSectionHeader(activity, "\u72b6\u6001"));
+        final boolean isH = sm.getState() == StateMachine.State.HIDDEN;
+        content.addView(buildButtonRow(activity,
+                "\u5f53\u524d\u72b6\u6001\uff1a" + sm.getStateName(),
+                isH ? "\u5207\u6362\u663e\u5f62" : "\u5207\u6362\u9690\u85cf",
+                new View.OnClickListener() {
+                    @Override public void onClick(View v) {
+                        if (isH) {
+                            sm.exitHidden(false);
+                            sHeaderVisible = true;
+                        } else {
+                            sm.enterHidden();
+                            sHeaderVisible = false;
+                        }
+                        if (sAdapterHooked) refreshAdapterNotify();
+                        dismissOverlay(decor);
+                        onStateChanged();  // P_SE5: banner 跟随状态切换
+                        Log.i(TAG, "[SET:overlay] state -> " + sm.getStateName());
+                    }
+                }));
+
+        // 10. 授权状态 + 到期时间（占位）
+        content.addView(buildSectionHeader(activity, "\u6388\u6743"));
+        content.addView(buildTextRow(activity, "\u6388\u6743\u72b6\u6001",
+                "\u5df2\u6fc0\u6d3b (\u5360\u4f4d)"));
+        content.addView(buildTextRow(activity, "\u5230\u671f\u65f6\u95f4",
+                "\u6c38\u4e45 (\u5360\u4f4d)"));
+
+        // 关闭按钮
+        Button close = new Button(activity);
+        close.setText("\u5173\u95ed");
+        close.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { dismissOverlay(decor); }
+        });
+        LinearLayout.LayoutParams closeLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        int pad = dp(activity, 16);
+        closeLp.setMargins(pad, pad, pad, pad);
+        content.addView(close, closeLp);
+
+        sv.addView(content, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT));
+        root.addView(sv, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        return root;
+    }
+
+    private static void dismissOverlay(ViewGroup decor) {
+        View panel = decor.findViewWithTag(OVERLAY_TAG);
+        if (panel != null) {
+            try { decor.removeView(panel); } catch (Throwable ignored) {}
+            sOverlayActive = false;  // P_SE5: 解除 enterHidden 抑制
+            Log.i(TAG, "[SET:overlay] dismissed");
+        }
+    }
+
+    private static View buildSwitchRow(Context ctx, String title, String subtitle,
+                                       boolean checked,
+                                       CompoundButton.OnCheckedChangeListener listener) {
+        LinearLayout row = new LinearLayout(ctx);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setBackgroundColor(Color.WHITE);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        int ph = dp(ctx, 16);
+        int pv = dp(ctx, 12);
+        row.setPadding(ph, pv, ph, pv);
+
+        LinearLayout textCol = new LinearLayout(ctx);
+        textCol.setOrientation(LinearLayout.VERTICAL);
+        TextView tvTitle = new TextView(ctx);
+        tvTitle.setText(title);
+        tvTitle.setTextColor(Color.parseColor("#191919"));
+        tvTitle.setTextSize(16f);
+        textCol.addView(tvTitle);
+        if (subtitle != null && subtitle.length() > 0) {
+            TextView tvSub = new TextView(ctx);
+            tvSub.setText(subtitle);
+            tvSub.setTextColor(Color.parseColor("#888888"));
+            tvSub.setTextSize(12f);
+            textCol.addView(tvSub);
+        }
+        row.addView(textCol, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        Switch sw = new Switch(ctx);
+        sw.setChecked(checked);
+        if (listener != null) {
+            sw.setOnCheckedChangeListener(listener);
+        } else {
+            sw.setEnabled(false);
+        }
+        row.addView(sw);
+
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.setMargins(0, 0, 0, dp(ctx, 1));
+        row.setLayoutParams(lp);
+        return row;
+    }
+
+    private static View buildButtonRow(Context ctx, String title, String btnText,
+                                       View.OnClickListener listener) {
+        LinearLayout row = new LinearLayout(ctx);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setBackgroundColor(Color.WHITE);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        int ph = dp(ctx, 16);
+        int pv = dp(ctx, 14);
+        row.setPadding(ph, pv, ph, pv);
+        row.setOnClickListener(listener);
+        row.setClickable(true);
+
+        TextView tvTitle = new TextView(ctx);
+        tvTitle.setText(title);
+        tvTitle.setTextColor(Color.parseColor("#191919"));
+        tvTitle.setTextSize(16f);
+        row.addView(tvTitle, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView tvBtn = new TextView(ctx);
+        tvBtn.setText(btnText + " \u203a");
+        tvBtn.setTextColor(Color.parseColor("#576B95"));
+        tvBtn.setTextSize(14f);
+        row.addView(tvBtn);
+
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.setMargins(0, 0, 0, dp(ctx, 1));
+        row.setLayoutParams(lp);
+        return row;
+    }
+
+    private static View buildTextRow(Context ctx, String title, String value) {
+        LinearLayout row = new LinearLayout(ctx);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setBackgroundColor(Color.WHITE);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        int ph = dp(ctx, 16);
+        int pv = dp(ctx, 14);
+        row.setPadding(ph, pv, ph, pv);
+
+        TextView tvTitle = new TextView(ctx);
+        tvTitle.setText(title);
+        tvTitle.setTextColor(Color.parseColor("#191919"));
+        tvTitle.setTextSize(16f);
+        row.addView(tvTitle, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView tvVal = new TextView(ctx);
+        tvVal.setText(value);
+        tvVal.setTextColor(Color.parseColor("#888888"));
+        tvVal.setTextSize(14f);
+        row.addView(tvVal);
+
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.setMargins(0, 0, 0, dp(ctx, 1));
+        row.setLayoutParams(lp);
+        return row;
+    }
+
+    private static View buildSectionHeader(Context ctx, String text) {
+        TextView tv = new TextView(ctx);
+        tv.setText(text);
+        tv.setTextColor(Color.parseColor("#888888"));
+        tv.setTextSize(13f);
+        int ph = dp(ctx, 16);
+        tv.setPadding(ph, dp(ctx, 16), ph, dp(ctx, 6));
+        return tv;
+    }
+
+    private static View buildNotifyModeRow(Context ctx, final Bridge br) {
+        LinearLayout row = new LinearLayout(ctx);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setBackgroundColor(Color.WHITE);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        int ph = dp(ctx, 16);
+        int pv = dp(ctx, 8);
+        row.setPadding(ph, pv, ph, pv);
+
+        TextView label = new TextView(ctx);
+        label.setText("\u901a\u77e5\u6a21\u5f0f");
+        label.setTextColor(Color.parseColor("#191919"));
+        label.setTextSize(14f);
+        row.addView(label, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        RadioGroup rg = new RadioGroup(ctx);
+        rg.setOrientation(RadioGroup.HORIZONTAL);
+        final RadioButton rbOff     = new RadioButton(ctx);
+        final RadioButton rbVibrate = new RadioButton(ctx);
+        final RadioButton rbSound   = new RadioButton(ctx);
+        rbOff.setText("\u9ed8\u8ba4");      // 默认（静默）
+        rbVibrate.setText("\u9707\u52a8");  // 震动
+        rbSound.setText("\u58f0\u97f3");    // 声音
+        rg.addView(rbOff);
+        rg.addView(rbVibrate);
+        rg.addView(rbSound);
+        Bridge.NotifyPolicy current = br.getNotifyPolicy();
+        if (current == Bridge.NotifyPolicy.VIBRATE)      rbVibrate.setChecked(true);
+        else if (current == Bridge.NotifyPolicy.SOUND)   rbSound.setChecked(true);
+        else                                              rbOff.setChecked(true);
+        rg.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override public void onCheckedChanged(RadioGroup g, int id) {
+                if (id == rbOff.getId())          br.setNotifyPolicy(Bridge.NotifyPolicy.OFF);
+                else if (id == rbVibrate.getId()) br.setNotifyPolicy(Bridge.NotifyPolicy.VIBRATE);
+                else if (id == rbSound.getId())   br.setNotifyPolicy(Bridge.NotifyPolicy.SOUND);
+                Log.i(TAG, "[SET:overlay] notifyMode=" + br.getNotifyPolicy());
+            }
+        });
+        row.addView(rg);
+
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.setMargins(0, 0, 0, dp(ctx, 1));
+        row.setLayoutParams(lp);
+        return row;
+    }
+
+    /** 来电（语音/视频）通知模式：仅 静默 / 震动 两态，默认静默。来电永不放铃声。 */
+    private static View buildCallNotifyModeRow(Context ctx, final Bridge br) {
+        LinearLayout row = new LinearLayout(ctx);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setBackgroundColor(Color.WHITE);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        int ph = dp(ctx, 16);
+        int pv = dp(ctx, 8);
+        row.setPadding(ph, pv, ph, pv);
+
+        TextView label = new TextView(ctx);
+        label.setText("\u6765\u7535\u63d0\u793a");
+        label.setTextColor(Color.parseColor("#191919"));
+        label.setTextSize(14f);
+        row.addView(label, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        RadioGroup rg = new RadioGroup(ctx);
+        rg.setOrientation(RadioGroup.HORIZONTAL);
+        final RadioButton rbOff     = new RadioButton(ctx);
+        final RadioButton rbVibrate = new RadioButton(ctx);
+        rbOff.setText("\u9759\u9ed8");      // 静默（默认）
+        rbVibrate.setText("\u9707\u52a8");  // 震动
+        rg.addView(rbOff);
+        rg.addView(rbVibrate);
+        Bridge.NotifyPolicy current = br.getCallNotifyPolicy();
+        if (current == Bridge.NotifyPolicy.VIBRATE) rbVibrate.setChecked(true);
+        else                                        rbOff.setChecked(true);
+        final Context appCtx = ctx.getApplicationContext();
+        rg.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override public void onCheckedChanged(RadioGroup g, int id) {
+                if (id == rbVibrate.getId()) {
+                    br.setCallNotifyPolicy(Bridge.NotifyPolicy.VIBRATE);
+                    // Live preview: let the owner feel the call vibration on selection.
+                    try {
+                        com.ghost.assist.moduleC.NotifyRouter.fireAlert(
+                                appCtx, com.ghost.assist.moduleC.NotifyRouter.EventType.CALL);
+                    } catch (Throwable ignored) {}
+                } else {
+                    br.setCallNotifyPolicy(Bridge.NotifyPolicy.OFF);
+                }
+                Log.i(TAG, "[SET:overlay] callNotifyMode=" + br.getCallNotifyPolicy());
+            }
+        });
+        row.addView(rg);
+
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.setMargins(0, 0, 0, dp(ctx, 1));
+        row.setLayoutParams(lp);
+        return row;
+    }
+
+    private static void showWxidListDialog(Activity activity) {
+        Bridge br = Bridge.getInstance();
+        java.util.Set<String> wxids = br.getWxids();
+        if (wxids == null || wxids.isEmpty()) {
+            Toast.makeText(activity, "\u6682\u65e0\u5bc6\u53cb", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        final String[] items = wxids.toArray(new String[0]);
+        new AlertDialog.Builder(activity)
+                .setTitle("\u5bc6\u53cb\u5217\u8868 (\u70b9\u51fb\u79fb\u9664)")
+                .setItems(items, new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int which) {
+                        Bridge.getInstance().removeWxid(items[which]);
+                        Log.i(TAG, "[SET:overlay] remove wxid=" + items[which]);
+                    }
+                })
+                .setNegativeButton("\u5173\u95ed", null)
+                .show();
+    }
+
+    private static void showAddWxidDialog(final Activity activity) {
+        final EditText input = new EditText(activity);
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+        input.setHint("\u8f93\u5165 wxid");
+        new AlertDialog.Builder(activity)
+                .setTitle("\u6dfb\u52a0\u5bc6\u53cb")
+                .setView(input)
+                .setPositiveButton("\u6dfb\u52a0", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) {
+                        String wxid = input.getText().toString().trim();
+                        if (wxid.isEmpty()) return;
+                        Bridge.getInstance().addWxid(wxid);
+                        Log.i(TAG, "[SET:overlay] add wxid=" + wxid);
+                        Toast.makeText(activity,
+                                "\u5df2\u6dfb\u52a0: " + wxid, Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("\u53d6\u6d88", null)
+                .show();
+    }
+
+    private static void showGroupListDialog(Activity activity) {
+        Bridge br = Bridge.getInstance();
+        java.util.Set<String> groups = br.getGroupIds();
+        if (groups == null || groups.isEmpty()) {
+            Toast.makeText(activity, "\u6682\u65e0\u5bc6\u7fa4", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        final String[] items = groups.toArray(new String[0]);
+        new AlertDialog.Builder(activity)
+                .setTitle("\u5bc6\u7fa4\u5217\u8868 (\u70b9\u51fb\u79fb\u9664)")
+                .setItems(items, new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int which) {
+                        Bridge.getInstance().removeGroupId(items[which]);
+                        Log.i(TAG, "[SET:overlay] remove group=" + items[which]);
+                    }
+                })
+                .setNegativeButton("\u5173\u95ed", null)
+                .show();
+    }
+
+    private static Activity unwrapActivity(Context ctx) {
+        while (ctx instanceof ContextWrapper) {
+            if (ctx instanceof Activity) return (Activity) ctx;
+            Context base = ((ContextWrapper) ctx).getBaseContext();
+            if (base == ctx) return null;
+            ctx = base;
+        }
+        return null;
     }
 
     // -----------------------------------------------------------------------
@@ -608,6 +1688,177 @@ public class SettingsEntry {
         for (int i = 0; i < vg.getChildCount(); i++) {
                 TextView found = findFirstTextView(vg.getChildAt(i));
                 if (found != null) return found;
+            }
+        }
+        return null;
+    }
+
+    private static TextView findTextViewContaining(View v, String needle) {
+        if (v instanceof TextView) {
+            CharSequence text = ((TextView) v).getText();
+            if (text != null && text.toString().contains(needle)) return (TextView) v;
+        }
+        if (v instanceof ViewGroup) {
+            ViewGroup vg = (ViewGroup) v;
+            for (int i = 0; i < vg.getChildCount(); i++) {
+                TextView found = findTextViewContaining(vg.getChildAt(i), needle);
+                if (found != null) return found;
+            }
+        }
+        return null;
+    }
+
+    // P_SE1: 严格等值匹配（避免 "个人资料" 被 "个人资料隐私" 等长名命中）。
+    private static TextView findExactText(View v, String exact) {
+        if (v instanceof TextView) {
+            CharSequence text = ((TextView) v).getText();
+            if (text != null && exact.contentEquals(text)) return (TextView) v;
+        }
+        if (v instanceof ViewGroup) {
+            ViewGroup vg = (ViewGroup) v;
+            for (int i = 0; i < vg.getChildCount(); i++) {
+                TextView found = findExactText(vg.getChildAt(i), exact);
+                if (found != null) return found;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Q4: 找设置菜单"个人资料"行的 title TextView。
+     * 需要同时识别已替换为"量子密友"的状态，否则状态机切换后无法再找到这一行。
+     */
+    private static TextView findProfileRowTitle(View v) {
+        if (v instanceof TextView) {
+            CharSequence text = ((TextView) v).getText();
+            if (text != null
+                    && (PROFILE_TEXT.contentEquals(text) || MIYOU_TEXT.contentEquals(text))) {
+                return (TextView) v;
+            }
+        }
+        if (v instanceof ViewGroup) {
+            ViewGroup vg = (ViewGroup) v;
+            for (int i = 0; i < vg.getChildCount(); i++) {
+                TextView found = findProfileRowTitle(vg.getChildAt(i));
+                if (found != null) return found;
+            }
+        }
+        return null;
+    }
+
+    private static ViewGroup findProfileRowAncestor(TextView wxidText) {
+        ViewParent p = wxidText.getParent();
+        for (int depth = 0; depth < 8 && p instanceof ViewGroup; depth++) {
+            ViewGroup vg = (ViewGroup) p;
+            if (containsImageView(vg) && findProfileTitle(vg, wxidText) != null) {
+                return vg;
+            }
+            p = vg.getParent();
+        }
+        return null;
+    }
+
+    private static boolean containsImageView(View v) {
+        if (v instanceof ImageView) return true;
+        if (v instanceof ViewGroup) {
+            ViewGroup vg = (ViewGroup) v;
+            for (int i = 0; i < vg.getChildCount(); i++) {
+                if (containsImageView(vg.getChildAt(i))) return true;
+            }
+        }
+        return false;
+    }
+
+    private static TextView findProfileTitle(View v, TextView wxidText) {
+        TextView best = null;
+        if (v instanceof TextView && v != wxidText) {
+            TextView tv = (TextView) v;
+            CharSequence text = tv.getText();
+            if (text != null && text.length() > 0 && !text.toString().contains("微信号")) {
+                best = tv;
+            }
+        }
+        if (v instanceof ViewGroup) {
+            ViewGroup vg = (ViewGroup) v;
+            for (int i = 0; i < vg.getChildCount(); i++) {
+                TextView found = findProfileTitle(vg.getChildAt(i), wxidText);
+                if (found == null) continue;
+                if (best == null || found.getTextSize() > best.getTextSize()) {
+                    best = found;
+                }
+            }
+        }
+        return best;
+    }
+
+    private static View.OnClickListener getCurrentOnClickListener(View v) {
+        try {
+            java.lang.reflect.Method getListenerInfo =
+                    View.class.getDeclaredMethod("getListenerInfo");
+            getListenerInfo.setAccessible(true);
+            Object listenerInfo = getListenerInfo.invoke(v);
+            if (listenerInfo == null) return null;
+            java.lang.reflect.Field f = listenerInfo.getClass().getDeclaredField("mOnClickListener");
+            f.setAccessible(true);
+            Object listener = f.get(listenerInfo);
+            return listener instanceof View.OnClickListener
+                    ? (View.OnClickListener) listener
+                    : null;
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    // disable clickable on all child views so clicks bubble up to row
+    private static void disableChildClicks(View v) {
+        if (v instanceof ViewGroup) {
+            ViewGroup vg = (ViewGroup) v;
+            for (int i = 0; i < vg.getChildCount(); i++) {
+                View child = vg.getChildAt(i);
+                child.setClickable(false);
+                child.setFocusable(false);
+                disableChildClicks(child);
+            }
+        }
+    }
+
+    // P_SE1 R1 整行热区：把同一个 hijack listener 装到 root 的全部后代。
+    // 无论 Android 把 click 派发到 root 还是哪个子 View，触发的都是同一个 hijack。
+    /**
+     * P_SE5: 状态机切到 HIDDEN 后，卸掉所有装在 row 子树上的 hijack listener，
+     * 让 RecyclerView.OnItemTouchListener 自然处理 click，走 WeChat 原生跳 Fragment。
+     */
+    private static void detachHijackFromAllDescendants(View v) {
+        v.setOnClickListener(null);
+        v.setClickable(false);
+        if (v instanceof ViewGroup) {
+            ViewGroup vg = (ViewGroup) v;
+            for (int i = 0; i < vg.getChildCount(); i++) {
+                detachHijackFromAllDescendants(vg.getChildAt(i));
+            }
+        }
+    }
+
+    private static void attachHijackToAllDescendants(View v, View.OnClickListener listener) {
+        if (v instanceof ViewGroup) {
+            ViewGroup vg = (ViewGroup) v;
+            for (int i = 0; i < vg.getChildCount(); i++) {
+                View child = vg.getChildAt(i);
+                child.setOnClickListener(listener);
+                attachHijackToAllDescendants(child, listener);
+            }
+        }
+    }
+
+    // walk subtree to find first OnClickListener (for full-row hijack)
+    private static View.OnClickListener findFirstOnClickListener(View v) {
+        View.OnClickListener listener = getCurrentOnClickListener(v);
+        if (listener != null) return listener;
+        if (v instanceof ViewGroup) {
+            ViewGroup vg = (ViewGroup) v;
+            for (int i = 0; i < vg.getChildCount(); i++) {
+                listener = findFirstOnClickListener(vg.getChildAt(i));
+                if (listener != null) return listener;
             }
         }
         return null;

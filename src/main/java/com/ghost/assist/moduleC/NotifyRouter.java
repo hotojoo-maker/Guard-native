@@ -1,6 +1,7 @@
 package com.ghost.assist.moduleC;
 
 import android.app.Notification;
+import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
@@ -21,18 +22,19 @@ import com.ghost.assist.core.Bridge;
  *
  * Table (mirrors Catfish §16.3 three-tier design):
  *
- *  ┌───────────────┬──────────────────────────┬──────────────────────┬──────────────────────────┐
- *  │   event       │          OFF             │       VIBRATE        │          SOUND           │
- *  ├───────────────┼──────────────────────────┼──────────────────────┼──────────────────────────┤
- *  │ MSG (message) │ BLOCK                    │ BLOCK + vibrate      │ BLOCK + custom sound     │
- *  ├───────────────┼──────────────────────────┼──────────────────────┼──────────────────────────┤
- *  │ CALL (VoIP)   │ BLOCK (always)           │ BLOCK (always)       │ BLOCK (always)           │
- *  ├───────────────┼──────────────────────────┼──────────────────────┼──────────────────────────┤
- *  │ HANGUP        │ no action                │ no action            │ no action                │
- *  └───────────────┴──────────────────────────┴──────────────────────┴──────────────────────────┘
+ *  MSG (message) — three-tier policy via Bridge.getNotifyPolicy() (key "nfyp"):
+ *    OFF      → BLOCK
+ *    VIBRATE  → BLOCK + out-of-band vibrate
+ *    SOUND    → BLOCK + custom ringtone
  *
- *  VoIP calls are ALWAYS fully silent — policy does NOT apply to calls.
- *  Three-tier policy applies to regular messages only.
+ *  CALL (VoIP voice/video) — two-tier dedicated policy via Bridge.getCallNotifyPolicy()
+ *  (key "cnfy", default OFF). Calls NEVER ring (anti-exposure); ringtone is not an option.
+ *    OFF      → BLOCK, fully silent (default)
+ *    VIBRATE  → BLOCK + out-of-band vibrate only
+ *
+ *  In every case the WeChat-native call UI / ringtone / wake / vibrate / hangup tone
+ *  is still suppressed by PushFilter (SF/VC/AT/MP/VV/VW); fireAlert() only adds the
+ *  owner-side vibrate when the policy asks for it.
  */
 public final class NotifyRouter {
 
@@ -40,6 +42,18 @@ public final class NotifyRouter {
 
     // Vibration pattern for message alert: two short pulses
     static final long[] VIB_MSG = {0, 80, 60, 80};
+
+    // Vibration pattern for call alert: 1s on → 1s off → 1s on ("blink" rhythm,
+    // clearly felt even when backgrounded / screen off)
+    static final long[] VIB_CALL = {0, 1000, 1000, 1000};
+
+    /**
+     * Wall-clock deadline (ms) until which our own vibration is in flight. The
+     * PushFilter VV/cancel hooks use this to stop WeChat's call-teardown from
+     * cancelling our pulse before it finishes (the call UI is torn down within
+     * ~60ms of our vibrate firing). 0 = no vibration in flight.
+     */
+    public static volatile long sOurVibrationUntilMs = 0;
 
     /**
      * Set to true while fireAlert() is calling vib.vibrate() so the PushFilter VV hook
@@ -92,8 +106,9 @@ public final class NotifyRouter {
         if (talker == null) return Action.PASS;
         if (!Bridge.getInstance().shouldHideId(talker)) return Action.PASS;
 
-        // VoIP calls are ALWAYS fully silent, regardless of user policy.
-        // Policy (VIBRATE/SOUND) only applies to regular messages.
+        // VoIP calls: the notification itself is ALWAYS blocked. The owner-side
+        // vibrate (when call policy == VIBRATE) is fired out-of-band via fireAlert(),
+        // not by passing a notification through. Calls never ring.
         if (type == EventType.CALL || type == EventType.HANGUP) return Action.BLOCK;
 
         Bridge.NotifyPolicy policy = Bridge.getInstance().getNotifyPolicy();
@@ -120,8 +135,10 @@ public final class NotifyRouter {
         n.defaults &= ~Notification.DEFAULT_VIBRATE;
         n.vibrate = null;
 
-        // Inject our pattern as the notification's vibration
-        long[] pattern = VIB_MSG; // calls always silent; only MSG reaches fireAlert
+        // Inject our pattern as the notification's vibration.
+        // applyVibrate() is only used on the MSG pass-through path; call vibration
+        // is fired out-of-band via fireAlert(CALL) + doVibrate(VIB_CALL).
+        long[] pattern = VIB_MSG;
         n.defaults |= Notification.DEFAULT_VIBRATE;
         n.vibrate = pattern;
         Log.i(TAG, "[NR] applyVibrate type=" + type);
@@ -138,9 +155,20 @@ public final class NotifyRouter {
      * @param type MSG or CALL
      */
     public static void fireAlert(android.content.Context ctx, EventType type) {
+        if (ctx == null) return;
+
+        // VoIP calls use a DEDICATED two-tier policy and NEVER ring.
+        if (type == EventType.CALL || type == EventType.HANGUP) {
+            Bridge.NotifyPolicy callPolicy = Bridge.getInstance().getCallNotifyPolicy();
+            // OFF (default) → silent. Only VIBRATE produces feedback. SOUND is not a
+            // call option; if it ever sneaks in we still only vibrate (never ring).
+            if (callPolicy == Bridge.NotifyPolicy.OFF) return;
+            doVibrate(ctx, VIB_CALL, type, callPolicy);
+            return;
+        }
+
         Bridge.NotifyPolicy policy = Bridge.getInstance().getNotifyPolicy();
         if (policy == Bridge.NotifyPolicy.OFF) return;
-        if (ctx == null) return;
 
         // Phase 2: play custom sound when policy == SOUND and URI is configured.
         // For now falls back to vibration (Phase 1).
@@ -168,23 +196,49 @@ public final class NotifyRouter {
         }
 
         // VIBRATE (or SOUND fallback)
+        doVibrate(ctx, VIB_MSG, type, policy);
+    }
+
+    /**
+     * Fire our own vibration pattern out-of-band, guarding sOurVibration so the
+     * PushFilter VV hook (which intercepts ALL Vibrator.vibrate() in WeChat's
+     * process) lets ours through while still blocking WeChat's own VoIP vibration.
+     */
+    private static void doVibrate(android.content.Context ctx, long[] pattern,
+                                  EventType type, Bridge.NotifyPolicy policy) {
         Vibrator vib = (Vibrator) ctx.getSystemService(android.content.Context.VIBRATOR_SERVICE);
         if (vib == null || !vib.hasVibrator()) {
             Log.w(TAG, "[NR] fireAlert no vibrator");
             return;
         }
-        long[] pattern = VIB_MSG; // calls always silent; only MSG reaches fireAlert
+        long total = 0;
+        for (long p : pattern) total += p;
+        sOurVibrationUntilMs = System.currentTimeMillis() + total + 200;
+
+        // Calls (语音/视频) MUST vibrate even when backgrounded / screen-off / DND.
+        // USAGE_ALARM is the one usage Android won't gate behind ringer-mode or doze,
+        // so it plays reliably foreground AND background. Messages stay best-effort
+        // (plain vibrate, no attributes) per product spec — may be dropped in bg.
+        boolean isCall = (type == EventType.CALL || type == EventType.HANGUP);
+        AudioAttributes attrs = isCall
+                ? new AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build()
+                : null;
         try {
-            // Set flag BEFORE calling vibrate() so the PushFilter VV hook
-            // (which intercepts ALL Vibrator.vibrate() in WeChat's process) skips it.
             sOurVibration = true;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vib.vibrate(VibrationEffect.createWaveform(pattern, -1));
+                VibrationEffect effect = VibrationEffect.createWaveform(pattern, -1);
+                if (attrs != null) vib.vibrate(effect, attrs);
+                else               vib.vibrate(effect);
             } else {
                 //noinspection deprecation
-                vib.vibrate(pattern, -1);
+                if (attrs != null) vib.vibrate(pattern, -1, attrs);
+                else               vib.vibrate(pattern, -1);
             }
-            Log.i(TAG, "[NR] fireAlert type=" + type + " policy=" + policy);
+            Log.i(TAG, "[NR] fireAlert type=" + type + " policy=" + policy
+                    + " durMs=" + total + " usage=" + (isCall ? "ALARM" : "default"));
         } catch (Throwable t) {
             Log.w(TAG, "[NR] fireAlert vib err: " + t);
         } finally {
