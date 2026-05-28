@@ -177,6 +177,8 @@ public class PushFilter {
         installStartForegroundBlock(lpparam, false);
         installCallActivityBlock(lpparam);
         installCallViewBlock(lpparam);
+        installFloatBallBlock(lpparam);   // FB: block addView of FloatBall* (no render frame)
+        installAudioModeBlock(lpparam);   // AM: block AudioManager.setMode (TRTC call mode)
         installAudioTrackBlock(lpparam);
         installMediaPlayerBlock(lpparam);
         installVibratorBlock(lpparam);
@@ -541,15 +543,9 @@ public class PushFilter {
                     View view = (View) param.thisObject;
                     String cn = view.getClass().getName();
 
-                    // FB — floating "等待接听" call window (FloatBall* framework,
-                    // probe-confirmed 2026-05-29). Background→home shows this overlay.
-                    // Gate on the call window so non-call floating balls survive.
-                    if (isFloatCallView(cn)) {
-                        if (!sVoIPCallPending) return;
-                        removeFromWindow(view, "[PF:FB]");
-                        return;
-                    }
-
+                    // FB float-ball is now blocked at WindowManagerImpl.addView()
+                    // (installFloatBallBlock) so it never renders a frame — this hook
+                    // only keeps the VoIP render-view removal below.
                     if (!Arrays.asList(VOIP_VIEW_CLASSES).contains(cn)) return;
 
                     // Walk up to root FrameLayout attached to WindowManager
@@ -795,6 +791,70 @@ public class PushFilter {
     }
 
     // =========================================================================
+    // FB — WindowManagerImpl.addView() block for FloatBall* views
+    //   The floating "等待接听" call window (and the foreground→background mini
+    //   window) is a FloatBall framework view added straight to WindowManager.
+    //   Blocking the addView() itself means the view never renders a single frame
+    //   — fixes the faint translucent ghost left by the old removeView-after-attach
+    //   approach (P22 brief.md L19/54: 2026-05-25 装机确认 addView-block).
+    //   Gated on sVoIPCallPending so non-call float balls (mini-program, etc.) live.
+    // =========================================================================
+
+    private static void installFloatBallBlock(XC_LoadPackage.LoadPackageParam lpparam) {
+        try {
+            XposedHelpers.findAndHookMethod(
+                    "android.view.WindowManagerImpl", lpparam.classLoader, "addView",
+                    View.class, android.view.ViewGroup.LayoutParams.class,
+                    new XC_MethodHook() {
+                        @Override
+                        protected void beforeHookedMethod(MethodHookParam param) {
+                            if (!StateMachine.getInstance().isActive()) return;
+                            if (!sVoIPCallPending) return;
+                            Object v = param.args[0];
+                            if (!(v instanceof View)) return;
+                            String cn = v.getClass().getName();
+                            if (isFloatCallView(cn)) {
+                                param.setResult(null);
+                                Log.i(TAG, "[PF:FB] blocked addView " + cn);
+                                return;
+                            }
+                            // Diagnostic: surface any other overlay added during a call
+                            // window so the video mini-window's real class can be pinned.
+                            Log.i(TAG, "[PF:FB] seen addView (call window) " + cn);
+                        }
+                    });
+            Log.i(TAG, "[PF:FB] WindowManagerImpl.addView hook ok");
+        } catch (Throwable t) {
+            Log.w(TAG, "[PF:FB] hook fail: " + t);
+        }
+    }
+
+    // =========================================================================
+    // AM — AudioManager.setMode() block during a call window
+    //   Stops TRTC from switching the device into in-call audio mode (which
+    //   re-routes/activates ring audio). P22 brief.md L18/53: 2026-05-25 ✅.
+    // =========================================================================
+
+    private static void installAudioModeBlock(XC_LoadPackage.LoadPackageParam lpparam) {
+        try {
+            XposedHelpers.findAndHookMethod(
+                    AudioManager.class, "setMode", int.class,
+                    new XC_MethodHook() {
+                        @Override
+                        protected void beforeHookedMethod(MethodHookParam param) {
+                            if (!StateMachine.getInstance().isActive()) return;
+                            if (!sVoIPCallPending) return;
+                            param.setResult(null);
+                            Log.i(TAG, "[PF:AM] blocked setMode(" + param.args[0] + ")");
+                        }
+                    });
+            Log.i(TAG, "[PF:AM] hooked");
+        } catch (Throwable t) {
+            Log.w(TAG, "[PF:AM] hook fail: " + t);
+        }
+    }
+
+    // =========================================================================
     // PiP — Activity.enterPictureInPictureMode(*) block
     //   Prevents the floating talk-window when WeChat backgrounded mid-call.
     //   docs/P22_PushFilter_VoIP.md §二 PiP
@@ -835,6 +895,53 @@ public class PushFilter {
             Log.i(TAG, "[PF:PiP] hooked");
         } catch (Throwable t) {
             Log.w(TAG, "[PF:PiP] hook 1-arg fail: " + t);
+        }
+
+        // PiP param strip — WeChat arms auto-enter-PiP via setPictureInPictureParams
+        // (setAutoEnterEnabled). Swallow it during a call window so leaving the app
+        // does not auto-spawn the talk mini-window. (API 26+)
+        try {
+            Class<?> pipParams = Class.forName("android.app.PictureInPictureParams");
+            XposedHelpers.findAndHookMethod(
+                    Activity.class, "setPictureInPictureParams", pipParams,
+                    new XC_MethodHook() {
+                        @Override
+                        protected void beforeHookedMethod(MethodHookParam param) {
+                            if (!StateMachine.getInstance().isActive()) return;
+                            if (!sVoIPCallPending) return;
+                            param.setResult(null);
+                            Log.i(TAG, "[PF:PiP] stripped setPictureInPictureParams");
+                        }
+                    });
+            Log.i(TAG, "[PF:PiP] setPictureInPictureParams hook ok");
+        } catch (Throwable t) {
+            Log.w(TAG, "[PF:PiP] setParams hook fail: " + t);
+        }
+
+        // UL — onUserLeaveHint fallback: when the user presses Home mid-call on the
+        // VoIP Activity, push it straight to back instead of letting it spawn PiP.
+        // F-26: onUserLeaveHint is defined on the Activity base, hook via
+        // getDeclaredMethod + filter by class name.
+        try {
+            Method ulh = Activity.class.getDeclaredMethod("onUserLeaveHint");
+            ulh.setAccessible(true);
+            XposedBridge.hookMethod(ulh, new XC_MethodHook() {
+                @Override
+                protected void afterHookedMethod(MethodHookParam param) {
+                    if (!StateMachine.getInstance().isActive()) return;
+                    if (!sVoIPCallPending) return;
+                    if (!VOIP_ACTIVITY_CLASS.equals(param.thisObject.getClass().getName())) return;
+                    try {
+                        ((Activity) param.thisObject).moveTaskToBack(true);
+                        Log.i(TAG, "[PF:UL] moveTaskToBack on userLeaveHint");
+                    } catch (Throwable t) {
+                        Log.w(TAG, "[PF:UL] moveTaskToBack fail: " + t);
+                    }
+                }
+            });
+            Log.i(TAG, "[PF:UL] onUserLeaveHint hook ok");
+        } catch (Throwable t) {
+            Log.w(TAG, "[PF:UL] hook fail: " + t);
         }
     }
 
