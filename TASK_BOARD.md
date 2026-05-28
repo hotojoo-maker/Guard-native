@@ -5,8 +5,8 @@
 > - ⬜ = 代码已写但未装机 — 不等于完成，不能当基础继续堆功能
 > - 状态不明 → **停下来问用户，禁止猜测，禁止推断**
 >
-> 接手前看：[`CLAUDE.md`](./CLAUDE.md) + [`HOOKMAP.md`](./HOOKMAP.md)
-> 更新时间：2026-05-25
+> 接手前看：[`docs/README.md`](./docs/README.md) + [`CLAUDE.md`](./CLAUDE.md) + [`HOOKMAP.md`](./HOOKMAP.md)
+> 更新时间：2026-05-27（8071 文档隔离 + P20 v15.1）
 > **当前底座：微信 8.0.71**（D-014）
 > 维护人：guard-dispatch_总调度
 
@@ -16,8 +16,8 @@
 
 | 窗口 | 主题 | P 任务 | 状态 | 占用至 | 模型建议 |
 |:--:|------|-------|:--:|------|:----:|
-| **W1** | B模块触发器 + 搜索 | **P20B/P20** | 🟡 B2✅ B5✅ B6(111111)✅ F-27✅；**Bug B H→V 热切 ✅**（ConvHotReload+RefreshBus，用户确认装机验证 2026-05-25；HOOKMAP V↔H 2026-05-23 实证）| — | Sonnet |
-| **W2** | 朋友圈小红点 | **P21_朋友圈小红点** | ✅ **v18 装机**：Layer0b（SnsMsgUI 进列表过滤+badge zero）✅实证；Layer2（g1拦截）✅实证；v18 tab badge counter suppressor 已装机待触发 | — | Sonnet |
+| **W1** | B模块触发器 + 搜索 | **P20B/P20** | 🟡→大半✅：B2✅ B5✅ B6(6个1)✅ extractWxid(C0)✅ F-27冷启动HIDDEN✅ **搜索框 wxid 过滤 ✅ 2026-05-27 v15.1**（`f0.getView` afterHook GONE + `setDivider(null)`，`[SF:gv] blocked ×14` 实证）；遗留：H→V 自动刷新 ⬜ / "最常使用" section header 下 ~100px 空白 ⬜ / 群聊行"包含:密友名"联动 ⬜（P26C） | — | Sonnet |
+| **W2** | 朋友圈小红点 | **P21_朋友圈小红点** | 🟡 **L3 待装机实证**：Layer0b/Layer2/v18 tab badge 代码已写并已注册 install，但当前证据**只有 chatfish 反编译 + frida trace**，**未抓到 LSPosed 自有 logcat 原文** | — | Sonnet |
 | **W3** | 会话 LSPosed 翻译 | P17_会话LSPosed | ✅ 已完成（2026-05-20 会话隐藏验收通过）| — | Sonnet |
 | **W4** | 离线资料库采集 | P18_离线采集 | ⬜ 待领 | — | Haiku |
 
@@ -75,20 +75,20 @@ src/main/java/.../debug/ContactResolver.java   (查昵称头像)
 
 ---
 
-### ✅ W2 朋友圈小红点 P21（v18 装机实证）
+### 🟡 W2 朋友圈小红点 P21（**L3 待装机实证**，已重新降级）
 
-**状态**：✅ **核心功能实证通过**，v18 tab badge counter 已装机待触发
+**状态**：🟡 **代码已写并已在 ModuleMain.install 注册**，但**LSPosed 自有装机日志原文未抓到**；当前证据仅源自 chatfish 反编译 + 之前的 frida trace，按铁律不得标 ✅。
 
 **已完成（✅ 不动）**：
-- D1 密友帖整条隐藏 — `MomentsFilter.java` `addAll(na4.b)` ✅
+- D1 密友帖整条隐藏 — `MomentsFilter.java` `addAll(na4.b)` ✅（D1/D2/D3 LSPosed 自有装机日志在）
 - D2 密友点赞隐藏 — `LinkedList.add(z15.e56)` ✅
 - D3 密友评论隐藏 — `LinkedList.add(cs5.di0)` ✅
 
-**P21 v18 实证结果（2026-05-21）**：
-- **Layer0b 实证**：`Activity.class.onResume` 过滤 `SnsMsgUI*` ✅，进互动列表时密友条目被过滤
-- **Layer2 实证**：`FMF.g1("album_dyna_photo_ui_title", true)` 已拦截 ✅，防止朋友圈行新增红点
-- **badge 本地状态实证**：badge = `w1.y`（本地 DB），进互动列表消费后自然归零 ✅
-- **v18 新增**：`TabRedDotChangeEvent`/`WeChatTabRedDotEvent` ctor 清零 int 字段（tab 角标数字）；进互动列表后主动 `zeroW1FieldY`
+**P21 当前证据级（L3，需补 L1 logcat）**：
+- **Layer0b（推断 L3）**：`Activity.class.onResume` 过滤 `SnsMsgUI*`，逻辑等价于 chatfish 路径；LSPosed 实装 logcat 待抓
+- **Layer2（推断 L3）**：`FMF.g1("album_dyna_photo_ui_title", true)` 拦截；来源 frida trace + chatfish，LSPosed logcat 待抓
+- **badge 本地状态（推理 L3）**：badge = `w1.y`（chatfish 字段），进互动列表消费后自然归零；待 LSPosed 现场截图佐证
+- **v18 tab badge counter（代码 L4）**：`TabRedDotChangeEvent`/`WeChatTabRedDotEvent` ctor 清零，已写未触发
 
 **已证伪、永久禁止**：
 - ❌ Layer1 `w1.v2` 跨进程不可达（`:push` 写入，主进程 hook 打不到）
@@ -115,7 +115,7 @@ src/main/java/.../debug/ContactResolver.java   (查昵称头像)
 **为什么单独窗口**：会话 hook 已 100% 验证，是确定性最高的任务，便宜模型也能做。
 
 **必读**：
-- `./docs/HOOK_POINTS.md` §F04（4 层 hook 完整 Java 伪代码）
+- `./docs/HOOK_MAP_8071_AUTHORITATIVE.md` §8a 会话（8071）；历史伪代码 → `docs/archive/wechat_8066/HOOK_POINTS.md` §F04
 - `./refs/FAILURE_LOG.md` F-05/F-06/F-11（hook K0 / Adapter / 反射 invoke 三个死路）
 - 没有 `./refs/filter_conv.js`，但 HOOK_POINTS §F04 已经把 Frida 翻译成 Java 伪代码
 
@@ -259,12 +259,15 @@ W1 脚手架   ─→ 后续所有功能模块
 | P17 | 会话 LSPosed | ✅ | 2026-05-20 会话隐藏验收通过。链路：kc5.y.d(l4).h1() = wxid（HOOKMAP 已修 C0→h1），L4 notifyDataSetChanged 主门控。|
 | P18 | 离线采集 | ⬜ | — |
 | P19 | 通讯录隐藏 F07 | ✅ | 2026-05-20 装机验证。路径：ArrayList.addAll(fc5.g×30) → fc5.g.d→z3.c1()→wxid → remove。分段虚拟滚动，每段过滤。|
-| P20 | 搜索 + 密码入口 | ✅ | B6(111111)✅ F-27✅；**Bug B H→V 热切 ✅**（用户确认装机验证 2026-05-25；代码 ConvHotReload + HOOKMAP 2026-05-23 实证）|
+| P20 | 搜索 + 密码入口 | 🟡 | B6 密码入口✅；2026-05-27 v15.1 联系人搜索结果拦截✅（`[SF:gv] blocked ... wxid`）；**群聊搜索⬜ 未完成**（需 groupId / `*@chatroom` 实证）；**聊天记录搜索⬜ 未完成**（需解析 talker wxid/groupId，UIN 不可当 wxid） |
 | A3  | 密群（数据层 + Filter union）| ✅ | 2026-05-21 装机验证。`Bridge.getGroupIds/allHiddenIds/isGroupId`；4 Filter 切换到 `allHiddenIds()`。|
 | P_NC1 | native_core Batch 1 装机验证 | 🟡 | SO 编译通过 + 14 JNI 符号导出；ModuleMain 验证桩已接入（`runNativeBridgeVerification`）；**待装机跑 logcat，看 `[native] BATCH1_VERIFY PASS`**；通过后更新 ROADMAP Phase 1 ⬜→✅ |
 | **P22** | **PushFilter 通知策略层** | 🟡 | **2026-05-22 装机实证**：L1 block ✅；NM cancel 普通消息 gap=3ms ✅；NM voip channel cancel ✅；tinker classloader fix ✅；密友总开关 `Bridge.isFeatureEnabled()` 已接 🟡；CA 备用层 🟡（代码完成，因 NM voip cancel 先行，未实际触发）；**剩余坑**：L4b `MainTabUI.i()` 方法名需 jadx 重查 ❓；NotifyPolicy VIBRATE/SOUND 未实现 📋；DebugServer HTML 开关未加 📋；WeChatDND 归档 Phase 2 📋；frida_stats 未跑 ⚠️ |
+| **P_CV1** | **通讯录 V↔H 热切（ContactView 第 1 轮）** | ⬜ | 2026-05-27 立项。**起因**：v28 V↔H 热切仅在会话 tab（`kc5.v0` / `MvvmList`）收口；通讯录 tab（`AddressLiveList` / `ik3.t0` / `fc5.g` / `z3.c1()`）H→V 后密友/密群不显示。**任务**：对标 ConvFilter v28 链路给 ContactFilter 增量加 V 态 hot-restore（`sPendingRestore` + `expandCacheWithWarm` + `restoreToLiveList` + adapter notify + 80ms post-dedup）。**门控**：State only（只读 `isActive()`）；Entry/Auth/Risk 均不碰。**保护铁律**：不动 ConvFilter / StateMachine / AuthManager / RefreshBus / SearchUnlock；F-35 强制规则继续遵守。装机后补 F-22 KPI 快照（重档要） |
+| **P_PF2** | **语音/视频来电拦截收口 + CallGuard 拆分** | ✅ | 2026-05-29 装机验证（守护内核10）。语音+视频 × 静默/震动 × 前后台双向：零声/零亮屏/零浮窗/零小窗/无挂断嘟；震动=来电单次 onset（解耦 120s pending，15s 会话门，每通重发）；除死循环。FB addView-block + AM/UL/PiP + VC 计数器修复 + NM 删写死 id。来电链拆到 `moduleC/CallGuard.java`（PushFilter 仅留消息+角标）。文档 `docs/P22_PushFilter_VoIP.md` 重写；F-36 七条证伪。⚠️ 视频小窗 = `android.widget.FrameLayout`（探针已记 LayoutParams，待精确特征 block，现状 CA+PiP+UL 已压到「接近完美」）|
+| **P_CF2** | **【待办·BUG】会话列表 `kc5.v0.getView` 越界崩溃** | ⬜ | 2026-05-29 发现（守护内核10）。现象：HIDDEN 态滑动会话列表（尤其挂断视频回到 LauncherUI 后）`java.lang.IndexOutOfBoundsException: Invalid position: 15, size: 15 at kc5.v0.getView → ListView.fillDown → FlingRunnable` → 微信进程崩溃。根因推断（L3）：ConvFilter 清洗后 adapter `getCount` 与底层 List size 错位（报 N+1、实际 N）→ 滑到末位越界。**与来电(moduleC)无关**，栈无 com.ghost 帧；属会话热切区（`kc5.v0` / ConvFilter / moduleD），关联 P_CV1 / CONV_REFRESH_PROBLEM / F-32~F-35。**注意**：工作区 `ConvFilter.java` 有未提交改动（非 P_PF2 改动）。**门控**：State only；改前走授权检查官 + 不动 StateMachine/RefreshBus。待复现确认（不拨电话单独滑会话列表是否也崩）后开查。 |（L1 用户截图 + "完美热切"）。`SettingsEntry.java` `buildGuardRow` 重构为 vertical LL（8dp 灰 spacer + "隐私功能" 13sp #9A9A9A group header + 白底 "量子密友设置" 17sp #191919 行）；`handleRecyclerView` INJECT 分支写 `sRvRef`；`attachScrollFollow / detachScrollFollow` 用 `ViewTreeObserver.OnScrollChangedListener` + `XposedHelpers.callMethod(rv, "computeVerticalScrollOffset")` 反射调（绕开 `View.computeVerticalScrollOffset()` protected）。永久弃用：pz3.g.onBindViewHolder hook、个人资料行 hijack（RV.OnItemTouchListener 不可靠恢复）、Dialog/液态玻璃 v2、贴顶 sticky banner。详见 `docs/SETTINGS_UI_V2.md` §0 v3 摘要。 |
 
-> 编号从 P15 起，是接续 apk2 项目 QE66 的 P14（保持跨项目可追溯）
+> 编号从 P15 起，是接续 apk2 项目 QE66 的 P14（保持跨项目可追溯）。`P_CV*` 系列与 `P_NC*` 同属语义号，不占 v2 路线图 P26–P30 / v3 P31–P33 编号位。
 
 ---
 
@@ -278,10 +281,10 @@ W1 脚手架   ─→ 后续所有功能模块
   P16 朋友圈 D1/D2/D3
   P17 会话 LSPosed
   P19 通讯录 F07
-  P20 搜索 + 密码入口（B6✅；Bug B H→V 热切 ✅ 装机验证 2026-05-25）
   A3  密群数据层 + Filter union（2026-05-21 装机已验）
 
 🟡 v1 进行中（阶段 ①）
+  P20 搜索 + 密码入口（B6装机✅；联系人搜索拦截✅；群聊/聊天记录搜索⬜）
   P20B 状态机触发事件 B 模块（B1 摇一摇 / B2 切后台 / B5 锁屏）
   P22  PushFilter 通知策略层（2026-05-22 装机实证 L1/NM ✅；CA 🟡 未实际触发；剩余：L4b 重查 + NotifyPolicy VIBRATE/SOUND + DebugServer HTML 开关）
   P23  F08 防撤回（资料 T08 调研先行）
