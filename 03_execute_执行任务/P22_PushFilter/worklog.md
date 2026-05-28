@@ -2,6 +2,48 @@
 
 ---
 
+## 2026-05-29 语音/视频来电拦截收口（装机验证通过）
+
+**会话**：守护内核10（wuxianChat 014931）。底座小米9/8.0.71。分支 `fix/voip-call-intercept`。
+
+### 起因
+上个 AI 重建来电链时丢了浮窗/AM 层、用了次优写法（removeView-after-attach、写死通知 id、MP/VW 全 HIDDEN 拦）。本会话审代码 + 装机抓包逐层修复。
+
+### 改动（全部装机 L1 实证）
+1. **NM 删写死 id** `-525958226`（只对一个测试密友有效）→ 靠 `sL1BlockedLastItem` 判密友。
+2. **MP 加 `sVoIPCallPending` 门**（原只判 isActive → 误杀 HIDDEN 态所有媒体）。
+3. **FB 改 addView-block**：hook `WindowManagerImpl.addView` 命中 `.plugin.ball.view.*` 不让 add（根治半透明痕迹），退役 onAttach→removeView。
+4. **补 AM**（`AudioManager.setMode` block）+ **PiP `setPictureInPictureParams` 剥离** + **UL `onUserLeaveHint` 兜底**。
+5. **VC onDetach 改计数器** `sRemovedByUsCount`（修：视频两个渲染 view 第 2 个 detach 误判挂断 → 60ms 清 pending → 声音漏）。
+6. **撤掉 stopForeground 判挂断**（视频服务每 ~10s 循环 start/stopForeground → 误判 → 嘟漏 + 死循环）；pending 只由 120s fallback 清零。
+7. **来电振动 = 单次 onset**（`VIB_CALL={0,400,220,400}` USAGE_ALARM，上升沿 fireAlert 一次）；撤掉自发持续 ring + 撤掉放行微信官方振动（官方持续振会响到超时死循环）。VV 两模式都拦微信振动。
+8. callNotifyPolicy：**静默=全静默 / 震动=来电单次提示**（用户口径）。
+
+### 验收（用户确认「完美」）
+语音+视频 × 静默+震动 × 前后台双向：零声/零亮屏/零浮窗/零小窗/无挂断嘟；震动只在来电瞬间振一次不死循环；拦截本体不受影响。
+
+### 证伪归档 → FAILURE_LOG F-36（a~g 七条）；权威文档 → docs/P22_PushFilter_VoIP.md 重写。
+
+### 【授权检查官 改后审查报告】
+- 审查时间：2026-05-29　触发：来电拦截多层改动（Filter 链）+ 振动策略
+- 涉及文件：`moduleC/PushFilter.java`、`moduleC/NotifyRouter.java`（均非授权保护区）
+- 1 乱接状态机：**否**（只读 `isActive()`/`NativeBridge.isHidden()`，无写）
+- 2 混淆口令/授权：**否**（不碰 111111/AuthGate）
+- 3 越权：**否**（未授权 isActive()=false 自然放行）
+- 4 绕过 AuthGate：**否**
+- 5 破坏 SearchUnlock→sm→RefreshBus 链：**否**，不涉及
+- 6 Java/C++ 分层：**合规**（VW/NM/SF 主进程读 Java sm、:push 读 NativeBridge；铁律 30）
+- 7 保护区未经审先改：**否**（PushFilter/NotifyRouter 非保护区）
+- 8 模块边界：⚠️ PushFilter ~1000 行（消息+来电+角标三件事）→ **需拆 CallGuard**（命中 §零.六 C-1），下一步执行
+- 9 最小修复：拆 CallGuard 后行为不变复验
+- 门控：EntryGate ✅ / AuthGate ✅ / StateGate ✅ / RiskGate ✅（振动为机主侧，不增微信可见特征）/ 分层 ✅
+- **结论：PASS**（拆 CallGuard 为待办架构债，不阻塞）
+
+### 提交
+`3d38f34`(语音快照) → `1fe644e`(FB addView-block+AM/UL/PiP) → `3a0b76b`(振动收口+除死循环+挂断嘟)。
+
+---
+
 ## 2026-05-25 18:45 第二轮 Bug 修复（本会话）
 
 ### 修复内容

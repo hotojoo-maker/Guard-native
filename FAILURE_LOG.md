@@ -1,10 +1,10 @@
-# FAILURE_LOG — 失败方案归档（28 条铁律）
+# FAILURE_LOG — 失败方案归档（34 条铁律）
 
 > **铁律**：已证实失败的方案，**任何人不得复用**。AI 接手必读。
 > 旧 15 条详细 → [`./refs/FAILURE_LOG.md`](./refs/FAILURE_LOG.md)
-> 新 13 条（F-16 ~ F-28）见下方 §二
+> 新 19 条（F-16 ~ F-34）见下方 §二
 
-更新时间：2026-05-19
+更新时间：2026-05-27（F-32/33/34 已补，含 ConvFilter L4 卡帧 + V↔H 刷新 + sConvCache 死循环）
 
 ---
 
@@ -30,7 +30,7 @@
 
 ---
 
-## 二、F-16 ~ F-22 新增（基于 D 线 + 8.0.66 实证）
+## 二、F-16 ~ F-34 新增（基于 D 线 + 8.0.66/8.0.71 实证）
 
 ### F-16：LSPosed 模块不加进程白名单 → 沙箱进程 FATAL
 
@@ -351,7 +351,37 @@ H→V 后：  [BUS:pendingRestore] notified adapter=v0 ← 同上
 
 ---
 
-## 三、铁律使用方法
+### F-35：v25 跨 List identity / v26 list-visited 双层强 dedup → BUS-V-adapter.p 零条 → RecyclerView 不重绘
+
+| 项 | 内容 |
+|----|------|
+| 日期 | 2026-05-27 |
+| 症状 | v25/v26 装机后 H→V 切换：日志 `restoreInPlace o/p/h 各 injected=3`、`BUS-V-adapter.q.d injected=3`，但 `BUS-V-adapter.p` **零条**；肉眼密友密群**全不显示**，等新消息到才出现 |
+| 根因 1（v25） | `injectCacheIntoList` / `restoreToMvvmList` 内层加 `item == itemToInject` identity check：`restoreToMvvmList` 先把 fresh kc5.y 注入 MvvmConvList.h/o/p；随后 `restoreAdapterGraphFromCache` 递归 adapter.p（即同一个 MvvmConvList 实例）时，p.h/p.o/p.p 已含 fresh → identity 命中 → `injected=0`。**adapter.p 跨字段后续注入全被拦** |
+| 根因 2（v26） | `restoreConvListsInObject` + `restoreToMvvmList` 用 `IdentityHashMap` 跟踪已访问 List：同一 backing List 实例只走一次注入。表象与 v25 等价 |
+| 共因 | v24 原本依赖密群 wxid 比对失败导致的「同 List 多次 list.add」**副作用**：每多一次 add 就一次 ArrayList.modCount++，RecyclerView 在 notifyDataSetChanged 时看到 modCount 变化才重绘；v25/v26 把这些「多余 add」全部 dedup 掉 → modCount 不动 → RecyclerView 跳过重绘 |
+| 解法 | v27 = v24 wxid-only dedup 保留多次 insert 副作用 + 80ms 异步 `postDedupAdapterGraph` 按 identity 把同对象引用收敛成 1 份（先脏后净，肉眼最多见 80ms 闪一下）。**禁止把 dedup 提前到 notify 之前同步执行** |
+| 强制规则 | ❌ 禁止在 `injectCacheIntoList` / `restoreToMvvmList` 加跨 List identity check（v25 已证伪）；❌ 禁止把 list-visited 加到 `restoreConvListsInObject` 或 `restoreToMvvmList` 的 List 层（v26 已证伪）；✅ identity dedup 必须放在 notify 之后异步执行 |
+| 关联 | docs/CONV_REFRESH_PROBLEM.md §十六 / §十七、HOOKMAP.md §二 V↔H 实时刷新行 |
+| 后续观测 · 2026-05-27 v28 | **仅会话 tab（`kc5.v0` / `MvvmList`）热切路径下 5 轮未复现 `removed 3→12` dedup 锁死**。装箱日志：`bug排查/final_v28_5rounds.log:8181`、`bug排查/final_v28_coldstart.log`。**通讯录 tab（`AddressLiveList` / `ik3.t0`）未进入本轮验证范围 — V 态 hot-restore 未实现，单独归属 P_CV1**。F-35 强制规则保留不动；本行仅作历史追加，**不视为铁律解除** |
+
+### F-36：8.0.71 语音/视频来电拦截 — 6 条已证伪路径（2026-05-29 收口合集）
+
+> 权威设计文档：[`docs/P22_PushFilter_VoIP.md`](./docs/P22_PushFilter_VoIP.md) §七。以下全部装机 L1 实证。
+
+| # | 已证伪路径 | 根因 | 正确做法 |
+|---|-----------|------|---------|
+| a | **来电持续振动**（单/重复波形）| MIUI 把第三方 app 所有 Vibrator 波形截成一下短的 | 只做来电**单次 onset** 振动（`VIB_CALL={0,400,220,400}` USAGE_ALARM） |
+| b | **放行微信官方持续振动**（VV 不拦）| 藏了来电 UI 后微信不知用户已处理 → 官方振动响到 ~60s 超时，对方挂了也停不下 → **死循环** | VV 两个模式都拦微信自身振动；振动只由我们 onset 提供 |
+| c | **`Service.stopForeground` 当挂断信号** | 视频 VoIP 服务每 ~10s 循环 start/stopForeground，非挂断标记 → 提前清 `sVoIPCallPending` → 挂断嘟漏 + onset 重触发死循环 | pending **只由 120s fallback 清零**；不 hook stopForeground 判挂断 |
+| d | **单 boolean `sRemovedByUs` 辨别 VC 移除** | 视频 attach 两个渲染 view（VoIPRenderTextureView+VoIPMPVoIPVideoView），第 2 个 detach 误判挂断 → 60ms 清 pending → 声音漏 | 用计数器 `sRemovedByUsCount` |
+| e | **FB `onAttachedToWindow → removeView`** | view 已 attach 上屏，移除前渲染一帧 → 桌面半透明痕迹 | hook `WindowManagerImpl.addView` 命中 `.plugin.ball.view.*` 直接 `setResult(null)` 不让 add |
+| f | **MP/VW 只判 `isActive()`（不判 pending）** | HIDDEN 态全拦所有 MediaPlayer/亮屏 → 误杀非密友媒体/正常亮屏 | 必须加 `sVoIPCallPending` 门，只在来电窗口拦 |
+| g | NM L1-gap 写死 `id==-525958226` | 那是某测试密友的通知 id，换人失效 | 靠 `sL1BlockedLastItem` 标志判密友，200ms 窗口无 id 限制 |
+
+**强制规则**：来电拦截**只改 §七 未列为证伪**的层；动任何已装机验证的层前必须问用户（铁律 29）。
+
+---
 
 1. 写代码前先 grep 本文件查"我要做的事"是否已被否决
 2. 见到 ❌ 标记或本表中任一条 → **立即停手**，找替代方案
