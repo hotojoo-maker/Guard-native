@@ -99,9 +99,13 @@ public class PushFilter {
     // touch Java Bridge / NotifyRouter (no MMKV there). Set in installForPush().
     private static volatile boolean sPushProcess = false;
 
-    // True only between our own removeView() and the matching onDetach hook;
-    // distinguishes "we removed it" from "WeChat removed it (call ended)".
-    private static volatile boolean sRemovedByUs = false;
+    // Count of VoIP render views WE removeView()'d that have not yet fired their
+    // matching onDetach. A single boolean broke when a video call attaches BOTH
+    // VoIPRenderTextureView and VoIPMPVoIPVideoView: the 2nd detach was misread as
+    // "WeChat ended the call" and cleared sVoIPCallPending ~60ms into the call,
+    // letting the rest of the call (audio/float-window) leak. A counter keeps every
+    // self-triggered detach classified as "ours".
+    private static volatile int sRemovedByUsCount = 0;
 
     // 120s fallback. See docs/P22_PushFilter_VoIP.md §二 sVoIPCallPending lifecycle.
     private static final long   VOIP_PENDING_TTL_MS = 120_000L;
@@ -430,6 +434,10 @@ public class PushFilter {
                 Log.w(TAG, tag + " hook 3-arg fail: " + t);
             }
         }
+        // NOTE: deliberately NOT hooking stopForeground as a "call ended" signal — the
+        // video VoIP service cycles start/stopForeground every ~10s, so it is not a
+        // reliable hang-up marker. pending is cleared by the 120s fallback only; that
+        // keeps AT/MP armed across the whole call so the hang-up "嘟" stays suppressed.
     }
 
     private static void handleStartForeground(XC_MethodHook.MethodHookParam param,
@@ -558,7 +566,7 @@ public class PushFilter {
                     try {
                         android.view.ViewManager vm = (android.view.ViewManager)
                                 top.getContext().getSystemService(android.content.Context.WINDOW_SERVICE);
-                        sRemovedByUs = true;
+                        sRemovedByUsCount++;
                         vm.removeView(top);
                         Log.i(TAG, "[PF:VC] removeView " + cn);
                     } catch (Throwable t) {
@@ -582,13 +590,16 @@ public class PushFilter {
                     String cn = view.getClass().getName();
                     if (!Arrays.asList(VOIP_VIEW_CLASSES).contains(cn)) return;
 
-                    if (sRemovedByUs) {
-                        // Our own removeView triggered this; re-arm 120s
-                        sRemovedByUs = false;
+                    if (sRemovedByUsCount > 0) {
+                        // One of OUR removeView()s triggered this detach; re-arm and
+                        // wait for the next. Only when the counter is drained does a
+                        // detach mean WeChat itself tore the view down (call ended).
+                        sRemovedByUsCount--;
                         armVoIPPending();
-                        Log.i(TAG, "[PF:VC] onDetach (ours) re-arm 120s");
+                        Log.i(TAG, "[PF:VC] onDetach (ours) re-arm 120s, pendingDetach="
+                                + sRemovedByUsCount);
                     } else {
-                        // WeChat detached → call truly ended
+                        // WeChat detached a view we never removed → call truly ended
                         AudioManager am = (AudioManager) view.getContext()
                                 .getSystemService(android.content.Context.AUDIO_SERVICE);
                         clearVoIPPending(am);
@@ -667,12 +678,12 @@ public class PushFilter {
                         new XC_MethodHook() {
                             @Override
                             protected void beforeHookedMethod(MethodHookParam param) {
-                                if (NotifyRouter.sOurVibration) return;
+                                if (NotifyRouter.sOurVibration) return;  // our own onset pulse
                                 if (!StateMachine.getInstance().isActive()) return;
-                                if (allowCallVibration()) {
-                                    Log.i(TAG, "[PF:VV] allow WeChat call vibration (VIBRATE mode)");
-                                    return;
-                                }
+                                // Block WeChat's own vibration in BOTH modes. The official
+                                // call vibration loops to ring-timeout (~60s) because we hide
+                                // the call UI, so it can never be allowed. VIBRATE feedback is
+                                // a single owner-side onset pulse fired from armVoIPPending.
                                 param.setResult(null);
                                 Log.i(TAG, "[PF:VV] blocked vibrate(VibrationEffect)");
                             }
@@ -684,12 +695,8 @@ public class PushFilter {
                     new XC_MethodHook() {
                         @Override
                         protected void beforeHookedMethod(MethodHookParam param) {
-                            if (NotifyRouter.sOurVibration) return;
+                            if (NotifyRouter.sOurVibration) return;  // our own onset pulse
                             if (!StateMachine.getInstance().isActive()) return;
-                            if (allowCallVibration()) {
-                                Log.i(TAG, "[PF:VV] allow WeChat call vibration (VIBRATE mode)");
-                                return;
-                            }
                             param.setResult(null);
                             Log.i(TAG, "[PF:VV] blocked vibrate(long[])");
                         }
@@ -707,12 +714,6 @@ public class PushFilter {
      * WeChat's native incoming-call vibration is the most reliable source.
      * Main-process only (Bridge has no MMKV in :push).
      */
-    private static boolean allowCallVibration() {
-        return !sPushProcess
-                && sVoIPCallPending
-                && Bridge.getInstance().getCallNotifyPolicy() == Bridge.NotifyPolicy.VIBRATE;
-    }
-
     // =========================================================================
     // VW — PowerManager$WakeLock.acquire() + .release()
     //   Block screen-wake WakeLocks; mirror block in release() to avoid
@@ -819,8 +820,17 @@ public class PushFilter {
                                 return;
                             }
                             // Diagnostic: surface any other overlay added during a call
-                            // window so the video mini-window's real class can be pinned.
-                            Log.i(TAG, "[PF:FB] seen addView (call window) " + cn);
+                            // window with its window LayoutParams, so the video mini-
+                            // window (a plain FrameLayout) can be pinned by type/flags.
+                            String lpInfo = "";
+                            Object lp = param.args[1];
+                            if (lp instanceof android.view.WindowManager.LayoutParams) {
+                                android.view.WindowManager.LayoutParams w =
+                                        (android.view.WindowManager.LayoutParams) lp;
+                                lpInfo = " type=" + w.type + " flags=0x" + Integer.toHexString(w.flags)
+                                        + " gravity=" + w.gravity + " w=" + w.width + " h=" + w.height;
+                            }
+                            Log.i(TAG, "[PF:FB] seen addView (call window) " + cn + lpInfo);
                         }
                     });
             Log.i(TAG, "[PF:FB] WindowManagerImpl.addView hook ok");
@@ -984,19 +994,35 @@ public class PushFilter {
     // VoIP lifecycle helpers
     // =========================================================================
 
+    /** Application context via ActivityThread (null-safe). */
+    private static android.content.Context appContext() {
+        try {
+            return (android.content.Context) Class.forName("android.app.ActivityThread")
+                    .getMethod("currentApplication").invoke(null);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
     /** Arm or refresh the 120s sVoIPCallPending fallback timer. */
     private static void armVoIPPending() {
+        boolean wasPending = sVoIPCallPending;
         sVoIPCallPending = true;
         if (sClearVoIPPendingRunnable != null) {
             sMainHandler.removeCallbacks(sClearVoIPPendingRunnable);
         }
-        // No custom vibration here: in VIBRATE mode the VV hook lets WeChat's own
-        // call vibration through (see allowCallVibration()); in OFF mode it's blocked.
+        // Rising edge → fire exactly ONE owner-side onset vibration (VIBRATE policy
+        // only; OFF stays fully silent). No continuous ring and WeChat's own call
+        // vibration is blocked by VV, so there is no runaway loop. pending stays armed
+        // for the whole call (re-arm sees wasPending=true → no repeat), so this fires
+        // once per call. Main process only — :push must never call NotifyRouter (rule 30).
+        if (!wasPending && !sPushProcess) {
+            android.content.Context ctx = appContext();
+            if (ctx != null) NotifyRouter.fireAlert(ctx, NotifyRouter.EventType.CALL);
+        }
         sClearVoIPPendingRunnable = () -> {
             sVoIPCallPending = false;
             // No AudioManager context here; restoreVoIPStreams runs in VC.onDetach.
-            // If we hit the 120s fallback without VC detach, leave streams as-is
-            // (worst case: user mutes manually). Avoid grabbing am from random thread.
             Log.i(TAG, "[PF:VC] sVoIPCallPending=false (120s fallback)");
         };
         sMainHandler.postDelayed(sClearVoIPPendingRunnable, VOIP_PENDING_TTL_MS);

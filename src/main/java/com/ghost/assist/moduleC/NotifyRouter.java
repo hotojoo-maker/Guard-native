@@ -43,9 +43,11 @@ public final class NotifyRouter {
     // Vibration pattern for message alert: two short pulses
     static final long[] VIB_MSG = {0, 80, 60, 80};
 
-    // Vibration pattern for call alert: 1s on → 1s off → 1s on ("blink" rhythm,
-    // clearly felt even when backgrounded / screen off)
-    static final long[] VIB_CALL = {0, 1000, 1000, 1000};
+    // Call onset alert (fired ONCE per call on the pending rising edge): a clear
+    // double pulse. Not continuous — MIUI truncates long/repeating waveforms and
+    // WeChat's own continuous vibration loops to ring-timeout, so we deliberately
+    // give one unambiguous "hidden friend is calling" buzz, then stop.
+    static final long[] VIB_CALL = {0, 400, 220, 400};
 
     /**
      * Wall-clock deadline (ms) until which our own vibration is in flight. The
@@ -245,7 +247,6 @@ public final class NotifyRouter {
             sOurVibration = false;
         }
     }
-
 
     // -------------------------------------------------------------------------
     // applySound — replace WeChat ringtone with custom URI
