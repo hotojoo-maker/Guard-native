@@ -56,6 +56,7 @@ public final class UiContextTracker {
                                     "tab", tab,
                                     "title", title));
 
+                    Log.i(TAG, "[UI:RAW] " + cn);
                     Log.i(TAG, "[UI] page=" + page + " activity=" + cn);
 
                     // When LauncherUI comes back to foreground, ensure conv list is clean

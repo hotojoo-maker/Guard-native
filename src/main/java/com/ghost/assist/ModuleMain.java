@@ -15,15 +15,18 @@ import com.ghost.assist.debug.StatusNotification;
 import com.ghost.assist.debug.UiContextTracker;
 import com.ghost.assist.moduleB.SearchFilter;
 import com.ghost.assist.moduleB.SearchUnlock;
+import com.ghost.assist.moduleB.SelfProfileCapture;
 import com.ghost.assist.moduleB.SettingsEntry;
 import com.ghost.assist.moduleB.TriggerGuard;
 import com.ghost.assist.moduleB.UpdateGuard;
 import com.ghost.assist.moduleC.AntiRecall;
 import com.ghost.assist.moduleC.PushFilter;
 import com.ghost.assist.moduleD.ContactFilter;
+import com.ghost.assist.moduleD.ContactLabelHideGuard;
 import com.ghost.assist.moduleD.ConvFilter;
 import com.ghost.assist.moduleD.MomentsFilter;
-// MomentsRedDotGuard — 朋友圈小红点，LSPosed 方案卡关中，暂不注册（见 P21_MomentsRedDot/worklog.md）
+// MomentsRedDotGuard — 朋友圈小红点（P21）；Layer0b/Layer2 证据来源 chatfish 反编译 + frida trace，
+// LSPosed 自有装机日志尚未抓到原文（证据级 L3），但代码已注册 install（见下方 L149）
 import com.ghost.assist.moduleD.MomentsRedDotGuard;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
@@ -134,17 +137,20 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
 
         // 7. Install module hooks
         AntiRecall.install(lpparam);
+        SelfProfileCapture.install(lpparam);   // 抓自己 wxid/alias/nick → Bridge（授权评估前置数据）
         SearchUnlock.install(lpparam);
         SearchFilter.install(lpparam);
         MomentsFilter.install(lpparam);
         ConvFilter.install(lpparam);
         ContactFilter.install(lpparam);
+        ContactLabelHideGuard.install(lpparam); // P19B 通讯录【标签】入口/管理/Activity 隐藏
         PushFilter.install(lpparam);
 
         // P21: 更新小红点 + 状态机自动触发器（代码已写，待装机验证）
         MomentsRedDotGuard.install(lpparam);
         UpdateGuard.install(lpparam);
         TriggerGuard.install(app);  // B1/B2/B5，Android API，不吃 lpparam
+        com.ghost.assist.moduleD.ContactDiscoveryHook.install(app); // P_CV1 V1：动态发现通讯录 LiveList/Adapter
 
         // 设置入口 — 微信「我→设置」顶部注入"密友设置 ›"行（仅 VISIBLE 态可见）
         SettingsEntry.install(lpparam);
@@ -153,9 +159,12 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         DebugServer.start();
         Log.i(TAG, "[init] debug server started port=" + AppConfig.getInstance().getServerPort());
 
-        // 8b. UI debug tools (overlay + notification) only in DEV/HONEY.
+        // 8b. UiContextTracker must run in PROD too — SearchUnlock/SearchFilter use
+        //     getCurrentActivity() to finish() the search page after unlock.
+        UiContextTracker.install(lpparam);
+
+        // 8c. UI debug tools (overlay + notification) only in DEV/HONEY.
         if (AppConfig.getInstance().isDebugEnabled()) {
-            UiContextTracker.install(lpparam);
             StatusNotification.show(app);
             OverlayWindow.attach(app);
             Log.i(TAG, "[init] debug UI tools started");

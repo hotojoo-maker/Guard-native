@@ -93,12 +93,6 @@ public class StateMachine {
     public boolean isVipAuthorized() { return true; }
     /** true when module is disabled (non-prod mode) */
     public boolean isDisabled() { return !AppConfig.getInstance().isProdMode(); }
-    /**
-     * High-performance mode: skip the white-flash overlay on resume.
-     * v1 stub = false (always show overlay for maximum privacy).
-     * v2: user-configurable via SettingsEntry toggle.
-     */
-    public boolean isHighPerfMode() { return false; }
 
     // --- State transitions ---
 

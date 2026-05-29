@@ -37,13 +37,16 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
  */
 public class ContactFilter {
 
-    private static final String TAG = "NCL";
+    static final String TAG = "NCL";
 
     private static final String ADDR_ADAPTER    = "ik3.t0";
     private static final String ADDR_LIVE_LIST  = "com.tencent.mm.ui.contact.address.AddressLiveList";
     private static final String MVVMLIST_CLASS  = "com.tencent.mm.plugin.mvvmlist.MvvmList";
-    private static final String MVVMLIST_DATA   = "f135087o"; // ArrayList<T> in MvvmList
-    private static final String ADDR_ITEM_CLS   = "fc5.g";
+    static final String MVVMLIST_DATA   = "f135087o"; // 旧字段名（8.0.71 AddressLiveList 实测不存在，见 worklog 2026-05-29）
+    // P_CV1（2026-05-29 L1 实证）：AddressLiveList 的 MvvmList 基类真实 backing 字段 = o/p/h（与会话 tab MvvmConvList 同），
+    // 元素 fc5.g。injected=0 根因 = 之前硬找 f135087o 不存在。对标 ConvFilter.MVVMLIST_ARRAY_FIELDS。
+    static final String[] MVVMLIST_FIELDS = {"o", "p", "h"};
+    static final String ADDR_ITEM_CLS   = "fc5.g";
     private static final String ADDR_Z3_CLS     = "com.tencent.mm.storage.z3";
 
     // DEX field names (JADX prefix stripped):  f238409d → "d",  f238410e → "e"
@@ -54,42 +57,65 @@ public class ContactFilter {
     private static volatile Method  sZ3C1      = null;
     private static volatile Field   sItemD     = null;
     private static volatile Field   sItemE     = null;
-    private static volatile Field   sMvvmDataF = null;
 
     // ===================================================================
+    // V3: backing list captured directly from addAll hook (no fragment lifecycle needed)
 
     public static void install(XC_LoadPackage.LoadPackageParam lpparam) {
+        // 密友（主通讯录）热切的真正驱动 = installAddAllHook（H 态过滤 + cache）
+        //   + ContactDiscoveryHook（扫 live AddressLiveList/ik3.t0 → 写 sLiveListRef/sAdapterRef）
+        //   + RefreshBus → ContactHotReload（H 清 / V 注 o/p/h）。
+        // V0-V4 那一波诊断探针（fragMethodProbe / rvSetAdapterProbe / warmAttach）与影子类死 hook
+        //   （adapterCtorHook / adapterHook / fragResumeHook / tabFragmentHook，lpparam classloader
+        //   分裂导致永不触发）已于 2026-05-29 收口时清除。
         installAddAllHook();           // 8.0.71 通讯录入口：ArrayList.addAll(fc5.g×30)
-        installAdapterHook(lpparam);   // 兜底：notifyDataSetChanged clean-before
-        installFragResumeHook(lpparam); // 兜底：onResume/onHiddenChanged
+        // 群聊页隐藏：classloader 分裂下不能 lpparam.loadClass(s0) 后 hook（影子类零命中），
+        // 改由 ContactDiscoveryHook 从 live adapter 实例回调 hookGroupAdapterFromLive() 装 hook。
+
+        // V↔H 热切：H 态清理 + V 态注回（P_CV1，对标 ConvHotReload v28）
+        ContactHotReload.install(lpparam);
 
         // Hot-reload: state listener (registration log) + RefreshBus callback.
         StateMachine.getInstance().addListener("ContactFilter",
                 (oldState, newState) -> { /* log only — RefreshBus driven by StateMachine */ });
         RefreshBus.getInstance().register("ContactFilter", hidden -> {
-            Object liveList = sLiveListRef;
-            if (liveList == null) {
-                Log.i(TAG, "[BUS] refresh ContactFilter skipped no-livelist");
-                return;
-            }
-            // In HIDDEN: cleanLiveList removes items from MvvmList internal array.
-            cleanLiveList(liveList, "bus");
-            // Notify adapter to re-render.
-            Object adapter = sAdapterRef != null ? sAdapterRef.get() : null;
-            if (adapter != null) {
-                try {
-                    adapter.getClass().getMethod("notifyDataSetChanged").invoke(adapter);
-                    Log.i(TAG, "[BUS] refresh ContactFilter done hidden=" + hidden);
-                } catch (Throwable t) {
-                    Log.w(TAG, "[BUS] refresh ContactFilter notify err: " + t);
-                }
+            StateMachine.State state = StateMachine.getInstance().getState();
+            if (state == StateMachine.State.HIDDEN) {
+                ContactHotReload.handleBusHidden();
+            } else if (state == StateMachine.State.VISIBLE) {
+                ContactHotReload.handleBusVisible();
             } else {
-                Log.i(TAG, "[BUS] refresh ContactFilter no-adapter (livelist cleaned)");
+                Log.i(TAG, "[BUS] ContactFilter skipped state=" + state + " hidden=" + hidden);
             }
         });
 
         Log.i(TAG, "[CTF] ContactFilter installed");
     }
+
+    // ------------------------------------------------------------------
+    // Adapter notify helper — 给 ContactHotReload 用，封装 ik3.t0.notifyDataSetChanged
+    // ------------------------------------------------------------------
+    static void notifyContactAdapter(String tag) {
+        Object adapter = sAdapterRef != null ? sAdapterRef.get() : null;
+        if (adapter == null) {
+            Log.i(TAG, "[CTHR:notify:" + tag + "] no-adapter; forceNotify");
+            // sAdapterRef was GC'd — recover via sAdapterHostRef (View) or current-activity scan.
+            ContactDiscoveryHook.forceNotify(tag);
+            return;
+        }
+        try {
+            adapter.getClass().getMethod("notifyDataSetChanged").invoke(adapter);
+            Log.i(TAG, "[CTHR:notify:" + tag + "] done");
+        } catch (Throwable t) {
+            Log.w(TAG, "[CTHR:notify:" + tag + "] err: " + t);
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // P_CV1-G 群聊隐藏已抽到 ContactGroupHide.java（2026-05-29 模块拆分）。
+    //   ChatroomContactUI 是独立 cursor adapter，与主通讯录两套机制；
+    //   由 ContactDiscoveryHook 从 live s0 实例回调 ContactGroupHide.hookGroupAdapterFromLive()。
+    // ------------------------------------------------------------------
 
     // ------------------------------------------------------------------
     // 8.0.71 通讯录数据入口（L1）：ArrayList.addAll(Collection)
@@ -110,6 +136,19 @@ public class ContactFilter {
                             String cn = first.getClass().getName();
                             if (!ADDR_ITEM_CLS.equals(cn)) return; // 只处理 fc5.g
 
+                            // addAll(fc5.g) 的 thisObject 是分段临时 list（非 RV 持久 backing）；
+                            // 仅在 sBackingListRef 还没被 CDH 发现填上时作为 fallback 记一下。
+                            if (sBackingListRef == null || sBackingListRef.get() == null) {
+                                @SuppressWarnings("unchecked")
+                                java.util.ArrayList<Object> _bl =
+                                        (java.util.ArrayList<Object>) param.thisObject;
+                                sBackingListRef = new WeakReference<>(_bl);
+                            }
+
+                            // P_CV1 V1.2：fc5.g 首次触达 = 通讯录数据真实加载信号
+                            // 通知 CDH 200ms 后扫前台 Activity 抓 RecyclerView/ListView（不影响 H 态过滤主流程）
+                            try { ContactDiscoveryHook.scheduleScanFromAddAll(); } catch (Throwable ignored) {}
+
                             if (!StateMachine.getInstance().isActive()) return;
                             Set<String> hidden = Bridge.getInstance().allHiddenIds();
                             if (hidden.isEmpty()) return;
@@ -117,13 +156,24 @@ public class ContactFilter {
                             int before = coll.size();
                             java.util.Iterator it = coll.iterator();
                             int removed = 0;
+                            int idx = 0;
                             while (it.hasNext()) {
                                 Object item = it.next();
-                                if (item == null) continue;
-                                if (!isContactItem(item)) continue; // 跳过分组头
+                                if (item == null) { idx++; continue; }
+                                if (!isContactItem(item)) { idx++; continue; } // 跳过分组头
                                 String wxid = extractWxid(item);
-                                if (wxid != null && hidden.contains(wxid)) {
-                                    try { it.remove(); removed++; } catch (UnsupportedOperationException ignored) {}
+                                if (wxid == null) { idx++; continue; }
+                                if (hidden.contains(wxid)) {
+                                    try {
+                                        ContactHotReload.putCache(wxid, item, null, idx);
+                                        it.remove();
+                                        removed++;
+                                        // idx not incremented: next slides in
+                                    } catch (UnsupportedOperationException ignored) {
+                                        idx++;
+                                    }
+                                } else {
+                                    idx++;
                                 }
                             }
                             if (removed > 0) {
@@ -185,320 +235,78 @@ public class ContactFilter {
     // 补线：onResume / onHiddenChanged → 找 AddressLiveList 实例 → 强制清理
     // 使用 getMethods()（含继承），只 hook 生命周期方法
     // ------------------------------------------------------------------
-    private static volatile Object sLiveListRef = null; // 缓存最近见到的 AddressLiveList
-    private static volatile WeakReference<Object> sAdapterRef; // 通讯录 Adapter 弱引用
-
-    private static void installFragResumeHook(XC_LoadPackage.LoadPackageParam lpparam) {
-        try {
-            final Class<?> fragCls  = lpparam.classLoader.loadClass(
-                    "com.tencent.mm.ui.contact.address.MvvmAddressUIFragment");
-            final Class<?> addrCls  = lpparam.classLoader.loadClass(ADDR_LIVE_LIST);
-            final java.util.Set<String> targetMethods = new java.util.HashSet<>(
-                    java.util.Arrays.asList("onResume", "onHiddenChanged", "onStart", "onViewCreated"));
-
-            int hooked = 0;
-            for (Method m : fragCls.getMethods()) {  // getMethods() 含继承
-                if (!targetMethods.contains(m.getName())) continue;
-                XposedBridge.hookMethod(m, new XC_MethodHook() {
-                    @Override
-                    protected void afterHookedMethod(MethodHookParam param) {
-                        Log.i(TAG, "[CTF:frag] " + m.getName() + " fired");
-                        // 尝试从 Fragment 里找 AddressLiveList 字段
-                        Object liveList = findFieldByType(param.thisObject, addrCls);
-                        if (liveList != null) {
-                            sLiveListRef = liveList;
-                            cleanLiveList(liveList, "frag." + m.getName());
-                        } else if (sLiveListRef != null) {
-                            cleanLiveList(sLiveListRef, "frag.cached");
-                        }
-                    }
-                });
-                hooked++;
-            }
-            Log.i(TAG, "[CTF] fragResume hooked " + hooked + " lifecycle methods");
-        } catch (Throwable e) {
-            Log.w(TAG, "[CTF] fragResume fail: " + e);
-        }
-    }
-
-    /** 在 obj 的字段里找第一个 targetClass 类型的实例（含父类字段） */
-    private static Object findFieldByType(Object obj, Class<?> targetClass) {
-        if (obj == null) return null;
-        Class<?> cls = obj.getClass();
-        while (cls != null && !cls.equals(Object.class)) {
-            for (Field f : cls.getDeclaredFields()) {
-                try {
-                    f.setAccessible(true);
-                    Object v = f.get(obj);
-                    if (v != null && targetClass.isInstance(v)) return v;
-                } catch (Throwable ignored) {}
-            }
-            cls = cls.getSuperclass();
-        }
-        return null;
-    }
-
-    // ------------------------------------------------------------------
-    // Probe: hook EVERY method on MvvmAddressUIFragment — find what fires on tab switch
-    // ------------------------------------------------------------------
-    private static void installFragMethodProbe(XC_LoadPackage.LoadPackageParam lpparam) {
-        try {
-            Class<?> fragCls = lpparam.classLoader.loadClass(
-                    "com.tencent.mm.ui.contact.address.MvvmAddressUIFragment");
-            int cnt = 0;
-            for (java.lang.reflect.Method m : fragCls.getDeclaredMethods()) {
-                if (m.getParameterTypes().length > 2) continue; // skip complex methods
-                final String mName = m.getName();
-                XposedBridge.hookMethod(m, new XC_MethodHook() {
-                    @Override
-                    protected void beforeHookedMethod(MethodHookParam param) {
-                        if (sSeenAdapters.add("frag:" + mName)) {
-                            Log.i(TAG, "[CTF:fragMethod] " + mName + "()");
-                        }
-                    }
-                });
-                cnt++;
-            }
-            Log.i(TAG, "[CTF] fragMethod probe: " + cnt + " methods hooked");
-        } catch (Throwable e) {
-            Log.w(TAG, "[CTF] fragMethod probe fail: " + e);
-        }
-    }
-
-    // ------------------------------------------------------------------
-    // Probe: hook RecyclerView.setAdapter globally — find contacts adapter
-    // ------------------------------------------------------------------
-    private static final java.util.Set<String> sSeenAdapters =
-            java.util.Collections.synchronizedSet(new java.util.HashSet<String>());
-
-    private static void installRvSetAdapterProbe(XC_LoadPackage.LoadPackageParam lpparam) {
-        // androidx.recyclerview.widget.RecyclerView may be obfuscated.
-        // Try both stable name and known obfuscated short names in the package.
-        String[] candidates = {
-            "androidx.recyclerview.widget.RecyclerView",
-            "com.tencent.mm.view.recyclerview.WxRecyclerView",
-            "androidx.recyclerview.widget.e2",
-            "androidx.recyclerview.widget.d2",
-            "androidx.recyclerview.widget.c2",
-            "androidx.recyclerview.widget.g2",
-        };
-        XC_MethodHook probe = new XC_MethodHook() {
-            @Override
-            protected void afterHookedMethod(MethodHookParam param) {
-                Object adapter = param.args[0];
-                if (adapter == null) return;
-                String cn = adapter.getClass().getName();
-                if (sSeenAdapters.add(cn)) {
-                    Log.i(TAG, "[CTF:rv] setAdapter cls=" + cn);
-                }
-            }
-        };
-        for (String candidate : candidates) {
-            try {
-                Class<?> rvCls = lpparam.classLoader.loadClass(candidate);
-                for (java.lang.reflect.Method m : rvCls.getDeclaredMethods()) {
-                    if (!"setAdapter".equals(m.getName())) continue;
-                    if (m.getParameterTypes().length != 1) continue;
-                    XposedBridge.hookMethod(m, probe);
-                    Log.i(TAG, "[CTF] RV.setAdapter hooked on " + candidate);
-                    break;
-                }
-            } catch (ClassNotFoundException ignore) {
-            } catch (Throwable e) {
-                Log.w(TAG, "[CTF] RV probe fail " + candidate + ": " + e);
-            }
-        }
-    }
-
-    // ------------------------------------------------------------------
-    // L4: ik3.t0.notifyDataSetChanged — inherited from RecyclerView.Adapter
-    //     Hook the parent class method and filter by instanceof
-    // ------------------------------------------------------------------
-
-    private static void installAdapterHook(XC_LoadPackage.LoadPackageParam lpparam) {
-        try {
-            // Load ik3.t0 to ensure it's in the classloader
-            final Class<?> adapterCls = lpparam.classLoader.loadClass(ADDR_ADAPTER);
-
-            // Walk hierarchy to find the declaring class of notifyDataSetChanged
-            Method nds = null;
-            Class<?> cur = adapterCls;
-            while (cur != null && !cur.getName().equals("java.lang.Object")) {
-                try { nds = cur.getDeclaredMethod("notifyDataSetChanged"); break; }
-                catch (NoSuchMethodException ignore) { cur = cur.getSuperclass(); }
-            }
-            if (nds == null) {
-                Log.w(TAG, "[CTF] L4: notifyDataSetChanged not found in hierarchy");
-                return;
-            }
-
-            final Method finalNds = nds;
-            XposedBridge.hookMethod(nds, new XC_MethodHook() {
-                @Override
-                protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                    if (!adapterCls.isInstance(param.thisObject)) return;
-                    // Update weak ref so RefreshBus can drive hot-reload.
-                    sAdapterRef = new WeakReference<>(param.thisObject);
-                    Log.i(TAG, "[CTF:L4fire] cls=" + param.thisObject.getClass().getName());
-                    cleanAdapter(param.thisObject);
-                }
-            });
-            Log.i(TAG, "[CTF] L4 hooked: notifyDataSetChanged on "
-                    + finalNds.getDeclaringClass().getName() + " (filter=" + ADDR_ADAPTER + ")");
-        } catch (Throwable e) {
-            Log.w(TAG, "[CTF] L4 hook fail: " + e);
-        }
-    }
-
-    // ------------------------------------------------------------------
-    // INIT: hook MvvmList base constructor — catches ALL subclasses incl. AddressLiveList
-    // ------------------------------------------------------------------
-
-    private static void installWarmAttach(XC_LoadPackage.LoadPackageParam lpparam) {
-        int hooked = 0;
-
-        // 1. AddressLiveList directly
-        try {
-            Class<?> allCls = lpparam.classLoader.loadClass(ADDR_LIVE_LIST);
-            for (Constructor<?> ctor : allCls.getDeclaredConstructors()) {
-                XposedBridge.hookMethod(ctor, new XC_MethodHook() {
-                    @Override
-                    protected void afterHookedMethod(final MethodHookParam param) {
-                        Log.i(TAG, "[CTF:ctor] AddressLiveList constructed");
-                        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-                            @Override public void run() {
-                                cleanLiveList(param.thisObject, "INIT");
-                            }
-                        }, 1000);
-                    }
-                });
-                hooked++;
-            }
-        } catch (Throwable e) {
-            Log.w(TAG, "[CTF] AddressLiveList ctor hook fail: " + e);
-        }
-
-        // 2. MvvmList base — catches any subclass including contacts lists
-        try {
-            Class<?> mvvmCls = lpparam.classLoader.loadClass(MVVMLIST_CLASS);
-            for (Constructor<?> ctor : mvvmCls.getDeclaredConstructors()) {
-                XposedBridge.hookMethod(ctor, new XC_MethodHook() {
-                    @Override
-                    protected void afterHookedMethod(final MethodHookParam param) {
-                        final String subCls = param.thisObject.getClass().getName();
-                        // Log ALL MvvmList subclass instantiations (diagnostic)
-                        if (sSeenAdapters.add("mvvm:" + subCls)) {
-                            Log.i(TAG, "[CTF:mvvmCtor] subCls=" + subCls);
-                        }
-                        if (!subCls.contains("Address") && !subCls.contains("address")
-                                && !subCls.equals(ADDR_LIVE_LIST)) {
-                            return;
-                        }
-                        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-                            @Override public void run() {
-                                cleanLiveList(param.thisObject, "INIT");
-                            }
-                        }, 1000);
-                    }
-                });
-                hooked++;
-            }
-            Log.i(TAG, "[CTF] MvvmList base ctors hooked: " + hooked);
-        } catch (Throwable e) {
-            Log.w(TAG, "[CTF] MvvmList ctor hook fail: " + e);
-        }
-
-        Log.i(TAG, "[CTF] INIT warm-attach hooked: " + hooked + " ctors");
-    }
-
-    // ------------------------------------------------------------------
-    // Clean from adapter — find AddressLiveList via field scan
-    // ------------------------------------------------------------------
-
-    private static void cleanAdapter(Object adapter) {
-        try {
-            Object liveList = findAddressLiveList(adapter);
-            if (liveList != null) {
-                cleanLiveList(liveList, "L4");
-            } else {
-                Log.w(TAG, "[CTF] L4: AddressLiveList not found on adapter");
-            }
-        } catch (Throwable e) {
-            Log.w(TAG, "[CTF] cleanAdapter err: " + e);
-        }
-    }
+    static volatile Object sLiveListRef = null; // 缓存最近见到的 AddressLiveList
+    static volatile WeakReference<Object> sAdapterRef; // 通讯录 Adapter 弱引用
+    /** V3: backing ArrayList (f135087o) captured directly from addAll hook. */
+    @SuppressWarnings("unchecked")
+    static volatile WeakReference<java.util.ArrayList<Object>> sBackingListRef = null;
 
     /**
-     * Walk adapter (and its parent) fields to find an AddressLiveList instance.
-     * The WxRecyclerAdapter stores a reference to the MvvmList it drives.
+     * P_CV1 V2.0（2026-05-28，jadx 验证）：8.0.71 真实 tab fragment 生命周期 hook。
+     *
+     * 背景：MvvmAddressUIFragment extends BaseAddressUIFragment extends
+     *      AbstractTabChildActivity.AbStractTabFragment（微信自定义 tab fragment）。
+     * 不是标准 androidx Fragment，所以 onResume/onHiddenChanged 永远不点火。
+     * 微信自定义 lifecycle：q0(Bundle)=onTabCreate / t0()=onResume / r0()=onDestroy / s0()=onPause
+     *
+     * jadx 已验：MvvmAddressUIFragment.F0() 直接返回 AddressLiveList；
+     *           f188251p 字段是 WxRecyclerView 实例（line 96）；
+     *           q0() 内 setAdapter(E0()) 给 WxRecyclerView 装 adapter（line 366）
+     *
+     * 本 hook 在 q0(Bundle) afterHook 时反射调 F0() 拿 AddressLiveList → 写 sLiveListRef；
+     *           反射读 WxRecyclerView 字段 → getAdapter() → 写 sAdapterRef。
+     * 在 t0() afterHook 时复用同样逻辑（确保切 tab 回来时引用仍新鲜）。
      */
-    private static Object findAddressLiveList(Object adapter) {
-        Class<?> cls = adapter.getClass();
-        while (cls != null && !cls.getName().equals("java.lang.Object")) {
-            for (Field f : cls.getDeclaredFields()) {
-                f.setAccessible(true);
-                try {
-                    Object val = f.get(adapter);
-                    if (val == null) continue;
-                    String vCls = val.getClass().getName();
-                    if (ADDR_LIVE_LIST.equals(vCls)) return val;
-                    // also accept any MvvmList subclass that carries fc5.g items
-                    if (isMvvmListSubtype(val.getClass())) {
-                        java.util.List<?> data = getMvvmData(val);
-                        if (data != null && !data.isEmpty()
-                                && ADDR_ITEM_CLS.equals(data.get(0).getClass().getName())) {
-                            return val;
-                        }
-                    }
-                } catch (Throwable ignored) {}
-            }
-            cls = cls.getSuperclass();
-        }
-        return null;
-    }
-
-    private static boolean isMvvmListSubtype(Class<?> cls) {
-        Class<?> c = cls;
-        while (c != null && !c.getName().equals("java.lang.Object")) {
-            if (MVVMLIST_CLASS.equals(c.getName())) return true;
-            c = c.getSuperclass();
-        }
-        return false;
-    }
-
     // ------------------------------------------------------------------
-    // Core clean: filter f135087o of an AddressLiveList
+    // Core clean: 过滤 AddressLiveList 的 o/p/h（密友主通讯录 H 态隐藏）
     // ------------------------------------------------------------------
 
-    private static void cleanLiveList(Object liveList, String tag) {
+    static void cleanLiveList(Object liveList, String tag) {
         boolean filterOn = StateMachine.getInstance().isActive();
         Log.i(TAG, "[CTF:" + tag + "] cleanLiveList on=" + filterOn);
         if (!filterOn) return;
-        try {
-            java.util.List<?> items = getMvvmData(liveList);
-            int sz = items != null ? items.size() : -1;
-            Log.i(TAG, "[CTF:" + tag + "] sz=" + sz);
-            if (items == null || items.isEmpty()) return;
-            int removed = filterContactList(items, tag);
-            Log.i(TAG, "[CTF:" + tag + "] filtered=" + removed + "/" + sz);
-            if (removed > 0) Bridge.getInstance().addRawFeedLine("[CTF:" + tag + "] filtered=" + removed);
-        } catch (Throwable e) {
-            Log.w(TAG, "[CTF] cleanLiveList err: " + e);
+        // P_CV1（2026-05-29 L1 实证）：AddressLiveList 真 backing = MvvmList 基类 o/p/h（非 f135087o）。
+        // 旧 getMvvmData 只找 f135087o → 返回 null → sz=-1 → 不删除（V→H 不隐藏 bug）。
+        // 改为逐字段遍历 o/p/h，对每个装 fc5.g 的 List 跑过滤，与 restoreToLiveList 对称。
+        int totalRemoved = 0;
+        for (String fn : MVVMLIST_FIELDS) {
+            try {
+                Field f = findFieldInHierarchy(liveList.getClass(), fn);
+                if (f == null) continue;
+                f.setAccessible(true);
+                Object arr = f.get(liveList);
+                if (!(arr instanceof java.util.List)) continue;
+                java.util.List<?> items = (java.util.List<?>) arr;
+                if (items.isEmpty()) continue;
+                Object first = items.get(0);
+                if (first == null || !ADDR_ITEM_CLS.equals(first.getClass().getName())) continue;
+                int sz = items.size();
+                int removed = filterContactList(items, tag + ":" + fn);
+                if (removed > 0) {
+                    Log.i(TAG, "[CTF:" + tag + "] field=" + fn + " filtered=" + removed + "/" + sz);
+                    totalRemoved += removed;
+                }
+            } catch (Throwable e) {
+                Log.w(TAG, "[CTF] cleanLiveList field=" + fn + " err: " + e);
+            }
         }
+        Log.i(TAG, "[CTF:" + tag + "] cleanLiveList totalRemoved=" + totalRemoved);
+        if (totalRemoved > 0) Bridge.getInstance().addRawFeedLine("[CTF:" + tag + "] filtered=" + totalRemoved);
     }
 
-    @SuppressWarnings("unchecked")
-    private static java.util.List<?> getMvvmData(Object liveList) {
-        try {
-            if (sMvvmDataF == null) {
-                Field f = findFieldInHierarchy(liveList.getClass(), MVVMLIST_DATA);
-                if (f != null) { f.setAccessible(true); sMvvmDataF = f; }
-            }
-            if (sMvvmDataF != null) return (ArrayList<?>) sMvvmDataF.get(liveList);
-        } catch (Throwable e) {
-            Log.w(TAG, "[CTF] getMvvmData err: " + e);
-        }
-        return null;
+    /**
+     * V3: 直接对 backing ArrayList 做过滤（BUS-H 时 sLiveListRef 仍为 null 的兜底）。
+     * 与 cleanLiveList 等价，但绕过 f135087o 反射，因为 backing 已是 f135087o 本身。
+     */
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    static void cleanBackingList(java.util.List backing, String tag) {
+        if (backing == null || backing.isEmpty()) return;
+        boolean filterOn = StateMachine.getInstance().isActive();
+        Log.i(TAG, "[CTF:" + tag + "] cleanBackingList on=" + filterOn + " sz=" + backing.size());
+        if (!filterOn) return;
+        int removed = filterContactList(backing, tag);
+        Log.i(TAG, "[CTF:" + tag + "] filtered=" + removed);
+        if (removed > 0) Bridge.getInstance().addRawFeedLine("[CTF:" + tag + "] filtered=" + removed);
     }
 
     // ------------------------------------------------------------------
@@ -511,17 +319,22 @@ public class ContactFilter {
         if (hidden.isEmpty()) return 0;
 
         int removed = 0;
+        int idx = 0;
         Iterator it = items.iterator();
         while (it.hasNext()) {
             Object item = it.next();
-            if (item == null) continue;
-            if (!isContactItem(item)) continue; // skip headers
+            if (item == null) { idx++; continue; }
+            if (!isContactItem(item)) { idx++; continue; }
             String wxid = extractWxid(item);
-            if (wxid == null) continue;
+            if (wxid == null) { idx++; continue; }
             if (hidden.contains(wxid)) {
+                ContactHotReload.putCache(wxid, item, MVVMLIST_DATA, idx);
                 it.remove();
                 removed++;
-                Log.d(TAG, "[CTF:" + tag + "] removed wxid=" + wxid);
+                Log.d(TAG, "[CTF:" + tag + "] removed id=" + wxid + " idx=" + idx);
+                // idx not incremented: next item slides into same slot
+            } else {
+                idx++;
             }
         }
         return removed;
@@ -540,8 +353,8 @@ public class ContactFilter {
         } catch (Throwable e) { return false; }
     }
 
-    /** fc5.g.d → z3 → z3.c1() → wxid */
-    private static String extractWxid(Object item) {
+    /** fc5.g.d → z3 → z3.c1() → wxid（或 *@chatroom，经 isWxid 短路放行） */
+    static String extractWxid(Object item) {
         try {
             if (sItemD == null) {
                 Field f = item.getClass().getDeclaredField(ITEM_CONTACT_FIELD);
@@ -591,7 +404,7 @@ public class ContactFilter {
     // Helpers
     // ------------------------------------------------------------------
 
-    private static Field findFieldInHierarchy(Class<?> cls, String name) {
+    static Field findFieldInHierarchy(Class<?> cls, String name) {
         Class<?> c = cls;
         while (c != null && !c.getName().equals("java.lang.Object")) {
             try { return c.getDeclaredField(name); } catch (NoSuchFieldException ignored) {}
@@ -602,6 +415,7 @@ public class ContactFilter {
 
     static boolean isWxid(String s) {
         if (s == null || s.length() < 4 || s.contains(" ")) return false;
+        if (Bridge.isGroupId(s)) return true; // 密群 *@chatroom 也作为 hidden id 候选放行（P_CV1 补丁-2）
         return s.startsWith("wxid_") || s.startsWith("gh_")
                 || "weixin".equals(s) || "filehelper".equals(s)
                 || s.startsWith("qqmail_") || s.startsWith("newsapp");

@@ -9,7 +9,6 @@ import com.ghost.assist.core.InterceptCounter;
 import com.ghost.assist.core.RefreshBus;
 import com.ghost.assist.core.StateMachine;
 import com.ghost.assist.debug.DebugTelemetry;
-import com.ghost.assist.debug.DebugTelemetry;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
@@ -67,6 +66,12 @@ public class ConvFilter {
     static final String[] MVVMLIST_ARRAY_FIELDS = {"o", "p", "h"};
     // Contact field on conversation item (8.0.66: item.d = m3 contact obj)
     private static final String[] CONTACT_FIELD_NAMES = {"d", "e", "f", "a", "b", "c"};
+    // 友好名/昵称源（contact 层）。优先 conRemark（本地备注）→ nickname → username 派生。
+    private static final String[] NICK_FIELD_NAMES = {
+            "field_conRemark", "field_nickname", "field_chatRoomName",
+            "field_nickName", "displayName", "nickname"};
+    private static final String[] NICK_GETTER_NAMES = {
+            "getDisplayName", "getNickname", "getNickName", "getConRemark", "g0"};
     // Methods on contact obj that return wxid
     // C0() = 8.0.71 l4.C0() → field_digestUser = wxid  (confirmed by live broad-scan 2026-05-22)
     // h1() = returns "officialaccounts" for public account items — NOT wxid for regular contacts
@@ -153,6 +158,7 @@ public class ConvFilter {
         installMvvmListHooks(lpparam);
         installMvvmListL3Hooks(lpparam);
         installMvvmListEHook(lpparam);
+        installIk3nHandleEventHook(lpparam);
         installMvvmConvHooks(lpparam);
         installMvvmConvConstructorHook(lpparam);
         installAddAllHook();
@@ -184,12 +190,131 @@ public class ConvFilter {
         Log.i(TAG, "[CF] Lh0 stub (h0 covered by L1/L4 in 8.0.71)");
     }
 
+    // L0w — MvvmList write path (P26 confirmed: ik3.h0 → MvvmList.l/k/e → ArrayList.add).
+    // beforeHookedMethod filters hidden items BEFORE they enter the backing ArrayList.
     private static void installMvvmListEHook(XC_LoadPackage.LoadPackageParam lpparam) {
-        Log.i(TAG, "[CF] Le stub");
+        try {
+            Class<?> mvvmCls = lpparam.classLoader.loadClass(MVVMLIST_CLASS);
+            int hooked = 0;
+            for (Method m : mvvmCls.getDeclaredMethods()) {
+                String mn = m.getName();
+                if (!"e".equals(mn) && !"k".equals(mn) && !"l".equals(mn)) continue;
+                if (m.getParameterTypes().length == 0) continue;
+                final String sig = m.toGenericString();
+                final String label = "L0" + mn;
+                XposedBridge.hookMethod(m, new XC_MethodHook() {
+                    @Override
+                    protected void beforeHookedMethod(MethodHookParam param) {
+                        rememberMvvmList(param.thisObject);
+                        filterWritePathArgs(param, label);
+                    }
+                });
+                hooked++;
+                Log.i(TAG, "[CF] " + label + " hooked: " + sig);
+            }
+            if (hooked == 0) {
+                Log.w(TAG, "[CF] L0w no e/k/l candidates on MvvmList");
+            }
+            Log.i(TAG, "[CF] L0w total hooked=" + hooked);
+        } catch (Throwable e) {
+            Log.w(TAG, "[CF] L0w install fail: " + e);
+        }
+    }
+
+    private static void filterWritePathArgs(XC_MethodHook.MethodHookParam param, String label) {
+        if (param.args == null || param.args.length == 0) return;
+        for (int i = 0; i < param.args.length; i++) {
+            List<Object> list = extractListFromArg(param.args[i]);
+            if (list == null || list.isEmpty()) continue;
+            if (!isConvItemList(list)) continue;
+            int before = list.size();
+            java.util.ArrayList<Object> filtered = new java.util.ArrayList<Object>(list);
+            rememberFreshConvItems(filtered, label);
+            filterConvList(filtered, label);
+            int removed = before - filtered.size();
+            if (param.args[i] instanceof List) {
+                param.args[i] = filtered;
+            } else {
+                replaceListContents(list, filtered);
+            }
+            Log.i(TAG, "[CF:" + label + "] enter arg=" + i + " size=" + before
+                    + " removed=" + removed
+                    + " active=" + StateMachine.getInstance().isActive());
+            return;
+        }
+    }
+
+    private static void replaceListContents(List<Object> target, List<Object> filtered) {
+        try {
+            target.clear();
+            target.addAll(filtered);
+        } catch (Throwable t) {
+            Log.w(TAG, "[CF:L0w] replace list fail: " + t.getMessage());
+        }
     }
 
     private static void installMvvmConvConstructorHook(XC_LoadPackage.LoadPackageParam lpparam) {
         Log.i(TAG, "[CF] MCL-ctor stub");
+    }
+
+    // IK3n — upstream conversation refresh event.
+    // 8.0.71 live chain: ik3.n.handleEvent(List) → MvvmList.w/e → kc5.v0.notifyDataSetChanged.
+    // HIDDEN path filters fresh conversation rows before they reach MvvmList, so a new message
+    // cannot make a hidden wxid/groupId appear in LauncherUI.
+    private static void installIk3nHandleEventHook(XC_LoadPackage.LoadPackageParam lpparam) {
+        try {
+            Class<?> ik3nCls = lpparam.classLoader.loadClass("ik3.n");
+            int hooked = 0;
+            for (Method m : ik3nCls.getDeclaredMethods()) {
+                if (!"handleEvent".equals(m.getName())) continue;
+                Class<?>[] p = m.getParameterTypes();
+                if (p.length != 1) continue;
+                final String sig = m.toGenericString();
+                try { m.setAccessible(true); } catch (Throwable ignored) {}
+                XposedBridge.hookMethod(m, new XC_MethodHook() {
+                    @Override
+                    protected void beforeHookedMethod(MethodHookParam param) {
+                        List<Object> list = extractListFromArg(param.args[0]);
+                        if (list == null || list.isEmpty()) return;
+                        if (!isConvItemList(list)) return;
+                        rememberFreshConvItems(list, "IK3n");
+                        filterConvList(list, "IK3n");
+                    }
+                });
+                hooked++;
+                Log.i(TAG, "[CF] IK3n hooked: " + sig);
+            }
+            if (hooked == 0) {
+                Log.w(TAG, "[CF] IK3n no handleEvent(1) candidates");
+            }
+        } catch (ClassNotFoundException e) {
+            Log.w(TAG, "[CF] IK3n class not found");
+        } catch (Throwable e) {
+            Log.w(TAG, "[CF] IK3n install fail: " + e.getMessage());
+        }
+    }
+
+    private static boolean isConvItemList(List<Object> list) {
+        if (list == null || list.isEmpty()) return false;
+        Object first = list.get(0);
+        if (first == null) return false;
+        String firstCls = first.getClass().getName();
+        return CONV_MAIN_UI.equals(firstCls) || "kc5.y".equals(firstCls);
+    }
+
+    private static void rememberFreshConvItems(List<Object> list, String label) {
+        int saved = 0;
+        for (Object item : list) {
+            String wxid = extractWxid(item);
+            if (wxid != null) {
+                ConvHotReload.sConvItemMap.put(wxid, item);
+                saved++;
+            }
+        }
+        if (saved > 0) {
+            Log.i(TAG, "[CF:" + label + "] fresh saved=" + saved
+                    + " first=" + list.get(0).getClass().getName());
+        }
     }
 
     // =========================================================================
@@ -309,6 +434,8 @@ public class ConvFilter {
                 String mn = m.getName();
                 // Already covered by L1/L2
                 if ("n".equals(mn) || "m".equals(mn) || "s".equals(mn)) continue;
+                // Covered by L0w write-path hooks.
+                if ("e".equals(mn) || "k".equals(mn) || "l".equals(mn)) continue;
                 Class<?>[] params = m.getParameterTypes();
                 if (params.length != 1) continue;
                 // Skip primitive / boolean single-param methods (getters/flags)
@@ -722,9 +849,11 @@ public class ConvFilter {
                                 + " state=" + (StateMachine.getInstance().isActive() ? "H" : "V"));
                         if (gCleaning) return;
                         if (!isConvListAdapter(adapter)) return;
-                        long now = System.currentTimeMillis();
-                        if (now - gLastCleanMs < COOLDOWN_MS) return;
-                        gLastCleanMs = now;
+                        if (!StateMachine.getInstance().isActive()) {
+                            long now = System.currentTimeMillis();
+                            if (now - gLastCleanMs < COOLDOWN_MS) return;
+                            gLastCleanMs = now;
+                        }
 
                         // L4-NoDiff: clean hidden items, then replace WeChat's notify with a
                         // synchronous clean call via invokeOriginalMethod.
@@ -746,6 +875,11 @@ public class ConvFilter {
                         // Rollback: comment out param.setResult + invokeOriginalMethod lines and
                         //   uncomment the Handler.post block below; WeChat's original notify resumes.
                         int removed = l4CleanAndCount();
+                        int adapterRemoved = cleanAdapterGraph(adapter, "L4adapter");
+                        if (adapterRemoved > 0) {
+                            Log.i(TAG, "[CF:L4adapter] cleaned=" + adapterRemoved);
+                        }
+                        removed += adapterRemoved;
                         Log.i(TAG, "[CF:L4] cleaned=" + removed);
                         if (removed == 0 && !StateMachine.getInstance().isActive()) {
                             // VISIBLE mode: inject any missing cached items into the backing array
@@ -763,6 +897,12 @@ public class ConvFilter {
                                         int inj = ConvHotReload.restoreToMvvmList(ml, snap);
                                         if (inj > 0) {
                                             Log.i(TAG, "[CF:L4-inject] injected=" + inj);
+                                        }
+                                        int adapterInj = restoreAdapterGraphFromCache(
+                                                snap, "L4-visible");
+                                        if (adapterInj > 0) {
+                                            Log.i(TAG, "[CF:L4adapter-inject] injected="
+                                                    + adapterInj);
                                         }
                                     }
                                 }
@@ -821,6 +961,360 @@ public class ConvFilter {
         // Return 0: we can't count what was removed, so don't cancel WeChat's notify.
         cleanConvData("L4");
         return 0;
+    }
+
+    private static int cleanAdapterGraph(Object adapter, String label) {
+        if (!StateMachine.getInstance().isActive()) return 0;
+        if (Bridge.getInstance().allHiddenIds().isEmpty()) return 0;
+        if (adapter == null) return 0;
+        Set<Object> visited = Collections.newSetFromMap(
+                new java.util.IdentityHashMap<Object, Boolean>());
+        return cleanConvListsInObject(adapter, label, 0, visited);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static int cleanConvListsInObject(
+            Object root, String label, int depth, Set<Object> visited) {
+        if (root == null || depth > 2 || visited.contains(root)) return 0;
+        visited.add(root);
+        int total = 0;
+        Class<?> cls = root.getClass();
+        while (cls != null && cls != Object.class) {
+            Field[] fields;
+            try {
+                fields = cls.getDeclaredFields();
+            } catch (Throwable ignored) {
+                break;
+            }
+            for (Field f : fields) {
+                try {
+                    f.setAccessible(true);
+                    Object v = f.get(root);
+                    if (v == null) continue;
+                    String fieldLabel = label + "." + f.getName();
+                    if (v instanceof List) {
+                        List<Object> list = (List<Object>) v;
+                        if (!isConvItemListByScan(list)) continue;
+                        int before = list.size();
+                        filterConvList(list, fieldLabel);
+                        int removed = before - list.size();
+                        if (removed > 0) {
+                            Log.i(TAG, "[CF:" + label + "] field=" + f.getName()
+                                    + " removed=" + removed
+                                    + " owner=" + root.getClass().getName());
+                            total += removed;
+                        }
+                    } else if (depth < 2 && isTencentHolder(v)) {
+                        total += cleanConvListsInObject(v, fieldLabel, depth + 1, visited);
+                    }
+                } catch (Throwable ignored) {}
+            }
+            cls = cls.getSuperclass();
+        }
+        return total;
+    }
+
+    private static boolean isConvItemListByScan(List<Object> list) {
+        if (list == null || list.isEmpty()) return false;
+        int checked = 0;
+        for (Object item : list) {
+            if (item == null) continue;
+            String cn = item.getClass().getName();
+            if (CONV_MAIN_UI.equals(cn) || "kc5.y".equals(cn)) return true;
+            if (++checked >= 5) break;
+        }
+        return false;
+    }
+
+    static int restoreAdapterGraphFromCache(
+            List<ConvHotReload.CachedConvItem> cacheSnap, String label) {
+        if (StateMachine.getInstance().isActive()) return 0;
+        if (cacheSnap == null || cacheSnap.isEmpty()) return 0;
+        Object adapter = getConvAdapter();
+        if (adapter == null) return 0;
+        Set<Object> visited = Collections.newSetFromMap(
+                new java.util.IdentityHashMap<Object, Boolean>());
+        return restoreConvListsInObject(adapter, cacheSnap, label, 0, visited);
+    }
+
+    // =========================================================================
+    // v27 post-dedup: 在 v24 风格多次 insert（用于触发 RecyclerView 重渲染）之后，
+    // 扫 adapter 图把同对象引用在同一 List 里只保留首次出现项。
+    // 调用时机：BUS-V Runnable 在 inject + 第一次 notify 之后、二次 notify 之前。
+    // =========================================================================
+
+    /** 入口：扫 conv adapter 全图、所有 conv-item List 做 identity dedup。 */
+    static int postDedupAdapterGraph(String label) {
+        Object adapter = getConvAdapter();
+        if (adapter == null) return 0;
+        Set<Object> visited = Collections.newSetFromMap(
+                new java.util.IdentityHashMap<Object, Boolean>());
+        return dedupConvListsInObject(adapter, label, 0, visited);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static int dedupConvListsInObject(
+            Object root, String label, int depth, Set<Object> visited) {
+        if (root == null || depth > 2 || visited.contains(root)) return 0;
+        visited.add(root);
+        int total = 0;
+        Class<?> cls = root.getClass();
+        while (cls != null && cls != Object.class) {
+            Field[] fields;
+            try {
+                fields = cls.getDeclaredFields();
+            } catch (Throwable ignored) {
+                break;
+            }
+            for (Field f : fields) {
+                try {
+                    f.setAccessible(true);
+                    Object v = f.get(root);
+                    if (v == null) continue;
+                    String fieldLabel = label + "." + f.getName();
+                    if (v instanceof List) {
+                        List<Object> list = (List<Object>) v;
+                        if (visited.contains(list)) continue;
+                        visited.add(list);
+                        if (!isConvItemListByScan(list)) continue;
+                        int removed = dedupListByIdentity(list);
+                        if (removed > 0) {
+                            Log.i(TAG, "[CF:" + label + "] field=" + f.getName()
+                                    + " dedup=" + removed + " listSz=" + list.size()
+                                    + " owner=" + root.getClass().getName());
+                            total += removed;
+                        }
+                    } else if (depth < 2 && isTencentHolder(v)) {
+                        total += dedupConvListsInObject(v, fieldLabel, depth + 1, visited);
+                    }
+                } catch (Throwable ignored) {}
+            }
+            cls = cls.getSuperclass();
+        }
+        return total;
+    }
+
+    private static int dedupListByIdentity(List<Object> list) {
+        if (list == null || list.size() < 2) return 0;
+        java.util.IdentityHashMap<Object, Boolean> seen =
+                new java.util.IdentityHashMap<Object, Boolean>();
+        int removed = 0;
+        Iterator<Object> it = list.iterator();
+        while (it.hasNext()) {
+            Object item = it.next();
+            if (item == null) continue;
+            if (seen.containsKey(item)) {
+                it.remove();
+                removed++;
+            } else {
+                seen.put(item, Boolean.TRUE);
+            }
+        }
+        return removed;
+    }
+
+    static List<ConvHotReload.CachedConvItem> expandCacheWithWarm(
+            List<ConvHotReload.CachedConvItem> cacheSnap, String label) {
+        java.util.ArrayList<ConvHotReload.CachedConvItem> out =
+                new java.util.ArrayList<ConvHotReload.CachedConvItem>();
+        if (cacheSnap != null) {
+            for (ConvHotReload.CachedConvItem cached : cacheSnap) {
+                if (cached == null || cached.wxid == null) continue;
+                out.add(cached);
+            }
+        }
+        if (StateMachine.getInstance().isActive()) return out;
+        Object x = findKc5XFromAdapterGraph();
+        Method h = resolveKc5XH(x);
+        if (x == null || h == null) {
+            Log.w(TAG, "[CF:warmAll:" + label + "] x=" + x + " h=" + h + " cache=" + out.size());
+            return out;
+        }
+        for (String id : Bridge.getInstance().allHiddenIds()) {
+            if (id == null) continue;
+            try {
+                Object item = h.invoke(x, id);
+                if (item == null) {
+                    Log.i(TAG, "[CF:warmAll:" + label + "] h(" + id + ") -> null");
+                    continue;
+                }
+                // Use the hidden id (Bridge.allHiddenIds()) as the authoritative key.
+                // extractWxid() on a chatroom kc5.y returns the last-speaker member wxid
+                // (proven 2026-05-27 v23.1 — WXID-MISMATCH id=...@chatroom extracted=wxid_...),
+                // which collides with friend entries and makes the chatroom be replaced.
+                String wxidExtracted = extractWxid(item);
+                String wxid = id;
+                if (wxidExtracted != null && !id.equals(wxidExtracted)) {
+                    Log.w(TAG, "[CF:warmAll:" + label + "] WXID-MISMATCH id=" + id
+                            + " extracted=" + wxidExtracted + " using id as key");
+                }
+                ConvHotReload.sConvItemMap.put(wxid, item);
+                replaceOrAppendWarmItem(out, wxid, item);
+                Log.i(TAG, "[CF:warmAll:" + label + "] h(" + id + ") -> "
+                        + item.getClass().getName() + " wxid=" + wxid);
+            } catch (Throwable t) {
+                Log.w(TAG, "[CF:warmAll:" + label + "] h(" + id + ") fail: " + t);
+            }
+        }
+        Log.i(TAG, "[CF:warmAll:" + label + "] cache=" + (cacheSnap != null ? cacheSnap.size() : 0)
+                + " expanded=" + out.size());
+        return out;
+    }
+
+    private static void replaceOrAppendWarmItem(
+            java.util.ArrayList<ConvHotReload.CachedConvItem> out, String wxid, Object item) {
+        int oldIndex = -1;
+        int oldOriginalIndex = out.size();
+        for (int i = 0; i < out.size(); i++) {
+            ConvHotReload.CachedConvItem cached = out.get(i);
+            if (cached != null && wxid.equals(cached.wxid)) {
+                oldIndex = i;
+                oldOriginalIndex = cached.originalIndex;
+                break;
+            }
+        }
+        ConvHotReload.CachedConvItem fresh =
+                new ConvHotReload.CachedConvItem(wxid, item, null, oldOriginalIndex);
+        if (oldIndex >= 0) {
+            out.set(oldIndex, fresh);
+        } else {
+            out.add(fresh);
+        }
+    }
+
+    private static Object findKc5XFromAdapterGraph() {
+        Object adapter = getConvAdapter();
+        if (adapter == null) return null;
+        Set<Object> visited = Collections.newSetFromMap(
+                new java.util.IdentityHashMap<Object, Boolean>());
+        Object x = findObjectByClassName(adapter, "kc5.x", 0, visited);
+        if (x != null && sDiagSeen.add("kc5x_found_graph")) {
+            Log.i(TAG, "[CF:xFind] kc5.x found via adapter graph: " + x.getClass().getName());
+        }
+        return x;
+    }
+
+    private static Object findObjectByClassName(
+            Object root, String targetClassName, int depth, Set<Object> visited) {
+        if (root == null || depth > 4 || visited.contains(root)) return null;
+        visited.add(root);
+        String cn = root.getClass().getName();
+        if (targetClassName.equals(cn)) return root;
+        if (!isTencentHolder(root)) return null;
+        Class<?> cls = root.getClass();
+        while (cls != null && cls != Object.class) {
+            Field[] fields;
+            try {
+                fields = cls.getDeclaredFields();
+            } catch (Throwable ignored) {
+                break;
+            }
+            for (Field f : fields) {
+                try {
+                    f.setAccessible(true);
+                    Object v = f.get(root);
+                    if (v == null) continue;
+                    Object found = findObjectByClassName(v, targetClassName, depth + 1, visited);
+                    if (found != null) return found;
+                } catch (Throwable ignored) {}
+            }
+            cls = cls.getSuperclass();
+        }
+        return null;
+    }
+
+    private static Method resolveKc5XH(Object x) {
+        if (x == null) return null;
+        try {
+            Class<?> cls = x.getClass();
+            while (cls != null && cls != Object.class) {
+                for (Method m : cls.getDeclaredMethods()) {
+                    if (!"h".equals(m.getName())) continue;
+                    Class<?>[] p = m.getParameterTypes();
+                    if (p.length != 1 || p[0] != String.class) continue;
+                    try { m.setAccessible(true); } catch (Throwable ignored) {}
+                    if (sDiagSeen.add("kc5x_h_resolved")) {
+                        Log.i(TAG, "[CF:xFind] h() resolved");
+                    }
+                    return m;
+                }
+                cls = cls.getSuperclass();
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "[CF:xFind] resolve h fail: " + t);
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static int restoreConvListsInObject(
+            Object root, List<ConvHotReload.CachedConvItem> cacheSnap,
+            String label, int depth, Set<Object> visited) {
+        if (root == null || depth > 2 || visited.contains(root)) return 0;
+        visited.add(root);
+        int total = 0;
+        Class<?> cls = root.getClass();
+        while (cls != null && cls != Object.class) {
+            Field[] fields;
+            try {
+                fields = cls.getDeclaredFields();
+            } catch (Throwable ignored) {
+                break;
+            }
+            for (Field f : fields) {
+                try {
+                    f.setAccessible(true);
+                    Object v = f.get(root);
+                    if (v == null) continue;
+                    String fieldLabel = label + "." + f.getName();
+                    if (v instanceof List) {
+                        List<Object> list = (List<Object>) v;
+                        // v27 回退到 v24：移除 list-visited (v26 引入)，允许 adapter.p.h/o/p
+                        // 的 backing list 被再次扫描，确保 RecyclerView 看到列表变化触发渲染。
+                        // 多拍残留交由 dedup wxid-only 控制（密群仍会多拍，业务可接受）。
+                        if (!isConvItemListByScan(list)) continue;
+                        int injected = injectCacheIntoList(list, cacheSnap);
+                        if (injected > 0) {
+                            Log.i(TAG, "[CF:" + label + "] field=" + f.getName()
+                                    + " injected=" + injected
+                                    + " owner=" + root.getClass().getName());
+                            total += injected;
+                        }
+                    } else if (depth < 2 && isTencentHolder(v)) {
+                        total += restoreConvListsInObject(
+                                v, cacheSnap, fieldLabel, depth + 1, visited);
+                    }
+                } catch (Throwable ignored) {}
+            }
+            cls = cls.getSuperclass();
+        }
+        return total;
+    }
+
+    private static int injectCacheIntoList(
+            List<Object> list, List<ConvHotReload.CachedConvItem> cacheSnap) {
+        int injected = 0;
+        for (ConvHotReload.CachedConvItem cached : cacheSnap) {
+            // v27 回退到 v24：仅 wxid 等值 dedup。identity check (v25/v26) 导致
+            // adapter.p 跨字段被拦致 RecyclerView 不渲染。
+            // 已知副作用：密群 cached.wxid="xxx@chatroom" vs list 中群条目
+            // extractWxid 抽出的成员 wxid 永不匹配 → 多次注入致密群多拍 4 行；
+            // 业务可接受（点进去仍是同一群），多拍专项交 P27 处理。
+            Object expectedFresh = ConvHotReload.sConvItemMap.get(cached.wxid);
+            Object itemToInject = expectedFresh != null ? expectedFresh : cached.item;
+            boolean dup = false;
+            for (Object item : list) {
+                String w = extractWxid(item);
+                if (w != null && cached.wxid.equals(w)) { dup = true; break; }
+            }
+            if (dup) continue;
+            // P_CF3：按 field_conversationTime 降序插入，拿不到时间回退旧 originalIndex
+            long t = extractConvTime(itemToInject);
+            int pos = insertPosByTime(list, t, cached.originalIndex);
+            list.add(pos, itemToInject);
+            injected++;
+        }
+        return injected;
     }
 
     // =========================================================================
@@ -973,9 +1467,9 @@ public class ConvFilter {
             return;
         }
         sScreenWasLocked = false; // 消费锁屏标记
-        // 高性能模式：用户主动选择不要遮罩
-        if (StateMachine.getInstance().isHighPerfMode()) {
-            Log.i(TAG, "[CF:overlay] skip (highPerfMode)");
+        // SETTINGS_UI_V2 §7.1：高性能模式跳过白色遮罩（响应更快、不建议常杀微信后台）
+        if (com.ghost.assist.core.Bridge.getInstance().isHighPerfMode()) {
+            Log.i(TAG, "[CF:overlay] skip (high perf mode)");
             return;
         }
         try {
@@ -1107,12 +1601,10 @@ public class ConvFilter {
             }
             String wxid = extractWxid(item);
             if (wxid != null && !wxid.startsWith("gh_") && !wxid.startsWith("notifymessage")) {
-                // 顺手提取群名（kc5.y.f 字段 = 群成员名拼接）
-                String nick = null;
-                if (wxid.endsWith("@chatroom")) {
-                    nick = getStrField(item, "f");
-                    if (nick == null) nick = getStrField(item, "e");
-                    if (nick != null && nick.length() > 20) nick = nick.substring(0, 20) + "…";
+                String nick = extractConvNick(item, wxid);
+                if (nick != null && nick.length() > 20) nick = nick.substring(0, 20) + "…";
+                if (nick != null && wxid.endsWith("@chatroom")
+                        && sDiagSeen.add("groupnick_" + wxid)) {
                     Log.i(TAG, "[CF:group] chatroom=" + wxid + " name=" + nick);
                 }
                 Bridge.getInstance().addConvWxid(wxid, nick);
@@ -1126,28 +1618,54 @@ public class ConvFilter {
         Set<String> hidden = Bridge.getInstance().allHiddenIds();
         if (hidden.isEmpty()) return;
 
+        // CME 防御：用快照决定哪些 item 应该删，再用 list.remove(Object) 在 live list 上删。
+        // for-each / Iterator 直接迭代 live list 会与微信 Kotlin coroutine 并发写抢锁。
         int before = list.size();
-        int idx = 0;
-        Iterator<Object> it = list.iterator();
-        while (it.hasNext()) {
-            Object item = it.next();
-            if (item == null) { idx++; continue; }
+        java.util.ArrayList<Object> snap;
+        try {
+            snap = new java.util.ArrayList<>(list);
+        } catch (java.util.ConcurrentModificationException cme) {
+            Log.w(TAG, "[CF:" + label + "] snapshot CME, skip this round");
+            return;
+        }
+
+        java.util.ArrayList<Object> toRemove = new java.util.ArrayList<>();
+        java.util.ArrayList<String> toRemoveWxids = new java.util.ArrayList<>();
+        java.util.ArrayList<Integer> toRemoveIdx = new java.util.ArrayList<>();
+        for (int i = 0; i < snap.size(); i++) {
+            Object item = snap.get(i);
+            if (item == null) continue;
             String wxid = extractWxid(item);
-            if (wxid == null) { idx++; continue; }
-            if ("weixin".equals(wxid) && hasUnread(item)) { idx++; continue; }
+            // 密群保底：extractWxid 抽到的可能是「最后发言成员 wxid」，与 hidden 里 @chatroom
+            // 比对失败致密群漏删（F-35 残留毛刺根因）。补一道 extractGroupId 扫 contact 字段。
+            if (wxid == null || !hidden.contains(wxid)) {
+                String g = extractGroupId(item);
+                if (g != null && hidden.contains(g)) wxid = g;
+            }
+            if (wxid == null) continue;
+            if ("weixin".equals(wxid) && hasUnread(item)) continue;
             if (hidden.contains(wxid)) {
-                it.remove();
-                // fieldName=null: item 被拦截在 MvvmList 写入前，restore 时注入主字段
-                ConvHotReload.putCache(wxid, item, null, idx);
-                Log.i(TAG, "[CF] " + label + " removed wxid=" + wxid);
-                InterceptCounter.getInstance().incF04(wxid);
-                DebugTelemetry dt = DebugTelemetry.getInstance();
-                dt.emit("conv", "conv_blocked",
-                        DebugTelemetry.fields("wxid", wxid, "label", label));
-                dt.addBlocked("conv");
-                // idx not incremented: removed item, next slides in
-            } else {
-                idx++;
+                toRemove.add(item);
+                toRemoveWxids.add(wxid);
+                toRemoveIdx.add(i);
+            }
+        }
+        for (int i = 0; i < toRemove.size(); i++) {
+            try {
+                if (list.remove(toRemove.get(i))) {
+                    String wxid = toRemoveWxids.get(i);
+                    int idx = toRemoveIdx.get(i);
+                    ConvHotReload.putCache(wxid, toRemove.get(i), null, idx);
+                    Log.i(TAG, "[CF] " + label + " removed wxid=" + wxid);
+                    InterceptCounter.getInstance().incF04(wxid);
+                    DebugTelemetry dt = DebugTelemetry.getInstance();
+                    dt.emit("conv", "conv_blocked",
+                            DebugTelemetry.fields("wxid", wxid, "label", label));
+                    dt.addBlocked("conv");
+                }
+            } catch (java.util.ConcurrentModificationException cme) {
+                Log.w(TAG, "[CF:" + label + "] remove CME wxid="
+                        + toRemoveWxids.get(i) + ", skip");
             }
         }
         int removed = before - list.size();
@@ -1392,6 +1910,32 @@ public class ConvFilter {
     // wxid extraction
     // =========================================================================
 
+    /**
+     * 密群保底 id 提取——extractWxid 在群条目上常常取到「最后发言成员 wxid」（F-NEW 实测），
+     * 导致 H 态 filterConvList 用 wxid 比对密群失败、密群条目漏删 → V 态 restoreInPlace 反复注入。
+     * 本方法只在 extractWxid 拿不到正确 chatroom id 时做兜底：扫所有 contact-like 字段
+     * 与 kc5.y 本身的字段，返回第一个 *@chatroom 字符串。返回 null 表示该 item 不是群条目。
+     */
+    static String extractGroupId(Object item) {
+        if (item == null) return null;
+        for (String cfn : CONTACT_FIELD_NAMES) {
+            Object contact = getFieldSafe(item, cfn);
+            if (contact == null || contact instanceof String) continue;
+            String ccn = contact.getClass().getName();
+            if (ccn.startsWith("java.") || ccn.startsWith("android.")
+                    || ccn.startsWith("kotlin.")) continue;
+            for (String fn : new String[]{"field_username", "field_userName"}) {
+                String s = getStrField(contact, fn);
+                if (s != null && s.endsWith("@chatroom")) return s;
+            }
+        }
+        for (String fn : new String[]{"a", "b", "c", "d", "e", "f"}) {
+            String s = getStrField(item, fn);
+            if (s != null && s.endsWith("@chatroom")) return s;
+        }
+        return null;
+    }
+
     static String extractWxid(Object item) {
         if (item == null) return null;
         for (String contactFieldName : CONTACT_FIELD_NAMES) {
@@ -1402,11 +1946,17 @@ public class ConvFilter {
             // fast path: try known getter names first (C0 for 8.0.71, j1 for 8.0.66)
             for (String getter : WXID_GETTER_NAMES) {
                 String wxid = callStrMethod(contact, getter);
-                if (isWxid(wxid)) return wxid;
+                if (isWxid(wxid)) {
+                    populateUinMapping(contact, wxid);
+                    return wxid;
+                }
             }
             for (String fn : WXID_FIELD_NAMES) {
                 String wxid = getStrField(contact, fn);
-                if (isWxid(wxid)) return wxid;
+                if (isWxid(wxid)) {
+                    populateUinMapping(contact, wxid);
+                    return wxid;
+                }
             }
             // broad-scan fallback: scan ALL 0-param String methods on contact class hierarchy
             try {
@@ -1420,6 +1970,7 @@ public class ConvFilter {
                             String r = (String) m.invoke(contact);
                             if (isWxid(r)) {
                                 Log.i(TAG, "[CF] wxid found via broad-scan: " + m.getName() + "()=" + r);
+                                populateUinMapping(contact, r);
                                 return r;
                             }
                         } catch (Throwable ignored) {}
@@ -1433,6 +1984,165 @@ public class ConvFilter {
             if (isWxid(wxid)) return wxid;
         }
         return null;
+    }
+
+    // =========================================================================
+    // 会话时间排序（P_CF3：H→V 注回按 field_conversationTime 排序，不再用旧 originalIndex）
+    // =========================================================================
+
+    /**
+     * 提取会话最近消息时间（epoch ms）。
+     * 字段路径 2026-05-29 Frida L1 实证：kc5.y → d/e/f 联系人对象 → 嵌套对象 → field_conversationTime。
+     * 为抗混淆改版，按微信未混淆的 DB 列名 "field_conversationTime" 递归扫（深度≤3），不写死 d/i2。
+     * 返回 -1 表示拿不到 → 调用方回退到旧 originalIndex 行为。纯读字段，无副作用。
+     */
+    static long extractConvTime(Object item) {
+        if (item == null) return -1L;
+        return findLongFieldByName(item, "field_conversationTime", 0,
+                new java.util.IdentityHashMap<Object, Boolean>());
+    }
+
+    private static long findLongFieldByName(
+            Object root, String fieldName, int depth, java.util.Map<Object, Boolean> visited) {
+        if (root == null || depth > 3 || visited.containsKey(root)) return -1L;
+        visited.put(root, Boolean.TRUE);
+        String cn = root.getClass().getName();
+        if (cn.startsWith("java.") || cn.startsWith("android.")
+                || cn.startsWith("kotlin.") || cn.startsWith("androidx.")) return -1L;
+        // pass 1：本对象（含父类）直接命中同名 long 字段
+        Class<?> cls = root.getClass();
+        while (cls != null && cls != Object.class) {
+            try {
+                for (Field f : cls.getDeclaredFields()) {
+                    if (!fieldName.equals(f.getName())) continue;
+                    f.setAccessible(true);
+                    Object v = f.get(root);
+                    if (v instanceof Long) return ((Long) v).longValue();
+                }
+            } catch (Throwable ignored) {}
+            cls = cls.getSuperclass();
+        }
+        // pass 2：递归进嵌套 Tencent 对象
+        cls = root.getClass();
+        while (cls != null && cls != Object.class) {
+            try {
+                for (Field f : cls.getDeclaredFields()) {
+                    Class<?> ft = f.getType();
+                    if (ft.isPrimitive() || ft == String.class) continue;
+                    f.setAccessible(true);
+                    Object v = f.get(root);
+                    if (v == null) continue;
+                    String vcn = v.getClass().getName();
+                    if (vcn.startsWith("java.") || vcn.startsWith("android.")
+                            || vcn.startsWith("kotlin.") || vcn.startsWith("androidx.")) continue;
+                    long r = findLongFieldByName(v, fieldName, depth + 1, visited);
+                    if (r >= 0) return r;
+                }
+            } catch (Throwable ignored) {}
+            cls = cls.getSuperclass();
+        }
+        return -1L;
+    }
+
+    /**
+     * 计算按 field_conversationTime 降序（最新在顶）的注回插入位置。
+     * @param t            待插入会话的时间（epoch ms）；t<0（未知）→ 回退 fallbackIndex（旧 originalIndex）
+     * @param fallbackIndex 拿不到时间时的兜底下标（隐藏时记录的 originalIndex）
+     * 只读各项时间、不修改 list；list 为空返回 0。F-35 安全：不改条目数、不动 list 引用、不去重。
+     */
+    static int insertPosByTime(List<?> list, long t, int fallbackIndex) {
+        if (list == null || list.isEmpty()) return 0;
+        if (t < 0) return Math.min(Math.max(fallbackIndex, 0), list.size());
+        int size = list.size();
+        for (int i = 0; i < size; i++) {
+            Object item;
+            try { item = list.get(i); }
+            catch (IndexOutOfBoundsException oob) { break; }
+            long ti = extractConvTime(item);
+            if (ti < 0) continue;          // 该项时间未知，跳过比较继续向下
+            if (t > ti) return i;          // 新会话更新 → 插到它前面
+        }
+        return list.size();                // 比所有已知项都旧 → 追加末尾
+    }
+
+    /**
+     * 提取会话条目的显示昵称\u3002\u4f18\u5148\u7ea7\uff1a
+     *   1. \u5bf9 chatroom\uff1akc5.y.f / .e\uff08\u5fae\u4fe1\u62fc\u63a5\u7684\u7fa4\u540d\u6216\u6210\u5458\u540d\u62fc\uff09
+     *   2. \u5bf9\u4ea4\u804a wxid\uff1ackt5.y.f \u8eab\u4efd\u540d \u2192 contact.field_nickname \u2192 contact.field_conRemark \u2192 \u5176\u4ed6
+     * \u8fd4\u56de null \u8868\u793a\u62fd\u4e0d\u5230\u3001UI \u4f1a\u9000\u5316\u4e3a wxid \u663e\u793a\u3002
+     */
+    static String extractConvNick(Object item, String wxid) {
+        if (item == null || wxid == null) return null;
+        boolean isGroup = wxid.endsWith("@chatroom");
+        for (String fn : new String[]{"f", "e"}) {
+            String s = getStrField(item, fn);
+            if (s == null || s.isEmpty()) continue;
+            if (!isGroup && isWxid(s)) continue;
+            return s;
+        }
+        for (String cfn : CONTACT_FIELD_NAMES) {
+            Object contact = getFieldSafe(item, cfn);
+            if (contact == null || contact instanceof String) continue;
+            String ccn = contact.getClass().getName();
+            if (ccn.startsWith("java.") || ccn.startsWith("android.")
+                    || ccn.startsWith("kotlin.")) continue;
+            for (String fn : NICK_FIELD_NAMES) {
+                String s = getStrField(contact, fn);
+                if (s == null || s.isEmpty()) continue;
+                if (isWxid(s)) continue;
+                return s;
+            }
+            for (String gn : NICK_GETTER_NAMES) {
+                String s = callStrMethod(contact, gn);
+                if (s == null || s.isEmpty()) continue;
+                if (isWxid(s)) continue;
+                return s;
+            }
+        }
+        return null;
+    }
+
+    /** Extract UIN from l4 contact object and store UIN→wxid mapping for SearchFilter. */
+    private static void populateUinMapping(Object contact, String wxid) {
+        try {
+            // Try S0() (8.0.71 l4 UIN getter)
+            String uin = callStrMethod(contact, "S0");
+            if (uin != null && !uin.isEmpty()) {
+                Bridge.getInstance().putUinMapping(uin, wxid);
+                if (sDiagSeen.add("uin_ok_" + contact.getClass().getSimpleName()))
+                    Log.i(TAG, "[CF:uin] S0()=" + uin + " → " + wxid + " cls=" + contact.getClass().getName());
+                return;
+            }
+            // Try field_uin
+            for (String fn : new String[]{"field_uin", "uin", "field_username"}) {
+                String v = getStrField(contact, fn);
+                if (v != null && !v.isEmpty() && v.matches("\\d+")) {
+                    Bridge.getInstance().putUinMapping(v, wxid);
+                    if (sDiagSeen.add("uin_ok_" + contact.getClass().getSimpleName()))
+                        Log.i(TAG, "[CF:uin] " + fn + "=" + v + " → " + wxid);
+                    return;
+                }
+            }
+            // Diag: first 3 contacts, dump all String-returning 0-param methods
+            if (sDiagSeen.add("uin_diag_" + contact.getClass().getName())) {
+                StringBuilder sb = new StringBuilder("[CF:uin-diag] cls=")
+                        .append(contact.getClass().getName());
+                for (Class<?> c = contact.getClass(); c != null && c != Object.class; c = c.getSuperclass()) {
+                    for (Method m : c.getDeclaredMethods()) {
+                        if (m.getParameterTypes().length != 0) continue;
+                        if (!m.getReturnType().equals(String.class)) continue;
+                        try {
+                            m.setAccessible(true);
+                            String r = (String) m.invoke(contact);
+                            if (r != null && !r.isEmpty())
+                                sb.append(" ").append(m.getName()).append("()=")
+                                        .append(r.length() > 30 ? r.substring(0, 30) : r);
+                        } catch (Throwable ignored) {}
+                    }
+                }
+                Log.i(TAG, sb.toString());
+            }
+        } catch (Throwable ignored) {}
     }
 
     private static boolean hasUnread(Object item) {

@@ -45,6 +45,20 @@ public class TriggerGuard {
     private static SensorEventListener sShakeListener;
     private static BroadcastReceiver sScreenReceiver;
 
+    // P_SE2: 当前 resumed Activity 全限定类名（仅在主线程更新；read 线程安全靠 volatile）。
+    private static volatile String sCurrentResumedActivity = null;
+
+    // P_SE2 settings_freeze: 用户在 MainSettingsUI 上操作密友设置期间，冻结所有 V→H 触发。
+    // 包括 B1 摇一摇 / B2 close_dialogs 任意 reason / B5 锁屏。
+    // 真实"用户离开微信"路径走 Activity lifecycle onActivityStopped → onLeftForeground，
+    // 此时 sCurrentResumedActivity 已被 onActivityPaused 清空，冻结自动失效，enterHidden 正常 fire。
+    private static final String MAIN_SETTINGS_CLASS =
+            "com.tencent.mm.plugin.setting.ui.setting_new.MainSettingsUI";
+
+    private static boolean isOnSettingsPage() {
+        return MAIN_SETTINGS_CLASS.equals(sCurrentResumedActivity);
+    }
+
     public static void install(Application app) {
         if (sInstalled) return;
         sInstalled = true;
@@ -82,8 +96,14 @@ public class TriggerGuard {
 
             // 其他生命周期空实现 ----------
             @Override public void onActivityCreated(Activity a, Bundle b) {}
-            @Override public void onActivityResumed(Activity a) {}
-            @Override public void onActivityPaused(Activity a) {}
+            @Override public void onActivityResumed(Activity a) {
+                sCurrentResumedActivity = a.getClass().getName();
+            }
+            @Override public void onActivityPaused(Activity a) {
+                if (a.getClass().getName().equals(sCurrentResumedActivity)) {
+                    sCurrentResumedActivity = null;
+                }
+            }
             @Override public void onActivitySaveInstanceState(Activity a, Bundle b) {}
             @Override public void onActivityDestroyed(Activity a) {}
         });
@@ -95,8 +115,14 @@ public class TriggerGuard {
         if (AppConfig.getInstance().isDevMode()) return; // DEV 模式开发不打扰
         StateMachine sm = StateMachine.getInstance();
         if (sm.isActive()) return; // 已是 HIDDEN 不重复触发
+        // P_SE5: 密友设置 overlay 显示期间不让切 H（用户正在配置密友）
+        if (SettingsEntry.isOverlayActive()) {
+            Log.i(TAG, "[TG] " + reason + " skipped (overlay active)");
+            return;
+        }
         Log.i(TAG, "[TG] " + reason + " → enterHidden");
         sm.enterHidden();
+        SettingsEntry.onStateChanged();
     }
 
     // -------------------------------------------------------------------------
@@ -113,17 +139,29 @@ public class TriggerGuard {
                     if (AppConfig.getInstance().isDevMode()) return;
                     StateMachine sm = StateMachine.getInstance();
                     if (sm.isActive()) return;
+                    if (SettingsEntry.isOverlayActive()) {
+                        Log.i(TAG, "[TG] B5-screen_off skipped (overlay active)");
+                        return;
+                    }
                     Log.i(TAG, "[TG] B5-screen_off → enterHidden");
                     sm.enterHidden();
+                    SettingsEntry.onStateChanged();
                 } else if (Intent.ACTION_CLOSE_SYSTEM_DIALOGS.equals(action)) {
-                    // B2 兜底：Home / 手势上划 / Recent
+                    // B2 兜底：Home / 手势上划 / Recent。
+                    // P_SE5: 不再用 settings_freeze on MainSettingsUI；
+                    //        改为 overlay 显示期间统一抑制。
                     if (!AppConfig.getInstance().isB2Enabled()) return;
                     if (AppConfig.getInstance().isDevMode()) return;
                     StateMachine sm = StateMachine.getInstance();
                     if (sm.isActive()) return;
                     String reason = intent.getStringExtra("reason");
+                    if (SettingsEntry.isOverlayActive()) {
+                        Log.i(TAG, "[TG] B2-close_dialogs(" + reason + ") skipped (overlay active)");
+                        return;
+                    }
                     Log.i(TAG, "[TG] B2-close_dialogs(" + reason + ") → enterHidden");
                     sm.enterHidden();
+                    SettingsEntry.onStateChanged();
                 }
             }
         };
@@ -196,7 +234,12 @@ public class TriggerGuard {
         if (AppConfig.getInstance().isDevMode()) return;
         StateMachine sm = StateMachine.getInstance();
         if (sm.isActive()) return;
+        if (SettingsEntry.isOverlayActive()) {
+            Log.i(TAG, "[TG] B1-shake skipped (overlay active)");
+            return;
+        }
         Log.i(TAG, "[TG] B1-shake → enterHidden");
         sm.enterHidden();
+        SettingsEntry.onStateChanged();
     }
 }

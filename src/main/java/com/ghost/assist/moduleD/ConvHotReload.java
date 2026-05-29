@@ -146,7 +146,10 @@ class ConvHotReload {
             cacheSnap = new java.util.ArrayList<>(sConvCache);
         }
         Log.i(ConvFilter.TAG, "[BUS-V] cache=" + cacheSnap.size());
-        if (!cacheSnap.isEmpty()) {
+        final List<CachedConvItem> visibleSnap =
+                ConvFilter.expandCacheWithWarm(cacheSnap, "BUS-V");
+        Log.i(ConvFilter.TAG, "[BUS-V] visibleSnap=" + visibleSnap.size());
+        if (!visibleSnap.isEmpty()) {
             new Handler(Looper.getMainLooper()).post(new Runnable() {
                 @Override
                 public void run() {
@@ -160,10 +163,28 @@ class ConvHotReload {
                     }
                     // In-place 注入：直接修改 adapter 持有的 List 对象（同一引用）。
                     // MvvmList.n(newList) 会替换字段，adapter 仍持旧引用 → 无效果。
-                    int injected = restoreToMvvmList(liveMvvmList, cacheSnap);
+                    int injected = restoreToMvvmList(liveMvvmList, visibleSnap);
+                    int adapterInjected = ConvFilter.restoreAdapterGraphFromCache(
+                            visibleSnap, "BUS-V-adapter");
                     Log.i(ConvFilter.TAG, "[BUS-V] in-place injected=" + injected
+                            + " adapterInjected=" + adapterInjected
                             + " on " + liveMvvmList.getClass().getSimpleName());
                     notifyConvAdapter("BUS-V-direct");
+
+                    // v27 post-dedup：v24 风格多次 insert 已使 RecyclerView 看到列表变更
+                    // 触发重绘；80ms 后扫整个 adapter 图、把 identity 重复项剔掉再 notify，
+                    // 让最终态只剩单次出现的密群/密友（先脏后净，肉眼最多见 80ms 闪一下）。
+                    new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                        @Override public void run() {
+                            if (StateMachine.getInstance().getState()
+                                    != StateMachine.State.VISIBLE) return;
+                            int removed = ConvFilter.postDedupAdapterGraph("BUS-V-dedup");
+                            Log.i(ConvFilter.TAG, "[BUS-V:dedup] removed=" + removed);
+                            if (removed > 0) {
+                                notifyConvAdapter("BUS-V-dedup");
+                            }
+                        }
+                    }, 80);
                 }
             });
         } else {
@@ -363,7 +384,9 @@ class ConvHotReload {
                 if (!found) {
                     Object liveItem = sConvItemMap.get(cached.wxid);
                     Object itemToInject = (liveItem != null) ? liveItem : cached.item;
-                    int pos = Math.min(cached.originalIndex, list.size());
+                    // P_CF3：按 field_conversationTime 降序插入，拿不到时间回退旧 originalIndex
+                    long t = ConvFilter.extractConvTime(itemToInject);
+                    int pos = ConvFilter.insertPosByTime(list, t, cached.originalIndex);
                     list.add(pos, itemToInject);
                     injected++;
                 }
@@ -385,6 +408,10 @@ class ConvHotReload {
     static int restoreToMvvmList(Object mvvmList, List<CachedConvItem> cacheSnap) {
         if (cacheSnap == null || cacheSnap.isEmpty()) return 0;
         int totalInjected = 0;
+        // v27 回退到 v24：移除 list-visited 与 identity check（v25/v26 引入），
+        // 允许 MvvmConvList.h/o/p 即使引用同一 backing List 也被多次扫到，
+        // 确保 RecyclerView 数据源被实际改写到位、触发渲染。
+        // 副作用：密群多拍交由 dedup wxid-only 控制（业务可接受，专项 P27 处理）。
         for (String fn : ConvFilter.MVVMLIST_ARRAY_FIELDS) {
             try {
                 Field f = ConvFilter.findFieldRecursive(mvvmList.getClass(), fn);
@@ -396,24 +423,44 @@ class ConvHotReload {
                 if (list.isEmpty()) continue;
                 String firstCls = list.get(0).getClass().getName();
                 if (!ConvFilter.CONV_MAIN_UI.equals(firstCls) && !"kc5.y".equals(firstCls)) continue;
+                // dup-scan 不直接迭代 live list（微信 Kotlin coroutine 可能并发写），
+                // 用 size+get 的下标访问 + CME 兜底，命中即 abort 当前快照重启。
                 int injected = 0;
                 for (CachedConvItem cached : cacheSnap) {
+                    Object liveItem = sConvItemMap.get(cached.wxid);
+                    Object itemToInject = (liveItem != null) ? liveItem : cached.item;
                     boolean dup = false;
-                    for (Object item : list) {
-                        if (cached.wxid.equals(ConvFilter.extractWxid(item))) { dup = true; break; }
+                    try {
+                        int sz = list.size();
+                        for (int i = 0; i < sz; i++) {
+                            Object item;
+                            try { item = list.get(i); }
+                            catch (IndexOutOfBoundsException oob) { break; }
+                            String w = ConvFilter.extractWxid(item);
+                            if (w != null && cached.wxid.equals(w)) { dup = true; break; }
+                        }
+                    } catch (java.util.ConcurrentModificationException cme) {
+                        Log.w(ConvFilter.TAG, "[CF:restoreInPlace] field=" + fn
+                                + " dup-scan CME wxid=" + cached.wxid + ", skip this wxid");
+                        continue;
                     }
                     if (!dup) {
-                        Object liveItem = sConvItemMap.get(cached.wxid);
-                        Object itemToInject = (liveItem != null) ? liveItem : cached.item;
-                        int pos = Math.min(cached.originalIndex, list.size());
-                        list.add(pos, itemToInject);
-                        injected++;
-                        if (liveItem != null) {
-                            Log.i(ConvFilter.TAG,
-                                    "[CF:restoreInPlace] wxid=" + cached.wxid + " used fresh from map");
-                        } else {
-                            Log.i(ConvFilter.TAG,
-                                    "[CF:restoreInPlace] wxid=" + cached.wxid + " used stale cache");
+                        try {
+                            // P_CF3：按 field_conversationTime 降序插入，拿不到时间回退旧 originalIndex
+                            long t = ConvFilter.extractConvTime(itemToInject);
+                            int pos = ConvFilter.insertPosByTime(list, t, cached.originalIndex);
+                            list.add(pos, itemToInject);
+                            injected++;
+                            if (liveItem != null) {
+                                Log.i(ConvFilter.TAG,
+                                        "[CF:restoreInPlace] wxid=" + cached.wxid + " used fresh from map");
+                            } else {
+                                Log.i(ConvFilter.TAG,
+                                        "[CF:restoreInPlace] wxid=" + cached.wxid + " used stale cache");
+                            }
+                        } catch (java.util.ConcurrentModificationException cme) {
+                            Log.w(ConvFilter.TAG, "[CF:restoreInPlace] field=" + fn
+                                    + " insert CME wxid=" + cached.wxid + ", skip");
                         }
                     }
                 }
@@ -479,7 +526,9 @@ class ConvHotReload {
                                 + " field=" + fn);
                         continue;
                     }
-                    int insertAt = Math.min(cached.originalIndex, targetList.size());
+                    // P_CF3：按 field_conversationTime 降序插入，拿不到时间回退旧 originalIndex
+                    long t = ConvFilter.extractConvTime(cached.item);
+                    int insertAt = ConvFilter.insertPosByTime(targetList, t, cached.originalIndex);
                     targetList.add(insertAt, cached.item);
                     anyInjected = true;
                     Log.i(ConvFilter.TAG, "[CF:restore] inject wxid=" + cached.wxid
