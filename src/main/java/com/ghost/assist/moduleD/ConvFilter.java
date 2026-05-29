@@ -1304,7 +1304,9 @@ public class ConvFilter {
             Object itemToInject = expectedFresh != null ? expectedFresh : cached.item;
             boolean dup = false;
             for (Object item : list) {
-                String w = extractWxid(item);
+                // P_CF5：去重 key 必须与 cache key（hideKeyOf）一致。否则群（extractWxid 抽到
+                // 成员 wxid）会与同 wxid 的密友撞车，导致密友被误判已存在 → 注不回（密友消失）。
+                String w = hideKeyOf(item);
                 if (w != null && cached.wxid.equals(w)) { dup = true; break; }
             }
             if (dup) continue;

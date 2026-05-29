@@ -379,7 +379,8 @@ class ConvHotReload {
             for (CachedConvItem cached : sConvCache) {
                 boolean found = false;
                 for (Object item : list) {
-                    if (cached.wxid.equals(ConvFilter.extractWxid(item))) { found = true; break; }
+                    // P_CF5：去重 key 用 hideKeyOf（与 cache key 一致），群不再用成员 wxid 撞密友。
+                    if (cached.wxid.equals(ConvFilter.hideKeyOf(item))) { found = true; break; }
                 }
                 if (!found) {
                     Object liveItem = sConvItemMap.get(cached.wxid);
@@ -435,7 +436,8 @@ class ConvHotReload {
                             Object item;
                             try { item = list.get(i); }
                             catch (IndexOutOfBoundsException oob) { break; }
-                            String w = ConvFilter.extractWxid(item);
+                            // P_CF5：去重 key 用 hideKeyOf（与 cache key 一致），群不再用成员 wxid 撞密友。
+                            String w = ConvFilter.hideKeyOf(item);
                             if (w != null && cached.wxid.equals(w)) { dup = true; break; }
                         }
                     } catch (java.util.ConcurrentModificationException cme) {
@@ -516,7 +518,8 @@ class ConvHotReload {
                     List<Object> targetList = (List<Object>) arr;
                     boolean dup = false;
                     for (Object item : targetList) {
-                        String wxid = ConvFilter.extractWxid(item);
+                        // P_CF5：去重 key 用 hideKeyOf（与 cache key 一致）。
+                        String wxid = ConvFilter.hideKeyOf(item);
                         if (cached.wxid.equals(wxid)) { dup = true; break; }
                     }
                     if (dup) {
