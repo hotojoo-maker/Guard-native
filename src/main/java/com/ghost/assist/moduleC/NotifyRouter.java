@@ -217,30 +217,24 @@ public final class NotifyRouter {
         for (long p : pattern) total += p;
         sOurVibrationUntilMs = System.currentTimeMillis() + total + 200;
 
-        // Calls (语音/视频) MUST vibrate even when backgrounded / screen-off / DND.
-        // USAGE_ALARM is the one usage Android won't gate behind ringer-mode or doze,
-        // so it plays reliably foreground AND background. Messages stay best-effort
-        // (plain vibrate, no attributes) per product spec — may be dropped in bg.
-        boolean isCall = (type == EventType.CALL || type == EventType.HANGUP);
-        AudioAttributes attrs = isCall
-                ? new AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build()
-                : null;
+        // 消息与来电都用 USAGE_ALARM——这是 Android 唯一不会被 ringer-mode(静音/震动档)
+        // 或 doze/勿扰 压掉的 usage，能保证前台 AND 后台/锁屏都可靠震动。
+        // 产品口径（2026-05-29）：密友消息震动档 前台后台都要有，不再 best-effort。
+        AudioAttributes attrs = new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ALARM)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build();
         try {
             sOurVibration = true;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 VibrationEffect effect = VibrationEffect.createWaveform(pattern, -1);
-                if (attrs != null) vib.vibrate(effect, attrs);
-                else               vib.vibrate(effect);
+                vib.vibrate(effect, attrs);
             } else {
                 //noinspection deprecation
-                if (attrs != null) vib.vibrate(pattern, -1, attrs);
-                else               vib.vibrate(pattern, -1);
+                vib.vibrate(pattern, -1, attrs);
             }
             Log.i(TAG, "[NR] fireAlert type=" + type + " policy=" + policy
-                    + " durMs=" + total + " usage=" + (isCall ? "ALARM" : "default"));
+                    + " durMs=" + total + " usage=ALARM");
         } catch (Throwable t) {
             Log.w(TAG, "[NR] fireAlert vib err: " + t);
         } finally {
