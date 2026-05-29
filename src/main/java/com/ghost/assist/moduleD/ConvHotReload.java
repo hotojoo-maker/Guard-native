@@ -384,9 +384,8 @@ class ConvHotReload {
                 if (!found) {
                     Object liveItem = sConvItemMap.get(cached.wxid);
                     Object itemToInject = (liveItem != null) ? liveItem : cached.item;
-                    // P_CF3：按 field_conversationTime 降序插入，拿不到时间回退旧 originalIndex
-                    long t = ConvFilter.extractConvTime(itemToInject);
-                    int pos = ConvFilter.insertPosByTime(list, t, cached.originalIndex);
+                    // P_CF3：置顶优先 + field_conversationTime 降序插入，拿不到回退旧 originalIndex
+                    int pos = ConvFilter.insertPosByTime(list, itemToInject, cached.originalIndex);
                     list.add(pos, itemToInject);
                     injected++;
                 }
@@ -446,9 +445,8 @@ class ConvHotReload {
                     }
                     if (!dup) {
                         try {
-                            // P_CF3：按 field_conversationTime 降序插入，拿不到时间回退旧 originalIndex
-                            long t = ConvFilter.extractConvTime(itemToInject);
-                            int pos = ConvFilter.insertPosByTime(list, t, cached.originalIndex);
+                            // P_CF3：置顶优先 + field_conversationTime 降序插入，拿不到回退旧 originalIndex
+                            int pos = ConvFilter.insertPosByTime(list, itemToInject, cached.originalIndex);
                             list.add(pos, itemToInject);
                             injected++;
                             if (liveItem != null) {
@@ -526,9 +524,8 @@ class ConvHotReload {
                                 + " field=" + fn);
                         continue;
                     }
-                    // P_CF3：按 field_conversationTime 降序插入，拿不到时间回退旧 originalIndex
-                    long t = ConvFilter.extractConvTime(cached.item);
-                    int insertAt = ConvFilter.insertPosByTime(targetList, t, cached.originalIndex);
+                    // P_CF3：置顶优先 + field_conversationTime 降序插入，拿不到回退旧 originalIndex
+                    int insertAt = ConvFilter.insertPosByTime(targetList, cached.item, cached.originalIndex);
                     targetList.add(insertAt, cached.item);
                     anyInjected = true;
                     Log.i(ConvFilter.TAG, "[CF:restore] inject wxid=" + cached.wxid

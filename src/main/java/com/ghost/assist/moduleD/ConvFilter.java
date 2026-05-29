@@ -1308,9 +1308,8 @@ public class ConvFilter {
                 if (w != null && cached.wxid.equals(w)) { dup = true; break; }
             }
             if (dup) continue;
-            // P_CF3：按 field_conversationTime 降序插入，拿不到时间回退旧 originalIndex
-            long t = extractConvTime(itemToInject);
-            int pos = insertPosByTime(list, t, cached.originalIndex);
+            // P_CF3：置顶优先 + field_conversationTime 降序插入，拿不到回退旧 originalIndex
+            int pos = insertPosByTime(list, itemToInject, cached.originalIndex);
             list.add(pos, itemToInject);
             injected++;
         }
@@ -1635,13 +1634,9 @@ public class ConvFilter {
         for (int i = 0; i < snap.size(); i++) {
             Object item = snap.get(i);
             if (item == null) continue;
-            String wxid = extractWxid(item);
-            // 密群保底：extractWxid 抽到的可能是「最后发言成员 wxid」，与 hidden 里 @chatroom
-            // 比对失败致密群漏删（F-35 残留毛刺根因）。补一道 extractGroupId 扫 contact 字段。
-            if (wxid == null || !hidden.contains(wxid)) {
-                String g = extractGroupId(item);
-                if (g != null && hidden.contains(g)) wxid = g;
-            }
+            // P_CF5：群只按群 id 判隐藏，单聊按对方 wxid。绝不用「最后发言成员 wxid」判群，
+            // 否则隐藏密友在普通群发言会误删整个群（且 V 态不恢复 → 永久消失）。
+            String wxid = hideKeyOf(item);
             if (wxid == null) continue;
             if ("weixin".equals(wxid) && hasUnread(item)) continue;
             if (hidden.contains(wxid)) {
@@ -1860,7 +1855,8 @@ public class ConvFilter {
                 while (it.hasNext()) {
                     Object item = it.next();
                     if (item == null) { idx++; continue; }
-                    String wxid = extractWxid(item);
+                    // P_CF5：群只按群 id 判隐藏，单聊按对方 wxid（不用最后发言成员 wxid 误删群）。
+                    String wxid = hideKeyOf(item);
                     if (wxid == null) { idx++; continue; }
                     if ("weixin".equals(wxid) && hasUnread(item)) { idx++; continue; }
                     if (hidden.contains(wxid)) {
@@ -1934,6 +1930,20 @@ public class ConvFilter {
             if (s != null && s.endsWith("@chatroom")) return s;
         }
         return null;
+    }
+
+    /**
+     * 决定一条会话用哪个 id 判「是否该隐藏」（P_CF5）。
+     *  - 群（@chatroom）：**只认群 id**（extractGroupId），无视最后发言成员 wxid。
+     *    否则隐藏密友在普通群里发了言，extractWxid 抽到该成员 wxid → 命中 hidden → 整个群被误删，
+     *    且 V 态 warm 不恢复它（群不在隐藏名单）→ 群永久消失。
+     *  - 单聊：认对方 wxid（extractWxid）。
+     * 返回 null = 该条不参与隐藏判定。纯读，无副作用。
+     */
+    static String hideKeyOf(Object item) {
+        String groupId = extractGroupId(item);
+        if (groupId != null) return groupId;
+        return extractWxid(item);
     }
 
     static String extractWxid(Object item) {
@@ -2044,25 +2054,48 @@ public class ConvFilter {
         return -1L;
     }
 
+    // field_flag 的 bit62 = 置顶(sticky)标志（8.0.71 Frida L1 实证：置顶会话 field_flag = 时间 | 2^62）
+    private static final long CONV_PIN_FLAG = 0x4000000000000000L;
+
+    /** 会话是否置顶。读嵌套 field_flag（未混淆 DB 列名）的 bit62。拿不到返回 false。纯读无副作用。 */
+    static boolean isConvPinned(Object item) {
+        long flag = findLongFieldByName(item, "field_flag", 0,
+                new java.util.IdentityHashMap<Object, Boolean>());
+        return flag >= 0 && (flag & CONV_PIN_FLAG) != 0;
+    }
+
     /**
-     * 计算按 field_conversationTime 降序（最新在顶）的注回插入位置。
-     * @param t            待插入会话的时间（epoch ms）；t<0（未知）→ 回退 fallbackIndex（旧 originalIndex）
+     * 计算注回插入位置：置顶优先 + field_conversationTime 降序（最新在顶）。
+     *  - 置顶会话：钉在置顶块（永远排在所有非置顶之前；置顶块内按时间降序）
+     *  - 非置顶会话：必须排在所有置顶之后，再按时间降序
+     *  - 时间拿不到（-1）：置顶→插顶部，非置顶→回退 fallbackIndex（旧 originalIndex）
      * @param fallbackIndex 拿不到时间时的兜底下标（隐藏时记录的 originalIndex）
-     * 只读各项时间、不修改 list；list 为空返回 0。F-35 安全：不改条目数、不动 list 引用、不去重。
+     * 只读各项时间/置顶位、不修改 list；list 为空返回 0。F-35 安全：不改条目数、不动 list 引用、不去重。
      */
-    static int insertPosByTime(List<?> list, long t, int fallbackIndex) {
+    static int insertPosByTime(List<?> list, Object itemToInject, int fallbackIndex) {
         if (list == null || list.isEmpty()) return 0;
-        if (t < 0) return Math.min(Math.max(fallbackIndex, 0), list.size());
+        long t = extractConvTime(itemToInject);
+        boolean myPinned = isConvPinned(itemToInject);
+        if (t < 0) {
+            if (myPinned) return 0;
+            return Math.min(Math.max(fallbackIndex, 0), list.size());
+        }
         int size = list.size();
         for (int i = 0; i < size; i++) {
             Object item;
             try { item = list.get(i); }
             catch (IndexOutOfBoundsException oob) { break; }
+            boolean itPinned = isConvPinned(item);
             long ti = extractConvTime(item);
-            if (ti < 0) continue;          // 该项时间未知，跳过比较继续向下
-            if (t > ti) return i;          // 新会话更新 → 插到它前面
+            if (myPinned) {
+                if (!itPinned) return i;             // 置顶块结束 → 插在置顶块末尾、非置顶之前
+                if (ti >= 0 && t > ti) return i;     // 置顶块内更新 → 插它前面
+            } else {
+                if (itPinned) continue;              // 跳过所有置顶项
+                if (ti >= 0 && t > ti) return i;     // 非置顶区内更新 → 插它前面
+            }
         }
-        return list.size();                // 比所有已知项都旧 → 追加末尾
+        return list.size();                          // 比同组所有已知项都旧 → 追加末尾
     }
 
     /**
