@@ -2,9 +2,9 @@
 
 > **铁律**：已证实失败的方案，**任何人不得复用**。AI 接手必读。
 > 旧 15 条详细 → [`./refs/FAILURE_LOG.md`](./refs/FAILURE_LOG.md)
-> 新 19 条（F-16 ~ F-34）见下方 §二
+> 新 22 条（F-16 ~ F-37）见下方 §二
 
-更新时间：2026-05-27（F-32/33/34 已补，含 ConvFilter L4 卡帧 + V↔H 刷新 + sConvCache 死循环）
+更新时间：2026-05-31（F-37 已补：a2.b 证伪 + jy0.t.f 防撤回真实点 + tinker classloader 教训）
 
 ---
 
@@ -30,7 +30,7 @@
 
 ---
 
-## 二、F-16 ~ F-34 新增（基于 D 线 + 8.0.66/8.0.71 实证）
+## 二、F-16 ~ F-37 新增（基于 D 线 + 8.0.66/8.0.71 实证）
 
 ### F-16：LSPosed 模块不加进程白名单 → 沙箱进程 FATAL
 
@@ -380,6 +380,20 @@ H→V 后：  [BUS:pendingRestore] notified adapter=v0 ← 同上
 | g | NM L1-gap 写死 `id==-525958226` | 那是某测试密友的通知 id，换人失效 | 靠 `sL1BlockedLastItem` 标志判密友，200ms 窗口无 id 限制 |
 
 **强制规则**：来电拦截**只改 §七 未列为证伪**的层；动任何已装机验证的层前必须问用户（铁律 29）。
+
+---
+
+### F-37：a2.b 从竞品 8.0.70 直搬到 8.0.71 → 收对方撤回零触发（动态证伪）
+
+> 2026-05-31 P23 防撤回。全程 L1/L2 实证。
+
+| 项 | 内容 |
+|----|------|
+| 现象 | hook `a2.b(p0, z15.ut4, ge3.z4)` 装上了（`[AR] hook installed`），但收到对方撤回时 `[AR]` **零命中**——开关绿、授权过，撤回照样成功 |
+| 根因 | `a2.b` 是 8.0.70 Catfish 的撤回派发点，**8.0.71 撤回不走它**。真实统一出口 = `jy0.t.f`(doRevokeMsg, TAG `MicroMsg.BigBallSysCmdMsgConsumer`)，由 tinker 补丁 dex baksmali 搜 `"revokemsg"` 字符串引用静态定位（L2） |
+| 正确做法 | hook `jy0.t.f` → `setResult(null)` 跳过原地覆盖（原文保留）+ 用 `jy0.c9.b().u()`(h9) 插一条 type=10000 系统提示（`h9.r9(f9)`）；提示染红走 hook `MMNeat7extView`（聊天文字自绘控件，不经框架 TextView.setText） |
+| 附带教训 | **tinker 补丁内的类必须用 `app.getClassLoader()`**——`lpparam.classLoader`(base.apk) 那份不是运行时实际加载的副本，hook 上去不触发 |
+| L1 证据 | 2026-05-31 装机 `[AR] recall blocked + tip inserted` ×4（文字/表情/图片/视频）；frida 实时 trace 被 8.0.71 反 frida 杀进程挡住，故走静态反编译定位 |
 
 ---
 

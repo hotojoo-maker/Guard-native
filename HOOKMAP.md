@@ -20,7 +20,7 @@
 | ------------------------------------- | --- | --- | ------------------------------------------- | --- |
 | **A. 核心隐私**（密友列表/密群/密码/总开关）           | 🟡  | 4   | A1/A2/A3 ✅装机；A4 密码⬜待装机                  | §A  |
 | **B. 隐藏触发**（摇一摇/切后台/Home/锁屏/搜索框 1111） | 🟡  | 6   | B2/B6 **8071 已验**；B1/B5 待确认；B4 ⬜ | §B  |
-| **C. 消息控制**（防撤回/通知伪装/未读/通知模式/**来电拦截**）         | 🟡  | 5   | **语音/视频来电拦截 ✅装机 2026-05-29**（→ `docs/P22_PushFilter_VoIP.md`）；PushFilter L1/NM ✅装机 2026-05-22；L4b ❓；L4c 🟡；AntiRecall 🟡 未装机；**通知模式 静默/震动 ✅、铃声占位、:push 独立震 🟡(P_NF3)**；C5 v2 起 | §C  |
+| **C. 消息控制**（防撤回/通知伪装/未读/通知模式/**来电拦截**）         | 🟡  | 5   | **语音/视频来电拦截 ✅装机 2026-05-29**（→ `docs/P22_PushFilter_VoIP.md`）；PushFilter L1/NM ✅装机 2026-05-22；L4b ❓；L4c 🟡；AntiRecall ✅装机 2026-05-31（jy0.t.f 拦截+原文保留+提示染红）；**通知模式 静默/震动 ✅、铃声占位、:push 独立震 🟡(P_NF3)**；C5 v2 起 | §C  |
 | **D. 痕迹隐藏**（密友帖/点赞/评论）         | ✅  | 3   | D1+D2+D3 装机确认 2026-05-20（8.0.71） | §D  |
 | **E. 装b 模块**（步数/定位/改零钱）               | ⬜   | 3   | 不在 v1                                       | §E  |
 | **F. 商业彩蛋**（反盗版引流/独家功能/私域链接）          | ⬜   | 3   | 不在 v1                                       | §F  |
@@ -36,7 +36,7 @@
 - **【部分入位 v1，未结案】**
   - PushFilter L1 + NM ✅ 装机实证 2026-05-22（普通消息 + voip 通知拦截）
   - PushFilter L4b ❓ 未触发 / L4c 🟡 减法逻辑待装机 / CA 🟡 备用层（C3 未读控制对应实现）
-  - AntiRecall 🟡 代码已写 + 已注册 install，**LSPosed 装机 `[AR] *` 命中日志尚未抓到**（C1 防撤回）
+  - AntiRecall ✅ L1 装机实证 2026-05-31：`jy0.t.f` 拦截 + 原文保留 + 系统提示染红（C1 防撤回）
   - C2 通知伪装：暂由 PushFilter NM 层 cancel 替代，**未单独实现**
   - C4 通知三档 / C5 语音转发：v2+
 - **【已下沉 v1】P21 朋友圈小红点 Layer0b/Layer2 🟡**（注：当前实证来源仅 chatfish 反编译 + frida trace，尚无 LSPosed 装机日志原文，证据级 L3）
@@ -169,13 +169,13 @@
 > **v1 实装现状**（按铁律"无 logcat 不得标 ✅"重新整理）：
 > - **PushFilter L1 + NM** ✅ 装机实证 2026-05-22（普通消息 block+cancel / voip channel 静默） — 见 §二 表
 > - **PushFilter L4b/L4c/CA** ❓🟡 代码已写，未拿到完整命中日志
-> - **AntiRecall** 🟡 代码已写、已注册 install（ModuleMain L138），**LSPosed 装机 `[AR] *` 命中日志尚未抓到**
+> - **AntiRecall** ✅ L1 装机实证 2026-05-31：`jy0.t.f`(doRevokeMsg) 拦截 + 原文保留 + 插 type=10000 系统提示(染红)；logcat `[AR] recall blocked + tip inserted` ×4（文字/表情/图片/视频）
 > - **C2 通知伪装** 暂由 PushFilter NM 层 cancel 替代实现，无独立类
 > - 完整 C2/C3/C4/C5 仍按 v2 节奏推进；现阶段对 §一 状态列 🟡 不得当成 ✅。
 
 | #   | 功能                | 状态  | 备注                                            |
 | --- | ----------------- | --- | --------------------------------------------- |
-| C1  | 防撤回               | 🟡  | `moduleC/AntiRecall.java` 已 install（L138）；**LSPosed `[AR] *` 装机日志待抓**，不得标 ✅ |
+| C1  | 防撤回               | ✅  | `moduleC/AntiRecall.java`：hook `jy0.t.f`(doRevokeMsg)，`setResult(null)` 跳过原地覆盖→**原文(文字/图片/视频)保留** + 插 type=10000 系统提示「─── HH:mm 已拦截对方撤回的消息 ───」(染红，hook `MMNeat7extView` 首参 CharSequence 方法)。自己撤回(isSend==1)放行。**L1 装机 2026-05-31**：logcat `[AR] recall blocked + tip inserted` ×4。旧点 a2.b 已证伪→F-37 |
 | C2  | 通知伪装为 weixin wxid | 🟡  | 原计划"构造来自 weixin 的消息"未单独实现；当前由 PushFilter NM 层 cancel 替代（NM ✅装机 2026-05-22） |
 | C3  | 未读消息条数控制          | 🟡  | PushFilter L4b/L4c 已写（MainTabUI.i / h0.d 减法）；**L4b ❓ 装机未触发**；**L4c 减法逻辑待装机验证** |
 | C4  | 通知模式（静默/震动/铃声）   | 🟡  | 静默/震动 ✅装机实证（前台 FGMUTE + 后台 USAGE_ALARM，主进程活/重生）；铃声占位「功能更新中」未实装；UI 改 iOS 胶囊（静默默认浅绿 #67C23A、字号对齐 16f）；:push 独立震 🟡 待现场（route1 g_nfyp 跨进程 + fireAlertForPolicy）— 见 P_NF3 |
