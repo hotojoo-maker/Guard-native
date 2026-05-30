@@ -17,11 +17,15 @@ public class Bridge {
 
     private static final Bridge sInstance = new Bridge();
     private SharedPreferences mPrefs;
+    private Application mApp;
 
     public static Bridge getInstance() { return sInstance; }
 
     public void init(Application app) {
+        mApp = app;
         mPrefs = app.getSharedPreferences(NAMESPACE, Context.MODE_PRIVATE);
+        // 跨进程迁移：把当前通知策略落一份到文件，供 :push 进程读取（SP MODE_PRIVATE 不跨进程）。
+        writeCrossProcessPolicy(getNotifyPolicy().name());
     }
 
     // --- String ---
@@ -142,6 +146,45 @@ public class Bridge {
 
     public void setNotifyPolicy(NotifyPolicy policy) {
         putString(KEY_NOTIFY_POLICY, policy.name());
+        writeCrossProcessPolicy(policy.name());
+    }
+
+    // --- 跨进程通知策略文件：主进程写、:push 进程读 ---
+    // 背景：Bridge 用 SharedPreferences MODE_PRIVATE，不跨进程；:push 进程也不初始化 Bridge
+    //       （铁律 30 :push 只读 NativeBridge），所以 :push 拿不到用户选的静默/震动。
+    //       这里把 nfyp 单独落一个文件到 app filesDir（主进程与 :push 同 uid、同目录），
+    //       :push 每条密友消息到达时直接读文件拿 live 值。读取仅发生在密友消息命中后（低频）。
+    private static final String NFYP_XPROC_FILE = "g_nfyp";
+
+    private void writeCrossProcessPolicy(String name) {
+        if (mApp == null || name == null) return;
+        try {
+            java.io.File f = new java.io.File(mApp.getFilesDir(), NFYP_XPROC_FILE);
+            java.io.FileOutputStream fos = new java.io.FileOutputStream(f);
+            fos.write(name.getBytes("UTF-8"));
+            fos.flush();
+            fos.close();
+        } catch (Throwable ignored) {}
+    }
+
+    /**
+     * :push 进程用：直接读跨进程文件拿 live 通知策略，不依赖 SharedPreferences 缓存。
+     * 文件不存在/读失败 → OFF（静默，安全默认）。
+     */
+    public static NotifyPolicy readPolicyCrossProcess(android.content.Context ctx) {
+        if (ctx == null) return NotifyPolicy.OFF;
+        try {
+            java.io.File f = new java.io.File(ctx.getFilesDir(), NFYP_XPROC_FILE);
+            if (!f.exists()) return NotifyPolicy.OFF;
+            byte[] b = new byte[(int) f.length()];
+            java.io.FileInputStream fis = new java.io.FileInputStream(f);
+            int n = fis.read(b);
+            fis.close();
+            if (n <= 0) return NotifyPolicy.OFF;
+            return NotifyPolicy.fromString(new String(b, 0, n, "UTF-8"));
+        } catch (Throwable t) {
+            return NotifyPolicy.OFF;
+        }
     }
 
     // --- 语音/视频通话通知策略 CallNotifyPolicy (key: "cnfy", default: OFF) ---

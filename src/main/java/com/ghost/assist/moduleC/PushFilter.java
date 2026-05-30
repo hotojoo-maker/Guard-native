@@ -1,7 +1,11 @@
 package com.ghost.assist.moduleC;
 
 import android.app.Notification;
+import android.media.MediaPlayer;
 import android.os.Build;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 
 import com.ghost.assist.core.Bridge;
@@ -51,6 +55,10 @@ public class PushFilter {
     // Count of notifications blocked for hidden friends since last reset.
     private static volatile int sHiddenBlocked = 0;
 
+    // :push 提醒节流（场景B）：避免一条消息多次 LL.add 触发连震。
+    private static volatile long sLastPushAlertTs = 0;
+    private static final long PUSH_ALERT_THROTTLE_MS = 1200;
+
     // :push process discovery probe — log new LL.add item classes (deduped + capped)
     private static volatile boolean sPushDumpActive = true;
     private static volatile int sPushSeenCount = 0;
@@ -72,10 +80,12 @@ public class PushFilter {
         installL4b(lpparam);
         installL4c(lpparam);
         installMsgArrivalAlert(lpparam);   // 主进程消息到达 → 按策略震动/铃声（前台+后台-alive）
+        installNewMsgArrival(lpparam);     // w.handleMessage 通知 Message（带 talker，前台也触发）
+        installForegroundDingMute(lpparam); // 前台 in-app 密友消息「叮」声静音（仅密友，按策略）
 
         CallGuard.install(lpparam);   // VoIP voice/video call suppression
 
-        Log.i(TAG, "[PF] PushFilter installed (main: L1+NM+L4+MSGALERT) + CallGuard");
+        Log.i(TAG, "[PF] PushFilter installed (main: L1+NM+L4+MSGALERT+NEWMSG+FGMUTE) + CallGuard");
     }
 
     /** :push process install — message push + status-bar call icon (iron rule 30). */
@@ -127,6 +137,9 @@ public class PushFilter {
                     sL1BlockedLastItem = true;
                     sL1BlockTs = System.currentTimeMillis();
                     sHiddenBlocked++;
+                    // 武装前台叮声静音窗口：L1（NotificationItem 到达）是装机实证稳定触发、
+                    // 且带 talker 的密友消息到达点，比 x.d 可靠（x.d 装机偶发不触发）。
+                    sFgDingSuppressUntil = sL1BlockTs + FG_DING_SUPPRESS_MS;
                     param.setResult(false);
                     Log.i(TAG, "[PF:L1] block LL.add talker=" + talker
                             + " hiddenBlocked=" + sHiddenBlocked);
@@ -184,6 +197,28 @@ public class PushFilter {
                     param.setResult(false);
                     Log.i(TAG, "[PF:L1:push] block talker=" + talker
                             + " hiddenBlocked=" + sHiddenBlocked);
+
+                    // 场景B：主进程被杀（MIUI 狠杀）、:push 收消息 → 按用户策略在 :push 内出震动。
+                    // 铁律6：:push 仅限通知链最小拦截 —— 用户已明确授权本震动；策略经
+                    // Bridge.readPolicyCrossProcess 跨进程文件读取（:push 不初始化 Bridge）。
+                    // 节流避免一条消息多次 LL.add 连震。
+                    try {
+                        long now = System.currentTimeMillis();
+                        if (now - sLastPushAlertTs >= PUSH_ALERT_THROTTLE_MS) {
+                            android.app.Application ctx = (android.app.Application)
+                                    Class.forName("android.app.ActivityThread")
+                                            .getMethod("currentApplication").invoke(null);
+                            Bridge.NotifyPolicy policy = Bridge.readPolicyCrossProcess(ctx);
+                            if (policy != Bridge.NotifyPolicy.OFF) {
+                                sLastPushAlertTs = now;
+                                NotifyRouter.fireAlertForPolicy(
+                                        ctx, NotifyRouter.EventType.MSG, policy);
+                            }
+                            Log.i(TAG, "[PF:L1:push] alert policy=" + policy);
+                        }
+                    } catch (Throwable t) {
+                        Log.w(TAG, "[PF:L1:push] alert err: " + t);
+                    }
                 }
             });
             Log.i(TAG, "[PF:L1:push] LinkedList.add hook ok");
@@ -256,6 +291,13 @@ public class PushFilter {
     private static volatile long sLastMsgAlertTs = 0;
     private static final long MSG_ALERT_THROTTLE_MS = 1200;
 
+    // 前台叮声静音窗口：密友消息到达点 x.d 命中时置位 now+FG_DING_SUPPRESS_MS。
+    // 前台 in-app 收消息那声「叮」走 MediaPlayer.start()（首条后 setDataSource 被缓存跳过，
+    // L1 实证 2026-05-30 probe_fg_correlate：前台 x.d 带密友 talker，setDataSource 不复触发）。
+    // 只有密友/密群消息会置位 → 普通好友的叮声永不进入此窗口、照常响。
+    private static volatile long sFgDingSuppressUntil = 0;
+    private static final long FG_DING_SUPPRESS_MS = 1500;
+
     private static void installMsgArrivalAlert(XC_LoadPackage.LoadPackageParam lpparam) {
         try {
             XposedHelpers.findAndHookMethod(
@@ -267,12 +309,17 @@ public class PushFilter {
                         protected void afterHookedMethod(MethodHookParam param) {
                             try {
                                 if (!StateMachine.getInstance().isActive()) return;
-                                // OFF(静默) 不需要 owner-side 提醒；只有 VIBRATE/SOUND 才 fireAlert
-                                if (Bridge.getInstance().getNotifyPolicy()
-                                        == Bridge.NotifyPolicy.OFF) return;
                                 String talker = readMsgTalker(param);
                                 if (talker == null) return;
                                 if (!Bridge.getInstance().shouldHideId(talker)) return;
+
+                                // 密友/密群消息到达 → 武装前台叮声静音窗口（不分策略：OFF 也要把
+                                // 微信原生那声叮压住）。普通好友 talker 不命中 shouldHideId → 不武装。
+                                sFgDingSuppressUntil = System.currentTimeMillis() + FG_DING_SUPPRESS_MS;
+
+                                Bridge.NotifyPolicy policy = Bridge.getInstance().getNotifyPolicy();
+                                // OFF(静默) 不需要 owner-side 提醒；只有 VIBRATE/SOUND 才 fireAlert
+                                if (policy == Bridge.NotifyPolicy.OFF) return;
 
                                 long now = System.currentTimeMillis();
                                 if (now - sLastMsgAlertTs < MSG_ALERT_THROTTLE_MS) return;
@@ -282,8 +329,7 @@ public class PushFilter {
                                         Class.forName("android.app.ActivityThread")
                                                 .getMethod("currentApplication").invoke(null);
                                 NotifyRouter.fireAlert(ctx, NotifyRouter.EventType.MSG);
-                                Log.i(TAG, "[PF:MSGALERT] talker=" + talker
-                                        + " policy=" + Bridge.getInstance().getNotifyPolicy());
+                                Log.i(TAG, "[PF:MSGALERT] talker=" + talker + " policy=" + policy);
                             } catch (Throwable t) {
                                 Log.w(TAG, "[PF:MSGALERT] err: " + t);
                             }
@@ -292,6 +338,99 @@ public class PushFilter {
             Log.i(TAG, "[PF:MSGALERT] x.d hook ok");
         } catch (Throwable t) {
             Log.w(TAG, "[PF:MSGALERT] x.d hook fail: " + t);
+        }
+    }
+
+    // =========================================================================
+    // NEWMSG — Handler.dispatchMessage(Message)：通知 Message 到达点（带 talker，前台也触发）
+    //   L1 实证 2026-05-30：微信通知 Handler(w) 的 Message bundle 带明文 key
+    //   "notification.show.talker" = 密友 wxid / 密群 @chatroom，在前台 MediaPlayer 叮声前
+    //   ~50ms 触发，前后台都走（竞品 catfish 同一条路）。
+    //   ⚠️ 不能 hook w.handleMessage：微信 Tinker 热修复 → 运行时 w 类来自另一 classloader，
+    //   findAndHookMethod 按类名挂的是错的类实例 → 永不触发。改 hook 系统类
+    //   Handler.dispatchMessage（单 classloader，Tinker 打不乱），dispatchMessage 会为所有
+    //   Handler（含 w）的每条消息调用，且在 handleMessage 之前。
+    //   性能：用 peekData() 不创建空 Bundle，绝大多数消息无 data → 立即返回。
+    //   职责：① 命中密友/密群 → 武装前台叮声静音窗口（FGMUTE 据此掐叮，OFF 档也掐）；
+    //        ② VIBRATE/SOUND → fireAlert（与 x.d MSGALERT 共用节流，不重复震）。
+    // =========================================================================
+
+    private static final String NOTIFY_TALKER_KEY = "notification.show.talker";
+
+    private static void installNewMsgArrival(XC_LoadPackage.LoadPackageParam lpparam) {
+        try {
+            XposedHelpers.findAndHookMethod(
+                    Handler.class, "dispatchMessage", Message.class,
+                    new XC_MethodHook() {
+                        @Override
+                        protected void beforeHookedMethod(MethodHookParam param) {
+                            try {
+                                Object a0 = param.args[0];
+                                if (!(a0 instanceof Message)) return;
+                                Bundle data = ((Message) a0).peekData(); // 不创建空 Bundle
+                                if (data == null) return;
+                                String talker = data.getString(NOTIFY_TALKER_KEY);
+                                if (talker == null || talker.isEmpty()) return;
+                                if (!StateMachine.getInstance().isActive()) return;
+                                if (!Bridge.getInstance().shouldHideId(talker)) return;
+
+                                // 命中密友/密群 → 武装前台叮声静音窗口（OFF 档也武装：静默也要掐原生叮）
+                                sFgDingSuppressUntil = System.currentTimeMillis() + FG_DING_SUPPRESS_MS;
+
+                                Bridge.NotifyPolicy policy = Bridge.getInstance().getNotifyPolicy();
+                                if (policy == Bridge.NotifyPolicy.OFF) {
+                                    Log.i(TAG, "[PF:NEWMSG] talker=" + talker + " policy=OFF (arm mute)");
+                                    return;
+                                }
+
+                                long now = System.currentTimeMillis();
+                                if (now - sLastMsgAlertTs < MSG_ALERT_THROTTLE_MS) return;
+                                sLastMsgAlertTs = now;
+                                android.app.Application ctx = (android.app.Application)
+                                        Class.forName("android.app.ActivityThread")
+                                                .getMethod("currentApplication").invoke(null);
+                                NotifyRouter.fireAlert(ctx, NotifyRouter.EventType.MSG);
+                                Log.i(TAG, "[PF:NEWMSG] talker=" + talker + " policy=" + policy);
+                            } catch (Throwable t) {
+                                Log.w(TAG, "[PF:NEWMSG] err: " + t);
+                            }
+                        }
+                    });
+            Log.i(TAG, "[PF:NEWMSG] Handler.dispatchMessage hook ok");
+        } catch (Throwable t) {
+            Log.w(TAG, "[PF:NEWMSG] hook fail: " + t);
+        }
+    }
+
+    // =========================================================================
+    // FGMUTE — 前台 in-app 密友消息「叮」声静音
+    //   前台收消息那声叮 = MediaPlayer.start()（L1 实证 2026-05-30）。该点拿不到 talker，
+    //   故用 x.d（带 talker）武装的 sFgDingSuppressUntil 短窗口做关联：窗口内的 start() = 这条
+    //   密友消息的叮 → 静音。窗口只由密友/密群消息武装，普通好友的叮声永不进入 → 照常响。
+    //   策略无关地静音微信原生叮（OFF/VIBRATE/SOUND 都不该让原生叮叠加）；震动/自定义铃声由
+    //   x.d → NotifyRouter.fireAlert 负责（自有铃声经 sOurSound 豁免，不会被本 hook 误杀）。
+    // =========================================================================
+
+    private static void installForegroundDingMute(XC_LoadPackage.LoadPackageParam lpparam) {
+        try {
+            XposedHelpers.findAndHookMethod(
+                    MediaPlayer.class, "start",
+                    new XC_MethodHook() {
+                        @Override
+                        protected void beforeHookedMethod(MethodHookParam param) {
+                            // 我们自己 SOUND 档播放的自定义铃声 → 放行
+                            if (NotifyRouter.sOurSound) return;
+                            if (!StateMachine.getInstance().isActive()) return;
+                            long now = System.currentTimeMillis();
+                            if (now >= sFgDingSuppressUntil) return;  // 不在密友消息窗口 → 放行（普通好友照响）
+                            sFgDingSuppressUntil = 0;                 // 消费：一条消息只压一声叮
+                            param.setResult(null);
+                            Log.i(TAG, "[PF:FGMUTE] muted foreground ding (start)");
+                        }
+                    });
+            Log.i(TAG, "[PF:FGMUTE] MediaPlayer.start hook ok");
+        } catch (Throwable t) {
+            Log.w(TAG, "[PF:FGMUTE] hook fail: " + t);
         }
     }
 

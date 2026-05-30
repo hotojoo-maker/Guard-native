@@ -122,3 +122,26 @@
 - 微信 VoIP 来电用 flags=0x2000000a 亮屏，不是 0x10000001
 - 当前实现只拦截了 acquire 没同步处理 release，造成 under-locked crash
 - 振动拦截正常 (PF:VV blocked vibrate x6)
+
+---
+
+## 2026-05-31 Guard Native11 — 通知模式 UI + 后台震动 :push（P_NF3）
+
+### 改动
+1. `moduleB/SettingsEntry.java` `buildNotifyModeRow`：通知模式由【默认/震动/声音】→【静默/震动/铃声】iOS 胶囊分段控件（圆角灰轨道 #E9E9EB + 选中段浅绿药丸 #C8ECD0/绿字 #07A85C）。静默默认选中；铃声点击弹 Toast「功能更新中..」且不落库、选中回退。`通知模式`/`来电提示`标签字号 14f→16f 对齐其他行。
+2. `core/Bridge.java`：新增跨进程通知策略文件 `g_nfyp`（app filesDir）。`init` 迁移写 + `setNotifyPolicy` 同步写；新增静态 `readPolicyCrossProcess(ctx)`（:push 用，不依赖 SP 缓存）。绕开 SP MODE_PRIVATE 不跨进程、且 :push 不初始化 Bridge（铁律30）。**不动 SO**（route1）。
+3. `moduleC/NotifyRouter.java`：新增 `fireAlertForPolicy(ctx,type,policy)` 显式策略震动（给 :push，不读 Bridge）。
+4. `moduleC/PushFilter.java` `installL1ForPush`：拦住密友消息后读 `g_nfyp` → 非 OFF 则 `fireAlertForPolicy(MSG)` 震动（新增 1.2s 节流 `sLastPushAlertTs`）。铁律6：用户已明确授权 :push 出震动。
+
+### 装机验证（L1）
+- 场景 A（主进程活/重生 + 后台）震动 ✅ 实证：
+  ```
+  25502 [PF:L1] block LL.add talker=wxid_lzd2va16jd1622 hiddenBlocked=1
+  25502 [NR] fireAlert type=MSG policy=VIBRATE durMs=220 usage=ALARM
+  ```
+- 通知模式 UI ✅：截图 + logcat `[SET:overlay] notifyMode=OFF/VIBRATE`（从无 SOUND，证铃声占位不落库）。
+- 🟡 **:push 独立震未现场实证**：本机主进程秒级重生（杀 19790 → 立即重生 21768），杀后台测出的震动是主进程兜底，`[PF:L1:push] alert` 未触发。纯 :push 路径本机难复现。**时间关系，V1 阶段可通过**，待 MIUI 真狠杀场景补 `[PF:L1:push] alert policy=VIBRATE` L1。
+
+### 证据等级
+- 通知模式 UI / 场景 A 后台震动：**L1 实证 ✅**
+- :push 独立震（P_NF3）：代码已写已装，**L4 待现场实证**（标 🟡）

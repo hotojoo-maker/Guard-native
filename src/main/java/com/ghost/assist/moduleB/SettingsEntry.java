@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.DialogInterface;
 import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.InputType;
@@ -1179,7 +1180,10 @@ public class SettingsEntry {
         LinearLayout content = new LinearLayout(activity);
         content.setOrientation(LinearLayout.VERTICAL);
 
-        // 1. 开启密友（总开关）
+        // ===== 密友分组：开启密友 + 密友列表 + 密群列表（整合一区，仿 iOS 简洁布局）=====
+        content.addView(buildSectionHeader(activity, "\u5bc6\u53cb"));
+
+        // 开启密友（总开关）
         content.addView(buildSwitchRow(activity, "\u5f00\u542f\u5bc6\u53cb",
                 "\u5bc6\u53cb\u529f\u80fd\u603b\u5f00\u5173", br.isFeatureEnabled(),
                 new CompoundButton.OnCheckedChangeListener() {
@@ -1189,9 +1193,27 @@ public class SettingsEntry {
                     }
                 }));
 
-        // 2. 启动防层模式（SETTINGS_UI_V2 §7.1）
-        // 均衡（默认）：冷启动 / 锁屏亮屏 ConvFilter 白色遮罩
-        // 高性能：跳过遮罩、响应更快，要求微信常驻后台
+        // 密友列表（点击 = 拉起微信官方选择器，预选已有 + 增删一体）
+        content.addView(buildButtonRow(activity, "\u5bc6\u53cb\u5217\u8868",
+                "\u5df2\u9009\u62e9 " + br.getWxidCount() + " \u4e2a",
+                new View.OnClickListener() {
+                    @Override public void onClick(View v) {
+                        ContactImportGuard.launchSelectBuddy(activity);
+                    }
+                }));
+
+        // 密群列表（点击 = 拉起微信官方选择器，预选已有 + 增删一体）
+        content.addView(buildButtonRow(activity, "\u5bc6\u7fa4\u5217\u8868",
+                "\u5df2\u9009\u62e9 " + br.getGroupCount() + " \u4e2a",
+                new View.OnClickListener() {
+                    @Override public void onClick(View v) {
+                        ContactImportGuard.launchSelectGroup(activity);
+                    }
+                }));
+
+        // ===== 性能 =====
+        content.addView(buildSectionHeader(activity, "\u6027\u80fd"));
+        // 启动防层模式（SETTINGS_UI_V2 §7.1）均衡（默认）冷启/锁屏遮罩；高性能跳过遮罩
         content.addView(buildSwitchRow(activity, "\u9ad8\u6027\u80fd\u6a21\u5f0f",
                 "\u8df3\u8fc7\u51b7\u542f\u52a8\u767d\u5c4f\u906e\u7f69 / \u8981\u6c42\u5fae\u4fe1\u5e38\u9a7b\u540e\u53f0",
                 br.isHighPerfMode(),
@@ -1202,45 +1224,8 @@ public class SettingsEntry {
                     }
                 }));
 
-        // 3. 密友列表
-        content.addView(buildButtonRow(activity, "\u5bc6\u53cb\u5217\u8868",
-                "\u67e5\u770b " + br.getWxidCount() + " \u4e2a",
-                new View.OnClickListener() {
-                    @Override public void onClick(View v) { showWxidListDialog(activity); }
-                }));
-
-        // 4. 添加密友
-        content.addView(buildButtonRow(activity, "\u6dfb\u52a0\u5bc6\u53cb",
-                "\u8f93\u5165 wxid",
-                new View.OnClickListener() {
-                    @Override public void onClick(View v) { showAddWxidDialog(activity); }
-                }));
-
-        // 5. 密群列表
-        content.addView(buildButtonRow(activity, "\u5bc6\u7fa4\u5217\u8868",
-                "\u67e5\u770b " + br.getGroupCount() + " \u4e2a",
-                new View.OnClickListener() {
-                    @Override public void onClick(View v) { showGroupListDialog(activity); }
-                }));
-
-        // 6. 密友消息通知开关 + 模式三选一
+        // 6. 密友消息通知（单段控件：静默=不响不弹 / 震动=掐叮+震 / 铃声=待实现）
         content.addView(buildSectionHeader(activity, "\u5bc6\u53cb\u6d88\u606f\u901a\u77e5"));
-        Bridge.NotifyPolicy policy = br.getNotifyPolicy();
-        boolean notifyOn = policy != Bridge.NotifyPolicy.OFF;
-        content.addView(buildSwitchRow(activity, "\u901a\u77e5\u5f00\u5173",
-                "\u5bc6\u53cb\u6d88\u606f\u662f\u5426\u63a8\u9001", notifyOn,
-                new CompoundButton.OnCheckedChangeListener() {
-                    @Override public void onCheckedChanged(CompoundButton b, boolean checked) {
-                        if (!checked) {
-                            br.setNotifyPolicy(Bridge.NotifyPolicy.OFF);
-                        } else if (br.getNotifyPolicy() == Bridge.NotifyPolicy.OFF) {
-                            br.setNotifyPolicy(Bridge.NotifyPolicy.VIBRATE);
-                        }
-                        Log.i(TAG, "[SET:overlay] notify=" + br.getNotifyPolicy());
-                    }
-                }));
-
-        // 通知模式三选一
         content.addView(buildNotifyModeRow(activity, br));
 
         // 6.5 语音/视频通话通知（静默/震动，默认静默；来电永不放铃声）
@@ -1449,46 +1434,98 @@ public class SettingsEntry {
         return tv;
     }
 
-    private static View buildNotifyModeRow(Context ctx, final Bridge br) {
+    private static View buildNotifyModeRow(final Context ctx, final Bridge br) {
         LinearLayout row = new LinearLayout(ctx);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setBackgroundColor(Color.WHITE);
         row.setGravity(Gravity.CENTER_VERTICAL);
         int ph = dp(ctx, 16);
-        int pv = dp(ctx, 8);
+        int pv = dp(ctx, 10);
         row.setPadding(ph, pv, ph, pv);
 
         TextView label = new TextView(ctx);
         label.setText("\u901a\u77e5\u6a21\u5f0f");
         label.setTextColor(Color.parseColor("#191919"));
-        label.setTextSize(14f);
+        label.setTextSize(16f);
         row.addView(label, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
-        RadioGroup rg = new RadioGroup(ctx);
-        rg.setOrientation(RadioGroup.HORIZONTAL);
-        final RadioButton rbOff     = new RadioButton(ctx);
-        final RadioButton rbVibrate = new RadioButton(ctx);
-        final RadioButton rbSound   = new RadioButton(ctx);
-        rbOff.setText("\u9ed8\u8ba4");      // 默认（静默）
-        rbVibrate.setText("\u9707\u52a8");  // 震动
-        rbSound.setText("\u58f0\u97f3");    // 声音
-        rg.addView(rbOff);
-        rg.addView(rbVibrate);
-        rg.addView(rbSound);
-        Bridge.NotifyPolicy current = br.getNotifyPolicy();
-        if (current == Bridge.NotifyPolicy.VIBRATE)      rbVibrate.setChecked(true);
-        else if (current == Bridge.NotifyPolicy.SOUND)   rbSound.setChecked(true);
-        else                                              rbOff.setChecked(true);
-        rg.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
-            @Override public void onCheckedChanged(RadioGroup g, int id) {
-                if (id == rbOff.getId())          br.setNotifyPolicy(Bridge.NotifyPolicy.OFF);
-                else if (id == rbVibrate.getId()) br.setNotifyPolicy(Bridge.NotifyPolicy.VIBRATE);
-                else if (id == rbSound.getId())   br.setNotifyPolicy(Bridge.NotifyPolicy.SOUND);
-                Log.i(TAG, "[SET:overlay] notifyMode=" + br.getNotifyPolicy());
+        // iOS 风格胶囊分段控件：圆角灰底轨道 + 选中段浅绿圆角药丸。
+        final int selBg      = Color.parseColor("#C8ECD0"); // 选中段浅绿底
+        final int selText    = Color.parseColor("#07A85C"); // 选中段绿字
+        final int normalText = Color.parseColor("#555555"); // 未选中灰字
+
+        LinearLayout seg = new LinearLayout(ctx);
+        seg.setOrientation(LinearLayout.HORIZONTAL);
+        GradientDrawable track = new GradientDrawable();
+        track.setColor(Color.parseColor("#E9E9EB"));        // 轨道灰底
+        track.setCornerRadius(dp(ctx, 9));
+        seg.setBackground(track);
+        int sp = dp(ctx, 2);
+        seg.setPadding(sp, sp, sp, sp);
+
+        final String[] titles = {"\u9759\u9ed8", "\u9707\u52a8", "\u94c3\u58f0"}; // 静默/震动/铃声
+        final TextView[] segs = new TextView[3];
+        for (int i = 0; i < 3; i++) {
+            TextView t = new TextView(ctx);
+            t.setText(titles[i]);
+            t.setTextSize(13f);
+            t.setGravity(Gravity.CENTER);
+            t.setPadding(dp(ctx, 14), dp(ctx, 5), dp(ctx, 14), dp(ctx, 5));
+            seg.addView(t);
+            segs[i] = t;
+        }
+
+        // 当前已生效档：铃声未实现 → SOUND/OFF 一律回落到「静默」选中。
+        final Bridge.NotifyPolicy[] applied = { br.getNotifyPolicy() };
+        final int[] sel = { (applied[0] == Bridge.NotifyPolicy.VIBRATE) ? 1 : 0 };
+
+        final Runnable repaint = new Runnable() {
+            @Override public void run() {
+                for (int i = 0; i < 3; i++) {
+                    if (i == sel[0]) {
+                        GradientDrawable pill = new GradientDrawable();
+                        pill.setColor(selBg);
+                        pill.setCornerRadius(dp(ctx, 7));
+                        segs[i].setBackground(pill);
+                        segs[i].setTextColor(selText);
+                        segs[i].getPaint().setFakeBoldText(true);
+                    } else {
+                        segs[i].setBackground(null);
+                        segs[i].setTextColor(normalText);
+                        segs[i].getPaint().setFakeBoldText(false);
+                    }
+                    segs[i].invalidate();
+                }
             }
-        });
-        row.addView(rg);
+        };
+        repaint.run();
+
+        for (int i = 0; i < 3; i++) {
+            final int idx = i;
+            segs[i].setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    if (idx == 2) {
+                        // 铃声为占位档：提示「功能更新中」，不改选中、不落库。
+                        Toast.makeText(ctx, "\u529f\u80fd\u66f4\u65b0\u4e2d..",
+                                Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    sel[0] = idx;
+                    if (idx == 0) {
+                        applied[0] = Bridge.NotifyPolicy.OFF;
+                        br.setNotifyPolicy(Bridge.NotifyPolicy.OFF);
+                    } else {
+                        applied[0] = Bridge.NotifyPolicy.VIBRATE;
+                        br.setNotifyPolicy(Bridge.NotifyPolicy.VIBRATE);
+                    }
+                    repaint.run();
+                    Log.i(TAG, "[SET:overlay] notifyMode=" + br.getNotifyPolicy());
+                }
+            });
+        }
+
+        row.addView(seg);
 
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -1511,7 +1548,7 @@ public class SettingsEntry {
         TextView label = new TextView(ctx);
         label.setText("\u6765\u7535\u63d0\u793a");
         label.setTextColor(Color.parseColor("#191919"));
-        label.setTextSize(14f);
+        label.setTextSize(16f);
         row.addView(label, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 

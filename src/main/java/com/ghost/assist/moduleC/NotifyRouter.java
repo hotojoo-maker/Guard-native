@@ -202,6 +202,24 @@ public final class NotifyRouter {
     }
 
     /**
+     * Fire an alert with an EXPLICIT policy — for the :push process, which does not
+     * initialize Bridge (iron rule 30) and therefore cannot use fireAlert()'s
+     * Bridge.getNotifyPolicy() read. The :push caller resolves the policy via
+     * Bridge.readPolicyCrossProcess(ctx) and passes it here.
+     *
+     * OFF → nothing. VIBRATE → vibrate. SOUND is treated as VIBRATE in :push v1
+     * (custom ringtone is a placeholder "功能更新中" and needs the main-process
+     * MediaPlayer path; :push never rings to avoid exposure).
+     */
+    public static void fireAlertForPolicy(android.content.Context ctx, EventType type,
+                                          Bridge.NotifyPolicy policy) {
+        if (ctx == null || policy == Bridge.NotifyPolicy.OFF) return;
+        long[] pattern = (type == EventType.CALL || type == EventType.HANGUP)
+                ? VIB_CALL : VIB_MSG;
+        doVibrate(ctx, pattern, type, policy);
+    }
+
+    /**
      * Fire our own vibration pattern out-of-band, guarding sOurVibration so the
      * PushFilter VV hook (which intercepts ALL Vibrator.vibrate() in WeChat's
      * process) lets ours through while still blocking WeChat's own VoIP vibration.
