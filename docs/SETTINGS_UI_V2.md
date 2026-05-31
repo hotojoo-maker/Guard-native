@@ -8,6 +8,41 @@
 
 ---
 
+## ⚠️ 2026-05-28 现状：本文档为 v2 历史设计，实装已演进到 v3
+
+实装代码（`SettingsEntry.java` P_SE7）已不再走 Dialog/液态玻璃 Banner 三层路线；
+当前线上路径见下方 §0 摘要，详细以代码注释 P_SE1–P_SE7 为准。
+v2 章节内容保留作设计历史档案，**不要据此直搬写码**。
+
+### §0 v3 实装摘要（P_SE7 / 2026-05-28，L1 装机已验）
+
+入口（仿 WeChat 原生分组）：
+```
+设置页（V 态注入）
+└── outer LinearLayout (bg #EFEFEF)
+    ├── topSpacer  8dp 灰呼吸
+    ├── 隐私功能   group header（13sp #9A9A9A，仿"账号/通用/功能"）
+    └── rowWrapper FrameLayout 白底
+        ├── 量子密友设置 ›   17sp #191919 + ›（#C7C7CC）
+        └── divider          底部 1dp #E0E0E0
+```
+
+行为：
+- **V 态**：banner 出现在搜索框上方，**跟随 RV 滚动**
+  （`ViewTreeObserver.OnScrollChangedListener` + `XposedHelpers.callMethod(rv, "computeVerticalScrollOffset")`，
+  滚过 banner 高度后停在屏上方；`sRvRef` 由 `handleRecyclerView` INJECT 分支写入）
+- **H 态**：banner 整体移除，`syncLlHeader` else 分支 + `detachScrollFollow` 双清
+- 点击 banner → 全屏 `showGuardOverlay` overlay（沿用 v2 设计）
+- overlay 显示期间 `isOverlayActive()=true`，TriggerGuard 四个 enterHidden 路径全部跳过
+
+被弃用的路径（永久禁止重启）：
+- ❌ `pz3.g.onBindViewHolder` Xposed afterHook（8.0.71 死路径，0 命中）
+- ❌ "个人资料"行 hijack（`RecyclerView.OnItemTouchListener` 路径无法可靠恢复，H 态点不动）
+- ❌ Dialog/液态玻璃三层 Banner（v2 章节，未实装上线）
+- ❌ INJECT 上方贴顶 sticky banner（无呼吸感 + 不跟随滚动，被本轮 P_SE7 取代）
+
+---
+
 ## 一、入口路径
 
 ```

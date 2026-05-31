@@ -7,28 +7,23 @@ description: Guard Native 执行——写代码/跑脚本/设备调试/单个 P 
 
 ---
 
-## ⛔ 绝对禁止 / ABSOLUTE PROHIBITIONS
+## ⛔ 绝对禁止（执行特有；通用 G1–G6 见 `CLAUDE.md` §三.五）
 
-> **这一节优先级高于本 skill 所有其他内容。**
-> **This section overrides everything else in this skill.**
-
-| 中文 | English |
-|------|---------|
-| **禁止猜测** | No guessing |
-| **禁止推断**（无 L1 动态日志 / L2 jadx 静态证据） | No inference without L1 logcat/L2 jadx evidence |
-| **没有证据 → 停下来，主动问用户** | No evidence → STOP, ask the user |
-| **没有资料/日志 → 停下来，主动问用户** | No materials/logs → STOP, ask the user |
-| **⬜ 状态的条目只读名字，禁止展开细节** | ⬜ items: read name only, never expand or assume |
-| **不确定 = 不能写成结论，必须标 ❓ 并停下来问** | Uncertain = cannot be a conclusion; mark ❓ and ask |
-| **HOOKMAP / TASK_BOARD 状态不一致 → 停下来，报告矛盾，问用户** | Status conflict in docs → STOP, report conflict, ask |
-| **未经用户明确同意，禁止改任何 md 文档** | No md edits without explicit user approval |
-| **用户口述/截图/抓包片段 ≠ 已验证，禁止直接写入文档** | User paste ≠ verified; do not write to docs |
+| 禁忌 |
+|------|
+| **⬜ 状态条目只读名字**，禁止展开细节或假设实现方式 |
+| **不确定的事不能写成结论**——必须标 ❓ 并停下来主动问用户 |
+| **HOOKMAP 与 TASK_BOARD 状态不一致 → 停下来报告矛盾**，不自己拍板仲裁 |
 
 **触发停止的具体场景：**
-- 想写"这个类应该是 X" → ❌ 停，问"请确认 X 类名是否正确"
-- 想写"Hook 点应该在 Y 方法" → ❌ 停，问"Y 方法有没有 L1 日志？"
-- result.md 没有装机日志 → ❌ 不能把状态标 ✅
-- HOOKMAP 写 ✅ 但没有 logcat 原文 → ❌ 降回 🟡，报告用户
+- 想写"这个类应该是 X" → 停，问"请确认 X 类名"
+- 想写"Hook 点应该在 Y 方法" → 停，问"Y 有没有 L1 日志？"
+- result.md 没有装机日志 → 不能标 ✅
+- HOOKMAP 写 ✅ 但没有 logcat 原文 → 降回 🟡，报告用户
+
+**文档车道（8071）**：先读 [`docs/README.md`](../../docs/README.md)。写 hook 以 `docs/HOOK_MAP_8071_AUTHORITATIVE.md` 为准；**禁止**从 `docs/archive/wechat_8066/` 或 Catfish `refs/` 直搬类名（见 `docs/isolation/INDEX_COMPETITOR.md`）。
+
+**门控/状态机语意**：动 StateMachine / AuthManager / SearchUnlock / Filter 的 `isActive()` 调用前，**必须先读** `guard-auth-review` skill **§零.前 语意速查**。该节解释：① 入口口令 / 授权 / 状态机三者互不替代；② HIDDEN/VISIBLE/UNLOCKING 三态用户实际看到什么；③ Filter 只能 **只读** `isActive()`，禁止 `enterHidden/exitHidden`。
 
 ---
 
@@ -60,8 +55,8 @@ description: Guard Native 执行——写代码/跑脚本/设备调试/单个 P 
 |---------|------|--------|
 | 改文档 / 改配置 / 更新 result.md | `brief.md` | FAILURE_LOG、HOOKMAP |
 | 写非 hook 代码（UI/工具类/配置）| `brief.md` + CLAUDE.md 对应章节 | FAILURE_LOG 全文 |
-| **写 hook 代码 / 发版门控** | `brief.md` + FAILURE_LOG 相关 F-xx + HOOKMAP | — |
-| 首次接手新 P 任务 | CLAUDE.md + HOOKMAP + TASK_BOARD §一 + FAILURE_LOG 全文 | — |
+| **写 hook 代码 / 发版门控** | `brief.md` + FAILURE_LOG 相关 F-xx + HOOKMAP + `docs/HOOK_MAP_8071_AUTHORITATIVE.md` | archive / HOOK_MAP_V1 |
+| 首次接手新 P 任务 | CLAUDE.md + `docs/README.md` + HOOKMAP + TASK_BOARD §一 + FAILURE_LOG 全文 | — |
 
 > **brief.md 不存在时**：读 TASK_BOARD 对应窗口段 + FAILURE_LOG 全文（旧路径）
 
@@ -89,16 +84,54 @@ description: Guard Native 执行——写代码/跑脚本/设备调试/单个 P 
 
 ### 4. 设备调试（★ 最高优先铁律）
 
-**调试必须与用户交互，禁止盲猜。**
+> **一次只发一个 Step，等用户贴结果再发下一个。** 禁止一次堆 3-5 个 Step 让用户复制——会让 Claude Code 窗口爆炸。
 
-| 步骤 | 正确做法 | 禁止 |
-|------|---------|------|
-| 需要 adb/frida 输出 | 给用户一个明确指令，等结果 | 假设输出自行推进 |
-| logcat 没有命中 | 问用户"看到 [XX] hit 了吗" | "估计是 XXX" 直接改代码 |
-| 需要手机操作 | "请进朋友圈刷新，告诉我 F05 计数" | 自己判断结果 |
-| 出现新现象 | 停下来报告，问用户下一步 | 继续猜测原因 |
+#### 单 Step 输出格式（必须遵守）
 
-**调试节奏**：一次给用户**一个操作**，等回复，看结果，再下一步。
+**结构 = 一行目的 + 一个 code block + 一行观察要求**
+
+```markdown
+**Step N — 干什么**
+
+[一行命令，code block 内只放命令，不混说明]
+
+**请观察**：[一句话告诉用户看什么 / 贴什么回来]
+```
+
+#### 正确范例
+
+**Step 1 — 装机 debug apk**
+
+```
+adb install -r build/outputs/apk/debug/guard-native-debug.apk
+```
+
+**请观察**：是否打印 `Success`，失败贴报错。
+
+**Step 2 — 抓搜索过滤命中**
+
+```
+adb logcat -d 2>&1 | findstr "SF:gv MRD"
+```
+
+**请观察**：贴前 20 行，关注是否有 `[SF:gv] blocked` 字样。
+
+#### 禁止
+
+- ❌ 一次发多个 Step 让用户连贯执行（违反「一次一个」铁律）
+- ❌ code block 里塞 `# 这一步会做...` 注释（用户复制会一起带走）
+- ❌ 把「请观察」塞进 code block（必须独立 markdown 行）
+- ❌ 用散文「你跑一下 xxx 然后告诉我」（用户不知道复制什么）
+- ❌ 多行 `&&` 串联命令（出问题不知道哪步崩，且违反「一次一个」）
+
+#### 互动节奏速查
+
+| 场景 | 正确 | 禁止 |
+|------|------|------|
+| 需要 adb/frida 输出 | 发 1 Step，等贴回来 | 假设输出自行推进 |
+| logcat 没命中 | 问「看到 `[XX] hit` 了吗」 | 「估计是 XXX」直接改代码 |
+| 需要手机点击 | 「请打开微信，点放大镜，输入'熵'」 | 自己脑补流程 |
+| 出现新现象 | 停下来报告，问下一步 | 继续猜测原因 |
 
 ---
 
@@ -188,6 +221,57 @@ fields.forEach(function(f) {
     f.setAccessible(true);
     try { console.log(f.getName() + " = " + f.get(obj)); } catch(e){}
 });
+```
+
+---
+
+## ★ Frida 探针轻量化铁律（HEAVY-PROBE 反模式）
+
+> 重探针 = 微信进程被杀 / 时序错过 / 用户上下文炸 / 一晚白付。
+>
+> **已留下血证**：
+> - `bug排查/probe_yz2b0.log` 14 行 → `Process terminated`
+> - v3 用 `setTimeout(Java.choose, 2000)`：抢在搜词前拽 q2、List 全 size=0
+> - v6 maxDepth=3 + 递归展开 fz2.r/fz2.y + 全局 `BaseAdapter.notifyDataSetChanged` hook → 用户当场标"太重"
+
+### 五条铁律（H1–H5）
+
+| # | 铁律 | 反例 |
+|---|------|-----|
+| **H1** | **目标精确**：用 `Java.choose` 限定实例、或类名字符串内联过滤；禁止 hook 全局基类后再用 if 过滤 | 全局 `BaseAdapter.notifyDataSetChanged` → 每个 ListView 触发 |
+| **H2** | **递归 ≤ 1 层**：默认 dump 一层、第二层只打 size + className + toString(≤80)，不展开字段；要再下一层必须新写一版探针 | v6 maxDepth=3 + 自动展开非 java/android 嵌套对象 |
+| **H3** | **采样 ≤ 5 元素**：超 50 元素的 List 不深入、大 List 只打 size | dumpListElements 拿前 10、List 全集 |
+| **H4** | **小步迭代**：每轮探针只挖下一层、出结果才动下一版，禁止一把铺满 4 层 | v6 一把 a.n → iz2.i → f → 元素 → 字段 全拽 |
+| **H5** | **拽到就 unhook**：dump 完锁标志 + 主动把 `BA.ndc.implementation = null` 还原 | 只锁标志、hook 留着、每次 ndc 都跑判断 |
+
+### 探针迭代节奏（推荐节奏）
+
+```
+v1（轻）→ 拽顶层类的字段名表          目标：知道哪个字段是 List
+v2（轻）→ 拽 List 元素 className     目标：知道元素是什么类
+v3（轻）→ 拽元素的 String 字段       目标：找 wxid 候选
+v4（仅在 v3 没找到时）→ 拽嵌套对象一层
+```
+
+**禁止跳级**：v1 还没出结果就写 v3 + 一把递归 3 层。
+
+### 探针体积自检（写完 .js 之前自问）
+
+- [ ] maxDepth 是多少？> 2 就停下来想一想需不需要
+- [ ] hook 的方法是不是高频路径？（BaseAdapter / ArrayList / View / Activity 全是高频 → 必须类名过滤后只跑一次再 unhook）
+- [ ] dump 一次预计输出多少行？> 200 行就要砍
+- [ ] `enumerateLoadedClasses` 用了吗？只在初探时一次性 + 必须有过滤词
+- [ ] hook 完成后会主动把自己 `.implementation = null` 吗？
+
+### 探针失败汇报
+
+跑空（Process terminated / size=0 / hook 无命中）时**不要直接加深递归**，按下方报告格式停下来问用户：
+
+```
+[探针 P20-PROBE-yz2b0-00X] 跑空
+现象：[一句话]
+可能原因：A. 时序早了（hook 在数据前装）/ B. 探针太重（进程被杀）/ C. hook 类名错
+建议下一步：（A/B/C 三选一）
 ```
 
 ---

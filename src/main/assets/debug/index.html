@@ -11,8 +11,8 @@ html,body{height:100%;overflow:hidden;font-family:monospace;background:#080808;c
 /* ── 三栏布局 ── */
 #app{display:flex;height:100vh;gap:0}
 
-/* 左侧功能面板 — 收窄 */
-#panel{width:180px;min-width:180px;background:#0d0d0d;border-right:1px solid #222;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:8px}
+/* 左侧功能面板 — 加宽（容纳昵称 + wxid 一行）*/
+#panel{width:260px;min-width:260px;background:#0d0d0d;border-right:1px solid #222;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:8px}
 
 /* 中央事件流（主角，占最大） + 右侧辅助面板（固定宽度） */
 #logs{flex:1;display:flex;gap:0;overflow:hidden}
@@ -84,23 +84,23 @@ input[type=text]:focus{outline:none;border-color:#0f0}
     <div style="color:#444;font-size:9px;letter-spacing:2px;margin-top:1px">STATE MACHINE SYSTEM</div>
   </div>
 
-  <!-- ══ 密友控制 ══ -->
+  <!-- ══ 隐私控制 ══ -->
   <div class="card" id="ctrl-card">
-    <h3>密友控制</h3>
+    <h3>隐私控制</h3>
 
-    <!-- 状态 + 密友数（只读快照） -->
+    <!-- 状态 + 隐藏对象数（只读快照） -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
       <span class="label">状态</span>
       <span id="ctrl-state" style="font-size:12px;font-weight:bold">--</span>
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <span class="label">密友数</span>
+      <span class="label">隐藏对象</span>
       <span id="ctrl-hidden-cnt" style="font-size:12px;color:#0f0;font-weight:bold">--</span>
     </div>
 
     <!-- 功能总开关 -->
     <div style="margin-bottom:8px">
-      <div class="label" style="margin-bottom:3px">密友功能</div>
+      <div class="label" style="margin-bottom:3px">隐私功能</div>
       <div class="btn-row">
         <button id="feat-on"  class="btn" onclick="setFeature(true)">开启</button>
         <button id="feat-off" class="btn" onclick="setFeature(false)">关闭</button>
@@ -188,12 +188,22 @@ input[type=text]:focus{outline:none;border-color:#0f0}
     </div>
   </div>
 
-  <!-- 隐藏列表 -->
+  <!-- 密友列表 -->
   <div class="card" style="flex:1">
-    <h3>密友列表 <span style="color:#888;font-size:10px" id="hl-count"></span></h3>
-    <input type="text" id="hl-wxid" placeholder="wxid 或微信号">
-    <button class="btn" style="width:100%;margin-bottom:6px" onclick="addHidden()">+ 加入隐藏</button>
-    <div id="hl-list" style="max-height:200px;overflow-y:auto">
+    <h3>密友列表 <span style="color:#888;font-size:10px" id="hl-friend-count"></span></h3>
+    <input type="text" id="hl-wxid-input" placeholder="wxid_xxx">
+    <button class="btn" style="width:100%;margin-bottom:6px" onclick="addHidden('hl-wxid-input')">+ 加入密友</button>
+    <div id="hl-wxid-list" style="max-height:130px;overflow-y:auto">
+      <span style="color:#444;font-size:10px">(空)</span>
+</div>
+</div>
+
+  <!-- 密群列表 -->
+  <div class="card" style="flex:1">
+    <h3>密群列表 <span style="color:#888;font-size:10px" id="hl-group-count"></span></h3>
+    <input type="text" id="hl-group-input" placeholder="groupId@chatroom">
+    <button class="btn" style="width:100%;margin-bottom:6px" onclick="addHidden('hl-group-input')">+ 加入密群</button>
+    <div id="hl-group-list" style="max-height:130px;overflow-y:auto">
       <span style="color:#444;font-size:10px">(空)</span>
 </div>
 </div>
@@ -554,17 +564,35 @@ async function pollHidden() {
   try {
     let r = await fetch(BASE + '/api/hidden');
     let j = await r.json();
-    document.getElementById('hl-count').textContent = '(' + j.count + ')';
-    let el = document.getElementById('hl-list');
-    if (j.list && j.list.length > 0) {
-      el.innerHTML = j.list.map(w =>
-        '<div class="friend-row"><span style="font-size:10px;color:#ccc">' + w + '</span>' +
-        '<button class="btn danger" style="padding:1px 6px;font-size:9px" onclick="removeHidden(\'' + w + '\')">×</button></div>'
-      ).join('');
-    } else {
-      el.innerHTML = '<span style="color:#444;font-size:10px">(空)</span>';
-    }
+    let list = j.list || [];
+    let wxidList = list.filter(w => !isGroupId(w));
+    let groupList = list.filter(isGroupId);
+    let wxids = j.wxids !== undefined ? j.wxids : wxidList.length;
+    let groups = j.groups !== undefined ? j.groups : groupList.length;
+    document.getElementById('hl-friend-count').textContent = '(' + wxids + ')';
+    document.getElementById('hl-group-count').textContent = '(' + groups + ')';
+    renderHiddenList('hl-wxid-list', wxidList, '密友', '#0cf');
+    renderHiddenList('hl-group-list', groupList, '密群', '#fa0');
   } catch(e) {}
+}
+
+function isGroupId(id) {
+  return !!id && id.endsWith('@chatroom');
+}
+
+function renderHiddenList(elId, list, label, color) {
+  let el = document.getElementById(elId);
+  if (!el) return;
+  if (list && list.length > 0) {
+    el.innerHTML = list.map(w =>
+      '<div class="friend-row"><span>' +
+      '<span style="font-size:9px;color:' + color + '">' + label + '</span> ' +
+      '<span style="font-size:10px;color:#ccc">' + w + '</span></span>' +
+      '<button class="btn danger" style="padding:1px 6px;font-size:9px" onclick="removeHidden(\'' + w + '\')">×</button></div>'
+    ).join('');
+  } else {
+    el.innerHTML = '<span style="color:#444;font-size:10px">(空)</span>';
+  }
 }
 
 // ──── field tracker ────
@@ -666,11 +694,16 @@ async function pollCtrl() {
     }
   } catch(e) {}
   try {
-    // 密友数 (复用已有 /api/hidden)
+    // 隐藏对象数：密友 wxid + 密群 groupId
     let rh = await fetch(BASE + '/api/hidden');
     let jh = await rh.json();
     let cEl = document.getElementById('ctrl-hidden-cnt');
-    if (cEl) cEl.textContent = (jh.count !== undefined ? jh.count : '--') + ' 个';
+    if (cEl) {
+      let total = jh.count !== undefined ? jh.count : '--';
+      let wxids = jh.wxids !== undefined ? jh.wxids : '--';
+      let groups = jh.groups !== undefined ? jh.groups : '--';
+      cEl.textContent = total + ' 个（友 ' + wxids + ' / 群 ' + groups + '）';
+    }
   } catch(e) {}
   try {
     // 功能开关
@@ -719,17 +752,27 @@ async function apiTrigger(action) {
 async function setMode(mode) {
   try { await fetch(BASE + '/api/mode', {method:'POST', body:JSON.stringify({mode})}); pollConfig(); } catch(e) {}
 }
-async function addHidden() {
-  let wxid = document.getElementById('hl-wxid').value.trim();
+async function addHidden(inputId) {
+  let input = document.getElementById(inputId || 'hl-wxid-input');
+  let wxid = input ? input.value.trim() : '';
   if (!wxid) return;
-  try { await fetch(BASE + '/api/hidden', {method:'POST', body:JSON.stringify({action:'add', wxid})}); document.getElementById('hl-wxid').value=''; pollHidden(); } catch(e) {}
+  try {
+    await fetch(BASE + '/api/hidden', {method:'POST', body:JSON.stringify({action:'add', wxid})});
+    input.value='';
+    pollHidden();
+    pollCtrl();
+  } catch(e) {}
 }
 async function removeHidden(wxid) {
-  try { await fetch(BASE + '/api/hidden', {method:'POST', body:JSON.stringify({action:'remove', wxid})}); pollHidden(); } catch(e) {}
+  try {
+    await fetch(BASE + '/api/hidden', {method:'POST', body:JSON.stringify({action:'remove', wxid})});
+    pollHidden();
+    pollCtrl();
+  } catch(e) {}
 }
 async function quickAdd(wxid) {
-  document.getElementById('hl-wxid').value = wxid;
-  await addHidden();
+  document.getElementById(isGroupId(wxid) ? 'hl-group-input' : 'hl-wxid-input').value = wxid;
+  await addHidden(isGroupId(wxid) ? 'hl-group-input' : 'hl-wxid-input');
   pollFeedWxids();
 }
 async function saveMyWxid() {

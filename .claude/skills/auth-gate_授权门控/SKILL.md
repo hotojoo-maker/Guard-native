@@ -27,7 +27,8 @@ description: 授权检查官快捷入口（授权执行官/授权门控/auth-gat
 ```
 
 若无法读取，核心铁律：
-- SearchUnlock 不切状态、不当授权码
-- H/V 链路：SearchUnlock → SettingsEntry 对话框 → StateMachine → RefreshBus → Filter
+- SearchUnlock：v1 口令可 HIDDEN→VISIBLE（见 GUARD_GATE_TRUTH），**不当授权码**、不扩过滤逻辑
+- H/V 链路：SearchUnlock → StateMachine → RefreshBus → Filter（SettingsEntry 入口可见性）
+- 文档：`docs/README.md` · 8071 hook → `docs/HOOK_MAP_8071_AUTHORITATIVE.md`
 - 主进程 Filter 只读 Java StateMachine.isActive()；:push 只读 NativeBridge.shouldBlockBadge()
 - AUTH_STATE 只由 AuthManager/bindAccount 写入

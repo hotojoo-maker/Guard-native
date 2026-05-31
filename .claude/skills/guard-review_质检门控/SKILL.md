@@ -7,19 +7,13 @@ description: Guard Native 质检门控——P任务自审(轻档) + 发版门控
 
 ---
 
-## ⛔ 绝对禁止 / ABSOLUTE PROHIBITIONS
+## ⛔ 绝对禁止（质检特有；通用 G1–G6 见 `CLAUDE.md` §三.五）
 
-> **这一节优先级高于本 skill 所有其他内容。**
-> **This section overrides everything else in this skill.**
-
-| 中文 | English |
-|------|---------|
-| **禁止猜测** | No guessing |
-| **禁止推断**（无 L1/L2 证据） | No inference without L1/L2 evidence |
-| **没有 logcat/Frida 日志原文 → 不能标 ✅** | No logcat/Frida raw log → cannot mark ✅ |
-| **L3/L4 结论不得写成已验证事实** | L3/L4 conclusions must not be stated as verified facts |
-| **发现文档 ✅ 但无日志 → 降回 🟡 + 报告用户** | Doc ✅ without logs → downgrade to 🟡, report user |
-| **不确定 → 停下来主动问** | Uncertain → STOP and ask |
+| 禁忌 |
+|------|
+| **没有 logcat/Frida 日志原文 → 不能标 ✅**——口述/截图不算，必须能定位到磁盘文件 + 关键行 |
+| **L3 高概率推断 / L4 待验证结论不得写成已验证事实**——必须保留 ❓ 或 🟡 标签 |
+| **发现文档已经标 ✅ 但找不到日志 → 降回 🟡 + 报告用户**，不直接删 |
 
 ---
 
@@ -34,6 +28,8 @@ description: Guard Native 质检门控——P任务自审(轻档) + 发版门控
 ---
 
 ## 一、P 自审（轻档，4 项）
+
+> **门控/状态机语意识别**：审 ConvFilter / SettingsEntry / SearchUnlock / AuthManager / NativeBridge 等代码前，先看 `guard-auth-review` skill **§零.前 语意速查**——明白「入口口令 ≠ 授权 ≠ 状态机」之后，才识别得出"Filter 里悄悄调 `sm.exitHidden()`"这种乱接。
 
 ### ① 铁律检查
 grep 代码是否有被禁模式：
@@ -105,17 +101,28 @@ frida -U -f com.tencent.mm --no-pause -l "I:/apk2/_3__D_wechat_ban/official_wech
 
 ## 三、资料功能
 
+### 文档车道（8071，2026-05-27 隔离）
+
+| 用途 | 路径 |
+|------|------|
+| 文档入口 | `docs/README.md` |
+| 8071 hook 事实 | `docs/HOOK_MAP_8071_AUTHORITATIVE.md` |
+| 8066 历史 | `docs/archive/INDEX.md`（盘点/冲突时才开） |
+| Catfish | `docs/isolation/INDEX_COMPETITOR.md` |
+
+资料盘点时：若发现仍指向 `docs/CLASS_MAP_8066.md` / `docs/HOOK_POINTS.md` 作**默认写码**引用 → 标 🔴，改链到 8071 或 archive 索引。
+
 ### 路径表维护
-- 新增/移动资料 → 改 `PROJECT_INDEX.md`
+- 新增/移动资料 → 改 `PROJECT_INDEX.md` + 必要时 `docs/archive/INDEX.md`
 
 ### 冲突检测
-- 同一结论多处矛盾 → 写 `02_docs_资料员/CONFLICTS.md`：
+- 同一结论多处矛盾 → 写 `04_review_审稿复核/CONFLICTS.md`：
   ```
   | 日期 | 文件A | 文件B | 分歧点 | 仲裁 |
   ```
 
 ### 调研任务（T 任务）
-- T 任务放 `02_docs_资料员/T_TASKS/`，格式：
+- T 任务放 `04_review_审稿复核/T_TASKS/`，格式：
   ```
   # T<N>_<主题>
   ## 输入 / ## 任务 / ## 产出格式 / ## 验收
@@ -151,14 +158,7 @@ frida -U -f com.tencent.mm --no-pause -l "I:/apk2/_3__D_wechat_ban/official_wech
 
 ## 证据分级
 
-| 等级 | 标签 | 标准 |
-|------|------|------|
-| **L1** | 动态已证实 | Frida log / logcat 直接观察 |
-| **L2** | 静态已证实 | jadx / 反编译确认 |
-| **L3** | 高概率推断 | 多信号收敛，替代解释排除 |
-| **L4** | 待验证 | 有线索但未动态确认 |
-
-**任何结论必须标注等级**，否则视为 L4。
+L1/L2/L3/L4 定义见 `CLAUDE.md` §三.五；本 skill 重点是把无 L1 的 ✅ 降回 🟡。
 
 ---
 

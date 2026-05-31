@@ -1,7 +1,7 @@
 ﻿# Guard Native 守护内核 — 主入口（AI 接手必读）
-<!-- 最后更新：2026-05-23，ConvFilter V↔H 刷新问题修复完结，FAILURE_LOG 增至 F-33 -->
+<!-- 最后更新：2026-05-27，8071 文档隔离；V↔H 热切 ✅（v27 装机收口，v24 + 80ms post-dedup + IK3n install）；FAILURE_LOG F-35+ -->
 > 项目代号: **Guard Native (守护内核)**
-> 目标: 微信 **8.0.71** 隐私模块 → LSPosed 阶段 → 改包阶段 → native 加固
+> 目标: 微信 **8.0.71** 隐私模块 → LSPosed（让安卓应用被改造的框架）阶段 → 改包阶段 → 底层加固
 > 当前底座: **微信 8.0.71**（D-014，2026-05-21 切版）
 > 立项: 2026-05-19
 
@@ -38,24 +38,25 @@
 试错层   ████████████ 100%   31 条已验证失败方案归档 (FAILURE_LOG.md)
 ```
 
-**v1 已稳定**（有日志原文）：D1/D2/D3 朋友圈 · 会话 · 通讯录 · A3 密群 · P21 Layer0b/Layer2 · **ConvFilter V↔H 实时刷新**（2026-05-23 完结）
-**v1 待装机**：B1/B2/B5 触发器 · B6 搜索密码入口 · P20 搜索拦截 · P18 KPI 基线
-**下一个**：P20B 状态机 B 模块装机验证 → 详见 [`TASK_BOARD.md`](./TASK_BOARD.md)
+**v1 已稳定**（有日志原文）：D1/D2/D3 朋友圈 · 会话 V→H · 通讯录 · A3 密群 · P21 Layer0b/Layer2 · P20 搜索联系人 v15.1 · B2/B6 触发
+**v1 部分稳定**：ConvFilter **H→V 热切**（热路径 ✅，冷路径 🟡，见 `docs/CONV_REFRESH_PROBLEM.md`）
+**v1 待装机/🟡**：B1/B4/B5 部分触发 · P20 搜索群聊/聊天记录 · H→V 热切冷路径（见 `docs/CONV_REFRESH_PROBLEM.md`）· P18 KPI 基线
+**下一个**：P26 好友 fresh-fetch / P20 搜索分源 → 详见 [`TASK_BOARD.md`](./TASK_BOARD.md)
 
 ---
 
 ## 三、29 条铁律（违反即停）
 
-完整清单 → [`FAILURE_LOG.md`](./FAILURE_LOG.md)（F-33 条，最新：V↔H adapter ref 污染与 recreate 黑屏）
+完整清单 → [`FAILURE_LOG.md`](./FAILURE_LOG.md)（F-35 条，最新：v25/v26 跨 List identity / list-visited 双层强 dedup → BUS-V-adapter.p 零条 → RecyclerView 不重绘）
 
 ### 战略级
 1. **目标版本 8.0.71 锁定**（D-014）— 当前代码主线，禁止以 8.0.66/8.0.70 架构直搬
-2. **不引入 native 三件套**（Pine/bypassmm/shadowhook）— 封号高暴露风险
+2. **不引入底层注入三件套**（Pine/bypassmm/shadowhook）— 封号高暴露风险
 3. **业务逻辑参考竞品 80%，特征面 100% 自有** — 包名/类名/MMKV/网络/签名独立
 4. **修改任何 APK/SO/DEX/smali/MMKV 前先问用户**
 
 ### 反检测级
-5. **禁止读 `ro.boot.*` 属性** — Matrix 反向 hook 监控
+5. **禁止读 `ro.boot.*` 属性**（安卓启动参数）— Matrix（微信自家反作弊工具）反向 hook 监控
 6. **LSPosed 启动进程白名单**
    - ✅ 允许：`com.tencent.mm` 主进程
    - ✅ 允许：`com.tencent.mm:push` 进程，仅限 badge/unread 写入链最小拦截
@@ -63,9 +64,9 @@
    - `:push` 进程**禁止**：UI 操作 / `ActivityManager` / `getRunningAppProcesses` / WebServer / Overlay / Toast / 通知栏 / 复杂反射 dump / 全局 List hook / 网络授权请求 / 业务页面过滤
    - ❌ 永久禁止：`:sandboxed_process` `:isolated_*` `:appbrand*`
 7. **不调 ActivityManager.getRunningAppProcesses** — 沙箱进程无权限会 FATAL
-8. **verifiedbootstate 调用 KPI 红线 = 38**（8.0.68 水平）
+8. **verifiedbootstate（微信反检测计数器）调用 KPI 红线 = 38**（8.0.68 水平）
 
-### 实现级（FAILURE_LOG F-01 ~ F-31 摘要）
+### 实现级（FAILURE_LOG F-01 ~ F-35 摘要）
 9. 禁止把 8.0.70 架构搬到 8.0.71（混淆名全变）
 10. 禁止用 h8.L9/g8.f 调用链（是消息处理链不是会话链）
 11. 禁止 WCDB rawQuery 兜底（微信自定义封装）
@@ -74,19 +75,19 @@
 14. 禁止 hook Adapter.getCount/getItem/getView（Flow 覆盖/死循环）
 15. 禁止 V4 改 RecyclerView position（数据错位）
 16. 禁止 V.GONE 做主方案（ViewHolder 污染 + 点击穿透）
-17. 禁止 Java 反射 invoke notifyDataSetChanged（ART SIGSEGV）
-18. 禁止 notifyItemRange* 三种变体（DiffUtil position 错位/SIGABRT）
-19. **禁止 hook 异步回调中持有 `this`**（JNI local ref GC SIGABRT）
+17. 禁止 Java 反射调用 notifyDataSetChanged（在安卓 ART 虚拟机里会 SIGSEGV 崩溃）
+18. 禁止 notifyItemRange* 三种变体（用 DiffUtil 比对会让位置错位 / SIGABRT 崩）
+19. **禁止 hook（钩子）异步回调里持有 `this`**（JNI 局部引用被垃圾回收后 SIGABRT 崩）
 20. 禁止全局 hook ArrayList.add（频率过高）
-21. **必须 notifyDataSetChanged clean-before**（不是 clean-after）
+21. **必须 notifyDataSetChanged 时先清后通知**（不是先通知后清）
 22. **每个 P 任务关闭必跑 frida_stats.js**（KPI 不增量）
 23. **禁止注入微信 JNI 链**（F-23 实证：CodecLooper SIGSEGV + 微信强制下线）
     - ❌ 仍然禁止：`dlopen` 微信自身 SO / 在微信 `JNI_OnLoad` 链中注入 / Hook 任何 native 方法 / `System.loadLibrary` 加载不属于模块自身的 SO
-    - ✅ 例外——模块自有 SO（`libguardcore.so`）：状态机 / AES-GCM / HMAC / 授权校验 / wxid 匹配 / 进程角色判断 / hidden 状态持久化
+    - ✅ 例外——模块自有 SO（动态库 `libguardcore.so`）：状态机 / AES-GCM（加密算法） / HMAC（消息签名算法） / 授权校验 / wxid 匹配 / 进程角色判断 / hidden 状态持久化
 24. **禁止模块用 startService / extends Service**（F-24：Service not found）— Notification 用 `NotificationManager.notify()`，悬浮窗用 `WindowManager.addView()`
 25. **所有 XposedHelpers.findAndHookMethod 必须 `catch (Throwable)`**（F-25：NoSuchMethodError 穿透 catch Exception 导致 init 静默中断）
 26. **hook protobuf 类方法禁用 `findMethodExact`**（F-26：parseFrom 定义在父类，findMethodExact 不遍历继承链）→ 用 `getMethods()` + `XposedBridge.hookMethod()`
-27. **模块启动默认 HIDDEN，native 状态优先**（F-27）
+27. **模块启动默认 HIDDEN（隐藏态），底层状态优先**（F-27）
     - 安装任何业务 hook 前，必须先完成 `nativeInit()` + `nativeReloadState()`
     - `:push` 进程内 hook 必须先判断 `nativeIsHidden()`；为 `false` 时直接短路返回
 28. **禁止以 `MvvmList.m(List,boolean)` 类级别 hook 作为朋友圈过滤入口**（F-28：8.0.71 朋友圈数据不走 m()，正确路径是 addAll 实例拦截）
@@ -94,18 +95,46 @@
 
 ---
 
+## 三.五、AI 工作通用禁忌（所有 skill 默认遵守，不再各自重复）
+
+> 任何 skill 的「⛔ 绝对禁止」表只列**角色特有**条款；以下 6 条所有角色（dispatch/execute/review/terminal/auth）共用。
+
+| # | 通用禁忌 |
+|:--:|------|
+| G1 | **禁止猜测**（一旦想写"应该/可能/估计/大概/推测" → 停） |
+| G2 | **禁止推断**——没有 L1 动态日志（logcat / Frida）或 L2 静态反编译（jadx）作证，就不能下结论 |
+| G3 | **没有证据/资料/日志 → 立刻停，主动问用户** |
+| G4 | **不确定 → 立刻停，主动问，不写成结论**；必要时在文本里标 ❓ |
+| G5 | **未经用户明确同意，禁止改任何 .md 文档** |
+| G6 | **用户口述/截图/抓包/粘贴 ≠ 已验证**——即使是 L1 日志原文也要先找到磁盘文件再采信，不直接写入文档 |
+
+**触发任意一条 → 中断当前动作，给用户一句话报告 + 一个问题，等回复。**
+
+证据等级定义统一口径（所有 skill 通用）：
+
+| 等级 | 标签 | 标准 |
+|:--:|------|------|
+| **L1** | 动态已证实 | Frida log / logcat 直接观察 |
+| **L2** | 静态已证实 | jadx / 反编译确认 |
+| **L3** | 高概率推断 | 多信号收敛，替代解释排除 |
+| **L4** | 待验证 | 有线索但未动态确认 |
+
+任何结论必须标注等级，否则视为 L4。
+
+---
+
 ## 四、技术路线
 
 ```
 短期 v1   LSPosed Java + libguardcore.so 基础  →  现在（4-6 周）
-          Java 主力，C++ 工具库（状态机/加密/进程桥），禁止 native hook
+          Java 主力，C++ 工具库（状态机/加密/进程桥），禁止底层 hook
 中期      Frida 临时验证                        →  验证新版本 hook 点（不当最终方案）
 长期 v2+  libguardcore.so 全功能               →  LicenseBox / StateBridge / NotifyPolicy
           禁抄 Pine/bypassmm/shadowhook 三件套
           候补：LSPlant / bytehook / Dobby（与竞品不撞，v3+）
 ```
 
-**铁律**：native 在 v2+ 只能"补单点性能"，不得作为业务逻辑层。授权校验/蜜罐才下沉到 SO（v2 后）。
+**铁律**：底层在 v2+ 只能"补单点性能"，不得作为业务逻辑层。授权校验 / 蜜罐才下沉到 SO（v2 后）。
 
 ---
 
@@ -117,21 +146,24 @@
 |------|------|:-------:|
 | **A** | 核心隐私（密友列表/密群/密码/总开关） | ✅ |
 | **B** | 隐藏触发（摇一摇/切后台/Home/锁屏/搜索框 111111） | ✅ |
-| **C** | 消息控制（防撤回/通知伪装 weixin/未读控制） | ❌ **不在 v1**（v2 起）|
+| **C** | 消息控制（防撤回/通知伪装 weixin/未读控制） | 🟡 **代码已部分入 v1，整体未结案**：PushFilter L1/NM ✅ 装机 2026-05-22；L4b/L4c/CA 🟡 待装机；AntiRecall 🟡 代码已写未装机；C4/C5 v2+ |
 | **D** | 痕迹隐藏（朋友圈密友帖/点赞/评论屏蔽） | ✅ D1/D2/D3 |
 | **E** | 装b 模块（步数/定位/改零钱） | v2/v3 |
 | **F** | 商业彩蛋（反盗版引流/独家功能/私域链接） | v2 |
 
-### v1 锁定范围（铁律口径，AI 不得扩展）
+### v1 锁定范围（**待收敛**：本节为初心口径，与 §三/§五 实装表已出现偏离）
 ```
 11 个 hook（HOOK_MAP_V1.md 的 P0+P1）
  + 3 态状态机（显形/隐藏/解锁中）
  + 搜索框 111111 解锁（EditText 文本监听）
  + B 模块 6 个触发事件（摇一摇/切后台/Home/返回/锁屏/搜索）
  + 朋友圈 Proto 层（hookSnsObject 主线 + INIT 兜底）
+ + 【代码已入 v1，未结案】PushFilter L1+NM ✅ 装机；L4b/L4c/CA 🟡 / AntiRecall 🟡 代码已写未装机
+ + 【代码已入 v1，未结案】P21 朋友圈小红点 Layer0b/Layer2（🟡 L3，证据源 chatfish/frida，待 LSPosed 装机抓 logcat）
 ```
+> **AI 注意**：本"v1 锁定范围"已与现状偏离（C 模块下沉、P21 朋友圈小红点接入等）。新会话以 [`HOOKMAP.md`](./HOOKMAP.md) §二 实体表为准；本节作为产品初心存档，待 v1 收口时统一重写。
 
-v1 完整 hook 名单 → [`./docs/HOOK_MAP_V1.md`](./docs/HOOK_MAP_V1.md) P0 + P1
+v1 完整 hook 名单 → [`./docs/archive/wechat_8066/HOOK_MAP_V1.md`](./docs/archive/wechat_8066/HOOK_MAP_V1.md) P0 + P1（**历史规划**）；8071 事实 → [`./docs/HOOK_MAP_8071_AUTHORITATIVE.md`](./docs/HOOK_MAP_8071_AUTHORITATIVE.md)
 P2 / 暂缓 / 禁止 / 系统层破绽点 → **全部不做**
 
 ---
@@ -200,7 +232,7 @@ P2 / 暂缓 / 禁止 / 系统层破绽点 → **全部不做**
 v1  4-6 周   LSPosed 模块, 小米9/8.0.71, 纯 Java, 自用+种子客户
 v2  2-3 月   消息控制完整 + 反盗版引流壳 + miyou-server 授权接入
 v3  3-4 月   装b 三件套 + LSPosed → 改包（无 root，客户端 APK）
-v4  2 月     native C++ 蜜罐 + 加盐字幕混合加密
+v4  2 月     底层 C++ 蜜罐 + 加盐字幕混合加密
 ```
 
 ---
@@ -254,8 +286,10 @@ v4  2 月     native C++ 蜜罐 + 加盐字幕混合加密
 
 ```
 本仓库内:
-  ./docs/HOOK_POINTS.md             8.0.71 已验证 hook 点
-  ./docs/CLASS_MAP_8066.md          混淆类速查（8.0.66 参考）
+  ./docs/README.md                  文档入口（8071 主车道）
+  ./docs/HOOK_MAP_8071_AUTHORITATIVE.md  8071 hook 权威
+  ./docs/archive/INDEX.md           8066 历史（禁止直搬）
+  ./docs/isolation/INDEX_COMPETITOR.md  Catfish 竞品参考
   ./refs/MainEntry.java             竞品入口 989 行
   ./refs/UserControll.java          竞品业务 944 行
   ./refs/filter_moments.js          Frida 朋友圈已验证脚本

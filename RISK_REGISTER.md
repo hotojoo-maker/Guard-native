@@ -20,7 +20,7 @@
 | R-09 | miyou-server 双链路同时挂 | 极低 | 高 | 已有备用域名 miyou.lol | 已防 |
 | R-10 | iOS 蜘蛛密友泄露 Android 类名 | 低 | 低 | iOS 用 dylib，类名零混淆，反推不影响 Android | 接受 |
 | R-11 | **v1 无危险通告机制 / 封号潮无法拔电** | 中 | 高 | v1 客户端启动埋占位（默认 false）；v2 接入 miyou-server kill_switch | 缓解中 |
-| R-12 | 8.0.66 APK 未落地导致 W1~W4 全部卡死 | 中 | 高 | TOOLS_INDEX §〇 §A 列清单 + 优先级最高 | 待处理 |
+| R-12 | ~~8066 APK 未落地卡死 W1~W4~~ → **已降级**：8071 为唯一主车道；8066 仅可选对比样本 | 低 | 低 | `docs/archive/INDEX.md` + TOOLS_INDEX §A 可选 | 已缓解 |
 | R-13 | **空白 LSPosed 基线缺失导致 F-22 KPI 门控失效** | 高 | 中 | W4 P18 第 0 步必须先采空白基线（强制顺序）| 已防 |
 | R-14 | MMKV 明文存储导致 root 用户密友 wxid 泄露 | 中 | 高 | W1 阶段 MMKV 用 CryptKey 模式 + 设备指纹派生密钥 | 待启动 |
 

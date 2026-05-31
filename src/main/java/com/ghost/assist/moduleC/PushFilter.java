@@ -72,6 +72,15 @@ public class PushFilter {
 
     /** Main process install — message notifications + badge + CallGuard (call chain). */
     public static void install(XC_LoadPackage.LoadPackageParam lpparam) {
+        install(lpparam, lpparam.classLoader);
+    }
+
+    /**
+     * Main process install. {@code runtimeCl} 是微信运行时类加载器（app.getClassLoader()，
+     * 带 Tinker 补丁的 DelegateLastClassLoader）；hook 微信 UI/插件类必须用它，否则会绑到
+     * base.apk 里那份从不被实例化的副本（P_NF4 实测：hook 装上但永不触发）。
+     */
+    public static void install(XC_LoadPackage.LoadPackageParam lpparam, ClassLoader runtimeCl) {
         if (sInstalled) return;
         sInstalled = true;
 
@@ -82,10 +91,11 @@ public class PushFilter {
         installMsgArrivalAlert(lpparam);   // 主进程消息到达 → 按策略震动/铃声（前台+后台-alive）
         installNewMsgArrival(lpparam);     // w.handleMessage 通知 Message（带 talker，前台也触发）
         installForegroundDingMute(lpparam); // 前台 in-app 密友消息「叮」声静音（仅密友，按策略）
+        installUnreadCorrect(runtimeCl);    // 底部 tab 红点 + 顶部「微信(N)」标题扣除密友未读（P_NF4）
 
         CallGuard.install(lpparam);   // VoIP voice/video call suppression
 
-        Log.i(TAG, "[PF] PushFilter installed (main: L1+NM+L4+MSGALERT+NEWMSG+FGMUTE) + CallGuard");
+        Log.i(TAG, "[PF] PushFilter installed (main: L1+NM+L4+MSGALERT+NEWMSG+FGMUTE+UNREADFIX) + CallGuard");
     }
 
     /** :push process install — message push + status-bar call icon (iron rule 30). */
@@ -431,6 +441,87 @@ public class PushFilter {
             Log.i(TAG, "[PF:FGMUTE] MediaPlayer.start hook ok");
         } catch (Throwable t) {
             Log.w(TAG, "[PF:FGMUTE] hook fail: " + t);
+        }
+    }
+
+    // =========================================================================
+    // UNREADFIX — 底部 tab 红点 + 顶部「微信(N)」标题计数扣除密友未读（P_NF4，仅主进程）
+    //   8.0.71 渲染点（Frida 探针实证 2026-05-31）：
+    //     底部 tab：com.tencent.mm.ui.LauncherUIBottomTabView.l(int)         主 tab 未读数 setText
+    //     顶部标题：com.tencent.mm.plugin.taskbar.ui.TaskBarContainer.setActionBarTitle(String "微信(N)")
+    //   密友未读总数来自 ConvFilter.getHiddenUnread()（隐藏态全量过滤时累加 field_unReadCount）。
+    //   仅隐藏态生效；只减密友那部分，普通好友未读不受影响。
+    // =========================================================================
+    private static void installUnreadCorrect(ClassLoader cl) {
+        // 底部 tab 红点数字
+        try {
+            XposedHelpers.findAndHookMethod(
+                    "com.tencent.mm.ui.LauncherUIBottomTabView", cl,
+                    "l", int.class,
+                    new XC_MethodHook() {
+                        @Override
+                        protected void beforeHookedMethod(MethodHookParam param) {
+                            Log.i(TAG, "[PF:UNREADFIX] tab CALLED arg="
+                                    + (param.args.length > 0 ? String.valueOf(param.args[0]) : "?")
+                                    + " active=" + StateMachine.getInstance().isActive()
+                                    + " h=" + com.ghost.assist.moduleD.ConvFilter.getHiddenUnread());
+                            if (!StateMachine.getInstance().isActive()) return;
+                            // 用户开「显示密友未读消息数」→ 不扣，密友未读照常计入
+                            if (Bridge.getInstance().isShowHiddenUnread()) return;
+                            int h = com.ghost.assist.moduleD.ConvFilter.getHiddenUnread();
+                            if (h <= 0) return;
+                            if (!(param.args[0] instanceof Integer)) return;
+                            int real = (Integer) param.args[0];
+                            int fixed = Math.max(0, real - h);
+                            if (fixed != real) {
+                                param.args[0] = fixed;
+                                Log.i(TAG, "[PF:UNREADFIX] tab real=" + real
+                                        + " hidden=" + h + " out=" + fixed);
+                            }
+                        }
+                    });
+            Log.i(TAG, "[PF:UNREADFIX] LauncherUIBottomTabView.l hooked");
+        } catch (Throwable t) {
+            Log.w(TAG, "[PF:UNREADFIX] tab hook fail: " + t);
+        }
+
+        // 顶部「微信(N)」标题
+        try {
+            XposedHelpers.findAndHookMethod(
+                    "com.tencent.mm.plugin.taskbar.ui.TaskBarContainer", cl,
+                    "setActionBarTitle", String.class,
+                    new XC_MethodHook() {
+                        @Override
+                        protected void beforeHookedMethod(MethodHookParam param) {
+                            Log.i(TAG, "[PF:UNREADFIX] title CALLED arg=\""
+                                    + (param.args.length > 0 ? String.valueOf(param.args[0]) : "?")
+                                    + "\" active=" + StateMachine.getInstance().isActive()
+                                    + " h=" + com.ghost.assist.moduleD.ConvFilter.getHiddenUnread());
+                            if (!StateMachine.getInstance().isActive()) return;
+                            // 用户开「显示密友未读消息数」→ 不扣，密友未读照常计入
+                            if (Bridge.getInstance().isShowHiddenUnread()) return;
+                            int h = com.ghost.assist.moduleD.ConvFilter.getHiddenUnread();
+                            if (h <= 0) return;
+                            if (!(param.args[0] instanceof String)) return;
+                            String s = (String) param.args[0];
+                            // 匹配 "微信(N)" / "微信（N）"，N 纯数字；"99+" 不匹配 → 不动
+                            java.util.regex.Matcher m = java.util.regex.Pattern
+                                    .compile("^(.*?)[\\(（](\\d+)[\\)）]$").matcher(s);
+                            if (!m.matches()) return;
+                            int real = Integer.parseInt(m.group(2));
+                            int fixed = Math.max(0, real - h);
+                            String out = (fixed <= 0) ? m.group(1).trim()
+                                    : m.group(1) + "(" + fixed + ")";
+                            if (!out.equals(s)) {
+                                param.args[0] = out;
+                                Log.i(TAG, "[PF:UNREADFIX] title \"" + s + "\" hidden="
+                                        + h + " out=\"" + out + "\"");
+                            }
+                        }
+                    });
+            Log.i(TAG, "[PF:UNREADFIX] TaskBarContainer.setActionBarTitle hooked");
+        } catch (Throwable t) {
+            Log.w(TAG, "[PF:UNREADFIX] title hook fail: " + t);
         }
     }
 

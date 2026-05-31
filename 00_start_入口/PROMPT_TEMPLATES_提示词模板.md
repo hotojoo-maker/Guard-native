@@ -29,7 +29,7 @@
 进入 P<编号> 实现 <模块名,如 StateMachine / MomentsFilter / ConvFilter>。
 
 请用 guard-execute-one_单任务执行 skill：
-1. 必读: CLAUDE.md §<对应章节>, HOOKMAP.md §<对应模块>, FAILURE_LOG.md 全部 22 条
+1. 必读: CLAUDE.md §<对应章节>, HOOKMAP.md §<对应模块>, FAILURE_LOG.md 全部 34 条（F-01~F-34）
 2. 进入 03_execute_执行任务/P<编号>_<主题>/ 目录
 3. 按 result.md 模板开干，每完成一个子任务勾一项
 4. 写代码禁用敏感词（vip/hide/pirate/wechat/catfish/myauth/wmiyou）
@@ -70,14 +70,14 @@ W<N> 今天 P<编号> 完成了:
 
 ---
 
-### ⑤ 资料员（中午资料盘点）
+### ⑤ 资料盘点（中午）— 资料员/文档员角色已并入 guard-review
 
 ```
-请用 guard-doc-audit_资料员 skill：
+请用 guard-review_质检门控 skill 的"资料功能"档：
 1. 盘点 06_refs_参考资料/ 是否有新增没登记的资料
 2. 检查 PROJECT_INDEX.md 路径是否还有效
 3. grep 跨文件结论是否有冲突（同一类名/字段写法不同）
-4. 看 02_docs_资料员/T_TASKS/ 还有哪些 T 任务待派
+4. 看 04_review_审稿复核/T_TASKS/ 还有哪些 T 任务待派
 5. 给出资料盘点报告
 ```
 
@@ -123,10 +123,10 @@ v<N> 准备<进主线 | 发版 | 改 APK>。
 - 报错日志: <粘 10 行>
 
 请：
-1. 先 grep FAILURE_LOG.md 看是不是 22 条铁律之一
-2. 看 docs/HOOK_POINTS.md 对应模块是否有解
+1. 先 grep FAILURE_LOG.md 看是不是 34 条 F-XX 失败档案之一
+2. 看 docs/HOOK_MAP_8071_AUTHORITATIVE.md（8071）；历史见 docs/archive/INDEX.md
 3. 看 refs/MainEntry.java 看 Catfish 怎么做的
-4. 如以上都不行 → 派 T 调研任务到 02_docs_资料员/T_TASKS/
+4. 如以上都不行 → 派 T 调研任务到 04_review_审稿复核/T_TASKS/
 
 不要建议尝试 FAILURE_LOG 已禁的方案。
 ```
@@ -152,7 +152,7 @@ v<N> 准备<进主线 | 发版 | 改 APK>。
 ### ⑩ 派 T 调研任务（便宜模型独立完成）
 
 ```
-请用 guard-doc-audit_资料员 skill 派出新 T 调研任务:
+请用 guard-review_质检门控 skill 的"资料功能"档派出新 T 调研任务:
 - 主题: <如"8.0.66 ContactInfo Proto 类定位">
 - 派出窗口: <W2 / W3 / W5>
 - 模型建议: Haiku
@@ -161,7 +161,7 @@ v<N> 准备<进主线 | 发版 | 改 APK>。
 - 产出格式: <期望文件/字段>
 - 验收: <通过判据>
 
-写到 02_docs_资料员/T_TASKS/T<编号>_<主题>.md
+写到 04_review_审稿复核/T_TASKS/T<编号>_<主题>.md
 ```
 
 ---

@@ -1,19 +1,28 @@
 ---
 name: guard-auth-review_授权检查官
-description: Guard Native 授权检查官（别名：授权执行官、授权门控、auth-gate）。大框架守门人，统管四层门控 Entry/Auth/State/Risk、状态机白名单、防盗版分支。改动 SearchUnlock/StateMachine/AuthManager/NativeBridge/DebugServer/C++ auth 前必须审查。
+description: Guard Native 授权检查官（别名：授权执行官、授权门控、auth-gate）。大框架守门人——管 状态机/授权/模块边界/过滤位置/拆代码/模块化决策，防止"乱接导致混乱"。改动 SearchUnlock/StateMachine/AuthManager/NativeBridge/DebugServer/C++ auth 前必审；新增 Filter 链或拆/合代码前也要它点头。
 ---
 
 # guard-auth-review — 授权检查官（大框架守门人）
 
-> **定位（用户口径）**
+> **职责范围（用户口径，2026-05-27 锁定）**
 >
-> 授权 + 防盗版 + 状态机分支复杂，**每个 AI 乱接 StateMachine 后面必乱**。
-> 本 skill = **全项目门控架构的唯一权威**；总调度可规划方向，执行 AI 只调已有接口，**不得自创状态/授权捷径**。
+> 1. **状态机**：HIDDEN/VISIBLE/UNLOCKING 三态边界 + 白名单
+> 2. **授权**：AuthGate / LicenseGate / wxid+device 绑定
+> 3. **模块边界（防乱接）**：filter 不许写状态机；状态机不许嵌业务过滤；UI 不许直接读 native sm
+> 4. **过滤位置决策**：这个逻辑该不该写在 Filter 里？还是 NotifyPolicy 里？还是状态机里？
+> 5. **拆代码 / 模块化决策**：一个文件里同时做"过滤+状态切换+授权判断" → 必须拆
+>
+> **每个 AI 乱接 StateMachine 后面必乱**；本 skill = **门控架构 + 模块边界的唯一权威**。
+> 总调度规划方向、执行 AI 只调已有接口，**不得自创状态/授权捷径，不得在 Filter 里混入业务边界外的事**。
 
 > **核心原则（一句话）**
 >
-> 入口口令只开门，不解锁，不授权。
+> 入口口令触发显形/入口（v1），**不是**授权码。
 > 授权决定能不能用。状态决定现在隐藏还是显形。风险决定要不要静默失效。
+> Filter 只做过滤、状态机只管态、AuthGate 只管授权 — **三者各管一摊，串得清的链路才能改**。
+
+**门控权威**：[`docs/GUARD_GATE_TRUTH.md`](../../docs/GUARD_GATE_TRUTH.md)（高于 HOOKMAP 旧口径）。**8071 hook** → `docs/HOOK_MAP_8071_AUTHORITATIVE.md`；勿读 archive 8066 类名表写码。
 
 ---
 
@@ -38,18 +47,98 @@ description: Guard Native 授权检查官（别名：授权执行官、授权门
 
 ---
 
-## ⛔ 绝对禁止 / ABSOLUTE PROHIBITIONS
+## ⛔ 绝对禁止（授权特有；通用 G1–G6 见 `CLAUDE.md` §三.五）
 
-> **这一节优先级高于本 skill 所有其他内容。**
+| 禁忌 |
+|------|
+| **功能 AI 不得擅自修改授权逻辑**——任何 `AuthManager` / `NativeBridge.setAuthState` / `LicenseGate` 改动必须先经本 skill 审查 |
+| **入口口令（111111）不是授权码**，不能用它绕过授权——它只决定"能否看到设置入口" |
+| **未授权时禁止启用功能**：添加密友、改密码、切显隐、开通知策略，全部应被 `isAuthOk()` 拦住 |
+| **授权异常时功能静默失效**——不弹崩溃、不丢数据、不暴露异常文案给用户 |
+| **不得混用 4 层门控**：EntryGate（入口）≠ AuthGate（授权）≠ StateGate（状态）≠ RiskGate（风险）|
 
-| 中文 | English |
-|------|---------|
-| **功能 AI 不得擅自修改授权逻辑** | Feature AIs must NOT modify auth logic without this review |
-| **入口口令不是授权码，不能绕过授权** | Entry passcode ≠ license; cannot bypass auth |
-| **未授权时禁止添加密友、改密码、切显隐、开通知策略** | No friend add/pwd change/toggle/policy when not AUTH_OK |
-| **授权异常时功能静默失效，不破坏数据** | Auth failure → silent no-op, never corrupt data |
-| **不得混用 4 层门控（EntryGate ≠ AuthGate ≠ StateGate ≠ RiskGate）** | Never conflate the four gate layers |
-| **不确定 → 停下来问用户，禁止猜测** | Uncertain → STOP, ask user |
+---
+
+## 零.前、语意速查 — 4 层门控 + 状态机 + 入口口令到底什么意思
+
+> 这一节面向「读到本 skill 但没干过本项目」的 AI / 新人。**先看懂意思**，再去看下面的白名单和检查清单。
+
+### A. 三个互不替代的概念
+
+| 概念 | 一句话 | 用户视角 | 决定什么 | 谁能改 |
+|------|-------|--------|--------|--------|
+| **入口口令**（EntryGate）| 让"密友设置入口"在 HIDDEN 态下重新可见的钥匙 | 默认 `111111`，用户可在设置页里改自定义口令 | **只决定能不能"看到入口"**——不决定授权、不决定功能开/关 | `SearchUnlock` 命中后调状态机 H→V；`SettingsEntry` 内按钮 |
+| **授权**（AuthGate，license）| 用户付费/绑定后服务器签发的"使用权" | 一个 `wxid + 设备` 的绑定关系，看不见摸不着 | **决定能不能用功能**——过滤、名单、通知策略、防撤回等全部依赖它 | `AuthManager.evaluate()` / `bindAccount()`，**只此一处** |
+| **状态机**（StateGate）| 模块"当前处于隐身/显身/解锁中"哪一态 | HIDDEN：密友/密群消失；VISIBLE：密友/密群可见 + 设置入口可见 | **决定 id 过滤是否生效** | `StateMachine.enter/exitHidden / beginUnlock`，**只允许 SettingsEntry 内按钮 + B 模块触发器调** |
+
+**最常见的混淆**：把"输对 111111 = 授权通过"当成结论 ❌。
+- 输对 111111 **只**触发 `HIDDEN → VISIBLE`（状态机），让用户重新看到设置入口和密友
+- **没有授权时**，即使 VISIBLE 也无法添加密友、改密码、切策略 —— 设置页按钮全部灰色
+- 反之**有授权但 HIDDEN**：密友看不见，但 B 模块触发后能立刻恢复 VISIBLE
+
+### B. 三态状态机 — 用户实际看到什么
+
+| 状态 | 密友/密群 | 设置入口 | id 过滤 | 怎么进入 |
+|:--:|:--:|:--:|:--:|------|
+| **HIDDEN** | 看不见 | 看不见 | ✅ 生效 | 首装默认 / B1\~B5 任一触发器（摇一摇/Home/锁屏/切后台/返回） |
+| **VISIBLE** | 看得见 | 看得见 | ❌ 不生效 | B6 放大镜输入 `111111` 解锁，或 SettingsEntry 内按钮 |
+| **UNLOCKING** | 看不见 | 搜索页出现 | ✅ 生效 | 搜索框弹出但密码未输完 |
+
+**关键**：H↔V 切换 = `ConvFilter / MomentsFilter / ContactFilter / SearchFilter` 都要"立刻刷新"，密友/密群条目同步显隐。这是 P26 / `docs/CONV_REFRESH_PROBLEM.md` 整本书在讲的事。
+
+### C. `isActive()` 三层叠加的产品语义
+
+```java
+StateMachine.isActive() = isVipAuthorized()       // 1. 授权门 — 没付费就什么都不工作
+                       && Bridge.isFeatureEnabled() // 2. 密友总开关 f1 — 用户在设置页关掉了？
+                       && mActive;                  // 3. 当前 HIDDEN 态？— V 态不过滤
+```
+
+- 任意一层 false → **过滤直接放行**（朋友圈/会话/通讯录/搜索都看到密友）
+- **杂项功能（防撤回 f2、定位 f3）写法不同**：`isVipAuthorized() && isXxxEnabled()`，**不依赖** f1（密友开关与防撤回开关互相独立）
+
+### D. 4 层门控 — 每层"防什么"
+
+| 门 | 防的是什么场景 | 失败后用户看到什么 |
+|----|--------------|------------------|
+| **EntryGate** 入口门 | 别人随便拿到手机 → 看到密友入口 → 知道你在用 | 看不到设置入口；放大镜搜 `111111` 才能复活 |
+| **AuthGate** 授权门 | 破解党拿到 APK → 全功能白嫖 | 安装能装、能切状态，**但所有功能按钮灰色**；引流到购买 |
+| **StateGate** 状态门 | 老婆/老板拿过手机 → 一眼看到密友 | 模块当前 HIDDEN → 密友/密群/朋友圈密友帖 **全部消失** |
+| **RiskGate** 风险门 | 包被改 / 微信版本不对 / 服务器下发 killSwitch | **静默失效**：不崩溃、不弹窗，但所有 hook 都跳过，等同于没装模块 |
+
+**4 层互相独立**：EntryGate 通过 ≠ AuthGate 通过 ≠ 状态机 VISIBLE ≠ RiskGate 没触发。
+**4 层串联生效**：任意一层判定"该静默"，下游就放行。
+
+### E. 进程边界（Java sm vs C++ sm）
+
+| 进程 | 用哪个状态源 | 为什么 |
+|------|------------|--------|
+| `com.tencent.mm` 主进程 | **Java `StateMachine`**（单一权威）| Filter 链全在主进程，热刷新走 `RefreshBus` Java 端 |
+| `com.tencent.mm:push` 推送进程 | **C++ `NativeBridge.shouldBlockBadge()`** | push 进程没 UI、不读微信 DB，只判断"这条 unread 该不该写"。Java 静态字段跨不过去，必须 C++ |
+
+铁律 30：**Filter 链禁止读 C++ sm**；`:push` 进程禁止用 Java sm。两套状态由 P2 双写桥保持同步。
+
+### F. 代码里常见的英文符号 → 中文一句话
+
+| 代码符号 | 中文一句话 |
+|---------|----------|
+| `StateMachine` | 状态机：管 HIDDEN/VISIBLE/UNLOCKING 三态切换 |
+| `enterHidden()` / `exitHidden()` | 切到隐藏态 / 切出隐藏态（只能 SettingsEntry 按钮 + B 模块触发器调） |
+| `beginUnlock()` | 状态机进入"解锁中"——搜索框弹出时调 |
+| `isActive()` | 三层叠加：是否授权 + 密友总开关是否打开 + 当前是否 HIDDEN |
+| `isVipAuthorized()` | 当前 wxid 是否已经在服务器买了 license（v1 是 stub，永远返回 true）|
+| `isFeatureEnabled()` | 用户在设置页有没有手动关闭"密友功能"开关 f1 |
+| `AuthManager.evaluate()` | 评估当前 wxid + 设备 + license 的组合，输出 AUTH_OK / ACCOUNT_MISMATCH 等 |
+| `bindAccount()` | 通过 DebugServer `/api/bind_account` 建立首次绑定关系 |
+| `setAuthState()` | 把评估结果写进 C++ sm，让 :push 进程也知道（只有 AuthManager / bindAccount 能调）|
+| `NativeBridge.shouldBlockBadge()` | :push 进程问 C++：这条 unread 该不该写？|
+| `isTampered()` | RiskGate：包被改过 / 签名不对，进入 SAFE_MODE 全静默 |
+| `killSwitch` | 远程总闸：服务器下发"危险通告"后，全模块静默失效，等更新 |
+| `RefreshBus` | Java 端事件总线：状态切换后通知 Filter 链热刷新 |
+| `ConvFilter / MomentsFilter / ContactFilter / SearchFilter` | 会话 / 朋友圈 / 通讯录 / 搜索 — 四个过滤链，**都只读 `isActive()`** |
+| `SettingsEntry` | 微信"设置"页里注入的"密友设置"入口；HIDDEN 时不显示 |
+| `SearchUnlock` | 监听搜索框，输入默认口令 `111111` 时让模块从 HIDDEN → VISIBLE |
+| `PiracyNotice` | 检测到盗版后弹的引流窗（"独家功能 → 客服"）|
 
 ---
 
@@ -59,7 +148,7 @@ description: Guard Native 授权检查官（别名：授权执行官、授权门
 ┌─────────────────────────────────────────────────────────┐
 │  1. EntryGate  入口门                                    │
 │     入口口令（默认 111111，用户可改）                              │
-│     → 只负责打开设置页，不切状态，不授权                 │
+│     → v1：口令可显形+入口可见；不授权、不扩过滤           │
 ├─────────────────────────────────────────────────────────┤
 │  2. AuthGate  授权门                                     │
 │     wxid + device + license                             │
@@ -105,16 +194,18 @@ description: Guard Native 授权检查官（别名：授权执行官、授权门
 
 ### EntryGate — 口令链（不得扩写）
 
+> 当前 v1 裁决（见 `docs/GUARD_GATE_TRUTH.md`）：默认口令 `111111` 正确时，可以从 HIDDEN 显形并看到入口，且与授权无关。授权只决定能不能使用过滤、名单、通知策略等功能。该 v1 行为不得扩展成授权、绑定或功能开关逻辑。
+
 ```
 SearchUnlock（口令命中）
-  → SettingsEntry.unlockEntry() / showGuardDialog()   // 只开门
-  → （用户点对话框按钮后才进 StateMachine）
+  → v1: HIDDEN → VISIBLE + 入口重新可见（与授权无关）
+  → v2 target: SettingsEntry.unlockEntry() / showGuardDialog()
 ```
 
 | 模块 | 允许 | 禁止 |
 |------|------|------|
-| `SearchUnlock` | 检测口令 + 清空输入 + 调 SettingsEntry | **任何** StateMachine 写操作 |
-| `SearchFilter` | 过滤 + `tryUnlockFromSearchResults` **先于** filter | 触发状态切换 |
+| `SearchUnlock` | 检测默认口令 `111111` + 清空输入 + v1 显形/关闭搜索页 | 授权、绑定、功能开关、过滤逻辑 |
+| `SearchFilter` | 只做搜索结果过滤 / 透传 / 诊断日志 | 处理口令、触发状态切换、授权判断 |
 | `SettingsEntry` | 入口可见性 + dialog 内按钮切状态 | 绕过 dialog 自动切 H/V |
 
 ### AuthGate — 谁可以写 AUTH_STATE
@@ -140,6 +231,87 @@ SearchUnlock（口令命中）
 - ❌ 主进程 `NativeBridge.isHiddenWxid()` 做过滤决策
 - ❌ DebugServer 新 API 无 `isAuthOk()` 门控
 - ❌ 执行 AI「临时」`isVipAuthorized return true` 实装后未恢复 stub
+
+---
+
+## 零.六、模块边界 / 过滤位置 / 拆代码决策
+
+> **本节解决「乱接导致混乱」的根因**。绝大多数翻车不是状态机写错，而是 **逻辑放错文件了**——一个文件做了过滤 + 状态切换 + 授权三件事，结果谁也改不动。
+
+### A. 三大模块的职责单一性（违反即 BLOCK）
+
+| 模块 | 只做什么 | 绝不做什么 |
+|------|--------|----------|
+| **Filter 链**（ConvFilter / MomentsFilter / ContactFilter / SearchFilter / PushFilter / SearchFilter）| 读列表 → 按 wxid 判隐藏 → remove/GONE/setResult | **不写状态机、不读 C++ sm、不判授权、不刷新 UI、不弹通知** |
+| **StateMachine**（含 RefreshBus / NativeBridge 双写桥）| 三态转换 + MMKV 持久化 + Filter 链热刷新事件分发 | **不内嵌 AuthGate 判断、不直接调 Filter API、不读微信 DB** |
+| **AuthManager**（含 LicenseGate / bindAccount）| 评估 wxid+device+license → 写 AUTH_STATE | **不切状态、不动 Filter、不弹 UI** |
+
+**自检三问**（每次新增/改动代码必答）：
+1. 这段代码**属于哪一类**？Filter / State / Auth / B-触发器 / UI / Debug / 杂项
+2. 它**调了别的类**吗？调了就要看是 **白名单调用**还是**乱接**
+3. 我**想在 A 类里加 B 类的逻辑**——为什么不直接放进 B 类？
+
+### B. 「这逻辑该写在哪」决策树
+
+```
+要新加一段逻辑 →
+├─ 跟「读微信列表 → 判隐藏 → 移掉」相关？
+│    → Filter 链。**只读 isActive()**，禁止其他门控操作
+│
+├─ 跟「H/V/U 切换 / cache 写入 / 刷新事件」相关？
+│    → StateMachine 或 RefreshBus。改前必须本 skill 审
+│
+├─ 跟「wxid+device 绑定 / license 判断」相关？
+│    → AuthManager。改前必须本 skill 审
+│
+├─ 跟「摇一摇/Home/锁屏/返回」相关？
+│    → B 模块触发器。**调 StateMachine 已暴露的触发 API**，禁止自创捷径
+│
+├─ 跟「通知 / 角标 / unread」相关？
+│    → :push 进程的 PushFilter / NotifyPolicy。**只读 C++ sm**，禁止 UI
+│
+├─ 跟「弹设置页 / 入口可见性」相关？
+│    → SettingsEntry。dialog 内按钮可以调状态机，dialog 外不行
+│
+└─ 跟「采集 KPI / 抓 wxid / Frida 探针」相关？
+     → 工具脚本，**不进生产代码**
+```
+
+### C. 何时该「拆代码」—— 4 条触发条件
+
+满足任意一条 → 必须把当前文件拆成多个。**本 skill 在审查时如果命中，输出 BLOCK + 拆分建议**。
+
+| # | 触发 | 实例 |
+|---|------|------|
+| 1 | **一个 .java 文件 > 800 行** | `ConvFilter.java` 当前膨胀严重，应分 `ConvFilter`（仅过滤主体）+ `ConvHotReload`（H↔V 注回）+ `ConvCache`（cache 数据结构） |
+| 2 | **一个文件同时操作两个模块的私有字段** | 一个文件既 `sm.mActive=` 又 `convAdapter.q.d=` → 拆 |
+| 3 | **同一函数内做了两件不同性质的事** | `onTriggerHide()` 里既切状态又清 cache 又发通知 → 拆 |
+| 4 | **复制粘贴 ≥ 30 行同类代码 ≥ 2 次** | 三个 Filter 都用同一个 `extractWxid` → 抽到 `WxidExtractor` 静态工具类 |
+
+### D. 何时该「保持过滤 inline」—— 不拆代码的反例
+
+| 触发 | 实例 |
+|------|------|
+| 一个 hook 入口对应单一 Filter，逻辑 < 100 行 | `ContactFilter` 单点 hook fc5.g → 不需要拆 |
+| 临时调试代码 / 探针 | TODO 标记 + 一次性，不拆 |
+| 性能敏感的内联检查 | `if (!StateMachine.isActive()) return;` 一行守卫，不抽 |
+
+### E. 乱接典型 BLOCK 案例（见过的实战教训）
+
+| 反例 | 乱在哪 | 正确姿势 |
+|------|------|--------|
+| ConvFilter L4 hook 里写「`if (state==H) sm.exitHidden();`」"自动恢复" | Filter 写状态机 = 反人类 | 状态切换必经 SettingsEntry/B 触发器 |
+| 一个 `Util.java` 里既有 `extractWxid`、`shouldHide`、`enterVisible`、`encryptKey` | 责任混 | 拆 4 个工具类：WxidExtractor / HideJudge / StateTransition / Crypto |
+| 防撤回 hook 写在 `ConvFilter.java` 里"反正都在会话页" | f1 密友开关 ≠ f2 防撤回开关，混进 ConvFilter 让两个开关纠缠 | 防撤回单独建 `AntiRecallFilter.java` |
+| SearchUnlock 监听到 111111 后直接调 ConvFilter.clean | 入口口令 ≠ 状态切换 ≠ 过滤刷新 | 三段拆开：SearchUnlock 调 `sm.beginUnlock()`，状态机走 RefreshBus，Filter 监听事件 |
+
+### F. 审查报告新增第 9 项（与 §五 8 项并行）
+
+```
+9. 模块边界是否清晰
+   → 是/否  证据: [文件名 / 行号 / 跨模块字段操作描述]
+   → 是否需要拆代码: 是/否  拆分建议: [...]
+```
 
 ---
 
@@ -220,7 +392,7 @@ SearchUnlock（口令命中）
 | `core/StateMachine.java` | 状态转换逻辑 + isVipAuthorized stub |
 | `core/RefreshBus.java` | 状态变化广播 → Filter 热刷新入口，不得绕过 |
 | `core/Bridge.java` | licensedWxid / deviceHash / myWxid 读写 |
-| `moduleB/SearchUnlock.java` | 入口口令语义（只开门，不授权，不切状态，entry passcode）|
+| `moduleB/SearchUnlock.java` | 入口口令（v1 H→V + 入口可见；不授权、不扩过滤）|
 | `moduleB/SettingsEntry.java` | showGuardDialog() 的状态切换/功能开关按钮 AUTH 门控 |
 | `moduleB/TriggerGuard.java` | B1/B2/B5 触发器（StateGate 写入者），触发判定漏洞 = V→H 误触（2026-05-25 锁定） |
 | `debug/DebugServer.java` | 所有 isAuthOk() 门控接口 |
@@ -247,8 +419,8 @@ SearchUnlock（口令命中）
 ### 3.1 EntryGate 审查
 
 ```
-□ SearchUnlock 密码命中后，是否只打开设置页（不切状态机）？
-□ SearchUnlock 是否不调用 StateMachine.exitHidden / enterVisible / beginUnlock / attemptUnlock？
+□ SearchUnlock 口令命中后，是否仅做 v1 允许的状态切换（HIDDEN→UNLOCKING→VISIBLE）+ 关搜索页，**不**扩授权/过滤？
+□ SearchUnlock 是否未私自调用 exitHidden 或绕过 beginUnlock/attemptUnlock 链？
 □ 入口口令存储在 StateMachine（sm.getPassword()），是否被误用为授权码？
 □ 入口口令是否可被用户自由修改（不影响授权绑定）？
 □ 入口口令修改 API（DebugServer）是否已加 isAuthOk() 门控？
@@ -307,7 +479,7 @@ SearchUnlock（口令命中）
 
 ---
 
-## 五、审查报告格式（强制 8 项输出）
+## 五、审查报告格式（强制 9 项输出）
 
 授权检查官每次审查必须输出以下全部内容，不得省略：
 
@@ -319,7 +491,7 @@ SearchUnlock（口令命中）
 涉及文件: [被改动的保护区文件列表]
 
 ─────────────────────────────────────────
-必答 8 项（每项必须给出 是/否 + 证据行）
+必答 9 项（每项必须给出 是/否 + 证据行）
 ─────────────────────────────────────────
 1. 是否乱接状态机（SearchUnlock/SettingsEntry/DebugServer 私自切 H/V）
    → 是/否  证据: [代码行/方法名]
@@ -342,7 +514,11 @@ SearchUnlock（口令命中）
 7. 是否有保护区文件被改但未经本 skill 审查先行
    → 是/否  证据: [文件名 + 改动描述]
 
-8. 最小修复建议（如有问题）
+8. **模块边界是否清晰**（见 §零.六 — 防"乱接导致混乱"）
+   → 是/否  证据: [跨模块字段写入 / 同文件做多件事 / 复制粘贴 ≥ 30 行 ≥ 2 次 等]
+   → 是否需要拆代码: 是/否  拆分建议: [若是，1-3 条最小拆分方向]
+
+9. 最小修复建议（如有问题）
    → [1-3 条最小改动描述，不改代码，只写方向]
 
 ─────────────────────────────────────────
@@ -415,66 +591,41 @@ BLOCK 原因: [如有，必填]
 
 ---
 
-## 八、补充铁律（上方 ⛔ 未覆盖的关键规则）
+## 八、补充铁律 + 授权/开关分层（2026-05-25 锁定）
 
-1. **SearchUnlock 不调用 StateMachine.exitHidden / enterVisible / beginUnlock / attemptUnlock。** 状态切换只在 SettingsEntry 对话框按钮内走 StateMachine。
-2. **H/V 热切完整链路：入口口令命中 → SettingsEntry(对话框按钮) → StateMachine → RefreshBus → Filter。** 任何角色不得绕过此链路。
-3. **授权评估结果（AUTH_STATE）只由 AuthManager + bindAccount 写入，其他模块只读。**
-4. **v1 简化项（isVipAuthorized stub / 放行策略）不得在 v2 前擅自升级。**
+### 8.1 补充铁律
 
----
+1. **v1 默认口令 `111111` 正确 → 仅 H→V 显形 + 入口可见，与授权无关**。SearchUnlock 不得扩展授权 / 绑定 / 功能开关 / 过滤逻辑。
+2. **SearchFilter 永远不处理口令，不写 StateMachine**。搜索过滤与入口显形必须分离。
+3. **AUTH_STATE 只由 `AuthManager` + `bindAccount` 写入**，其他模块只读。
+4. **v1 简化项（`isVipAuthorized` stub / MISMATCH/NO_LICENSE 放行）v2 前不得自行升级**。
 
-## 九、授权与功能开关分层设计（2026-05-25 锁定）
-
-### 9.1 授权是所有功能的前提
+### 8.2 授权 → 功能开关 分层
 
 ```
-没有授权（isVipAuthorized=false）
-  → 一切功能全部关闭，包括：
-      - 密友过滤（isActive=false，朋友圈/会话/通讯录/搜索全部放行）
-      - 设置页所有功能按钮（禁用，提示"需要授权"）
-      - 杂项功能（防撤回/定位等，同样不工作）
-  → 但以下仍然可以：
-      - 输入口令触发状态机 H/V 切换（状态机本身不受授权影响）
-      - 看到"量子密友"入口，进入设置页（界面可见，功能不可用）
+isVipAuthorized = false
+  ├─ 过滤关闭（朋友圈/会话/通讯录/搜索全部放行）
+  ├─ 设置页按钮禁用，提示"需要授权"
+  └─ 杂项功能（防撤回/定位）一并不工作
+  但仍允许：口令触发 H/V 切换 + 看到入口（功能不可用）
 
-有授权（isVipAuthorized=true）
-  → 进入功能开关层，各功能独立控制
+isVipAuthorized = true
+  └─ 进入功能开关层，各功能独立：
+       f1 密友开关 → 控制密友过滤与 H/V 过滤效果
+       f2 防撤回（v2）/ f3 定位（v2-3）→ 与 f1 完全独立
 ```
 
-**铁律：isVipAuthorized() 必须保留在 isActive() 中。**
-❌ 禁止以"过滤是隐私保护、不应受 license 影响"为由将其移除。
-产品设计明确：无授权 = 无产品，包括隐私保护功能。
+**铁律：** `isVipAuthorized()` 必须保留在 `isActive()` 中——无授权 = 无产品（含隐私）。
+**铁律：** 杂项开关写 `isVipAuthorized() && isXxxEnabled()`，**禁止**写 `isFeatureEnabled() && isXxxEnabled()`（不依赖 f1）。
 
-### 9.2 功能开关各自独立（授权后才有意义）
-
-```
-f1：密友功能开关（isFeatureEnabled）
-    控制：密友过滤、H/V 状态机过滤效果
-    不影响：防撤回、定位等杂项
-
-f2：防撤回开关（v2 待加）
-    控制：消息防撤回功能
-    不受 f1 影响，独立开关
-
-f3：定位开关（v2/v3 待加）
-    控制：位置伪装功能
-    不受 f1 影响，独立开关
-```
-
-**铁律：杂项功能开关（f2/f3 等）与密友开关（f1）完全独立。**
-❌ 禁止把杂项功能的启用判断写成 `isFeatureEnabled() && isXxxEnabled()`（依赖 f1）。
-✅ 正确写法：`isVipAuthorized() && isXxxEnabled()`（只依赖授权 + 自身开关）。
-
-### 9.3 isActive() 三层门控最终定义（不得修改）
+### 8.3 isActive() 三层门控（最终定义，不得修改）
 
 ```java
 public boolean isActive() {
-    return isVipAuthorized()                         // 层1：授权门
-        && Bridge.getInstance().isFeatureEnabled()   // 层2：密友功能总开关（f1）
-        && mActive;                                  // 层3：当前 HIDDEN 态
+    return isVipAuthorized()                       // 层1：授权门
+        && Bridge.getInstance().isFeatureEnabled() // 层2：密友总开关 f1
+        && mActive;                                // 层3：HIDDEN 态
 }
 ```
 
-此方法只用于**密友过滤**决策，不用于其他功能。
-v2 接入 LicenseGate 时，只替换 `isVipAuthorized()` 的实现，结构不变。
+此方法**只用于密友过滤决策**。v2 接 LicenseGate 时只换 `isVipAuthorized()` 实现，结构不变。

@@ -38,10 +38,10 @@
 
 ## 派出的 T 调研任务（便宜模型可做）
 
-| T 号 | 主题 | 派出窗口 | 状态 | 资料员维护 |
+| T 号 | 主题 | 派出窗口 | 状态 | 任务定义存档 |
 |:--:|------|:--:|:--:|------|
-| T05 | 8.0.66 SnsObject Proto 类定位 | W2 | ⬜ | `02_docs_资料员/T_TASKS/T05.md` |
-| T07 | 通讯录 hook 点调研（v1 第 2 月）| — | ⬜ | `02_docs_资料员/T_TASKS/T07.md` |
-| T08 | 防撤回 hook 点调研（v2）| — | ⬜ | `02_docs_资料员/T_TASKS/T08.md` |
+| T05 | 8.0.66 SnsObject Proto 类定位 | W2 | ⬜ | `docs/archive/wechat_8066/tasks/T05_SnsObject_文档员.md` |
+| T07 | 通讯录 hook 点调研（v1 第 2 月）| — | ⬜ | `docs/archive/wechat_8066/tasks/T07_ContactStorage_文档员.md` |
+| T08 | 防撤回 hook 点调研（v2）| — | ⬜ | 已删除（02_docs_文档员 已并入 guard-review）|
 
-> T 任务由资料员维护，单任务执行 skill 派出
+> T 任务由 guard-review_质检门控 skill 的资料功能维护，新任务投放 `04_review_审稿复核/T_TASKS/`

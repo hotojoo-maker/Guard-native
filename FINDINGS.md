@@ -16,3 +16,7 @@
 [2026-05-22 15:00] 校准：私有化阶段补的是桌面角标/未读数字，不是朋友圈发现 tab 红点 | 证据：`apk2/_1__B_rewrite/05_docs/PROGRESS.md` Issue #23 (isVipMode语义修复) + #24 (h0.d角标注入) 均为桌面图标角标；Catfish hookSnsMsgList 是原版 Pine hook，非私有化新增；Guard P21 在 8.0.71 扫描 hookSnsMsgList 等价入口 = 0 hooks，不再回查，走自研 Layer0b+Layer2+v18 | 下一步：P21 继续按自研三层验证
 
 [2026-05-21 16:00] 朋友圈小红点 wxid 漏斗 — 卡关总结 | 已证实：① ns.c 聚合桶归零=全屏蔽（Frida 直接反射 OK）；② FindMoreFriendsUI.L1() 入口（`com.tencent.mm.ui.FindMoreFriendsUI`），无参数，内部读 this 某 List → 算 y → 写 ns.c.g；③ bm.b.call() 是上游瓶颈但未 dump 到内部 List。已证伪：7 条旧路径全零触发；AbstractCursor.getString 零命中（微信 WCDB 自有 Cursor 不走 Android AbstractCursor）；逐层 Frida dump 字段太慢。卡点：L1() 内部的 List 字段名 + item 类名 + wxid 字段名三个值未拿到 | 建议：资料员 jadx 静态追溯 FindMoreFriendsUI.L1() → 字段赋值 → 上游数据源，比设备逐层 dump 快
+
+[2026-05-27 00:30] widerprobe_v1.log(1525行) 搜索数据流全貌 | ①z15.ef6→LinkedList.add→聊天记录FTS,无wxid,p=ch6(pb消息)待深挖 ②fz2.e c≠3→ArrayList.addAll size=1→通讯录匹配,g=SOSItemRelevant:wxid✅ ③fz2.e c=3→addAll size=1→聊天记录内联,g=UIN缺映射 ④kc5.y→addAll size=17→会话匹配,d→l4→C0()✅ ⑤搜索页Adapter=q2 | 证据：widerprobe_v1.log SF:ALLseen #45 fz2.e + SF:DUMP z15.ef6完整字段 | 下一步：往搜索上游深挖(不在列表层删/堵)，用户准备重新抓日志
+
+[2026-05-27 00:30] PushFilter通知链路 | Frida实证NM.notify()在8.0.71被调用但Xposed hook零命中→hook签名可能不匹配(notify(tag,id,N) vs notify(id,N)) | 8.0.71链: w.handleMessage→x.d→m0.a→e0.a→a.a→NI.a(Context)[final,ART内联]→z2.n1.c→NM.notify | :push LLseen 24类+主进程49+类均无NotificationItem | PF:VV+PF:MP正常拦截但通知内容层未拦截 | SettingsEntry B2 H/V态都不显示,疑似setResult(null)对void不可靠

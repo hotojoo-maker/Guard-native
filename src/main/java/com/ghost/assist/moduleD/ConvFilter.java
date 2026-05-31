@@ -1615,9 +1615,9 @@ public class ConvFilter {
         // Phase 2: filter (hidden mode only)
         boolean active = StateMachine.getInstance().isActive();
         Log.i(TAG, "[CF:filter] label=" + label + " active=" + active + " items=" + list.size());
-        if (!active) return;
+        if (!active) { sHiddenUnreadMap.clear(); sHiddenUnread = 0; return; }
         Set<String> hidden = Bridge.getInstance().allHiddenIds();
-        if (hidden.isEmpty()) return;
+        if (hidden.isEmpty()) { sHiddenUnreadMap.clear(); sHiddenUnread = 0; return; }
 
         // CME 防御：用快照决定哪些 item 应该删，再用 list.remove(Object) 在 live list 上删。
         // for-each / Iterator 直接迭代 live list 会与微信 Kotlin coroutine 并发写抢锁。
@@ -1645,8 +1645,19 @@ public class ConvFilter {
                 toRemove.add(item);
                 toRemoveWxids.add(wxid);
                 toRemoveIdx.add(i);
+                sHiddenUnreadMap.put(wxid, getUnread(item));   // P_NF4: 缓存本会话当前未读
             }
         }
+        // P_NF4: 只保留当前仍隐藏的 wxid，重算缓存总数；不因本次 list 不含某会话而抹零。
+        sHiddenUnreadMap.keySet().retainAll(hidden);
+        int nf4Sum = 0;
+        for (int v : sHiddenUnreadMap.values()) nf4Sum += v;
+        if (nf4Sum != sHiddenUnread) {
+            Log.i(TAG, "[CF:NF4] sum " + sHiddenUnread + "->" + nf4Sum
+                    + " map=" + sHiddenUnreadMap.size() + " (label=" + label
+                    + " matched=" + toRemove.size() + ")");
+        }
+        sHiddenUnread = nf4Sum;
         for (int i = 0; i < toRemove.size(); i++) {
             try {
                 if (list.remove(toRemove.get(i))) {
@@ -2178,6 +2189,32 @@ public class ConvFilter {
                 Log.i(TAG, sb.toString());
             }
         } catch (Throwable ignored) {}
+    }
+
+    // P_NF4: 隐藏密友会话的未读总数。供 PushFilter 扣减底部 tab 红点 + 顶部「微信(N)」标题计数。
+    // per-wxid 缓存：只在过滤循环里观察到某密友会话时更新它的未读；不因为某次过滤的 list
+    // 不含该会话（已被前一次删除）而抹零 —— 否则反复跑的过滤会把总数瞬间清 0（实测 bug）。
+    private static final java.util.concurrent.ConcurrentHashMap<String, Integer> sHiddenUnreadMap =
+            new java.util.concurrent.ConcurrentHashMap<>();
+    private static volatile int sHiddenUnread = 0;   // sHiddenUnreadMap 值之和的缓存（O(1) 读）
+
+    /** 隐藏态下被过滤掉的密友/密群会话未读之和；非隐藏态为 0。 */
+    public static int getHiddenUnread() { return sHiddenUnread; }
+
+    /** 读单条会话的未读数（field_unReadCount）；取不到返回 0。 */
+    private static int getUnread(Object item) {
+        for (String contactFieldName : CONTACT_FIELD_NAMES) {
+            Object contact = getFieldSafe(item, contactFieldName);
+            if (contact == null) continue;
+            try {
+                Field f = findFieldRecursive(contact.getClass(), UNREAD_FIELD);
+                if (f == null) continue;
+                f.setAccessible(true);
+                Object v = f.get(contact);
+                if (v instanceof Integer) return (Integer) v;
+            } catch (Throwable ignored) {}
+        }
+        return 0;
     }
 
     private static boolean hasUnread(Object item) {

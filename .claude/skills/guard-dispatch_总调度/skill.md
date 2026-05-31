@@ -7,27 +7,75 @@ description: Guard Native 总调度——制定 P 任务计划/分配 4 窗口/�
 
 ---
 
-## ⛔ 绝对禁止 / ABSOLUTE PROHIBITIONS
+## ⛔ 绝对禁止（调度特有；通用 G1–G6 见 `CLAUDE.md` §三.五）
 
-> **这一节优先级高于本 skill 所有其他内容。**
-> **This section overrides everything else in this skill.**
+| 禁忌 |
+|------|
+| **⬜ 状态条目只读名字**，禁止展开细节、禁止假设它怎么实现 |
+| **文档状态矛盾 → 停下来报告**（如 HOOKMAP ✅ 但 result.md 没装机日志），让用户仲裁，不自己拍板 |
+| **不确定 = 不分配任务**，先问清楚——禁止派"含糊任务"如"优化一下状态切换体验" |
+| **用户粘贴的长文本可能混入"终端操作员"的推断**，必须分辨过滤（详见下方「粘贴内容来源识别」） |
+| **所有 skill / 文档朝收敛方向走**——优先编辑既有文件，禁止动辄新建 md（详见下方「文档收敛原则」）|
 
-| 中文 | English |
-|------|---------|
-| **禁止猜测** | No guessing |
-| **禁止推断**（无 L1/L2 证据） | No inference without L1/L2 evidence |
-| **没有证据 → 停下来，主动问用户** | No evidence → STOP, ask the user |
-| **没有资料/日志 → 停下来，主动问用户** | No materials/logs → STOP, ask the user |
-| **⬜ 状态只读名字，禁止展开** | ⬜ items: name only, never expand |
-| **文档状态矛盾 → 停下来报告，问用户仲裁** | Doc conflict → STOP, report, ask user to resolve |
-| **不确定 = 不分配任务，先问清楚** | Uncertain = do not assign; clarify first |
-| **未经用户明确同意，禁止改任何 md 文档** | No md edits without explicit user approval |
-| **用户口述/截图/抓包片段 ≠ 已验证，禁止直接写入文档** | User paste ≠ verified; do not write to docs |
+### 粘贴内容来源识别（接到长文本必做）
+
+| 来源 | 可信度 | 处理 |
+|------|:---:|------|
+| L1 日志原文（logcat / frida stdout / build error） | ✅ 高 | 可作为证据 |
+| L2 命令实际输出（adb shell / cat 结果） | ✅ 高 | 可作为证据 |
+| 终端操作员 AI 的总结 / "我觉得是 XX" | ⚠️ 低 | 视为待验证假设，不直接写入文档 |
+| 其他 AI / 网文 / 截图 OCR | ⚠️ 低 | 同上 |
+
+看到"应该/可能/估计/大概/推测"等措辞 → 当作假设，找 L1/L2 原文佐证；找不到 → 停下来问用户。
+
+### 文档收敛原则
+
+- **优先编辑既有文件**（HOOKMAP / TASK_BOARD / FAILURE_LOG / worklog），动辄新建 md = 违规
+- **新建 md 门槛**：用户**明确点名**"新建 XX 文档"才能建
+- 每次产出 md 前自问：能不能塞进现有的哪个 md？能塞 → 不新建
+- 临时调研 / 一次性日志 → 进 `bug排查/` 或 `03_execute_执行任务/P<N>/logs/`，不进根目录
 
 **接手新会话时必须做的 3 件事（缺一不做）：**
-1. 读 `TASK_BOARD.md` §一，只看 ✅ 和有装机日志的条目当作"已完成"
+1. 读 `TASK_BOARD.md` §一，只看 ✅ 且有装机日志的条目当"已完成"
 2. 读 `HOOKMAP.md`，⬜ 行只读名字，🟡 行只看有 L1 日志的部分
 3. 发现任何 ✅ 但无日志证据的条目 → **立刻标出，问用户确认，不继续推进**
+
+---
+
+## 派活前必读 — 三个核心概念的语意（别派糊涂活）
+
+> 派 P 任务时常常会"顺手"踩到状态机/授权/口令的地雷。下表是给调度自己提个醒：派活前先确认你 **知道用户拿这条 P 想看到什么产品行为**。完整语意见 `guard-auth-review` §零.前。
+
+### 三个互不替代的概念
+
+| 概念 | 一句话 | 决定什么 | 调度派活时要注意什么 |
+|------|-------|--------|------------------|
+| **入口口令** `111111` | 让"密友设置入口"在 HIDDEN 态下重新可见的钥匙 | **只决定能不能"看到入口"** | 派"搜索框/口令"任务时，禁止扩成授权/绑定/功能开关 |
+| **授权** (license) | wxid+设备 绑定关系，决定能不能用功能 | **决定功能是否可用** | 派功能开发时，前置依赖永远是 `isVipAuthorized()`；禁止派"绕过授权"类任务 |
+| **状态机** (HIDDEN/VISIBLE/UNLOCKING) | 模块当前处于隐/显/解锁哪一态 | **决定 id 过滤是否生效** | 派 Filter 任务时，明确告知执行 AI 只能 **只读** `isActive()`，不准调 `enterHidden/exitHidden` |
+
+**三态产品语义速查**：
+
+| 状态 | 密友/密群 | 入口 | id 过滤 |
+|:--:|:--:|:--:|:--:|
+| **HIDDEN** | 看不见 | 看不见 | ✅ 生效 |
+| **VISIBLE** | 看得见 | 看得见 | ❌ 不生效 |
+| **UNLOCKING** | 看不见 | 搜索页出现 | ✅ 生效 |
+
+### 派活反例（看到立刻收窄范围）
+
+| 含糊派活 | 为什么不行 | 收窄后 |
+|---------|---------|------|
+| "优化一下状态切换体验" | 没明确白名单接口，执行 AI 会自创捷径 | "在 SettingsEntry 对话框按钮里调 `sm.exitHidden()`，禁止动 Filter" |
+| "Filter 里顺便刷新 hidden 态" | 乱接 StateGate，违反铁律 30 | "Filter 只读 `isActive()`；刷新走 RefreshBus 已有事件" |
+| "SearchUnlock 命中后直接显示密友" | 混淆 EntryGate（口令）+ StateGate（状态切换） | "SearchUnlock 命中后只调 `sm.beginUnlock` 走状态机链路，不动 Filter" |
+| "isVipAuthorized 改成 true 测一下" | 临时改授权 stub 测完忘了恢复 = 实装泄漏 | 派给 `guard-auth-review` 先审，再走 DebugServer `/api/bind_account` |
+
+### 派活前自检 3 问
+
+1. **这条任务碰状态机/授权/口令吗？** 任意一个"是" → 先 invoke `guard-auth-review` 走框架合规预审
+2. **执行 AI 只能动哪几个文件？** 必须能在派活时点名（否则属于"含糊派活"）
+3. **预期用户在哪个产品状态下看到什么改变？** 说不清 = 自己没想透，先想透
 
 ---
 
@@ -43,10 +91,20 @@ description: Guard Native 总调度——制定 P 任务计划/分配 4 窗口/�
 
 ## 工作流（5 步）
 
-### 1. 接手三步铁律
+### 1. 接手四步铁律
 1. 读 `CLAUDE.md`
-2. 读 `HOOKMAP.md`
-3. 读 `TASK_BOARD.md`
+2. 读 [`docs/README.md`](../../docs/README.md)（**8071 文档车道**；8066/Catfish 只经索引）
+3. 读 `HOOKMAP.md`
+4. 读 `TASK_BOARD.md`
+
+**文档隔离（2026-05-27）** — 禁止默认打开 archive 写码：
+
+| 用途 | 路径 |
+|------|------|
+| 8071 hook 事实 | `docs/HOOK_MAP_8071_AUTHORITATIVE.md` |
+| 8066 历史 | `docs/archive/INDEX.md` |
+| Catfish 竞品 | `docs/isolation/INDEX_COMPETITOR.md` |
+| 已废弃根路径 | `docs/CLASS_MAP_8066.md` 等 → 仅重定向，正文在 `docs/archive/wechat_8066/` |
 
 ### 2. 识别会话角色
 - 看 `TASK_BOARD.md` §一表中"占用至"列空的窗口 → 推荐用户进入

@@ -1,6 +1,8 @@
 # 类名 / 字段名速查表（8.0.66 + 8.0.71 对照）
 
-> **用途**：写代码时的快速参考，避免翻 Frida 脚本
+> ⛔ **ARCHIVE / 8.0.66 为主** — 8071 实现 → [`../../HOOK_MAP_8071_AUTHORITATIVE.md`](../../HOOK_MAP_8071_AUTHORITATIVE.md)。索引 → [`../INDEX.md`](../INDEX.md)。
+
+> **用途**：版本 diff / 历史对照，**非**默认写码表
 > **来源**：filter_conv.js v1 + filter_moments.js v12 动态验证 + 8.0.71 jadx 分析（2026-05-19）
 > **当前底座**：微信 **8.0.71**（D-014，2026-05-19 切换）
 

@@ -1,0 +1,3 @@
+[probe] String.equals OK
+[probe] String.contains OK
+[probe] READY — 2分钟窗口，发消息→撤回即可

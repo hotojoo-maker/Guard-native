@@ -10,21 +10,22 @@ description: Guard Native 专属终端操作员——PowerShell/adb/frida/build 
 
 ---
 
-## ⛔ 绝对禁止 / ABSOLUTE PROHIBITIONS
+## ⛔ 绝对禁止（终端特有；通用 G1–G6 见 `CLAUDE.md` §三.五）
 
-> **这一节优先级高于本 skill 所有其他内容。**
-> **This section overrides everything else in this skill.**
+| 禁忌 |
+|------|
+| **没有证据不准乱推测带方向**——日志没出之前，不能给用户"应该是 XX 原因"这种带方向的猜测 |
+| **没有日志输出 → 停，给一条指令，等回复**——禁止 adb/frida 命令一条接一条往下灌 |
+| **出现报错 → 完整引用原文**，不意译，不猜原因；用户看到的就是日志原文 |
+| **操作时必须与用户交互**，禁止自动推进——每跑完一条命令等用户回话 |
+| **必须明确当前在哪个界面/页面**，再发下一步命令；"你现在在 XX 页面对吗？"这一句别省 |
 
-| 中文 | English |
-|------|---------|
-| **禁止猜测** | No guessing |
-| **禁止推断设备状态** | Never infer device state without output |
-| **没有日志输出 → 停，给用户一条指令，等回复** | No log output → STOP, give one command, wait |
-| **没有命中 → 不改代码，先问"看到 XX 日志了吗"** | No hit → don't change code, ask "did you see XX log?" |
-| **出现报错 → 完整引用报错原文，不意译，不猜原因** | Error → quote verbatim, no paraphrase, no guessing cause |
-| **不确定类名/字段名 → 停下来主动问** | Uncertain class/field name → STOP and ask |
+### 交互强制流程（每次设备操作前自查）
 
----
+1. **当前界面是什么？** —— 先问"你现在在 XX 页面对吗？"得到确认再发命令
+2. **下一步要去哪？** —— 明确告诉用户"请进入 XX 页面，然后点 XX 按钮"
+3. **预期看到什么日志/现象？** —— 提前声明命中关键词
+4. **拿不到任一答案 → 立刻停**，禁止"应该/大概/估计"等推测语言
 
 ---
 
@@ -32,9 +33,27 @@ description: Guard Native 专属终端操作员——PowerShell/adb/frida/build 
 
 1. **每条命令执行前，先一句中文说目的**（不是复述命令本身）
 2. **日志 > 500 行 → 强制多代理分析**（见"日志分析"节）
-3. 设备操作失败 → 立刻停，给用户**一条具体修复指令**，等回复
-4. 禁止假设设备状态，禁止"可能是 XXX"后直接改代码
-5. PowerShell 里用 `;` 串命令，不用 `&&`；用 `Select-String` 不用 `grep`
+3. 设备操作失败 → 立刻停，给**一条具体修复指令**，等回复
+4. PowerShell 里用 `;` 串命令，不用 `&&`；用 `Select-String` 不用 `grep`
+
+---
+
+## 日志关键词速查（看懂状态机/授权日志在说什么）
+
+> 终端不写门控代码，但日志里满屏 `state=H / state=V / sm.beginUnlock / AUTH_OK` 等术语，看不懂就没法判断装机是否成功。完整语意见 `guard-auth-review` §零.前。
+
+| 日志关键词 | 含义 | 健康标志 |
+|----------|------|--------|
+| `state=H` / `state=V` / `state=U` | 当前状态机 = HIDDEN / VISIBLE / UNLOCKING | 与用户口述操作一致即可 |
+| `[CF:L4] entry adapter=v0 cleaning=false state=H` | ConvFilter 在 HIDDEN 态做清扫 | 应该看到 `cleaned=N`，N>0 = 命中 |
+| `[SU] entry passcode matched` | 入口口令 `111111` 命中 | 紧接着应有 `H→V` 状态切换日志 |
+| `[CF:warmAll:BUS-V] expanded=N` | H→V 时 warm 出 N 个会话条目 | N ≥ 隐藏 id 数 |
+| `WXID-MISMATCH` | 群聊 wxid 抽取与 hidden id 不一致 | 配合 `using id as key` = 已修复 |
+| `AUTH_OK` / `AUTH_NO_LICENSE` / `AUTH_TAMPERED` | AuthGate 评估结果 | v1 期间 `isVipAuthorized` 是 stub → 永远 true |
+| `RiskGate SAFE_MODE` / `killSwitch` | 风险门触发，全链路静默 | 正版调试时永远不该出现 |
+
+**关键提醒**：日志里 `state=V` ≠ 授权通过。**别在汇报里把"输了 111111 进 V 态"等同于"已激活授权"**——它们是两条不相干的链路。
+**SET 诊断避坑**：`hook5 patched` 在 `onBindViewHolder` 里，8.0.71 设置页 RecyclerView 从不触发 onBindViewHolder → 永远零条；验收时 grep `wave-` 替代，例如 `wave-3000ms patched orig=...`。
 
 ---
 
@@ -202,6 +221,12 @@ Get-Content "logs\xxx.log" | Select-Object -Last 200 | Set-Content "logs\part3.t
 ```
 
 派 3 个 explore 子代理各读一段，任务：找 ERROR/WARN/关键事件，汇总一张表给用户。
+
+---
+
+## 文档车道（8071）
+
+终端只验 log，不改门控代码。读文档时：**8071** → `docs/HOOK_MAP_8071_AUTHORITATIVE.md`；**8066 历史** → `docs/archive/INDEX.md`；入口 → `docs/README.md`。
 
 ---
 

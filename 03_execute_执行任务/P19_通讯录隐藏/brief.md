@@ -82,8 +82,8 @@ int hookContactCount(int count) {
 
 ## 参考路径
 
-- `docs/HOOK_MAP_V1.md` §6–7  
-- `docs/HOOK_POINTERS.md` §通讯录  
+- `docs/archive/wechat_8066/HOOK_MAP_V1.md` §6–7（历史规划）  
+- `docs/HOOK_MAP_8071_AUTHORITATIVE.md` §通讯录（8071 现役事实，替代已删的 HOOK_POINTERS.md）  
 - `refs/MainEntry.java` 303–325, 374–381  
 - `refs/UserControll.java` 214–216, 837–843  
-- `02_docs_资料员/T_TASKS/T07_ContactStorage_8066.md`
+- `docs/archive/wechat_8066/tasks/T07_ContactStorage_文档员.md`（T07 历史任务定义）

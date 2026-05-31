@@ -222,7 +222,7 @@ F04 会话隐藏
 
 ### AI 要做什么
 
-- [ ] 先重新核对 `docs/HOOK_POINTS.md`
+- [ ] 先重新核对 `docs/HOOK_MAP_8071_AUTHORITATIVE.md（8071；8066 历史 → docs/archive/INDEX.md）`
 - [ ] 再核对 `refs/FAILURE_LOG.md`
 - [ ] 确认采用哪个已验证方案
 - [ ] 创建 `MomentsFilter.java`
@@ -239,7 +239,7 @@ F04 会话隐藏
 
 ### 特别提醒
 
-`docs/HOOK_POINTS.md` 和 `refs/FAILURE_LOG.md` 里对 F05 的最终方案记录不完全一致。  
+`docs/HOOK_MAP_8071_AUTHORITATIVE.md（8071；8066 历史 → docs/archive/INDEX.md）` 和 `refs/FAILURE_LOG.md` 里对 F05 的最终方案记录不完全一致。  
 AI 做 F05 之前，必须先整理清楚，不允许直接开写。
 
 ### 验收标准
@@ -266,7 +266,7 @@ AI 做 F05 之前，必须先整理清楚，不允许直接开写。
 
 ### AI 要做什么
 
-- [ ] 查 `docs/HOOK_POINTS.md` 是否已有 F07 资料
+- [ ] 查 `docs/HOOK_MAP_8071_AUTHORITATIVE.md（8071；8066 历史 → docs/archive/INDEX.md）` 是否已有 F07 资料
 - [ ] 如果资料不足，先做 Frida 验证
 - [ ] 找到通讯录列表的数据入口
 - [ ] 创建 `ContactFilter.java`
@@ -334,7 +334,7 @@ AI 做 F05 之前，必须先整理清楚，不允许直接开写。
 - [ ] 读 `CLAUDE.md`
 - [ ] 读 `docs/AI_WORKFLOW_CHECKLIST.md`
 - [ ] 读 `docs/USER_AI_USAGE_GUIDE.md`
-- [ ] 读当前阶段对应的 `docs/HOOK_POINTS.md`
+- [ ] 读当前阶段对应的 `docs/HOOK_MAP_8071_AUTHORITATIVE.md（8071；8066 历史 → docs/archive/INDEX.md）`
 - [ ] 如果要用某个方案，先查 `refs/FAILURE_LOG.md`
 - [ ] 只做当前阶段，不跨阶段乱做
 - [ ] 做完后更新本文件的状态和实际结果

@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.DialogInterface;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Handler;
@@ -121,6 +122,22 @@ public class SettingsEntry {
     }
 
     /**
+     * 设置页顶部「量子密友设置」入口行是否应当显示。
+     *
+     * - VISIBLE 态：恒显示。
+     * - HIDDEN / UNLOCKING 态：仅当用户关闭了「隐藏功能入口」开关时仍显示（常显）；
+     *   开关开启（默认）时隐藏 = 现状行为。
+     *
+     * 纯 EntryGate 可见性判断：只读状态机 + Bridge 开关，绝不写状态机、不碰过滤/授权。
+     */
+    private static boolean shouldShowEntry() {
+        if (StateMachine.getInstance().getState() == StateMachine.State.VISIBLE) {
+            return true;
+        }
+        return !Bridge.getInstance().isHideEntryInHidden();
+    }
+
+    /**
      * P_SE5: 状态机切换时主动刷 banner（不依赖 onResume 重新 fire）。
      * TriggerGuard 触发 enterHidden 后、overlay 状态切换按钮 dismiss 后调本方法。
      */
@@ -128,8 +145,7 @@ public class SettingsEntry {
         if (!sUseInjectMode) return;
         final ViewGroup ll = sLlRef != null ? sLlRef.get() : null;
         if (ll == null) return;
-        final boolean shouldShow = StateMachine.getInstance().getState()
-                == StateMachine.State.VISIBLE;
+        final boolean shouldShow = shouldShowEntry();
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override public void run() {
                 try {
@@ -271,7 +287,7 @@ public class SettingsEntry {
         // P_SE1 hijack: delayed — RecyclerView not laid out until after onResume
         scheduleProfileRowHijack(root);
 
-        boolean shouldShow = StateMachine.getInstance().getState() == StateMachine.State.VISIBLE;
+        boolean shouldShow = shouldShowEntry();
 
         // ── Path A: ListView ─────────────────────────────────────────────────
         ListView lv = findListViewRecursive(root);
@@ -1118,9 +1134,8 @@ public class SettingsEntry {
         final Bridge br = Bridge.getInstance();
         final StateMachine sm = StateMachine.getInstance();
 
-        // 根容器：竖直 LinearLayout，白底，拦截点击穿透
-        final LinearLayout root = new LinearLayout(activity);
-        root.setOrientation(LinearLayout.VERTICAL);
+        // 根容器：FrameLayout，白底，拦截点击穿透。整块内容滚动，返回 ← 固定悬浮。
+        final FrameLayout root = new FrameLayout(activity);
         root.setBackgroundColor(Color.parseColor("#F7F7F7"));
         root.setClickable(true);
         root.setFocusable(true);
@@ -1139,53 +1154,20 @@ public class SettingsEntry {
             }
         });
 
-        // 顶栏 ── 返回 + 标题 + 状态
-        LinearLayout topBar = new LinearLayout(activity);
-        topBar.setOrientation(LinearLayout.HORIZONTAL);
-        topBar.setBackgroundColor(Color.WHITE);
-        topBar.setGravity(Gravity.CENTER_VERTICAL);
-        topBar.setPadding(dp(activity, 12), dp(activity, 10), dp(activity, 16), dp(activity, 10));
-
-        TextView back = new TextView(activity);
-        back.setText("\u2190");  // ←
-        back.setTextColor(Color.parseColor("#191919"));
-        back.setTextSize(22f);
-        back.setPadding(dp(activity, 8), dp(activity, 4), dp(activity, 16), dp(activity, 4));
-        back.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { dismissOverlay(decor); }
-        });
-        topBar.addView(back);
-
-        TextView title = new TextView(activity);
-        title.setText("\u91cf\u5b50\u5bc6\u53cb"); // 量子密友
-        title.setTextColor(Color.parseColor("#191919"));
-        title.setTextSize(18f);
-        LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(
-                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-        topBar.addView(title, titleLp);
-
-        TextView stateBadge = new TextView(activity);
-        stateBadge.setText(sm.getState() == StateMachine.State.VISIBLE
-                ? "V" : "H");
-        stateBadge.setTextColor(Color.parseColor("#888888"));
-        stateBadge.setTextSize(13f);
-        topBar.addView(stateBadge);
-
-        root.addView(topBar, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT));
-
-        // 内容区（ScrollView 包裹）
+        // 内容区（ScrollView 包裹，含头图块——整块随内容滚动）
         ScrollView sv = new ScrollView(activity);
         LinearLayout content = new LinearLayout(activity);
         content.setOrientation(LinearLayout.VERTICAL);
 
-        // ===== 密友分组：开启密友 + 密友列表 + 密群列表（整合一区，仿 iOS 简洁布局）=====
-        content.addView(buildSectionHeader(activity, "\u5bc6\u53cb"));
+        // ===== 头图块（居中标题 + 致谢 + 版本号，随内容滚动）=====
+        content.addView(buildHeaderBlock(activity));
 
-        // 开启密友（总开关）
-        content.addView(buildSwitchRow(activity, "\u5f00\u542f\u5bc6\u53cb",
-                "\u5bc6\u53cb\u529f\u80fd\u603b\u5f00\u5173", br.isFeatureEnabled(),
+        // ===== 密友 =====
+        content.addView(buildSectionHeader(activity, "密友"));
+
+        // 1. 开启密友（总开关）
+        content.addView(buildSwitchRow(activity, "开启密友",
+                "密友功能总开关", br.isFeatureEnabled(),
                 new CompoundButton.OnCheckedChangeListener() {
                     @Override public void onCheckedChanged(CompoundButton b, boolean checked) {
                         br.setFeatureEnabled(checked);
@@ -1193,48 +1175,9 @@ public class SettingsEntry {
                     }
                 }));
 
-        // 密友列表（点击 = 拉起微信官方选择器，预选已有 + 增删一体）
-        content.addView(buildButtonRow(activity, "\u5bc6\u53cb\u5217\u8868",
-                "\u5df2\u9009\u62e9 " + br.getWxidCount() + " \u4e2a",
-                new View.OnClickListener() {
-                    @Override public void onClick(View v) {
-                        ContactImportGuard.launchSelectBuddy(activity);
-                    }
-                }));
-
-        // 密群列表（点击 = 拉起微信官方选择器，预选已有 + 增删一体）
-        content.addView(buildButtonRow(activity, "\u5bc6\u7fa4\u5217\u8868",
-                "\u5df2\u9009\u62e9 " + br.getGroupCount() + " \u4e2a",
-                new View.OnClickListener() {
-                    @Override public void onClick(View v) {
-                        ContactImportGuard.launchSelectGroup(activity);
-                    }
-                }));
-
-        // ===== 性能 =====
-        content.addView(buildSectionHeader(activity, "\u6027\u80fd"));
-        // 启动防层模式（SETTINGS_UI_V2 §7.1）均衡（默认）冷启/锁屏遮罩；高性能跳过遮罩
-        content.addView(buildSwitchRow(activity, "\u9ad8\u6027\u80fd\u6a21\u5f0f",
-                "\u8df3\u8fc7\u51b7\u542f\u52a8\u767d\u5c4f\u906e\u7f69 / \u8981\u6c42\u5fae\u4fe1\u5e38\u9a7b\u540e\u53f0",
-                br.isHighPerfMode(),
-                new CompoundButton.OnCheckedChangeListener() {
-                    @Override public void onCheckedChanged(CompoundButton b, boolean checked) {
-                        br.setHighPerfMode(checked);
-                        Log.i(TAG, "[SET:overlay] highPerf=" + checked);
-                    }
-                }));
-
-        // 6. 密友消息通知（单段控件：静默=不响不弹 / 震动=掐叮+震 / 铃声=待实现）
-        content.addView(buildSectionHeader(activity, "\u5bc6\u53cb\u6d88\u606f\u901a\u77e5"));
-        content.addView(buildNotifyModeRow(activity, br));
-
-        // 6.5 语音/视频通话通知（静默/震动，默认静默；来电永不放铃声）
-        content.addView(buildSectionHeader(activity, "\u8bed\u97f3/\u89c6\u9891\u901a\u77e5"));
-        content.addView(buildCallNotifyModeRow(activity, br));
-
-        // 7. 防撤回开关（空壳——AntiRecall 模块已存在，开关接通）
-        content.addView(buildSwitchRow(activity, "\u9632\u64a4\u56de",
-                "\u62e6\u622a\u5fae\u4fe1\u64a4\u56de\u6d88\u606f", br.isAntiRecallEnabled(),
+        // 2. 消息防撤回（接通 AntiRecall）
+        content.addView(buildSwitchRow(activity, "消息防撤回",
+                "拦截并保留对方撤回的消息", br.isAntiRecallEnabled(),
                 new CompoundButton.OnCheckedChangeListener() {
                     @Override public void onCheckedChanged(CompoundButton b, boolean checked) {
                         br.setAntiRecallEnabled(checked);
@@ -1242,9 +1185,23 @@ public class SettingsEntry {
                     }
                 }));
 
-        // 隐藏指定标签（Bridge.isHideContactLabelEnabled，已有 ContactLabelHideGuard 接入）
-        content.addView(buildSwitchRow(activity, "\u9690\u85cf\u6307\u5b9a\u6807\u7b7e",
-                "\u8054\u7cfb\u4eba\u6807\u7b7e\u9690\u85cf\u5165\u53e3",
+        // 3. 语音一键转发（占位，未接逻辑）
+        content.addView(buildSwitchRow(activity, "语音一键转发",
+                "功能更新中", false, null));
+
+        // 4. 显示密友未读消息数（默认关；开 = 顶部「微信(N)」照常计入密友未读）
+        content.addView(buildSwitchRow(activity, "显示密友未读消息数",
+                "开启后顶部微信计数包含密友未读", br.isShowHiddenUnread(),
+                new CompoundButton.OnCheckedChangeListener() {
+                    @Override public void onCheckedChanged(CompoundButton b, boolean checked) {
+                        br.setShowHiddenUnread(checked);
+                        Log.i(TAG, "[SET:overlay] showHiddenUnread=" + checked);
+                    }
+                }));
+
+        // 隐藏通讯录标签（原"隐藏指定标签"，移到密友列表上方）
+        content.addView(buildSwitchRow(activity, "隐藏通讯录标签",
+                "联系人标签隐藏入口",
                 br.isHideContactLabelEnabled(),
                 new CompoundButton.OnCheckedChangeListener() {
                     @Override public void onCheckedChanged(CompoundButton b, boolean checked) {
@@ -1253,57 +1210,96 @@ public class SettingsEntry {
                     }
                 }));
 
-        // 8. 虚拟定位（占位）
-        content.addView(buildSwitchRow(activity, "\u865a\u62df\u5b9a\u4f4d",
-                "\u4f2a\u9020 GPS \u4f4d\u7f6e (\u5360\u4f4d)", false, null));
-
-        // 9. 状态切换
-        content.addView(buildSectionHeader(activity, "\u72b6\u6001"));
-        final boolean isH = sm.getState() == StateMachine.State.HIDDEN;
-        content.addView(buildButtonRow(activity,
-                "\u5f53\u524d\u72b6\u6001\uff1a" + sm.getStateName(),
-                isH ? "\u5207\u6362\u663e\u5f62" : "\u5207\u6362\u9690\u85cf",
-                new View.OnClickListener() {
-                    @Override public void onClick(View v) {
-                        if (isH) {
-                            sm.exitHidden(false);
-                            sHeaderVisible = true;
-                        } else {
-                            sm.enterHidden();
-                            sHeaderVisible = false;
-                        }
-                        if (sAdapterHooked) refreshAdapterNotify();
-                        dismissOverlay(decor);
-                        onStateChanged();  // P_SE5: banner 跟随状态切换
-                        Log.i(TAG, "[SET:overlay] state -> " + sm.getStateName());
+        // 隐藏功能入口（默认开 = 隐身态自动藏入口；关 = 隐身态也常显入口）
+        content.addView(buildSwitchRow(activity, "隐藏功能入口",
+                "隐身时自动隐藏设置入口（关闭后常显）",
+                br.isHideEntryInHidden(),
+                new CompoundButton.OnCheckedChangeListener() {
+                    @Override public void onCheckedChanged(CompoundButton b, boolean checked) {
+                        br.setHideEntryInHidden(checked);
+                        Log.i(TAG, "[SET:overlay] hideEntryInHidden=" + checked);
                     }
                 }));
 
-        // 10. 授权状态 + 到期时间（占位）
+        // 5. 密友列表（点击 = 拉起微信官方选择器，预选已有 + 增删一体）
+        content.addView(buildButtonRow(activity, "密友列表",
+                "已选择 " + br.getWxidCount() + " 个",
+                new View.OnClickListener() {
+                    @Override public void onClick(View v) {
+                        ContactImportGuard.launchSelectBuddy(activity);
+                    }
+                }));
+
+        // 6. 密群列表（点击 = 拉起微信官方选择器，预选已有 + 增删一体）
+        content.addView(buildButtonRow(activity, "密群列表",
+                "已选择 " + br.getGroupCount() + " 个",
+                new View.OnClickListener() {
+                    @Override public void onClick(View v) {
+                        ContactImportGuard.launchSelectGroup(activity);
+                    }
+                }));
+
+        // ===== 性能（密友与特色功能之间的分组）=====
+        content.addView(buildSectionHeader(activity, "性能"));
+        content.addView(buildSwitchRow(activity, "高性能模式",
+                "跳过冷启动白屏遮罩 / 要求微信常驻后台",
+                br.isHighPerfMode(),
+                new CompoundButton.OnCheckedChangeListener() {
+                    @Override public void onCheckedChanged(CompoundButton b, boolean checked) {
+                        br.setHighPerfMode(checked);
+                        Log.i(TAG, "[SET:overlay] highPerf=" + checked);
+                    }
+                }));
+
+        // ===== 特色功能（占位，未接逻辑）=====
+        content.addView(buildSectionHeader(activity, "特色功能"));
+        content.addView(buildSwitchRow(activity, "伪装定位",
+                "伪造 GPS 位置（占位）", false, null));
+        content.addView(buildSwitchRow(activity, "余额装X",
+                "功能更新中", false, null));
+        content.addView(buildNote(activity, "独家功能 · 请低调使用"));
+
+        // ===== 通知（密友消息 + 来电 合并为一个小分组）=====
+        content.addView(buildSectionHeader(activity, "通知"));
+        content.addView(buildNotifyModeRow(activity, br));      // 密友消息通知模式
+        content.addView(buildCallNotifyModeRow(activity, br));  // 来电提示
+        content.addView(buildNote(activity, "推荐静默"));
+
+        // ===== 授权（占位）=====
         content.addView(buildSectionHeader(activity, "\u6388\u6743"));
         content.addView(buildTextRow(activity, "\u6388\u6743\u72b6\u6001",
                 "\u5df2\u6fc0\u6d3b (\u5360\u4f4d)"));
         content.addView(buildTextRow(activity, "\u5230\u671f\u65f6\u95f4",
                 "\u6c38\u4e45 (\u5360\u4f4d)"));
 
-        // 关闭按钮
-        Button close = new Button(activity);
-        close.setText("\u5173\u95ed");
-        close.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { dismissOverlay(decor); }
-        });
-        LinearLayout.LayoutParams closeLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
-        int pad = dp(activity, 16);
-        closeLp.setMargins(pad, pad, pad, pad);
-        content.addView(close, closeLp);
+        // 底部留白（替代原"关闭"按钮——返回用顶部 ← 或系统返回键）
+        View bottomPad = new View(activity);
+        content.addView(bottomPad, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(activity, 24)));
 
         sv.addView(content, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT));
-        root.addView(sv, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        root.addView(sv, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT));
+
+        // 固定悬浮返回 ←（左上角，状态栏下方，不随内容滚动）
+        TextView back = new TextView(activity);
+        back.setText("\u2190");
+        back.setTextColor(Color.parseColor("#1C1C1E"));
+        back.setTextSize(24f);
+        back.setPadding(dp(activity, 16), dp(activity, 4), dp(activity, 18), dp(activity, 8));
+        back.setClickable(true);
+        back.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { dismissOverlay(decor); }
+        });
+        FrameLayout.LayoutParams backLp = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        backLp.gravity = Gravity.START | Gravity.TOP;
+        backLp.topMargin = getStatusBarHeight(activity) + dp(activity, 8);
+        root.addView(back, backLp);
+
         return root;
     }
 
@@ -1314,6 +1310,56 @@ public class SettingsEntry {
             sOverlayActive = false;  // P_SE5: 解除 enterHidden 抑制
             Log.i(TAG, "[SET:overlay] dismissed");
         }
+    }
+
+    /**
+     * 扁平 iOS 风格开关（自绘）：大尺寸圆角轨道 + 白色圆钮，开绿关灰，带滑动动画。
+     * listener=null → 占位（略暗、不可点）。
+     */
+    private static View buildIosSwitch(final Context ctx, boolean checked,
+                                       final CompoundButton.OnCheckedChangeListener listener) {
+        final int wPx = dp(ctx, 54);
+        final int hPx = dp(ctx, 32);
+        final int thumbPx = dp(ctx, 28);
+        final int travel = wPx - thumbPx - dp(ctx, 4);
+        final int onColor = Color.parseColor("#34C759");
+        final int offColor = Color.parseColor("#E4E4EA");
+
+        final FrameLayout sw = new FrameLayout(ctx);
+        final boolean[] on = { checked };
+
+        final GradientDrawable track = new GradientDrawable();
+        track.setCornerRadius(hPx / 2f);
+        track.setColor(on[0] ? onColor : offColor);
+        sw.setBackground(track);
+
+        final View thumb = new View(ctx);
+        GradientDrawable thumbBg = new GradientDrawable();
+        thumbBg.setShape(GradientDrawable.OVAL);
+        thumbBg.setColor(Color.WHITE);
+        thumb.setBackground(thumbBg);
+        FrameLayout.LayoutParams tlp = new FrameLayout.LayoutParams(thumbPx, thumbPx);
+        tlp.gravity = Gravity.CENTER_VERTICAL | Gravity.START;
+        tlp.leftMargin = dp(ctx, 2);
+        sw.addView(thumb, tlp);
+        thumb.setTranslationX(on[0] ? travel : 0);
+
+        sw.setLayoutParams(new FrameLayout.LayoutParams(wPx, hPx));
+
+        if (listener != null) {
+            sw.setClickable(true);
+            sw.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    on[0] = !on[0];
+                    track.setColor(on[0] ? onColor : offColor);
+                    thumb.animate().translationX(on[0] ? travel : 0).setDuration(150).start();
+                    listener.onCheckedChanged(null, on[0]);
+                }
+            });
+        } else {
+            sw.setAlpha(0.5f); // 占位：略暗、不可点
+        }
+        return sw;
     }
 
     private static View buildSwitchRow(Context ctx, String title, String subtitle,
@@ -1332,7 +1378,7 @@ public class SettingsEntry {
         TextView tvTitle = new TextView(ctx);
         tvTitle.setText(title);
         tvTitle.setTextColor(Color.parseColor("#191919"));
-        tvTitle.setTextSize(16f);
+        tvTitle.setTextSize(17f);
         textCol.addView(tvTitle);
         if (subtitle != null && subtitle.length() > 0) {
             TextView tvSub = new TextView(ctx);
@@ -1344,14 +1390,7 @@ public class SettingsEntry {
         row.addView(textCol, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
-        Switch sw = new Switch(ctx);
-        sw.setChecked(checked);
-        if (listener != null) {
-            sw.setOnCheckedChangeListener(listener);
-        } else {
-            sw.setEnabled(false);
-        }
-        row.addView(sw);
+        row.addView(buildIosSwitch(ctx, checked, listener));
 
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -1376,7 +1415,7 @@ public class SettingsEntry {
         TextView tvTitle = new TextView(ctx);
         tvTitle.setText(title);
         tvTitle.setTextColor(Color.parseColor("#191919"));
-        tvTitle.setTextSize(16f);
+        tvTitle.setTextSize(17f);
         row.addView(tvTitle, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
@@ -1406,7 +1445,7 @@ public class SettingsEntry {
         TextView tvTitle = new TextView(ctx);
         tvTitle.setText(title);
         tvTitle.setTextColor(Color.parseColor("#191919"));
-        tvTitle.setTextSize(16f);
+        tvTitle.setTextSize(17f);
         row.addView(tvTitle, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
@@ -1434,6 +1473,68 @@ public class SettingsEntry {
         return tv;
     }
 
+    /** 分组底部小灰字注脚（如「独家功能 · 请低调使用」）。 */
+    private static View buildNote(Context ctx, String text) {
+        TextView tv = new TextView(ctx);
+        tv.setText(text);
+        tv.setTextColor(Color.parseColor("#9A9AA0"));
+        tv.setTextSize(12f);
+        int ph = dp(ctx, 16);
+        tv.setPadding(ph, dp(ctx, 8), ph, dp(ctx, 4));
+        return tv;
+    }
+
+    /**
+     * 头图块（随内容滚动）—— 居中标题 + 致谢文案 + 版本号，浅灰大气，仿竞品/苹果设置头。
+     * 返回 ← 不在这里（由 buildGuardOverlay 固定悬浮在左上角）。
+     */
+    private static View buildHeaderBlock(Context ctx) {
+        LinearLayout band = new LinearLayout(ctx);
+        band.setOrientation(LinearLayout.VERTICAL);
+        band.setBackgroundColor(Color.parseColor("#F2F2F7"));
+        band.setGravity(Gravity.CENTER_HORIZONTAL);
+        int sbar = getStatusBarHeight(ctx);
+        band.setPadding(dp(ctx, 16), sbar + dp(ctx, 13), dp(ctx, 16), dp(ctx, 20));
+
+        TextView title = new TextView(ctx);
+        title.setText("量子密友设置");
+        title.setTextColor(Color.parseColor("#1C1C1E"));
+        title.setTextSize(18f);
+        title.getPaint().setFakeBoldText(true);
+        title.setGravity(Gravity.CENTER);
+        band.addView(title);
+
+        TextView thanks = new TextView(ctx);
+        thanks.setText("感谢您使用量子密友");
+        thanks.setTextColor(Color.parseColor("#07A85C"));
+        thanks.setTextSize(13f);
+        thanks.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        tlp.topMargin = dp(ctx, 12);
+        band.addView(thanks, tlp);
+
+        TextView ver = new TextView(ctx);
+        ver.setText("Version 1.0.0");
+        ver.setTextColor(Color.parseColor("#9A9AA0"));
+        ver.setTextSize(11.5f);
+        ver.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams vlp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        vlp.topMargin = dp(ctx, 3);
+        band.addView(ver, vlp);
+
+        return band;
+    }
+
+    private static int getStatusBarHeight(Context ctx) {
+        try {
+            int id = ctx.getResources().getIdentifier("status_bar_height", "dimen", "android");
+            if (id > 0) return ctx.getResources().getDimensionPixelSize(id);
+        } catch (Throwable ignored) {}
+        return dp(ctx, 24);
+    }
+
     private static View buildNotifyModeRow(final Context ctx, final Bridge br) {
         LinearLayout row = new LinearLayout(ctx);
         row.setOrientation(LinearLayout.HORIZONTAL);
@@ -1446,7 +1547,7 @@ public class SettingsEntry {
         TextView label = new TextView(ctx);
         label.setText("\u901a\u77e5\u6a21\u5f0f");
         label.setTextColor(Color.parseColor("#191919"));
-        label.setTextSize(16f);
+        label.setTextSize(17f);
         row.addView(label, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
@@ -1518,6 +1619,12 @@ public class SettingsEntry {
                     } else {
                         applied[0] = Bridge.NotifyPolicy.VIBRATE;
                         br.setNotifyPolicy(Bridge.NotifyPolicy.VIBRATE);
+                        // 选「震动」即时给一次震动反馈（与来电提示一致）
+                        try {
+                            com.ghost.assist.moduleC.NotifyRouter.fireAlert(
+                                    ctx.getApplicationContext(),
+                                    com.ghost.assist.moduleC.NotifyRouter.EventType.MSG);
+                        } catch (Throwable ignored) {}
                     }
                     repaint.run();
                     Log.i(TAG, "[SET:overlay] notifyMode=" + br.getNotifyPolicy());
@@ -1548,7 +1655,7 @@ public class SettingsEntry {
         TextView label = new TextView(ctx);
         label.setText("\u6765\u7535\u63d0\u793a");
         label.setTextColor(Color.parseColor("#191919"));
-        label.setTextSize(16f);
+        label.setTextSize(17f);
         row.addView(label, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 

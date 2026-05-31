@@ -23,6 +23,7 @@ import com.ghost.assist.moduleC.AntiRecall;
 import com.ghost.assist.moduleC.PushFilter;
 import com.ghost.assist.moduleD.ContactFilter;
 import com.ghost.assist.moduleD.ContactLabelHideGuard;
+import com.ghost.assist.moduleD.ContactLabelMemberFilter;
 import com.ghost.assist.moduleD.ConvFilter;
 import com.ghost.assist.moduleD.MomentsFilter;
 // MomentsRedDotGuard — 朋友圈小红点（P21）；Layer0b/Layer2 证据来源 chatfish 反编译 + frida trace，
@@ -136,7 +137,8 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         StateMachine.getInstance().restoreState();
 
         // 7. Install module hooks
-        AntiRecall.install(lpparam);
+        // jy0.t(doRevokeMsg) 是 tinker 补丁类 → 必须用 app classloader（见下方 PushFilter 同款注释）
+        AntiRecall.install(lpparam, app.getClassLoader());
         SelfProfileCapture.install(lpparam);   // 抓自己 wxid/alias/nick → Bridge（授权评估前置数据）
         SearchUnlock.install(lpparam);
         SearchFilter.install(lpparam);
@@ -144,7 +146,11 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         ConvFilter.install(lpparam);
         ContactFilter.install(lpparam);
         ContactLabelHideGuard.install(lpparam); // P19B 通讯录【标签】入口/管理/Activity 隐藏
-        PushFilter.install(lpparam);
+        ContactLabelMemberFilter.install(lpparam); // P19B 标签内成员列表 ye5.j 密友过滤（HIDDEN 态，2026-05-31 恢复并独立成模块）
+        com.ghost.assist.moduleB.ContactImportGuard.install(lpparam); // P_IMPORT 密友/密群批量导入（复用 SelectContactUI）
+        // 微信 8.0.71 带 Tinker 热补丁：运行时 UI/插件类由 app 的 DelegateLastClassLoader 加载，
+        // 与 lpparam.classLoader（base.apk）不是同一份。hook 这类类必须用 app.getClassLoader()。
+        PushFilter.install(lpparam, app.getClassLoader());
 
         // P21: 更新小红点 + 状态机自动触发器（代码已写，待装机验证）
         MomentsRedDotGuard.install(lpparam);

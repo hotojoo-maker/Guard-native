@@ -183,8 +183,8 @@ src/cpp/
 
 ---
 
-> 详细 Hook 点参考 → `docs/HOOK_POINTS.md`
-> 类名速查表 → `docs/CLASS_MAP_8066.md`
+> 8071 Hook 事实 → `docs/HOOK_MAP_8071_AUTHORITATIVE.md` · 入口 → `docs/README.md`
+> 8066 历史 → `docs/archive/INDEX.md`
 > 失败方案档案 → `refs/FAILURE_LOG.md`
 
 *本文件整合自 tianmiyou_re 三步分析（SO_A/B/C）+ apk2 动态验证结果 + iOS 研究对照。*

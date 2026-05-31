@@ -1,6 +1,8 @@
 # Hook 点完整参考 — guard_native 8.0.66
 
-> **状态**：基于 Frida prod 脚本动态验证，可直接翻译为 LSPosed/Java 实现
+> ⛔ **ARCHIVE** — 8066 Frida 验证。8071 → [`../../HOOK_MAP_8071_AUTHORITATIVE.md`](../../HOOK_MAP_8071_AUTHORITATIVE.md)。
+
+> **状态**：8066 历史实证；8071 禁止直搬类名
 > **整理日期**：2026-05-18
 > **设备**：小米9 / Android 11 / 微信 8.0.66 官方版
 

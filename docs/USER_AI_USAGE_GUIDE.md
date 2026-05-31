@@ -17,7 +17,7 @@
 1. CLAUDE.md
 2. docs/AI_WORKFLOW_CHECKLIST.md
 3. docs/USER_AI_USAGE_GUIDE.md
-4. 当前阶段相关的 docs/HOOK_POINTS.md
+4. 当前阶段相关的 docs/README.md + docs/HOOK_MAP_8071_AUTHORITATIVE.md
 5. 如果要尝试方案，先查 refs/FAILURE_LOG.md
 
 要求：
@@ -177,7 +177,7 @@
 | 情况 | 写到哪里 |
 |------|----------|
 | 某个方案试了会崩溃 | `refs/FAILURE_LOG.md` |
-| 某个 hook 点确认有效 | `docs/HOOK_POINTS.md` |
+| 某个 hook 点确认有效 | `docs/README.md + docs/HOOK_MAP_8071_AUTHORITATIVE.md` |
 | 某个阶段完成或失败 | `docs/AI_WORKFLOW_CHECKLIST.md` |
 | 某个功能状态变化 | `refs/FEATURE_MATRIX.md` |
 | 手机测试步骤和结果 | `docs/AI_WORKFLOW_CHECKLIST.md` 的实际结果 |
@@ -243,7 +243,7 @@ AI 遇到下面情况必须先问你：
 
 - “我现在只做阶段 1。”
 - “这次会改这几个文件。”
-- “这个 hook 点依据是 `docs/HOOK_POINTS.md`。”
+- “这个 hook 点依据是 `docs/README.md + docs/HOOK_MAP_8071_AUTHORITATIVE.md`。”
 - “这个方案不能用，因为 `refs/FAILURE_LOG.md` 记录过会崩溃。”
 - “需要你操作手机，我一步一步说。”
 - “这一步完成后我会更新清单。”

@@ -1,25 +1,28 @@
 # PROJECT_INDEX — 项目导航 + 路径表
 
 > 所有路径在一处维护，SKILL.md 不写死路径，统一查本文件
-> 更新时间：2026-05-19
+> 更新时间：2026-05-27（8071 主车道 + archive 隔离）
 
 ---
 
-## 一、根目录核心文档（10 份）
+## 一、根目录核心文档（12 份）
+
+> doc-audit / 资料员 / 文档员 三个角色已于 2026-05-27 合并入 **guard-review_质检门控** 的"资料功能"档。
 
 | 文件 | 作用 | 谁维护 |
 |------|------|--------|
-| [`CLAUDE.md`](./CLAUDE.md) | 主入口 / 22 条铁律 / 无分歧共识 | 所有人 |
+| [`CLAUDE.md`](./CLAUDE.md) | 主入口 / 29 条铁律 / 无分歧共识 | 所有人 |
 | [`docs/PRODUCT_GATE.md`](./docs/PRODUCT_GATE.md) | **产品总闸**：状态机 / VIP 授权 / 密码入口 | dispatch |
 | [`AGENTS.md`](./AGENTS.md) | Cursor / Claude Code 兼容入口 | — |
-| [`PROJECT_INDEX.md`](./PROJECT_INDEX.md) | 本文件 / 路径表 / 导航 | doc-audit |
-| [`HOOKMAP.md`](./HOOKMAP.md) | 6 模块功能总图 / 状态看板 | doc-audit |
+| [`PROJECT_INDEX.md`](./PROJECT_INDEX.md) | 本文件 / 路径表 / 导航 | review |
+| [`HOOKMAP.md`](./HOOKMAP.md) | 6 模块功能总图 / 状态看板 | review |
 | [`TASK_BOARD.md`](./TASK_BOARD.md) | 4 窗口分工 / P 任务进度 | dispatch |
 | [`DECISION_LOG.md`](./DECISION_LOG.md) | 重大决策履历 | dispatch |
 | [`RISK_REGISTER.md`](./RISK_REGISTER.md) | 风险表 | risk-check |
-| [`FAILURE_LOG.md`](./FAILURE_LOG.md) | 22 条铁律 / 永久禁用方案 | review |
-| [`TOOLS_INDEX.md`](./TOOLS_INDEX.md) | 工具 / 脚本索引 | doc-audit |
-| [`FINDINGS.md`](./FINDINGS.md) | 发现即落盘 / 防压缩断链 | doc-audit |
+| [`FAILURE_LOG.md`](./FAILURE_LOG.md) | 34 条 F-XX 失败方案档案（F-34 最新：sConvCache 死循环）| review |
+| [`TOOLS_INDEX.md`](./TOOLS_INDEX.md) | 工具 / 脚本索引 | review |
+| [`FINDINGS.md`](./FINDINGS.md) | 发现即落盘 / 防压缩断链 | review |
+| [`docs/DOC_AUDIT_2026-05-27.md`](./docs/DOC_AUDIT_2026-05-27.md) | 8071 隔离后文档审计报告 | review |
 
 ---
 
@@ -27,34 +30,49 @@
 
 ```
 guard_native/
-├── 根目录 (9 份核心 md + 同步脚本)
-├── .cursor/skills/       5 个角色 skill（主目录，日常编辑这里）
-├── .claude/skills/       5 个角色 skill（镜像，sync_skills.ps1 同步）
-├── 00_start_入口/        新会话第一站
+├── 根目录 (12 份核心 md + 同步脚本)
+├── .cursor/skills/       6 个角色 skill（主目录，日常编辑这里）
+├── .claude/skills/       6 个角色 skill（镜像，sync_skills.ps1 同步）
+├── 00_start_入口/        新会话第一站（PROMPT_TEMPLATES）
 ├── 01_dispatch_总调度/   CURRENT_PLAN / NEXT_STEP
-├── 02_docs_资料员/       资产盘点 / 文档索引 / 冲突 / 调研任务池
+├── 02_tools_工具/        dynamic_crawler 等
 ├── 03_execute_执行任务/  P15 / P16 / P17 / P18 等
-├── 04_review_审稿复核/   每个 P 任务的审稿报告
+├── 04_review_审稿复核/   每个 P 任务的审稿报告 + T_TASKS 调研池 + CONFLICTS
 ├── 05_reports_报告/      阶段报告 / TECH_SYNC_SUMMARY
 ├── 06_refs_参考资料/     wechat / catfish / frida / 离线采集快照
 ├── 07_archive_归档/      关闭 30 天的 P 任务搬这里
 ├── 08_release_发布/      蜜罐 seed / 签名 / APK 输出
-├── docs/                 (现有, 不动) HOOK_POINTS / CLASS_MAP / RESEARCH
+├── docs/                 8071 主车道 README + GUARD_GATE_TRUTH + HOOK_MAP_8071_AUTHORITATIVE
+│   │                     + CONV_REFRESH_PROBLEM + PRODUCT_GATE + P22_PushFilter_VoIP …
+│   ├── archive/          8066/历史规划（见 archive/INDEX.md，含 HOOK_MAP_V1 / HOOK_POINTS / CLASS_MAP_8066 / T05/T07）
+│   └── isolation/        竞品 Catfish 索引
+├── native_core/          libguardcore.so 模块地图（API / ARCHITECTURE / MAP / ROADMAP / RULES）
 ├── refs/                 (现有, 不动) MainEntry / UserControll / filter_moments.js
-└── src/                  代码主目录 (待写, W1~W3 产出)
+└── src/                  代码主目录 (W1~W3 产出，com.ghost.assist.*)
 ```
+
+> **已删除目录（2026-05-27）**：`02_docs_文档员/` + `02_docs_资料员/` → 角色合并入 `guard-review_质检门控`。T05/T07 历史定义已存档至 `docs/archive/wechat_8066/tasks/`。
 
 ---
 
 ## 三、内部资料速查（高频访问）
 
-### Hook 点参考
+### Hook 点参考（8071 主车道）
 
 | 文件 | 内容 |
 |------|------|
-| [`./docs/HOOK_POINTS.md`](./docs/HOOK_POINTS.md) | 8.0.66 已验证 hook 点（F04/F05 完整 Java 伪代码 + 跨版本稳定性）|
-| [`./docs/CLASS_MAP_8066.md`](./docs/CLASS_MAP_8066.md) | 混淆类速查 |
+| [`./docs/README.md`](./docs/README.md) | **文档入口**：8071 默认读序 + 隔离区说明 |
+| [`./docs/HOOK_MAP_8071_AUTHORITATIVE.md`](./docs/HOOK_MAP_8071_AUTHORITATIVE.md) | **8.0.71 hook 权威事实** |
+| [`./docs/GUARD_GATE_TRUTH.md`](./docs/GUARD_GATE_TRUTH.md) | 门控 / 状态机裁决 |
+| [`./docs/CONV_REFRESH_PROBLEM.md`](./docs/CONV_REFRESH_PROBLEM.md) | 会话 H↔V 热切问题单 |
 | [`./docs/RESEARCH_SUMMARY.md`](./docs/RESEARCH_SUMMARY.md) | 研究汇总 |
+
+### 历史 / 竞品（非默认）
+
+| 索引 | 内容 |
+|------|------|
+| [`./docs/archive/INDEX.md`](./docs/archive/INDEX.md) | 8066 类名表、HOOK_MAP_V1、HOOK_POINTS… |
+| [`./docs/isolation/INDEX_COMPETITOR.md`](./docs/isolation/INDEX_COMPETITOR.md) | Catfish 行为参考 |
 
 ### Catfish 参考代码
 
@@ -170,9 +188,10 @@ I:/apk2_build/
 |---------|------|
 | 项目当前在做什么 | [`CLAUDE.md`](./CLAUDE.md) + [`TASK_BOARD.md`](./TASK_BOARD.md) |
 | 某功能怎么实现 | [`HOOKMAP.md`](./HOOKMAP.md) 找对应模块 → 详细资料链接 |
-| 8.0.66 上某个类叫什么 | [`./docs/CLASS_MAP_8066.md`](./docs/CLASS_MAP_8066.md) |
-| 某 hook 点怎么写 | [`./docs/HOOK_POINTS.md`](./docs/HOOK_POINTS.md) |
-| 我能不能做 X | [`FAILURE_LOG.md`](./FAILURE_LOG.md) 22 条铁律先查 |
+| 8071 某 hook 点怎么写 | [`./docs/HOOK_MAP_8071_AUTHORITATIVE.md`](./docs/HOOK_MAP_8071_AUTHORITATIVE.md) |
+| 8066 历史类名（仅 diff） | [`./docs/archive/INDEX.md`](./docs/archive/INDEX.md) |
+| Catfish 行为参考 | [`./docs/isolation/INDEX_COMPETITOR.md`](./docs/isolation/INDEX_COMPETITOR.md) |
+| 我能不能做 X | [`FAILURE_LOG.md`](./FAILURE_LOG.md) 34 条 F-XX 档案 + CLAUDE.md §三 29 条战略铁律 先查 |
 | Catfish 怎么做的 | [`./refs/MainEntry.java`](./refs/MainEntry.java) + [`UserControll.java`](./refs/UserControll.java) |
 | 历史版本对比 | 外部 `apk2/_4__samples/sample_history_research/VERSION_INDEX.md` |
 | 防封号边界 | 外部 `apk2/QE66_RESUME.md` + [`CLAUDE.md`](./CLAUDE.md) §六 KPI |
@@ -186,4 +205,4 @@ I:/apk2_build/
 1. 路径更新只改本文件，其他 md/SKILL.md 都引用本文件
 2. 新增外部资料时在 §四 加一行
 3. 内部新增目录在 §二 加节
-4. AI 接手发现路径错误 → 改本文件 + 在 `02_docs_资料员/CONFLICTS.md` 记一笔
+4. AI 接手发现路径错误 → 改本文件 + 在 `04_review_审稿复核/CONFLICTS.md` 记一笔（guard-review 资料功能）

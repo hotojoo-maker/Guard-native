@@ -1,5 +1,8 @@
 # HOOK_MAP_V1 — 第一版复刻 Hook 优先级
 
+> ⛔ **DEPRECATED** — 历史规划（**8.0.66**），已迁入 `docs/archive/`。  
+> **8071 实现** → [`../../HOOK_MAP_8071_AUTHORITATIVE.md`](../../HOOK_MAP_8071_AUTHORITATIVE.md)
+
 > **输入**：甜密友 23 hook × 8070 27 hook 交叉对比
 > **目标**：微信 8.0.66 / LSPosed 模块 / 纯 Java
 > **日期**：2026-05-19
@@ -35,7 +38,7 @@ P2 ░░░░        7 个  渲染层兜底 + 密友圈细节
 - hook `SnsObject.parseFrom(byte[])` 返回值，不是 hook 调用前
 - 遍历 `CommentUserList` / `LikeUserList` → remove 匹配 wxid
 - `return true` 表示已修改
-- 需要先确认 8.0.66 的 SnsObject 类名（查 `CLASS_MAP_8066.md`）
+- 需要先确认 8.0.66 的 SnsObject 类名（查同目录 `CLASS_MAP_8066.md`）
 
 **甜密友 / 8070 代码逐字相同**（22 行），可直接翻译。
 
@@ -85,7 +88,7 @@ P2 ░░░░        7 个  渲染层兜底 + 密友圈细节
 **实现要点**：
 - Catfish 8.0.70: `List<va5.y>` — ListView 模式
 - guard_native 8.0.66: `MvvmList.o/p` (ArrayList<f45.u>) — RecyclerView + Flow 模式
-- **不能照搬 Catfish 的 List.remove() 逻辑**，需适配 MvvmList 三层（已在 `docs/HOOK_POINTS.md` 验证）
+- **不能照搬 Catfish 的 List.remove() 逻辑**，需适配 MvvmList 三层（8066 见同目录 `HOOK_POINTS.md`）
 - guard_native `filter_conv.js` 已实现等效功能（4 层拦截 + notifyDataSetChanged clean-before）
 
 ---
@@ -228,6 +231,6 @@ P2 ░░░░        7 个  渲染层兜底 + 密友圈细节
 **关联文档**：
 - `HOOK_POINTERS.md` — 每个 hook 的源码位置、字段、类名
 - `HOOKMAP.md` — 功能模块总图（A~F 域）
-- `docs/HOOK_POINTS.md` — 8.0.66 WeChat 内部类/方法（Frida 动态验证）
+- `HOOK_POINTS.md`（本目录）— 8066 Frida 验证
 - `FAILURE_LOG.md` — 22 条禁止方案
 - `TASK_BOARD.md` — 4 窗口当前任务分配

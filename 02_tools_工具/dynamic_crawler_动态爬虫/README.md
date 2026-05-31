@@ -99,12 +99,30 @@ const MAX_HOOKS = 300;       // 最大 hook 数量（防爆）
 
 ---
 
-## 已知发现（截至 2026-05-23）
+## 已知发现（截至 2026-05-27）
+
+### 8.0.71 搜索框 wxid 真实路径（装机实证）
 
 | 类 | 链路 | wxid 路径 | 状态 |
 |----|------|-----------|:----:|
-| `fz2.e` c≠3 | 搜索联系人结果 | `g`=SOSItemRelevant:wxid | ✅ 已有 L-FTS |
-| `fz2.e` c=3 | 搜索聊天记录内联行 | `g`=UIN（无直接 wxid） | ❌ 待 UIN 映射 |
+| ⭐ **`com.tencent.mm.plugin.fts.ui.q2`** + `q2.j(View, jz2.g, boolean)` | **View 绑定层**（ListView BaseAdapter） | `g.a==1 → tz2.u1.f.s = wxid` · `g.a==2 → tz2.s1.s = groupId` | ✅ 装机实证 2026-05-27（主过滤路径） |
 | `kc5.y` | 搜索会话结果 | `d→l4→C0()` | ✅ 已有 L-CONV |
 
-详细见 → `03_execute_执行任务/P22_SearchCrawler/result.md`
+### 数据层（非 wxid 来源，作为诊断/兜底）
+
+| 类 | 链路 | `g` 字段实测内容 | 状态 |
+|----|------|---------------|:----:|
+| `fz2.e` c=0 | 分类/相关搜索行 | `"SOSItemRelevant:<关键词>"`（**无 wxid 字面**） | ❌ wxid 误判已纠 |
+| `fz2.e` c=2 | 联系人匹配数据行 | `"<UIN>"`（数字 ID，非 wxid） | ❌ wxid 误判已纠 |
+| `fz2.e` c=3 | 聊天记录内联行 | `"<UIN>"`（待 UIN→wxid 映射，**可由 q2 layer 替代**） | ❌ |
+| `fz2.e` c=4 | 其他 FTS 分区 | `"<UIN>"` | ❌ |
+| `z15.ef6` | 聊天记录 FTS 命中 | `d/e/o`=查询词/高亮，`p`=ch6.protobuf（talker 在 byte[] 内未解析） | ⚠️ wxid 不可达，由 q2 layer 兜底 |
+
+### 容器纠偏（vs v1.1 旧版）
+
+| 类 | v1.1 旧描述 | 8.0.71 装机实测 |
+|----|-----------|-----------|
+| `fz2.e` | LinkedList.add | **ArrayList.addAll** ✅ |
+| `z15.ef6` | LinkedList.add | LinkedList.add ✅ |
+
+详细见 → `03_execute_执行任务/P22_SearchCrawler/result.md` · `docs/HOOK_MAP_8071_AUTHORITATIVE.md` §8b/8c/8d

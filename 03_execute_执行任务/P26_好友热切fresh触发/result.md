@@ -104,3 +104,45 @@ fresh item **写入**走 `MvvmList.e`，不经 L1 `MvvmList.n/m`，不经 L0 `Ar
 ## 七、下一步（只列一步）
 
 **第 2 层探针**：写 `probe_r0d_invoke.js`（或 Java 内嵌 1 hook），V 态手动 trigger `kc5.r0.d()`，装机看密友是否出现。
+
+---
+
+## 八、2026-05-27 收尾节
+
+原 §七/§四 计划的 `kc5.r0.d / MvvmList.w / ik3.n.handleEvent` 本轮未采用（装机 0 enter 或不及验证）。实际装机走的是：
+live adapter 字段图 + `kc5.x.h(id)` fresh-warm + `adapter.q.d` 双写双清 + **hidden id 作 key**。
+
+### L1 实证
+`final_v24_full_fresh_restore_grep.log`：
+```
+WXID-MISMATCH id=44786160583@chatroom extracted=wxid_lzd2va16jd1622 using id as key
+h(44786160583@chatroom) -> kc5.y wxid=44786160583@chatroom
+cache=2 expanded=3  visibleSnap=3
+BUS-V-adapter.q field=d injected=3 owner=kc5.a
+```
+V 态 3 个会话（密友×2 + 密群×1）同时出现。
+
+### 残留项（已在本任务内闭包）
+2026-05-27 v25/v26 尝试在 `injectCacheIntoList` / `restoreToMvvmList` 加 `item == itemToInject` identity check + `IdentityHashMap` list-visited 双层强 dedup → 装机实证 `BUS-V-adapter.p` 零条、肉眼全不显示（F-35 已归档）。
+
+最终走 **v27 = v24 wxid-only dedup 保留 + 80ms 异步 `postDedupAdapterGraph` 按 identity 收敛同对象引用**，IK3n install 顺手补回 ConvFilter.install()。当前线上方案细节见 `docs/CONV_REFRESH_PROBLEM.md` §十七。
+
+### v28 = v27 + CME 防御 + 密群保底检（**装机完美通过**）
+
+v27 装机暴露两条残留毛刺，当晚就地补完：
+1. `restoreToMvvmList` dup-scan / insert 加 CME catch；下标访问替代 for-each
+2. 新增 `ConvFilter.extractGroupId`；`filterConvList` Phase 2 重写为 CME-safe + 双 key 兜底
+
+#### v28 L1 装机实测
+| 锚点 | 结果 |
+|------|------|
+| 冷启动 H 态不露 | ✅ |
+| H 态新消息不露（密友+密群） | ✅ |
+| V↔H 5 轮热切 | ✅ 完美 |
+| 冷启动→切 V 全恢复 | ✅ |
+| warmAll expanded=3 + WXID-MISMATCH 修复 | ✅ |
+| CME / ConcurrentModification | 0 条 |
+
+证据：`bug排查/final_v28_5rounds.log` + `bug排查/final_v28_coldstart.log`
+
+P27_密群去重 / P28_CME 防御 **均不开**，全部就地在 ConvFilter / ConvHotReload 主体补完。

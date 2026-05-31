@@ -91,6 +91,19 @@ public class Bridge {
         putBool(KEY_ANTI_RECALL, enabled);
     }
 
+    // --- 显示密友未读消息数 开关 (key: "shu", default: false) ---
+    // false（默认）= 顶部「微信(N)」+ 底 tab 红点 扣掉密友未读（隐藏态默认行为，藏得更干净）
+    // true        = 不扣，密友未读照常计入总数显示（PushFilter.UNREADFIX 读此位短路）
+    private static final String KEY_SHOW_HIDDEN_UNREAD = "shu";
+
+    public boolean isShowHiddenUnread() {
+        return getBool(KEY_SHOW_HIDDEN_UNREAD, false);
+    }
+
+    public void setShowHiddenUnread(boolean enabled) {
+        putBool(KEY_SHOW_HIDDEN_UNREAD, enabled);
+    }
+
     // --- 密友功能总开关 (key: "f1", default: true) ---
     private static final String KEY_FEATURE = "f1";
 
@@ -343,6 +356,16 @@ public class Bridge {
 
     public boolean isHideContactLabelEnabled()           { return getBool(KEY_HIDE_CONTACT_LABEL, false); }
     public void    setHideContactLabelEnabled(boolean v) { putBool(KEY_HIDE_CONTACT_LABEL, v); }
+
+    // --- 隐藏功能入口开关 (key: "hei", default: true) ---
+    // 仅控制 SettingsEntry 注入到微信「设置」页顶部的「量子密友设置」入口行的可见性，
+    // 不影响状态机、过滤或授权（纯 EntryGate 可见性）。
+    // true（默认）= 隐藏态自动隐藏入口（= 现状行为）
+    // false        = 隐藏态也显示入口（常显，方便随时打开面板）
+    private static final String KEY_HIDE_ENTRY_IN_HIDDEN = "hei";
+
+    public boolean isHideEntryInHidden()           { return getBool(KEY_HIDE_ENTRY_IN_HIDDEN, true); }
+    public void    setHideEntryInHidden(boolean v) { putBool(KEY_HIDE_ENTRY_IN_HIDDEN, v); }
 
     // --- Item field dump（每个类名保留最新一条，互不覆盖）---
     private final java.util.LinkedHashMap<String, String> mItemDumps = new java.util.LinkedHashMap<>();

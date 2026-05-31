@@ -1,4 +1,4 @@
-﻿# Guard Native — AI 上下文隔离（.cursorignore）
+# Guard Native — AI 上下文隔离（.cursorignore）
 # 作用：这些路径不会被 Cursor 索引 / @ 引用 / 自动带入上下文
 # 需要时仍可手动指定路径打开；隔离 ≠ 删除
 #
@@ -18,7 +18,7 @@ build/
 **/configure_fingerprint.bin
 hs_err_pid*.log
 
-# jadx 反编译 dump（大、可再生成；查 hook 点用 docs/HOOK_POINTS.md）
+# jadx 反编译 dump（大、可再生成；查 hook 点用 docs/HOOK_MAP_8071_AUTHORITATIVE.md）
 jadx_8071_out/
 **/wechat_*_jadx/
 **/apk_samples/
