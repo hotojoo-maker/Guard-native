@@ -94,6 +94,14 @@ public class SettingsEntry {
     private static volatile WeakReference<View> sScrollFollowRvRef;
     private static volatile android.view.ViewTreeObserver.OnScrollChangedListener sScrollListenerRef;
 
+    // P_SE8 (2026-06-01): 真·跟随滚动改良 —— banner 不再当占高度的兄弟，
+    // 改为悬浮在 RV 父层 + 给 RV 顶部 padding 腾空间（clipToPadding=false）。
+    // 空间由 RV 自身 padding 提供并随滚动自然回收 → 不留空槽、不用每帧 requestLayout。
+    // 记录被改 padding 的 RV 及其原始值，HIDDEN / 移除时还原。
+    private static volatile WeakReference<View> sPaddedRvRef;
+    private static volatile int                 sRvOrigPaddingTop    = 0;
+    private static volatile boolean             sRvOrigClipToPadding = true;
+
     // B2: Xposed adapter hooks state
     private static volatile boolean               sAdapterHooked   = false;
     private static volatile WeakReference<Object> sKnownAdapterRef = null;
@@ -831,6 +839,7 @@ public class SettingsEntry {
         sHeaderRowRef = null;
         sLlRef = null;
         detachScrollFollow();
+        restoreRvPadding();
         if (row == null) return;
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override public void run() {
@@ -864,49 +873,79 @@ public class SettingsEntry {
         View      knownRow = sHeaderRowRef != null ? sHeaderRowRef.get() : null;
 
         if (shouldShow) {
-            if (knownLl == ll && knownRow != null && knownRow.getParent() == ll) return;
+            // 幂等：同一 Activity 且 banner 仍挂着 → 不重复注入。
+            if (knownLl == ll && knownRow != null && knownRow.getParent() != null) return;
+            // 清旧 banner（可能来自上一个 Activity 实例）。
             if (knownRow != null && knownRow.getParent() != null) {
                 try { ((ViewGroup) knownRow.getParent()).removeView(knownRow); }
                 catch (Throwable ignored) {}
             }
             detachScrollFollow();
-            View row = buildGuardRow(activity);
-            // P_SE5: banner 放在 RecyclerView 之前（搜索框下方、"账号"分组上方）。
-            // 5-25 老代码用 idx=1 → 把 banner 加在搜索框上方，用户体感"悬浮"。
-            int rvIdx = -1;
-            for (int i = 0; i < ll.getChildCount(); i++) {
-                View c = ll.getChildAt(i);
-                if (c != null && c.getClass().getName().contains("RecyclerView")) {
-                    rvIdx = i;
-                    break;
-                }
-            }
-            // P_SE7: 顶部呼吸感由 buildGuardRow 内部 8dp 灰色 spacer 提供，不再外挂 topMargin。
-            int idx = rvIdx >= 0 ? rvIdx : Math.min(1, ll.getChildCount());
-            ll.addView(row, idx);
+            restoreRvPadding();
+
+            final View row = buildGuardRow(activity);
             sLlRef        = new WeakReference<>(ll);
             sHeaderRowRef = new WeakReference<>(row);
-            Log.i(TAG, "[SET] B1 entry row added idx=" + idx
-                    + " llChildCount=" + ll.getChildCount());
 
-            // P_SE7: 把 banner 绑定到 RV 滚动 —— 跟随内容上滑、滑过 bannerHeight 后停在屏上方。
-            // 直接复用 sRvRef（handleRecyclerView 已经存好的真 RV），不再扫 ll children。
-            View rvForScroll = sRvRef != null ? sRvRef.get() : null;
-            if (rvForScroll != null) {
-                attachScrollFollow(rvForScroll, row);
+            // P_SE8: 真·跟随滚动 —— banner 改挂到 RV 父层做顶部悬浮，并给 RV 顶部
+            // padding 腾空间（clipToPadding=false）。滚动时空间由 RV 自身 padding 提供、
+            // 随内容自然覆盖，banner 用 translationY 跟手；不留空槽、不用每帧 requestLayout。
+            final View rv = sRvRef != null ? sRvRef.get() : null;
+            final ViewGroup host = rv != null ? overlayHostFor(rv) : null;
+            if (rv != null && host != null) {
+                host.addView(row, makeTopOverlayLp(host));
+                Log.i(TAG, "[SET] overlay banner added host=" + host.getClass().getSimpleName());
+                row.post(new Runnable() {
+                    @Override public void run() {
+                        try {
+                            int bh = measureBannerHeight(row, rv, host);
+                            if (bh <= 0) {
+                                Log.w(TAG, "[SET] overlay bh<=0, skip padding");
+                                return;
+                            }
+                            // 让 banner 对齐 RV 在 host 内的顶边（多数情况 rv.getTop()==0）。
+                            try {
+                                ViewGroup.MarginLayoutParams mlp =
+                                        (ViewGroup.MarginLayoutParams) row.getLayoutParams();
+                                mlp.topMargin = Math.max(0, rv.getTop());
+                                row.setLayoutParams(mlp);
+                            } catch (Throwable ignored) {}
+                            applyRvTopPadding(rv, bh);
+                            attachScrollFollow(rv, row);
+                            Log.i(TAG, "[SET] overlay applied bh=" + bh + " rvTop=" + rv.getTop());
+                        } catch (Throwable t) {
+                            Log.w(TAG, "[SET] overlay apply failed: " + t);
+                        }
+                    }
+                });
             } else {
-                Log.w(TAG, "[SET] scroll-follow not attached: sRvRef null");
+                // Fallback（host 不可层叠）：保持原兄弟注入 + translationY（现状，不砸）。
+                int rvIdx = -1;
+                for (int i = 0; i < ll.getChildCount(); i++) {
+                    View c = ll.getChildAt(i);
+                    if (c != null && c.getClass().getName().contains("RecyclerView")) {
+                        rvIdx = i;
+                        break;
+                    }
+                }
+                int idx = rvIdx >= 0 ? rvIdx : Math.min(1, ll.getChildCount());
+                ll.addView(row, idx);
+                Log.i(TAG, "[SET] B1 fallback row added idx=" + idx
+                        + " llChildCount=" + ll.getChildCount());
+                if (rv != null) attachScrollFollow(rv, row);
+                else Log.w(TAG, "[SET] scroll-follow not attached: sRvRef null");
             }
         } else {
             detachScrollFollow();
+            restoreRvPadding();
             if (knownRow != null && knownRow.getParent() != null) {
                 try {
                     ((ViewGroup) knownRow.getParent()).removeView(knownRow);
-                    Log.i(TAG, "[SET] B1 entry row removed (HIDDEN)");
+                    Log.i(TAG, "[SET] entry row removed (HIDDEN)");
                 } catch (Throwable ignored) {}
-                sHeaderRowRef = null;
-                sLlRef = null;
             }
+            sHeaderRowRef = null;
+            sLlRef = null;
         }
     }
 
@@ -961,6 +1000,89 @@ public class SettingsEntry {
         } finally {
             sScrollFollowRvRef = null;
             sScrollListenerRef = null;
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // P_SE8: overlay banner host + RV top-padding helpers
+    // -----------------------------------------------------------------------
+
+    /** RV 的可层叠父容器（FrameLayout / RelativeLayout）才能承载顶部悬浮 banner。 */
+    private static ViewGroup overlayHostFor(View rv) {
+        try {
+            ViewParent p = rv.getParent();
+            if (p instanceof FrameLayout || p instanceof android.widget.RelativeLayout) {
+                return (ViewGroup) p;
+            }
+        } catch (Throwable ignored) {}
+        return null;
+    }
+
+    /** 顶部对齐、横向铺满、纵向 wrap 的 LayoutParams（按 host 类型生成）。 */
+    private static ViewGroup.LayoutParams makeTopOverlayLp(ViewGroup host) {
+        if (host instanceof FrameLayout) {
+            FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            lp.gravity = Gravity.TOP;
+            return lp;
+        }
+        android.widget.RelativeLayout.LayoutParams lp =
+                new android.widget.RelativeLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.addRule(android.widget.RelativeLayout.ALIGN_PARENT_TOP);
+        return lp;
+    }
+
+    /** banner 实测高度：优先 getHeight()，未布局则手动 measure 兜底。 */
+    private static int measureBannerHeight(View row, View rv, ViewGroup host) {
+        int bh = row.getHeight();
+        if (bh > 0) return bh;
+        try {
+            int w = rv.getWidth();
+            if (w <= 0) w = host.getWidth();
+            int ws = (w > 0)
+                    ? View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY)
+                    : View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
+            int hs = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
+            row.measure(ws, hs);
+            bh = row.getMeasuredHeight();
+        } catch (Throwable ignored) {}
+        return bh;
+    }
+
+    /** 给 RV 顶部加 topPad 高度 padding + clipToPadding=false；首次记录原值以便还原。 */
+    private static void applyRvTopPadding(View rv, int topPad) {
+        try {
+            View padded = sPaddedRvRef != null ? sPaddedRvRef.get() : null;
+            if (padded != rv) {
+                sRvOrigPaddingTop = rv.getPaddingTop();
+                try { sRvOrigClipToPadding = ((ViewGroup) rv).getClipToPadding(); }
+                catch (Throwable ignored) { sRvOrigClipToPadding = true; }
+                sPaddedRvRef = new WeakReference<>(rv);
+            }
+            try { ((ViewGroup) rv).setClipToPadding(false); } catch (Throwable ignored) {}
+            rv.setPadding(rv.getPaddingLeft(), sRvOrigPaddingTop + topPad,
+                    rv.getPaddingRight(), rv.getPaddingBottom());
+        } catch (Throwable t) {
+            Log.w(TAG, "[SET] applyRvTopPadding failed: " + t);
+        }
+    }
+
+    /** 还原被改过 padding 的 RV（top + clipToPadding），并清引用。 */
+    private static void restoreRvPadding() {
+        try {
+            View rv = sPaddedRvRef != null ? sPaddedRvRef.get() : null;
+            if (rv != null) {
+                rv.setPadding(rv.getPaddingLeft(), sRvOrigPaddingTop,
+                        rv.getPaddingRight(), rv.getPaddingBottom());
+                try { ((ViewGroup) rv).setClipToPadding(sRvOrigClipToPadding); }
+                catch (Throwable ignored) {}
+                Log.i(TAG, "[SET] RV padding restored top=" + sRvOrigPaddingTop);
+            }
+        } catch (Throwable ignored) {
+        } finally {
+            sPaddedRvRef = null;
         }
     }
 

@@ -232,6 +232,21 @@
 
 ---
 
+### 9. 设置入口 banner 注入（量子密友设置行 · 随列表滚动）
+
+| 项 | 内容 |
+|------|------|
+| **8.0.71 状态** | ✅ **装机验证 2026-06-01（P_SE8）** — banner 跟手滚动、顶部无空白，用户现场复验 ✅ |
+| **注入路径** | `SettingsEntry` 在 `MainSettingsUI / CommonSettingsUI` 的 `onResume` 注入「隐私功能 / 量子密友设置」banner（VISIBLE 显、HIDDEN+开关 `hei` 隐）|
+| **正解（P_SE8）** | banner 挂到 **RecyclerView 父层**（FrameLayout/RelativeLayout）做顶部悬浮 + 给 RV 设 **top padding = banner 高 & `setClipToPadding(false)`** 腾空间 + 滚动时 `banner.setTranslationY(-min(offset, bannerH))` 跟手。空间由 RV 自身 padding 提供、随内容自然回收 → 真·跟随滚动、不留空槽、不用每帧 requestLayout |
+| **症状（避坑）** | 旧实现（P_SE7）把 banner 当**占高度的兄弟 View** 加进 RV 容器 LinearLayout，再用 `setTranslationY` 做 scroll-follow。`setTranslationY` 只是视觉位移、**不回收布局高度** → 一滚动 banner 滑出但 H_banner 空槽还钉在顶部 → 设置页**标题栏与第一行之间出现一条空白**；现象：入口显示 + 下拉时露出、返回重进消失（offset 归 0）|
+| **如何避免** | ① 随列表滚动的 header **禁用**「占高度的兄弟 + translationY」凑（必漏空槽）；要么 RV 自身 padding 腾空间（本方案），要么做成真 list header。② RV header item（adapter）路线在 8.0.71 是**死路**：`pz3.g.onBindViewHolder` hook 0 命中，勿走。③ 改 banner 滚动逻辑前必读本行 + 铁律29 |
+| **项目代码** | `src/main/java/com/ghost/assist/moduleB/SettingsEntry.java` — `syncLlHeader` / `attachScrollFollow` / `applyRvTopPadding` / `restoreRvPadding` / `overlayHostFor`（带 fallback：父层不可层叠时回退旧兄弟注入）|
+| **铁律** | 铁律29：已装机验证 hook，**改前必问用户**；可见性权威口径见 `docs/GUARD_GATE_TRUTH.md` |
+| **来源** | 装机验证 2026-06-01（本会话，用户现场复验「收官完美」）|
+
+---
+
 ## 二、资料盘点（功能就绪度）
 
 ### "齐活"可立即落 hook（5 项）
