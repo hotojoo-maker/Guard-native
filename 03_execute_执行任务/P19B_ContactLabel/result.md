@@ -1,7 +1,7 @@
 # P19B 通讯录【标签】泄漏 — 实机验证通过
 
 **日期**: 2026-05-24  
-**状态**: ✅ build 装机确认（用户验证）
+**状态**: ✅ build 装机确认（用户验证 2026-05-24）；2026-05-31 重构期从 `ContactFilter` 丢失后独立成 `moduleD/ContactLabelMemberFilter.java`，用户现场复验 ✅
 
 ---
 
@@ -15,11 +15,11 @@
 **预期 logcat**（隐藏态 + 密友在名单）：
 
 ```
-I NCL: [CTF] ArrayList.addAll(ye5.j) label hook ok
-I NCL: [CTF:label] removed=1/N
+I NCL: [CLM] ArrayList.addAll(ye5.j) label-member hook ok
+I NCL: [CLM:label] removed=1/N
 ```
 
-DebugServer raw feed：`[CTF:label] ye5.j removed=1/N`
+DebugServer raw feed：`[CLM:label] ye5.j removed=1/N`
 
 ---
 
@@ -49,7 +49,7 @@ ArrayList.addAll(Collection)
                     └── it.remove()
 ```
 
-**实现位置**: `ContactFilter.java` → `installLabelAddAllHook()` / `extractLabelWxid()`
+**实现位置**: `moduleD/ContactLabelMemberFilter.java` → `install()` / `extractLabelWxid()`（2026-05-31 起独立模块；2026-05-24 原在 `ContactFilter.installLabelAddAllHook()`，P_CV1 重构期丢失）
 
 ---
 

@@ -8,8 +8,8 @@
 |------|------|
 | 标签成员列表密友不可见 | 用户 build 装机验证 2026-05-24 |
 | 标签内「添加」搜索密友不可见 | 同上 |
-| hook 安装 | 代码 `[CTF] ArrayList.addAll(ye5.j) label hook ok` |
-| 过滤命中日志 tag | `[CTF:label] ye5.j removed=N/M`（ContactFilter.java） |
+| hook 安装 | 代码 `[CLM] ArrayList.addAll(ye5.j) label-member hook ok` |
+| 过滤命中日志 tag | `[CLM:label] ye5.j removed=N/M`（ContactLabelMemberFilter.java） |
 | item 类 | `ye5.j`（Frida 探针 `[CLB] addAll itemCls=ye5.j`） |
 | wxid 字段 | `ye5.j.d`，格式 `wxid_xxx-N-M`，去后缀后匹配 |
 
@@ -21,4 +21,4 @@
 | `ArrayList.addAll(ye5.j)` remove | 路径 A+B 均生效 | ✅ |
 
 ## 下一步
-无（已关闭）。HOOKMAP F07B + TASK_BOARD 已同步。
+无（已关闭）。2026-05-31：P_CV1 重构期从 `ContactFilter` 丢失，按本任务文档恢复并独立成 `moduleD/ContactLabelMemberFilter.java`（日志 `[CLM:label]`），用户现场复验密友在标签内隐藏 ✅。hook 事实权威以 `docs/HOOK_MAP_8071_AUTHORITATIVE.md` §6b 为准（HOOKMAP/TASK_BOARD 不记 hook 事实）。

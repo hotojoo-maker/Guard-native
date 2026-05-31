@@ -132,12 +132,12 @@
 
 | 项 | 内容 |
 |------|------|
-| **8.0.71 状态** | ✅ **装机实证 2026-05-24（P19B）** |
+| **8.0.71 状态** | ✅ **装机实证 2026-05-24（P19B）**；标签内成员过滤 2026-05-31 重构独立成模块、用户现场复验 ✅ |
 | **L1 标签入口行** | `ArrayList.addAll(fc5.g)` 中 `e=8` 行为标签入口 → 移除该 item |
 | **L2 标签存储** | `com.tencent.mm.storage.d4` 类 |
-| **L3 标签成员/搜索 item** | `ye5.j` → `ye5.j.d` 形如 `wxid_xxx-15-0`，去后缀 `-N-M` 得 wxid |
+| **L3 标签成员/搜索 item** | `ye5.j` → `ye5.j.d` 形如 `wxid_xxx-15-0`，去后缀 `-N-M` 得 wxid；代码 = `moduleD/ContactLabelMemberFilter.java`（日志 `[CLM:label]`，门控 isActive+allHiddenIds） |
 | **L4 Activity 拦截** | `ContactLabelManagerUI / MvvmContactListUI / LabelSearchUI` |
-| **项目代码** | ✅ `moduleD/ContactLabelHideGuard.java`（2026-05-27 已补 ModuleMain.install） |
+| **项目代码** | ① 整标签入口/管理页隐藏（L1 `fc5.g` e=8 / L2 `d4` / L4 Activity，开关 hclb）= ✅ `moduleD/ContactLabelHideGuard.java`（2026-05-27 补 install）；② L3 标签内成员按 wxid 藏密友（门控 isActive+allHiddenIds）= ✅ `moduleD/ContactLabelMemberFilter.java`（2026-05-31 P_CV1 重构丢失后独立成模块，用户现场复验） |
 | **存储** | MMKV: `hcl`（`Bridge.isHideContactLabelEnabled`） |
 | **来源** | `03_execute_执行任务/P19B_ContactLabel/result.md` |
 

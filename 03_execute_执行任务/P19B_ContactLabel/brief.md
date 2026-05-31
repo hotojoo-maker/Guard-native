@@ -25,6 +25,6 @@
 | 铁律30 | 主进程过滤读 Java StateMachine |
 
 ## 关键文件
-- `src/main/java/com/ghost/assist/moduleD/ContactFilter.java` — `installLabelAddAllHook()`
+- `src/main/java/com/ghost/assist/moduleD/ContactLabelMemberFilter.java` — `install()` / `extractLabelWxid()`（2026-05-31 独立成模块；原在 `ContactFilter.installLabelAddAllHook()`）
 - `scripts/probe_label_tab.js` — 发现探针（v2 轻量）
-- `HOOKMAP.md` § F07B
+- `docs/HOOK_MAP_8071_AUTHORITATIVE.md` §6b — hook 事实权威（HOOKMAP 只记 F07 主列表；标签事实不入 HOOKMAP，见 worklog 2026-05-31 口径）
