@@ -1,4 +1,4 @@
-﻿# P_CV1 — 通讯录 V↔H 热切（ContactView 第 1 轮）worklog
+# P_CV1 — 通讯录 V↔H 热切（ContactView 第 1 轮）worklog
 
 - **2026-05-27 21:33** 任务建档（接班自 Guard Native141 会话 210015-3eb0e；上一会话已完成会话 tab V↔H v28 收口实证）。
 - **2026-05-27 21:33** 用户拍板：P 号 = `P_CV1`；动作顺序 = 先落文档 + 建任务目录 + worklog 首行 + 贴框架合规预审，再切 `/guard-execute-one_单任务执行` 开干。
@@ -131,7 +131,7 @@
 
 ---
 
-## 五、装机验证清单（待用户跑）
+## 五、装机验证清单（✅ 已跑 — `bug排查/final_pcv1_v8_双通成功.log` 双通 + 2026-06-01 复跑 install 实证 `final_pcv1_v9_173007.log`）
 
 **预期 logcat 关键 tag**（命中表示链路通）：
 

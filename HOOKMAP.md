@@ -18,8 +18,8 @@
 
 | 模块                                    | 状态  | 功能数 | v1 范围                                       | 详情  |
 | ------------------------------------- | --- | --- | ------------------------------------------- | --- |
-| **A. 核心隐私**（密友列表/密群/密码/总开关）           | 🟡  | 4   | A1/A2/A3 ✅装机；A4 密码⬜待装机                  | §A  |
-| **B. 隐藏触发**（摇一摇/切后台/Home/锁屏/搜索框 1111） | 🟡  | 6   | B2/B6 **8071 已验**；B1/B5 待确认；B4 ⬜ | §B  |
+| **A. 核心隐私**（密友列表/密群/密码/总开关）           | 🟡  | 4   | A1/A2/A3 ✅装机；A4 密码✅装机 2026-05-22（SearchUnlock，见 §三 A4）                  | §A  |
+| **B. 隐藏触发**（摇一摇/切后台/Home/锁屏/搜索框 1111） | 🟡  | 6   | B2/B6 **8071 已验**；B5 ✅ 用户确认已验证 2026-06-01；B1 待确认；B4 ⬜ | §B  |
 | **C. 消息控制**（防撤回/通知伪装/未读/通知模式/**来电拦截**）         | 🟡  | 5   | **语音/视频来电拦截 ✅装机 2026-05-29**（→ `docs/P22_PushFilter_VoIP.md`）；PushFilter L1/NM ✅装机 2026-05-22；L4b ❓；L4c 🟡；AntiRecall ✅装机 2026-05-31（jy0.t.f 拦截+原文保留+提示染红）；**通知模式 静默/震动 ✅、铃声占位、:push 独立震 🟡(P_NF3)**；C5 v2 起 | §C  |
 | **D. 痕迹隐藏**（密友帖/点赞/评论）         | ✅  | 3   | D1+D2+D3 装机确认 2026-05-20（8.0.71） | §D  |
 | **E. 装b 模块**（步数/定位/改零钱）               | ⬜   | 3   | 不在 v1                                       | §E  |
@@ -57,11 +57,12 @@
 | **L0v2 朋友圈过滤 D1** | `ArrayList.addAll(na4.b)` → `la4.p` → **`la4.p.field_userName` 直读**（fallback 主路径） → remove post | ✅ 装机确认 2026-05-21 | ⭐⭐⭐ | `h1()` 路径 null miss（F-31）；fallback 命中 5 次实证；**禁止改回 h1() 主路径** |
 | **L0v4 赞评过滤 D2/D3** | `LinkedList.add(z15.e56/cs5.di0/i84.y)` → `entry.d`（或 `f435583d`）=wxid → block | ✅ 装机确认 2026-05-20 | ⭐⭐⭐ | 4 字段轮询：`d / f435583d / username / field_userName`；getCommentList/LikeUserList 走 JNI 不可用 |
 | **F07 通讯录 8.0.71** | `ArrayList.addAll` → `fc5.g` → `g.d`（z3 实例）→ `z3.c1()` → remove | ✅ P19 2026-05-20 | ⭐⭐⭐ | **仅通讯录**；类常量 `com.tencent.mm.storage.z3`；`MvvmList.n/u` 零触发 |
+| **F07B 标签成员 8.0.71** | `ArrayList.addAll` → first item `ye5.j` → `ye5.j.d`（`wxid_xxx-N-M` 去后缀）→ `allHiddenIds().contains` → `Iterator.remove()` | ✅ 装机 2026-05-24 + 用户现场复验 2026-05-31 | ⭐⭐⭐ | 通讯录「标签」分组专用（≠ F07 主列表 `fc5.g`）；同 `addAll` 入口靠 first-item 类名分流，勿删 `fc5.g` 分支；独立为 `moduleD/ContactLabelMemberFilter.java`（日志 `[CLM:label]`，install `[CLM] ... hook ok` 2026-06-01 复跑实证 行 1940）；门控 `isActive()`+`allHiddenIds()` |
 | **朋友圈小红点 P21** | **Layer0b**：`Activity.onResume` 过滤 `SnsMsgUI*`（互动列表入口，进列表后密友条目不显示 + `w1.y` 归零）；**Layer2**：`FMF.g1("album_dyna_photo_ui_title", true)` 拦截（朋友圈行红点）；**v18 tab badge**：`TabRedDotChangeEvent`/`WeChatTabRedDotEvent` ctor int 字段清零 | 🟡 **L3 待装机实证**（证据源：chatfish 反编译 + frida trace，**尚无 LSPosed 自有 logcat 原文**，不得标 ✅）；v18 tab badge 代码已写，未触发 | ⭐⭐⭐ | ❌ Layer1 `w1.v2` **跨进程不可达**（`:push` 进程写，主进程 hook 打不到）；badge 本地状态，进互动列表消费后自然归零；`w1.E1()` getter 零调用（badge 不走 getter）；`g1(true)` 已拦截（阻止新红点）|
 | **L1 MvvmList.n/m** | `MvvmList.n(List,bool)` 8.0.71 / `.m`（8066）→ `kc5.v0` / `kc5.y` → `y.d`（l4）→ **`l4.C0()`** wxid（8071 主路径） | ✅ **装机确认 2026-05-20** | ⭐⭐⭐ | 8066 曾用 h1() 轮询；8071 以 C0 实证（P20B） |
 | **L2 MvvmList.s** | `MvvmList.s(List)`                         | ✅ Frida 验证 | ⭐⭐⭐    | 会话备用      |
 | **L4 notify**     | `kc5.v0.notifyDataSetChanged` clean-before → L4-NoDiff（setResult null + Handler.post 全量刷）| ✅ **装机实证 2026-05-23**（F-32 DiffUtil 卡帧修复） | ⭐⭐⭐ | 渲染前兜底；L4 beforeHook 同步更新 `sConvAdapterRef`（仅 kc5.v0）+ `sMvvmListRef`；**禁止把 h0 加入 sConvAdapterRef 更新条件** |
-| **V↔H 实时刷新**  | V→H：`sPendingHide` + LauncherUI.onResume → `cleanConvData` + `cleanAdapterGraph(L4adapter.q.d)` + `notifyConvAdapter(v0)`；H→V：`sPendingRestore` + `expandCacheWithWarm(kc5.x.h(id) fresh)` + `restoreToMvvmList(h/o/p, CME-safe)` + `restoreAdapterGraphFromCache(adapter.q.d)` + `notifyConvAdapter(v0)` + **80ms post-dedup（v27）**：`postDedupAdapterGraph` 按 identity 把同对象引用收敛成 1 份；filterConvList 加密群保底检 `extractGroupId` + 快照式 CME 防御（v28） | 🟡 **2026-05-27 v28 仅会话 tab 收口**：冷启动 H 态不露 / H 态新消息不露 / V↔H 5 轮热切完美 / 冷启动→V 全恢复 / CME=0 / warmAll expanded=3；证据：`bug排查/final_v28_5rounds.log` + `final_v28_coldstart.log`。⛔ **通讯录 tab V 态 hot-restore 未实现**（`ContactFilter.RefreshBus` 只含 cleanLiveList，无 restore 分支）；同路径密群在通讯录 ⛔ 未实现 — 现象：H→V 后通讯录看不到密友/密群；归属 P_CV1（见 TASK_BOARD §五） | ⭐⭐⭐⭐ | sConvAdapterRef 仅 kc5.v0；禁止 h0/q2 覆盖；禁止 v25 跨 List identity + v26 list-visited 双层强 dedup（已 F-35）；详见 [`docs/CONV_REFRESH_PROBLEM.md`](./docs/CONV_REFRESH_PROBLEM.md) §十二~§十七 |
+| **V↔H 实时刷新**  | V→H：`sPendingHide` + LauncherUI.onResume → `cleanConvData` + `cleanAdapterGraph(L4adapter.q.d)` + `notifyConvAdapter(v0)`；H→V：`sPendingRestore` + `expandCacheWithWarm(kc5.x.h(id) fresh)` + `restoreToMvvmList(h/o/p, CME-safe)` + `restoreAdapterGraphFromCache(adapter.q.d)` + `notifyConvAdapter(v0)` + **80ms post-dedup（v27）**：`postDedupAdapterGraph` 按 identity 把同对象引用收敛成 1 份；filterConvList 加密群保底检 `extractGroupId` + 快照式 CME 防御（v28） | 🟡 **2026-05-27 v28 仅会话 tab 收口**：冷启动 H 态不露 / H 态新消息不露 / V↔H 5 轮热切完美 / 冷启动→V 全恢复 / CME=0 / warmAll expanded=3；证据：`bug排查/final_v28_5rounds.log` + `final_v28_coldstart.log`。✅ **通讯录 tab 密友 V↔H 热切已装机收口（2026-05-29，P_CV1）**：`ContactHotReload.handleBusVisible` BUS-V restore 遍历 MvvmList 基类 o/p/h + 80ms 异步 post-dedup（F-35 合规），`ContactFilter.cleanLiveList` 同改 o/p/h 对称；`ContactDiscoveryHook.findAdapterHosts` 深度 8→24 抓到 `AddressLiveList`/`ik3.t0`；证据 `bug排查/final_pcv1_v8_双通成功.log`（V↔H 3 轮 V 注 4 / H 删 4 全稳）。通讯录「群聊」分组密群**隐藏**走 P_CV1-G `ChatroomContactUI`（见 `docs/A3_GROUP_FILTER_IMPL.md` §六）；密群 V 态恢复为 P_CV1 遗留。归属 P_CV1（见 TASK_BOARD §五） | ⭐⭐⭐⭐ | sConvAdapterRef 仅 kc5.v0；禁止 h0/q2 覆盖；禁止 v25 跨 List identity + v26 list-visited 双层强 dedup（已 F-35）；详见 [`docs/CONV_REFRESH_PROBLEM.md`](./docs/CONV_REFRESH_PROBLEM.md) §十二~§十七 |
 | INIT              | warm-attach 首次进入清理                         | ✅ Frida 验证 | ⭐⭐⭐    | 老数据清理     |
 | 实例轮询              | 3s 检查 hashCode 防 StateFlow 替换              | ✅ Frida 验证 | ⭐⭐⭐    | 朋友圈 o/p   |
 | **PushFilter L1** | `LinkedList.add(NotificationItem)` → `this.h` = talker wxid → `shouldHideId` → setResult(false) | ✅ **装机实证 2026-05-22**（普通消息拦截 block+cancel 双层生效） | ⭐⭐⭐ | 主进程；tinker classloader — 用 `obj.getClass().getDeclaredField("h")` 绕开 |
@@ -153,10 +154,10 @@
 | B2  | 切后台/Home/手势切 App → 自动隐藏（**默认开启**，不可关） | VISIBLE→HIDDEN | ✅ **8071 已验** | `TriggerGuard.java` ActivityLifecycleCallbacks + CLOSE_SYSTEM_DIALOGS | ⭐ |
 | B3  | ~~Home 键单独~~ | — | ❌ | 被 B2 的 CLOSE_SYSTEM_DIALOGS 覆盖，无需单独实现 | — |
 | B4  | 返回键 → 隐藏（仅会话/通讯录主页） | VISIBLE→HIDDEN | ⬜ 待实现 | hook onBackPressed，按页面判断 | ⭐ |
-| B5  | 锁屏 → 自动隐藏（解锁后**不**自动显形） | VISIBLE→HIDDEN | ⬜ 代码已写待装机 | `TriggerGuard.java` ACTION_SCREEN_OFF | ⭐ |
+| B5  | 锁屏 → 自动隐藏（解锁后**不**自动显形） | VISIBLE→HIDDEN | ✅ 用户确认已验证（2026-06-01） | `TriggerGuard.java` ACTION_SCREEN_OFF | ⭐ |
 | B6  | 主界面放大镜输入 111111 → 解锁显形 | HIDDEN→VISIBLE | ✅ **8071 已验** | `SearchUnlock.java` FTS 搜索页 TextWatcher | ⭐⭐ |
 
-**下一步**：B1/B5 待 8071 装机确认；B4 返回键待实现；111111 后密友自动回显 → P20B Bug B / P26。
+**下一步**：B1 待 8071 装机确认（B5 ✅ 用户确认已验证 2026-06-01）；B4 返回键待实现；111111 后密友自动回显 → P20B Bug B / P26。
 
 ---
 

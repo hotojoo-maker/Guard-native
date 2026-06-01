@@ -363,7 +363,7 @@ H→V 后：  [BUS:pendingRestore] notified adapter=v0 ← 同上
 | 解法 | v27 = v24 wxid-only dedup 保留多次 insert 副作用 + 80ms 异步 `postDedupAdapterGraph` 按 identity 把同对象引用收敛成 1 份（先脏后净，肉眼最多见 80ms 闪一下）。**禁止把 dedup 提前到 notify 之前同步执行** |
 | 强制规则 | ❌ 禁止在 `injectCacheIntoList` / `restoreToMvvmList` 加跨 List identity check（v25 已证伪）；❌ 禁止把 list-visited 加到 `restoreConvListsInObject` 或 `restoreToMvvmList` 的 List 层（v26 已证伪）；✅ identity dedup 必须放在 notify 之后异步执行 |
 | 关联 | docs/CONV_REFRESH_PROBLEM.md §十六 / §十七、HOOKMAP.md §二 V↔H 实时刷新行 |
-| 后续观测 · 2026-05-27 v28 | **仅会话 tab（`kc5.v0` / `MvvmList`）热切路径下 5 轮未复现 `removed 3→12` dedup 锁死**。装箱日志：`bug排查/final_v28_5rounds.log:8181`、`bug排查/final_v28_coldstart.log`。**通讯录 tab（`AddressLiveList` / `ik3.t0`）未进入本轮验证范围 — V 态 hot-restore 未实现，单独归属 P_CV1**。F-35 强制规则保留不动；本行仅作历史追加，**不视为铁律解除** |
+| 后续观测 · 2026-05-27 v28 | **仅会话 tab（`kc5.v0` / `MvvmList`）热切路径下 5 轮未复现 `removed 3→12` dedup 锁死**。装箱日志：`bug排查/final_v28_5rounds.log:8181`、`bug排查/final_v28_coldstart.log`。**通讯录 tab（`AddressLiveList` / `ik3.t0`）未进入本轮验证范围 — V 态 hot-restore 未实现，单独归属 P_CV1**。F-35 强制规则保留不动；本行仅作历史追加，**不视为铁律解除**。**追加 2026-06-01（不改原文）**：P_CV1 通讯录 V↔H 热切已装机收口（`bug排查/final_pcv1_v8_双通成功.log` 双通 + 本日 `[CTHR]/[CTF]/[CDH]` install 实证 `bug排查/final_pcv1_v9_173007.log`），上文「未实现」为 2026-05-27 历史观测、现已实现 |
 
 ### F-36：8.0.71 语音/视频来电拦截 — 6 条已证伪路径（2026-05-29 收口合集）
 
