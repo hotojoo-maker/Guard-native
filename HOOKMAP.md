@@ -18,7 +18,7 @@
 
 | 模块                                    | 状态  | 功能数 | v1 范围                                       | 详情  |
 | ------------------------------------- | --- | --- | ------------------------------------------- | --- |
-| **A. 核心隐私**（密友列表/密群/密码/总开关）           | 🟡  | 4   | A1/A2/A3 ✅装机；A4 密码✅装机 2026-05-22（SearchUnlock，见 §三 A4）                  | §A  |
+| **A. 核心隐私**（密友列表/密群/密码/总开关）           | 🟡  | 4   | A3 密群 ✅装机 2026-05-21；A4 密码 ✅装机 2026-05-22（SearchUnlock，见 §三 A4）；A1 状态机 🟡（isActive 门控已验/VIP 授权 v1 stub）；A2 密友名单 🟡（数据层 Bridge ✅/ContactResolver L4 stub + 设置入口「添加密友」按钮缺）                  | §A  |
 | **B. 隐藏触发**（摇一摇/切后台/Home/锁屏/搜索框 1111） | 🟡  | 6   | B2/B6 **8071 已验**；B5 ✅ 用户确认已验证 2026-06-01；B1 待确认；B4 ⬜ | §B  |
 | **C. 消息控制**（防撤回/通知伪装/未读/通知模式/**来电拦截**）         | 🟡  | 5   | **语音/视频来电拦截 ✅装机 2026-05-29**（→ `docs/P22_PushFilter_VoIP.md`）；PushFilter L1/NM ✅装机 2026-05-22；L4b ❓；L4c 🟡；AntiRecall ✅装机 2026-05-31（jy0.t.f 拦截+原文保留+提示染红）；**通知模式 静默/震动 ✅、铃声占位、:push 独立震 🟡(P_NF3)**；C5 v2 起 | §C  |
 | **D. 痕迹隐藏**（密友帖/点赞/评论）         | ✅  | 3   | D1+D2+D3 装机确认 2026-05-20（8.0.71） | §D  |
@@ -42,6 +42,8 @@
 - **【已下沉 v1】P21 朋友圈小红点 Layer0b/Layer2 🟡**（注：当前实证来源仅 chatfish 反编译 + frida trace，尚无 LSPosed 装机日志原文，证据级 L3）
 
 门控 / 授权 / 状态机 / 设置入口可见性的权威口径见 [`docs/GUARD_GATE_TRUTH.md`](./docs/GUARD_GATE_TRUTH.md)。
+
+防破解 / 防盗版（注入隔离 / 蜜罐 / 阶段路线图 / 上线前门控）见 [`PROTECTION_MAP.md`](./PROTECTION_MAP.md)；调试驾驶舱见 [`docs/DEBUG_CONSOLE_V2.md`](./docs/DEBUG_CONSOLE_V2.md)。
 
 **v2/v3 增量**：archive `HOOK_MAP_V1` 的 P2 (7) + 暂缓 (5) + E 装b + F 商业彩蛋
 
@@ -238,7 +240,7 @@
 | F05.3 朋友圈评论 | L0v4 `LinkedList.add`           | getter after 过滤          | ✅ L1 |
 | F07 通讯录隐藏   | **8.0.71** `ArrayList.addAll(fc5.g)` → `g.d`（z3）→ `z3.c1()` | notify + fragResume 兜底 | ✅ P19 装机 2026-05-20 |
 | **A3 密群隐藏**  | 复用 F04 + F07，统一走 `Bridge.allHiddenIds()` | — | ✅ 装机已验（2026-05-21）|
-| F08 防撤回     | 待 T08 调研                       | —                         | ⬜          |
+| F08 防撤回     | `jy0.t.f`(doRevokeMsg) setResult(null) 保原文 + 插 type=10000 系统提示染红 | — | ✅ **P23 L1 装机 2026-05-31**（旧"待 T08 调研"已结案）|
 | F-搜索（放大镜 FTS） | 联系人：`f0.getView` (q2 父类) afterHook 取 `tz2.u1.f.s` = wxid → GONE + ListView divider 清除 | 群聊：groupId 路径待验；聊天记录：z15.ef6 talker 未解析；fz2.e 数据层 c=3 走 UIN 待映射 | 🟡 联系人✅；群聊/聊天记录⬜ |
 
 

@@ -48,12 +48,24 @@ android {
         }
     }
 
+    signingConfigs {
+        // Sign release with the SAME debug keystore → release installs over debug
+        // without signature mismatch, and dev keeps one consistent signature.
+        release {
+            storeFile file("${System.properties['user.home']}/.android/debug.keystore")
+            storePassword "android"
+            keyAlias "androiddebugkey"
+            keyPassword "android"
+        }
+    }
+
     buildTypes {
         debug {
             minifyEnabled false
             debuggable true
         }
         release {
+            signingConfig signingConfigs.release
             minifyEnabled true
             shrinkResources false   // keep xposed_init asset
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
@@ -73,6 +85,11 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
+    }
+
+    // BuildConfig.DEBUG used to gate the debug HTTP dashboard off in release builds.
+    buildFeatures {
+        buildConfig true
     }
 }
 

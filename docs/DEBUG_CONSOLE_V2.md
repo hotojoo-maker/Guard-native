@@ -128,3 +128,26 @@ curl "http://127.0.0.1:8080/api/telemetry/events?channel=badge&limit=50"
 ```
 
 模块须 **DEV 或 HONEY** 模式（`AppConfig.isDebugEnabled()`）才安装 UI 追踪，避免 PROD KPI 噪声。
+
+---
+
+## 十、防护驾驶舱 + `/api/native`（2026-06-02 新增）
+
+> 防破解/防盗版的「看得见」层。设计与阶段总账见 [`../PROTECTION_MAP.md`](../PROTECTION_MAP.md)。
+
+**新接口** `GET /api/native`（DebugServer）——只吐**状态枚举，绝不吐密钥/配方/租约原文**：
+
+| 字段 | 含义 | 来源 |
+|------|------|------|
+| `soLoaded` | libguardcore.so 是否加载 | `NativeBridge.isAvailable()` |
+| `role` | 进程角色 MAIN/PUSH/… | `nativeGetProcessRole` |
+| `authState` | 授权态 OK/UNKNOWN/TAMPERED/… | `nativeGetAuthState` |
+| `risk` | 风险态 NONE/PIRATE/… | `nativeGetRiskState` |
+| `configVersion` | 配方版本 | `nativeGetConfigVersion` |
+| `leaseValid`/`decryptOk`/`tampered` | Phase 1/2 占位（现 null/false） | 待接入 |
+
+**浏览器**：左栏顶部「守护内核 · 防护驾驶舱」卡——Java 层（状态机/开关/名单）与 Native·SO 层（SO/授权/防篡改/配方）**分栏并列** + 蜜罐行 + 防破解阶段路线图。
+
+**桌面**：`tools/guard_status.cmd`（双击）/ `tools/guard_status.ps1`——adb forward + 控制台版同款状态面板（与 web 面板二选一）。
+
+> ⚠️ 同 §九：整套调试台**仅 DEV/HONEY**，PROD/release 必须关。Phase 0 待收口：`ModuleMain` 的 `DebugServer.start()` 当前**未 gate**（无条件启动），需改成 `isDebugEnabled()` 才启。

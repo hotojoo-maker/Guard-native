@@ -5,9 +5,11 @@ import android.os.Process;
 import android.util.Log;
 
 import com.ghost.assist.core.AppConfig;
+import com.ghost.assist.core.AuthManager;
 import com.ghost.assist.core.Bridge;
 import com.ghost.assist.core.InterceptCounter;
 import com.ghost.assist.core.NativeBridge;
+import com.ghost.assist.core.PiracyNotice;
 import com.ghost.assist.core.StateMachine;
 import com.ghost.assist.debug.DebugServer;
 import com.ghost.assist.debug.OverlayWindow;
@@ -136,6 +138,19 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         // 6. Restore state from persistence
         StateMachine.getInstance().restoreState();
 
+        // 6.5. P4-1: auth evaluate (wxid + device) — wires the previously-dead
+        //      AuthManager + PiracyNotice into the live path.
+        //      v1: RECORD ONLY, NO gating — NO_LICENSE / MISMATCH still pass
+        //      (GUARD_GATE_TRUTH §4). PiracyNotice only fires on AUTH_TAMPERED.
+        try {
+            int authResult = AuthManager.evaluate(app);
+            NativeBridge.setAuthState(authResult);
+            Log.i(TAG, "[auth] evaluate=" + authResult + " (v1 record-only, not gating)");
+            PiracyNotice.showIfTampered(app, NativeBridge.getAuthState());
+        } catch (Throwable t) {
+            Log.e(TAG, "[auth] wire crash: " + t);
+        }
+
         // 7. Install module hooks
         // jy0.t(doRevokeMsg) 是 tinker 补丁类 → 必须用 app classloader（见下方 PushFilter 同款注释）
         AntiRecall.install(lpparam, app.getClassLoader());
@@ -161,9 +176,14 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         // 设置入口 — 微信「我→设置」顶部注入"密友设置 ›"行（仅 VISIBLE 态可见）
         SettingsEntry.install(lpparam);
 
-        // 8a. HTTP debug server always starts so web dashboard works in PROD mode.
-        DebugServer.start();
-        Log.i(TAG, "[init] debug server started port=" + AppConfig.getInstance().getServerPort());
+        // 8a. HTTP debug server — DEBUG build always; RELEASE only in HONEY mode.
+        //     RELEASE + PROD (customer build) → never starts, so /api/hidden etc. are not exposed.
+        if (BuildConfig.DEBUG || AppConfig.getInstance().isDebugEnabled()) {
+            DebugServer.start();
+            Log.i(TAG, "[init] debug server started port=" + AppConfig.getInstance().getServerPort());
+        } else {
+            Log.i(TAG, "[init] debug server skipped (release+prod)");
+        }
 
         // 8b. UiContextTracker must run in PROD too — SearchUnlock/SearchFilter use
         //     getCurrentActivity() to finish() the search page after unlock.

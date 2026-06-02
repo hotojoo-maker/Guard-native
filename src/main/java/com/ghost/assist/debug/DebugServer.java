@@ -6,6 +6,7 @@ import com.ghost.assist.core.AppConfig;
 import com.ghost.assist.core.Bridge;
 import com.ghost.assist.core.InterceptCounter;
 import com.ghost.assist.core.StateMachine;
+import com.ghost.assist.core.NativeBridge;
 import com.ghost.assist.debug.DebugTelemetry;
 
 import java.io.BufferedReader;
@@ -106,6 +107,8 @@ public class DebugServer {
             byte[] response;
             if ("/api/state".equals(path)) {
                 response = apiState();
+            } else if ("/api/native".equals(path)) {
+                response = apiNative();
             } else if ("/api/counters".equals(path)) {
                 response = apiCounters();
             } else if ("/api/events".equals(path)) {
@@ -157,6 +160,61 @@ public class DebugServer {
             "\"code\":" + sm.getStateCode() + "," +
             "\"mode\":" + sm.isActive() + "}";
         return jsonResponse(json);
+    }
+
+    /**
+     * Native / protection-layer status snapshot for the dashboard.
+     * STATUS ONLY — never expose keys, raw config, lease tokens or decrypt material here.
+     * DEV builds only (the whole DebugServer must be gated off in release).
+     * leaseValid / decryptOk are Phase 1/2 placeholders (null until wired).
+     */
+    private static byte[] apiNative() {
+        boolean avail = NativeBridge.isAvailable();
+        String json = "{"
+            + "\"soLoaded\":" + avail + ","
+            + "\"role\":\"" + roleName(NativeBridge.getProcessRole()) + "\","
+            + "\"authState\":\"" + authName(NativeBridge.getAuthState()) + "\","
+            + "\"authorized\":" + NativeBridge.isAuthorized() + ","
+            + "\"risk\":\"" + riskName(NativeBridge.getRiskState()) + "\","
+            + "\"configVersion\":" + NativeBridge.getConfigVersion() + ","
+            + "\"hidden\":" + NativeBridge.isHidden() + ","
+            + "\"leaseValid\":null,"      // Phase 1: heartbeat lease
+            + "\"graceRemainHours\":-1,"  // Phase 1: from GRACE_* ladder
+            + "\"decryptOk\":null,"       // Phase 1: SO decrypt_config()
+            + "\"tampered\":false"        // Phase 2: honeypot tripwire flag
+            + "}";
+        return jsonResponse(json);
+    }
+
+    private static String authName(int s) {
+        switch (s) {
+            case NativeBridge.AUTH_OK:               return "OK";
+            case NativeBridge.AUTH_EXPIRED:          return "EXPIRED";
+            case NativeBridge.AUTH_TAMPERED:         return "TAMPERED";
+            case NativeBridge.AUTH_NO_LICENSE:       return "NO_LICENSE";
+            case NativeBridge.AUTH_ACCOUNT_MISMATCH: return "ACCOUNT_MISMATCH";
+            case NativeBridge.AUTH_DEVICE_MISMATCH:  return "DEVICE_MISMATCH";
+            default:                                 return "UNKNOWN";
+        }
+    }
+
+    private static String riskName(int s) {
+        switch (s) {
+            case NativeBridge.RISK_PACKAGE_MISMATCH: return "PACKAGE_MISMATCH";
+            case NativeBridge.RISK_CONFIG_TAMPERED:  return "CONFIG_TAMPERED";
+            case NativeBridge.RISK_GRACE_EXPIRED:    return "GRACE_EXPIRED";
+            case NativeBridge.RISK_PIRATE:           return "PIRATE";
+            default:                                 return "NONE";
+        }
+    }
+
+    private static String roleName(int r) {
+        switch (r) {
+            case NativeBridge.ROLE_MAIN:    return "MAIN";
+            case NativeBridge.ROLE_PUSH:    return "PUSH";
+            case NativeBridge.ROLE_BLOCKED: return "BLOCKED";
+            default:                        return "UNKNOWN";
+        }
     }
 
     private static byte[] apiCounters() {
