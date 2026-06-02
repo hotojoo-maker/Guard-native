@@ -167,6 +167,33 @@ public class SettingsEntry {
             }
         });
     }
+
+    /**
+     * P_IMPORT: 从 SelectContactUI 导入/移除回来后，即时刷新 overlay 里
+     * 「密友列表 / 密群列表」的「已选择 N 个」计数（修「导入成功 UI 不立刻刷新」bug）。
+     * 由 ContactImportGuard.consumeResult 在写完 Bridge 后调用；overlay 未显示时静默跳过。
+     */
+    public static void refreshImportCounts() {
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override public void run() {
+                try {
+                    Bridge br = Bridge.getInstance();
+                    TextView b = sBuddyCountRef != null ? sBuddyCountRef.get() : null;
+                    if (b != null) {
+                        b.setText("\u5df2\u9009\u62e9 " + br.getWxidCount() + " \u4e2a \u203a");
+                    }
+                    TextView g = sGroupCountRef != null ? sGroupCountRef.get() : null;
+                    if (g != null) {
+                        g.setText("\u5df2\u9009\u62e9 " + br.getGroupCount() + " \u4e2a \u203a");
+                    }
+                    Log.i(TAG, "[SET:overlay] import counts refreshed buddy="
+                            + br.getWxidCount() + " group=" + br.getGroupCount());
+                } catch (Throwable t) {
+                    Log.w(TAG, "[SET:overlay] refresh counts failed: " + t);
+                }
+            }
+        });
+    }
     private static final int        PROFILE_ROW_TAG   = 0x67757a72; // "guzr"
     private static final int        PROFILE_ORIG_TAG  = 0x67757a73; // "guzs" — cache 原 onClick listener
     private static final String     PROFILE_TEXT      = "\u4e2a\u4eba\u8d44\u6599"; // 个人资料
@@ -177,6 +204,12 @@ public class SettingsEntry {
     private static volatile WeakReference<TextView> sMoreTitleRef;
     private static volatile WeakReference<View.OnClickListener> sMoreOriginalClickRef;
     private static volatile String sMoreOriginalTitle;
+
+    // P_IMPORT: overlay 内「密友列表 / 密群列表」的「已选择 N 个」计数 TextView 引用。
+    // 导入/移除从 SelectContactUI 回来后，ContactImportGuard.consumeResult 调
+    // refreshImportCounts() 即时刷新这两个数字（修「导入成功 UI 不立刻刷新」bug）。
+    private static volatile WeakReference<TextView> sBuddyCountRef;
+    private static volatile WeakReference<TextView> sGroupCountRef;
 
 
     // -----------------------------------------------------------------------
@@ -1344,22 +1377,26 @@ public class SettingsEntry {
                 }));
 
         // 5. 密友列表（点击 = 拉起微信官方选择器，预选已有 + 增删一体）
+        final TextView[] buddyCountOut = new TextView[1];
         content.addView(buildButtonRow(activity, "密友列表",
                 "已选择 " + br.getWxidCount() + " 个",
                 new View.OnClickListener() {
                     @Override public void onClick(View v) {
                         ContactImportGuard.launchSelectBuddy(activity);
                     }
-                }));
+                }, buddyCountOut));
+        sBuddyCountRef = new WeakReference<>(buddyCountOut[0]);
 
-        // 6. 密群列表（点击 = 拉起微信官方选择器，预选已有 + 增删一体）
+        // 6. 密群列表（点击 = 拉起微信原生选群器 GroupCardSelectUI，预选已隐密群 → 增删一体）
+        final TextView[] groupCountOut = new TextView[1];
         content.addView(buildButtonRow(activity, "密群列表",
                 "已选择 " + br.getGroupCount() + " 个",
                 new View.OnClickListener() {
                     @Override public void onClick(View v) {
                         ContactImportGuard.launchSelectGroup(activity);
                     }
-                }));
+                }, groupCountOut));
+        sGroupCountRef = new WeakReference<>(groupCountOut[0]);
 
         // ===== 性能（密友与特色功能之间的分组）=====
         content.addView(buildSectionHeader(activity, "性能"));
@@ -1524,6 +1561,15 @@ public class SettingsEntry {
 
     private static View buildButtonRow(Context ctx, String title, String btnText,
                                        View.OnClickListener listener) {
+        return buildButtonRow(ctx, title, btnText, listener, null);
+    }
+
+    /**
+     * @param outBtn 非 null 时，把内部「值/计数」TextView 回传到 outBtn[0]，
+     *               供 refreshImportCounts() 后续刷新（修导入后计数不更新 bug）。
+     */
+    private static View buildButtonRow(Context ctx, String title, String btnText,
+                                       View.OnClickListener listener, TextView[] outBtn) {
         LinearLayout row = new LinearLayout(ctx);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setBackgroundColor(Color.WHITE);
@@ -1546,6 +1592,7 @@ public class SettingsEntry {
         tvBtn.setTextColor(Color.parseColor("#576B95"));
         tvBtn.setTextSize(14f);
         row.addView(tvBtn);
+        if (outBtn != null && outBtn.length > 0) outBtn[0] = tvBtn;
 
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,

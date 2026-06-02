@@ -76,7 +76,7 @@
 | **NotifyPolicy（规划）** | OFF/VIBRATE/SOUND 三档，Bridge/MMKV 存储，默认 OFF | 📋 方案已出，待 Phase 2 实现 | ⭐⭐⭐ | OFF 已完成；VIBRATE/SOUND 依赖 Phase 2 |
 | ❌ ~~x.a(f9)~~     | ~~`booter.notification.x.a(f9)`~~ — 8.0.71 零命中证伪 | ❌ 永久废弃 | — | hook 注册成功但运行时零触发，不走此路径 |
 | ❌ ~~NotificationItem.a(Context)~~ | ~~`final` 方法 + ART AOT 内联~~ | ❌ 永久废弃 | — | Xposed 无法拦截；Frida 可以但模块不用 |
-| **搜索框过滤 8.0.71**（主页放大镜 FTS 全局搜索） | `ListView.setAdapter` → q2 → 沿继承链 hookAllMethods("getView") → `com.tencent.mm.plugin.fts.ui.f0.getView(int,View,ViewGroup)` declared → afterHook `adapter.getItem(pos)` 拿 `tz2.u1` → `g.f.s` = wxid → `Bridge.allHiddenIds().contains` → `View.GONE + lp.height=0 + margin=0`；同 callback 内 `lv.setDivider(null) + lv.setDividerHeight(0)` 消除 row gap | ✅ **装机实证 2026-05-27 v15.1**（`[SF:gv] blocked pos=1 id=wxid_lzd2va16jd1622` ×14） | ⭐⭐⭐ | **仅"主页放大镜"FTS 搜索**；精确 wxid 匹配不伤同昵称非密友；q2.j hook 保留作 backstop（实测 0 触发）；遗留：①"最常使用" section header 下 ~100px 空白（疑 UI 设计）；②群聊行"包含:密友名"高亮（P26C 范畴） |
+| **搜索框过滤 8.0.71**（主页放大镜 FTS 全局搜索） | `ListView.setAdapter` → q2 → 沿继承链 hookAllMethods("getView") → `com.tencent.mm.plugin.fts.ui.f0.getView(int,View,ViewGroup)` declared → afterHook `adapter.getItem(pos)` 拿 `tz2.u1` → `g.f.s` = wxid → `Bridge.allHiddenIds().contains` → `View.GONE + lp.height=1 + margin=0`；同 callback 内 `lv.setDivider(null) + lv.setDividerHeight(0)` 消除 row gap | ✅ **装机实证 2026-05-27 v15.1**（`[SF:gv] blocked pos=1 id=wxid_lzd2va16jd1622` ×14）；v15.2 2026-06-02 灰白收口（详见权威 §8b） | ⭐⭐⭐ | **仅"主页放大镜"FTS 搜索**；精确 wxid 匹配不伤同昵称非密友；q2.j hook 保留作 backstop（实测 0 触发）；遗留：①隐藏行残留灰白 → ✅ 已解决 v15.2（根因 AbsListView height≤0，详见权威 §8b）；②群聊行"包含:密友名"高亮（P26C 范畴） |
 | ❌ ~~ss4.p.onBindViewHolder~~ — F-32x | RecyclerView ss4.p 本体 vis=0 但**父级 ConstraintLayout vis=8 GONE**，根本不上屏；2026-05-27 02:23 误锚定，2026-05-27 04:00 推翻 | ❌ 永久废弃 | — | 真渲染容器是 ListView (HeaderViewListAdapter wraps q2)；fts_tree_v2.log L243/273 铁证；hook 装上永不触发 |
 | ❌ ~~q2.j(View, jz2.g, boolean)~~ — F-32y | 8.0.71 搜索结果渲染**不经** q2.j；hook 装上 0 触发（final_v15 终端 AI 实证）；保留陪跑 | ❌ 主路径废弃，仅作 backstop | — | q2 渲染走 q2.getView (从 f0 继承) afterHook 路径；不要试图把 q2.j 当主入口 |
 | ❌ ~~SearchFilter 5-hook offset (getCount/getView/getItem/getItemId/getItemViewType)~~ — F-32z | setResult(orig-skip) 干扰 q2 内部 data swap，搜索结果区**完全空白** + ANR；final_v11/v12/v13/v14 装机连续 4 次空白实证 | ❌ 永久废弃 | — | 单 hook afterHook GONE 就够；不要试图缩 ListView count；如想消空白条用 setDivider(null) + lp.margin=0 而非 count 减 |
@@ -123,6 +123,7 @@
 #### A3 密群列表（groupId）
 
 - 状态：✅（**2026-05-21 装机已验**）
+- 导入入口 ✅ **2026-06-02**：密群列表 → `GroupCardSelectUI` 原生选群器（`already_select_contact` 预选已隐群 + 增删一体），详见 `docs/HOOK_MAP_8071_AUTHORITATIVE.md` §4
 - 存储：`Bridge.getGroupIds()` / `addGroupId()` / `removeGroupId()`，键 `glst`
 - groupId 形态：`xxxxxxxxxxxxxxxx@chatroom`（微信群唯一标识）
 - 拦截层复用：

@@ -55,6 +55,9 @@ public class SearchFilter {
 
     private static final String TAG = "NCL";
 
+    // diagnostic (2026-06-02): one-shot per-row dump to locate the gray blank card view
+    private static int sRowDumpCount = 0;
+
     // Search result item classes (8.0.71, confirmed by dynamic_crawler 2026-05-23):
     //   z15.ef6           — chat-record FTS hits, NO wxid (kept for unlock probe)
     //   fz2.e  c≠3        — contact match, g = SOSItemRelevant carrying wxid ← PRIMARY filter
@@ -616,6 +619,21 @@ public class SearchFilter {
                                                 item = getItem.invoke(curAdp, pos);
                                             } catch (Throwable ignored2) {}
                                         }
+                                        if (sRowDumpCount < 40) {
+                                            sRowDumpCount++;
+                                            try {
+                                                ViewGroup.LayoutParams lpd = v.getLayoutParams();
+                                                Log.i(TAG, "[SF:row] pos=" + pos
+                                                        + " vcls=" + v.getClass().getName()
+                                                        + " h=" + v.getHeight()
+                                                        + " mh=" + v.getMeasuredHeight()
+                                                        + " lph=" + (lpd != null ? lpd.height : -99)
+                                                        + " vis=" + v.getVisibility()
+                                                        + " item=" + (item == null ? "null" : item.getClass().getName())
+                                                        + " id=" + (item == null ? "-" : extractAnyWxid(item)));
+                                            } catch (Throwable ignored) {}
+                                        }
+
                                         if (item == null) return;
 
                                         String id = extractAnyWxid(item);
@@ -629,7 +647,9 @@ public class SearchFilter {
                                         v.setPadding(0, 0, 0, 0);
                                         ViewGroup.LayoutParams lp = v.getLayoutParams();
                                         if (lp != null) {
-                                            lp.height = 0;
+                                            // AbsListView 仅当 lp.height>0 才按 EXACTLY 量；=0 会走
+                                            // UNSPECIFIED → 行按原高渲染，留下 173px 灰块。用 1px≈隐形。
+                                            lp.height = 1;
                                             if (lp instanceof ViewGroup.MarginLayoutParams) {
                                                 ViewGroup.MarginLayoutParams mlp =
                                                         (ViewGroup.MarginLayoutParams) lp;
@@ -1589,7 +1609,8 @@ public class SearchFilter {
         try {
             if (v.getVisibility() != View.VISIBLE) v.setVisibility(View.VISIBLE);
             ViewGroup.LayoutParams lp = v.getLayoutParams();
-            if (lp != null && lp.height == 0) {
+            // collapsed sentinel is now 1px (was 0); accept both when restoring
+            if (lp != null && (lp.height == 0 || lp.height == 1)) {
                 lp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
                 v.setLayoutParams(lp);
             }

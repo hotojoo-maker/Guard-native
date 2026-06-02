@@ -16,28 +16,25 @@ import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
 /**
- * P_IMPORT —— 密友 / 密群 批量导入（复用微信官方多选选择器 SelectContactUI）。
+ * P_IMPORT —— 密友 / 密群 批量导入。两条路径走不同 Activity（8.0.71 L1 实证）。
  *
- * 机制（L1 frida 实证 2026-05-29，证据 bug排查/probe_selectcontact_IN_8071.log）：
- *   拉起：Intent → com.tencent.mm.ui.contact.SelectContactUI，extras：
- *     list_type              = 1（密友）/ 2（密群）
- *     list_attr              = 16471
- *     already_select_contact = 现有集合 CSV（预选，进去就勾上 → 增删一体的前提）
- *     titile                 = 标题（⚠️微信原拼写 titile，非 title）
- *     from_select_contact    = true
- *   返回：SelectContactUI.setResult(-1, Intent)，extra Select_Contact = 选中全集 CSV。
+ * ① 密友：复用 com.tencent.mm.ui.contact.SelectContactUI（选人器）。
+ *      extras: list_type=1, list_attr=16471, already_select_contact=现有 wxid CSV（预选）,
+ *              titile=标题（⚠️微信原拼写 titile，非 title）, from_select_contact=true
+ *      返回 setResult(-1): Select_Contact = 选中全集 CSV → diff 增删一体。
+ *      证据: bug排查/probe_selectcontact_IN_8071.log（仅 list_type=1 实证）
  *
- * 增删一体：返回的是「当前完整选中集」（非增量）→ diff 已存集：新增的 add、缺失的 remove。
- * 删除天然由微信原生 UI 处理（点顶部头像取消），我们不另做删除页。
+ * ② 密群：用 com.tencent.mm.ui.contact.GroupCardSelectUI（选群器，与选人器不是一回事）。
+ *      ⚠️ 旧注释「list_type=2=密群」是竞品 mn1(8.0.70.2)/A3 文档推断，8.0.71 已证伪：
+ *         群不走 SelectContactUI；真实入口（群发助手→选择朋友→从群聊导入）= GroupCardSelectUI。
+ *      extras: group_multi_select=true, group_select_need_result=true, group_select_type=true,
+ *              max_limit_num=Integer.MAX_VALUE  （无「预选」key → 拉起时无法预勾已隐群）
+ *      返回 setResult(-1): Select_Conv_User = 选中 @chatroom CSV。
+ *      证据: bug排查/probe_groupselect_8071.log（2026-06-02 用户现场多选实证）
+ *      因无预选 → 群侧只 union 加；删除走 SettingsEntry 密群管理面板（路线1）。
  *
- * 存储/门控：写 Bridge 现有 密友(wxid)/密群(@chatroom) 集合（MMKV）；隐不隐跟随状态机 V/H。
- *
- * 【门控锁定】只读/只写 Bridge 的隐藏集合 + 调微信原生 Activity；不碰状态机/授权/口令。
- *
- * 接线（待 guard-auth-review 后做）：
- *   1. ModuleMain.install() → ContactImportGuard.install(lpparam)
- *   2. SettingsEntry「添加密友」onClick → ContactImportGuard.launchSelectBuddy(activity)
- *      SettingsEntry「添加密群」onClick → ContactImportGuard.launchSelectGroup(activity)
+ * 存储/门控：写 Bridge 密友(wxid)/密群(@chatroom) 集合（MMKV）；隐不隐跟随状态机 V/H。
+ * 【门控锁定】只读/只写 Bridge 隐藏集合 + 调微信原生 Activity；不碰状态机/授权/口令。
  */
 public final class ContactImportGuard {
 
@@ -58,6 +55,14 @@ public final class ContactImportGuard {
     private static final int LIST_TYPE_GROUP = 2;
     private static final int LIST_ATTR       = 16471;
 
+    // GroupCardSelectUI（密群选群器）Intent keys（8.0.71 L1 实证 tools/sel_dump2.log）
+    private static final String GROUP_SELECT_UI   = "com.tencent.mm.ui.contact.GroupCardSelectUI";
+    private static final String EX_GROUP_MULTI    = "group_multi_select";
+    private static final String EX_GROUP_NEED_RES = "group_select_need_result";
+    private static final String EX_GROUP_TYPE     = "group_select_type";
+    private static final String EX_MAX_LIMIT      = "max_limit_num";
+    private static final String EX_CONV_RESULT    = "Select_Conv_User";
+
     /** 0=无 / 1=密友 / 2=密群 —— 只消费「我们自己发起」的那次 setResult，避免误吞微信其它选人场景。 */
     private static volatile int sExpect = 0;
 
@@ -75,11 +80,16 @@ public final class ContactImportGuard {
                             try {
                                 if (sExpect == 0) return;
                                 Object self = param.thisObject;
-                                if (self == null
-                                        || !SELECT_UI.equals(self.getClass().getName())) return;
+                                if (self == null) return;
+                                String cls = self.getClass().getName();
                                 Intent data = (Intent) param.args[1];
-                                if (data == null) { sExpect = 0; return; }
-                                consumeResult(data.getStringExtra(EX_RESULT));
+                                if (sExpect == LIST_TYPE_BUDDY && SELECT_UI.equals(cls)) {
+                                    if (data == null) { sExpect = 0; return; }
+                                    consumeResult(data.getStringExtra(EX_RESULT), LIST_TYPE_BUDDY);
+                                } else if (sExpect == LIST_TYPE_GROUP && GROUP_SELECT_UI.equals(cls)) {
+                                    if (data == null) { sExpect = 0; return; }
+                                    consumeResult(data.getStringExtra(EX_CONV_RESULT), LIST_TYPE_GROUP);
+                                }
                             } catch (Throwable t) {
                                 sExpect = 0;
                                 Log.w(TAG, "[CIG] capture err: " + t);
@@ -100,7 +110,32 @@ public final class ContactImportGuard {
     }
 
     public static void launchSelectGroup(Activity act) {
-        launch(act, LIST_TYPE_GROUP, Bridge.getInstance().getGroupIds(), "\u9009\u62e9\u5bc6\u7fa4");
+        // 密群走 GroupCardSelectUI（非 SelectContactUI）。
+        // L1 实证(bug排查/probe_groupkeys_8071.log)：读 already_select_contact → 传现有密群 = 预选 → 增删一体。
+        if (!StateMachine.getInstance().isVipAuthorized()) {
+            Log.i(TAG, "[CIG] group launch blocked: not authorized");
+            return;
+        }
+        if (act == null) {
+            Log.w(TAG, "[CIG] group launch abort: no activity");
+            return;
+        }
+        try {
+            Set<String> preset = Bridge.getInstance().getGroupIds();
+            Intent it = new Intent();
+            it.setClassName(WECHAT_PKG, GROUP_SELECT_UI);
+            it.putExtra(EX_GROUP_MULTI, true);
+            it.putExtra(EX_GROUP_NEED_RES, true);
+            it.putExtra(EX_GROUP_TYPE, true);
+            it.putExtra(EX_MAX_LIMIT, Integer.MAX_VALUE);
+            it.putExtra(EX_ALREADY, join(preset));   // 预选已隐密群 → 进去就勾上（增删一体）
+            sExpect = LIST_TYPE_GROUP;
+            act.startActivity(it);
+            Log.i(TAG, "[CIG] launch GroupCardSelectUI preset=" + preset.size());
+        } catch (Throwable t) {
+            sExpect = 0;
+            Log.w(TAG, "[CIG] launchSelectGroup fail: " + t);
+        }
     }
 
     private static void launch(Activity act, int listType, Set<String> preset, String title) {
@@ -134,8 +169,7 @@ public final class ContactImportGuard {
     // ------------------------------------------------------------------
     // 结果落地：返回全集 diff 已存集 → add/remove → 热切刷新
     // ------------------------------------------------------------------
-    private static void consumeResult(String csv) {
-        int mode = sExpect;
+    private static void consumeResult(String csv, int mode) {
         sExpect = 0;
         // 授权门兜底：未授权不落库（正常路径 launch 已挡，这里防御 sExpect 异常置位）
         if (!StateMachine.getInstance().isVipAuthorized()) {
@@ -146,6 +180,7 @@ public final class ContactImportGuard {
         Bridge br = Bridge.getInstance();
 
         if (mode == LIST_TYPE_BUDDY) {
+            // SelectContactUI 预选 already_select_contact → 返回 = 完整选中集 → diff 增删一体
             Set<String> cur = new HashSet<>(br.getWxids());
             int added = 0, removed = 0;
             for (String id : result) if (!cur.contains(id)) { br.addWxid(id);    added++; }
@@ -153,16 +188,23 @@ public final class ContactImportGuard {
             Log.i(TAG, "[CIG] buddy import result=" + result.size()
                     + " added=" + added + " removed=" + removed);
         } else if (mode == LIST_TYPE_GROUP) {
+            // GroupCardSelectUI 已传 already_select_contact 预选 → 返回 = 完整选中集 → diff 增删一体。
+            // 过滤只收 @chatroom（防御非群 id 混入）。
             Set<String> cur = new HashSet<>(br.getGroupIds());
-            int added = 0, removed = 0;
-            for (String id : result) if (!cur.contains(id)) { br.addGroupId(id);    added++; }
-            for (String id : cur)    if (!result.contains(id)) { br.removeGroupId(id); removed++; }
-            Log.i(TAG, "[CIG] group import result=" + result.size()
-                    + " added=" + added + " removed=" + removed);
+            int added = 0, removed = 0, skipped = 0;
+            for (String id : result) {
+                if (id == null || !Bridge.isGroupId(id)) { skipped++; continue; }
+                if (!cur.contains(id)) { br.addGroupId(id); added++; }
+            }
+            for (String id : cur) if (!result.contains(id)) { br.removeGroupId(id); removed++; }
+            Log.i(TAG, "[CIG] group import (diff) result=" + result.size()
+                    + " added=" + added + " removed=" + removed + " skipped=" + skipped);
         } else {
             return;
         }
         RefreshBus.getInstance().notifyHiddenChanged(StateMachine.getInstance().isActive());
+        // P_IMPORT: 即时刷新设置面板「密友/密群列表 已选择 N 个」计数（修导入成功 UI 不立刻刷新）。
+        try { SettingsEntry.refreshImportCounts(); } catch (Throwable ignored) {}
     }
 
     // ------------------------------------------------------------------

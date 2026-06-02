@@ -1,8 +1,13 @@
-# P_IMPORT 定稿 — 密友 / 密群 批量导入（复用官方 SelectContactUI）【待实现】
+# P_IMPORT 定稿 — 密友 / 密群 批量导入【✅ 已实现装机 2026-06-02】
 
 > 定稿：2026-05-29（总调度会话锁定）
 > 证据：L1 frida 实证 `bug排查/probe_selectcontact_8071.log` + `probe_selectcontact_IN_8071.log`（com.tencent.mn1 竞品 8.0.70.2 跨验，类名与 8.0.71 A3 一致）
-> 技术套路：复用微信官方多选选择器 `SelectContactUI`，拦启动参数预选 + 拦返回结果 → 增删一体
+> 技术套路：复用微信官方多选选择器，拦启动参数预选 + 拦返回结果 → 增删一体
+>
+> **【2026-06-02 L1 订正 · 已实现】（覆盖下方旧表"密群=list_type=2"的推断）**
+> - 密友：确为 `SelectContactUI`（`list_type=1` + `already_select_contact` 预选）✅
+> - 密群：**证伪**「list_type=2」（竞品 mn1/A3 推断）。8.0.71 走独立 Activity **`com.tencent.mm.ui.contact.GroupCardSelectUI`**，extras `group_multi_select` / `group_select_need_result` / `group_select_type`=true + `max_limit_num` + **`already_select_contact`（预选）**；返回 `Select_Conv_User`=`@chatroom` CSV → diff 增删一体
+> - L1 证据：`bug排查/probe_groupselect_8071.log` + `probe_groupkeys_8071.log`；代码：`ContactImportGuard.launchSelectGroup` + `SettingsEntry「密群列表」`
 
 ---
 
@@ -69,4 +74,6 @@
 
 ---
 
-## 七、状态：待实现（图纸 100% 齐，纯写代码）
+## 七、状态：✅ 已实现装机（2026-06-02）
+
+密友走 `SelectContactUI`、密群走 `GroupCardSelectUI`（见顶部 L1 订正），均预选 + diff 增删一体，用户现场验证通过。

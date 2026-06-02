@@ -56,15 +56,15 @@
 
 | 项 | 内容 |
 |------|------|
-| **8.0.71 状态** | 🟡 代码已写未装机（`moduleC/AntiRecall.java`） |
+| **8.0.71 状态** | ✅ **L1 装机实证 2026-05-31**（`moduleC/AntiRecall.java` v4） |
 | **竞品关键类（8.0.66）** | **`WmyRevokeMsg`**（Catfish 自有类） |
 | **竞品 hook 入口** | `MainEntry.revoke(p1, p2)` → `WmyRevokeMsg.init` · `MainEntry.revoke(cmd, Map, obj)` → `WmyRevokeMsg.revoke` |
 | **数据通道** | `cmd == "revokemsg"` 的命令通道 |
 | **存储** | MMKV: `revoke_msg`（项目 key=`arc`） |
-| **项目代码** | ✅ `moduleC/AntiRecall.java` + `Bridge.isAntiRecallEnabled()`（key=`arc`，default true） |
-| **install** | ✅ ModuleMain.install:138（本仓库已注册） |
-| **8.0.71 ⚠️ 缺** | 装机后是否真拦截（AntiRecall.java 仿写自竞品，需 logcat `[AR] *` 命中验证） |
-| **推荐下一步** | 装机让密友撤回消息 → 看 logcat 是否有 `[AR] *` 拦截命中 → 若失败需 Frida 找 8.0.71 真实 revokemsg 处理路径 |
+| **项目代码** | ✅ `moduleC/AntiRecall.java` v4：hook `jy0.t.f`(doRevokeMsg) → `setResult(null)` 保原文 + 插 type=10000 系统提示染红；+ `Bridge.isAntiRecallEnabled()`（key=`arc`，default true） |
+| **install** | ✅ `ModuleMain.install:141`（app classloader，本仓库已注册） |
+| **8.0.71 实证** | ✅ L1 装机 2026-05-31：`[AR] recall blocked + tip inserted` ×4（文字/表情/图片/视频） |
+| **推荐下一步** | 已结案；仅 8.0.72 升级时复验 `jy0.t.f` / `f9` / `h9` 混淆名 |
 | **来源** | `HOOK_IMPLEMENTATION_ANALYSIS.md` §2.9 + 项目 `moduleC/AntiRecall.java` |
 
 ---
@@ -89,15 +89,16 @@
 
 | 项 | 内容 |
 |------|------|
-| **8.0.71 状态** | ✅ 数据层 + 过滤链完整装机实证（2026-05-21） |
+| **8.0.71 状态** | ✅ 数据层 + 过滤链完整装机实证（2026-05-21）；✅ **导入 UI 2026-06-02**（GroupCardSelectUI 原生选群器，预选+增删一体，用户验证通过） |
 | **数据层** | ✅ `Bridge.addGroupId(gid) / removeGroupId(gid) / getGroupIds() / isGroupId()` |
 | **MMKV key** | `glst`（group list） |
 | **groupId 形态** | `xxxxxxxxxxxxxxxx@chatroom` |
 | **过滤链复用** | F04（`l4.C0()` 返的 username 已含 `*@chatroom`） + F07（`z3.c1()` 同字段） |
 | **8.0.71 chatroom 反射** | 8.0.66 走 `com.tencent.mm.storage.bb`（ChatRoom）· 8.0.71 等价类 ⚠️ 待重查 |
 | **项目代码** | ✅ `Bridge.java` 群数据 + 4 Filter 切换到 `allHiddenIds()` |
-| **UI 入口** | ⚠️ `SettingsEntry.showGuardDialog()` 缺"添加密群"按钮 |
-| **推荐下一步** | (a) SettingsEntry.showGuardDialog 加"添加密群"按钮（与添加密友合并入口，按 `*@chatroom` 自动分流） (b) 群昵称解析 L5 stub 写入 ContactResolver |
+| **UI 入口** | ✅ `SettingsEntry「密群列表」→ ContactImportGuard.launchSelectGroup → com.tencent.mm.ui.contact.GroupCardSelectUI`。extras: `group_multi_select` / `group_select_need_result` / `group_select_type`=true / `max_limit_num` / **`already_select_contact`=现有密群 CSV（预选）**；返回 `setResult(-1)` 的 `Select_Conv_User`=`@chatroom` CSV → diff 增删一体（与密友 SelectContactUI 同套路）。L1: `bug排查/probe_groupselect_8071.log` + `probe_groupkeys_8071.log` |
+| **⚠️ 旧口径证伪** | 「list_type=2=密群」来自竞品 mn1(8.0.70.2)/A3 推断，8.0.71 **不走** SelectContactUI；密群专用 GroupCardSelectUI（见上） |
+| **遗留** | 群昵称解析 `ContactResolver.resolveNameOrNull`（L4，依赖 ContactStorage 反射，未在 8.0.71 逐一验证；GroupCardSelectUI 自身显示群名，不强依赖） |
 | **来源** | `HOOKMAP.md` §A3 + `Bridge.java` |
 
 ---
@@ -177,12 +178,12 @@
 
 | 项 | 内容 |
 |------|------|
-| **8.0.71 状态** | 🟡 **部分完成**：联系人结果 ✅ 装机实证 2026-05-27 v15.1；群聊 ⬜ 未完成；聊天记录 ⬜ 未完成 |
+| **8.0.71 状态** | 🟡 **部分完成**：联系人结果 ✅ 装机实证 2026-05-27 v15.1（**v15.2 2026-06-02 灰白块收口**：隐藏行残留 ~173px 灰白 → `lp.height 0→1` 修复，用户验证通过）；群聊 ⬜ 未完成；聊天记录 ⬜ 未完成 |
 | **产品事实** | 全局搜索是聚合大过滤器，来源至少包括最近联系、联系人、群聊、聊天记录；不同来源走不同数据结构和渲染路径 |
-| **已验证：联系人** | `ListView.setAdapter` → 检测 q2 → 沿继承链 hookAllMethods("getView") → 命中 `com.tencent.mm.plugin.fts.ui.f0.getView(int,View,ViewGroup)` declared → afterHook 拿 `adapter.getItem(pos)` 为 `tz2.u1` → 抽 `tz2.u1.f.s` = wxid → 命中 hidden set → `View.GONE + lp.height=0 + topMargin=bottomMargin=0` |
+| **已验证：联系人** | `ListView.setAdapter` → 检测 q2 → 沿继承链 hookAllMethods("getView") → 命中 `com.tencent.mm.plugin.fts.ui.f0.getView(int,View,ViewGroup)` declared → afterHook 拿 `adapter.getItem(pos)` 为 `tz2.u1` → 抽 `tz2.u1.f.s` = wxid → 命中 hidden set → `View.GONE + lp.height=1 + topMargin=bottomMargin=0`（**v15.2 起 lp.height 必须 =1 不能 =0**，原因见「配套消空白」行）|
 | **待补：群聊** | 理论候选为 `tz2.s1.s` = groupId，但当前未有密群搜索装机实证；不得标完成 |
 | **待补：聊天记录** | `z15.ef6` / FTS 聊天记录行尚未拿到可靠 talker wxid/groupId，当前不能直接拦 |
-| **配套消空白** | 同 setAdapter callback 内 `lv.setDivider(null); lv.setDividerHeight(0)` 消除 GONE row 的视觉残留 |
+| **配套消空白** | ① 同 setAdapter callback 内 `lv.setDivider(null); lv.setDividerHeight(0)` 消除 GONE row divider；② **v15.2 灰白块根因（L1 `[SF:row]` 实证 `pos=2 vis=8 lph=0 h=173`）**：FTS 容器是 ListView(AbsListView)，其 `setupChild()` 仅当 `lp.height>0` 才按 `MeasureSpec.EXACTLY` 量，`height≤0`（含 0）走 `UNSPECIFIED` → 隐藏行按内容原高(~173px)渲染 → 残留灰白块（GONE 对 AbsListView 同样不跳过测量）；故隐藏行必须 `lp.height=1`（EXACTLY 1px≈隐形），`restoreView` 还原判断放宽为「0 或 1」。**禁止用 0/负值折叠 AbsListView 行；消空白只走视图层，禁减 getCount（呼应 F-32z）** |
 | **fz2.e 数据层** | ❌ 已证伪 — `fz2.e.g` 实测是 UIN 或 `SOSItemRelevant:<关键词>`，不含 wxid 字面；保留 [SF:ALLseen] 探针作未来 UIN→wxid 映射 |
 | **过滤原则** | 能确定 wxid/groupId 且命中名单才隐藏；不能确定 id 时只打限流诊断日志，不得猜字段、不得全量隐藏 |
 
@@ -249,22 +250,22 @@
 
 ## 二、资料盘点（功能就绪度）
 
-### "齐活"可立即落 hook（5 项）
+### "齐活"可立即落 hook（6 项）
 
 | # | 功能 | 当前状态 |
 |:-:|------|------|
 | 7 | 过滤通讯录 | ✅ 已 work（P19） |
 | 8a | 过滤会话列表 | ✅ P17；V→H ✅；H→V 热路径 ✅ / 冷路径 🟡 |
 | 6b | 通讯录标签隐藏 | ✅ 已 work（P19B + 2026-05-27 补 install） |
-| 4 | 添加密群 UI | 数据层完整，只缺 SettingsEntry 按钮 |
+| 2 | 防撤回（C1） | ✅ L1 装机实证 2026-05-31（jy0.t.f doRevokeMsg + 原文保留 + 系统提示染红） |
+| 4 | 添加密群 UI | ✅ 已完成（2026-06-02 GroupCardSelectUI 原生选群器，预选+增删一体） |
 | 3 | 添加密友 UI | 数据层完整，只缺 SettingsEntry 按钮 + ContactResolver L4 验证 |
 
-### 需要探针 / Frida 验证（4 项）
+### 需要探针 / Frida 验证（3 项）
 
 | # | 功能 | 缺什么 |
 |:-:|------|------|
 | 8b | 全局搜索群聊/聊天记录分源 | P20-S1/S2 待补；联系人主路径 f0.getView ✅ v15.1 |
-| 2 | 防撤回 | 装机验证 AntiRecall.java 真拦截（当前可能是 stub） |
 | 6a | 朋友圈"分组可见"图标 | 8.0.71 视图层 hook 点（需写 `moments_crawler.js` 跑朋友圈分组发布） |
 | 1 | 虚拟定位 | 8.0.71 TencentLocation hook 点（jadx + Frida 重查） |
 
