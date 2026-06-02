@@ -6,6 +6,7 @@
 > - 状态不明 → **停下来问用户，禁止猜测，禁止推断**
 >
 > 接手前看：[`docs/README.md`](./docs/README.md) + [`CLAUDE.md`](./CLAUDE.md) + [`HOOKMAP.md`](./HOOKMAP.md)
+> 防破解/防盗版总账（含上线前门控）：[`PROTECTION_MAP.md`](./PROTECTION_MAP.md)
 > 更新时间：2026-05-27（8071 文档隔离 + P20 v15.1）
 > **当前底座：微信 8.0.71**（D-014）
 > 维护人：guard-dispatch_总调度
@@ -262,17 +263,18 @@ W1 脚手架   ─→ 后续所有功能模块
 | P19B | 通讯录【标签】成员隐藏 F07B | ✅ | 2026-05-24 装机（用户验证）+ 2026-05-31 用户现场复验 + 2026-06-01 复跑 install 实证（`[CLM] ArrayList.addAll(ye5.j) label-member hook ok`，log 行 1940）。路径：`ArrayList.addAll`→first item `ye5.j`→`ye5.j.d` 去 `-N-M` 后缀→wxid→`Iterator.remove()`。2026-05-31 从 ContactFilter 重构丢失后独立成 `moduleD/ContactLabelMemberFilter.java`（运行日志 `[CLM:label] removed=1/N`）。验收：标签内密友不可见 ✅ + 标签内搜索搜不到 ✅。门控 `isActive()`+`allHiddenIds()`。详见 `03_execute_执行任务/P19B_ContactLabel/result.md`。|
 | P20 | 搜索 + 密码入口 | 🟡 | B6 密码入口✅；2026-05-27 v15.1 联系人搜索结果拦截✅（`[SF:gv] blocked ... wxid`）；**群聊搜索⬜ 未完成**（需 groupId / `*@chatroom` 实证）；**聊天记录搜索⬜ 未完成**（需解析 talker wxid/groupId，UIN 不可当 wxid） |
 | A3  | 密群（数据层 + Filter union）| ✅ | 2026-05-21 装机验证。`Bridge.getGroupIds/allHiddenIds/isGroupId`；4 Filter 切换到 `allHiddenIds()`。|
+| **P23** | **F08 防撤回（C1）** | ✅ | 2026-05-31 L1 装机实证（`[AR] recall blocked + tip inserted` ×4：文字/表情/图片/视频）。hook `jy0.t.f`(doRevokeMsg) → `setResult(null)` 跳过原地覆盖保留原文 + 插 type=10000 系统提示灰条「已拦截对方撤回的消息」（染红，`MMNeat7extView`）。自己撤回(isSend==1)放行。门控 `isVipAuthorized() && Bridge.isAntiRecallEnabled()`（key=`arc`）。代码 `moduleC/AntiRecall.java` v4（`ModuleMain.install:141`, app classloader）。旧点 a2.b 证伪→F-37。T08 调研并入本任务。|
 | P_NC1 | native_core Batch 1 装机验证 | 🟡 | SO 编译通过 + 14 JNI 符号导出；ModuleMain 验证桩已接入（`runNativeBridgeVerification`）；**待装机跑 logcat，看 `[native] BATCH1_VERIFY PASS`**；通过后更新 ROADMAP Phase 1 ⬜→✅ |
 | **P22** | **PushFilter 通知策略层** | 🟡 | **2026-05-22 装机实证**：L1 block ✅；NM cancel 普通消息 gap=3ms ✅；NM voip channel cancel ✅；tinker classloader fix ✅；密友总开关 `Bridge.isFeatureEnabled()` 已接 🟡；CA 备用层 🟡（代码完成，因 NM voip cancel 先行，未实际触发）；**剩余坑**：L4b `MainTabUI.i()` 方法名需 jadx 重查 ❓；NotifyPolicy VIBRATE/SOUND 未实现 📋；DebugServer HTML 开关未加 📋；WeChatDND 归档 Phase 2 📋；frida_stats 未跑 ⚠️ |
 | **P_CV1** | **通讯录 V↔H 热切（ContactView 第 1 轮）** | ✅ | **2026-05-29 装机收口（Guard Native9，以装机代码为准·用户裁定 2026-06-01）**：密友（联系人）通讯录 V↔H 热切 L1 装机实证 `bug排查/final_pcv1_v8_双通成功.log`（反复 V↔H 3 轮全稳，每轮 V 注 4 / H 删 4，不依赖冷启动）。**根因链**：① `ContactDiscoveryHook.findAdapterHosts` 扫描深度 8 < RV 实际深度 17 → 抓不到 adapter，修为 8→24 → `[CDH:found] liveListCls=AddressLiveList owner=ik3.t0`；② 真 backing 是 MvvmList 基类 `o/p/h`（非废弃 `f135087o`）。**实现**：`ContactHotReload.handleBusVisible` BUS-V restore 遍历 o/p/h in-place 注回 + 80ms 异步 post-dedup（F-35 合规）；`ContactFilter.cleanLiveList` 同改 o/p/h 对称。**门控**：State only（只读 `isActive()`），未碰 ConvFilter/StateMachine/AuthManager/RefreshBus/SearchUnlock。**遗留**：通讯录「群聊」分组密群 V 态恢复（密群**隐藏**已走 P_CV1-G `ChatroomContactUI`，见 `docs/A3_GROUP_FILTER_IMPL.md` §六）；F-22 KPI 快照发版前补。<br>———原立项记录（2026-05-27）：起因 v28 仅会话 tab 收口、通讯录 tab H→V 后密友/密群不显示；任务=对标 ConvFilter v28 给 ContactFilter 加 V 态 hot-restore。 |
 | **P_PF2** | **语音/视频来电拦截收口 + CallGuard 拆分** | ✅ | 2026-05-29 装机验证（守护内核10）。语音+视频 × 静默/震动 × 前后台双向：零声/零亮屏/零浮窗/零小窗/无挂断嘟；震动=来电单次 onset（解耦 120s pending，15s 会话门，每通重发）；除死循环。FB addView-block + AM/UL/PiP + VC 计数器修复 + NM 删写死 id。来电链拆到 `moduleC/CallGuard.java`（PushFilter 仅留消息+角标）。文档 `docs/P22_PushFilter_VoIP.md` 重写；F-36 七条证伪。⚠️ 视频小窗 = `android.widget.FrameLayout`（探针已记 LayoutParams，待精确特征 block，现状 CA+PiP+UL 已压到「接近完美」）|
 | **P_CF3** | **H→V 热切密友按实时时间顺序显示** | ✅ | 2026-05-29 **装机验证（守护内核6）**。方案 A：新增 `ConvFilter.extractConvTime(item)`（按微信未混淆 DB 列名 `field_conversationTime` 递归取，L1 探针实证路径 `kc5.y → d → i2 → field_conversationTime`，epoch ms）+ `ConvFilter.insertPosByTime(list,t,fallback)`（按时间降序找插入位，未知回退旧 originalIndex），4 处注回插入点统一改调（ConvHotReload×3 + ConvFilter×1）。**单个/多个密友按时间归位完美**（用户确认 + 截图），密群也正确归档；logcat inject/dedup 干净、无崩溃、无回归。**F-35 安全**：只改插入位、未动 dedup/post-dedup、未加跨 List identity / list-visited。提交在分支 `fix/conv-order-by-time` checkpoint `9fadf08`。冷会话 `h(id)→null` 不显示 → 转 **P_CF4**。 |
-| **P_CF2** | **【待办·BUG】会话列表 `kc5.v0.getView` 越界崩溃** | ⬜ | 2026-05-29 发现（守护内核10）。现象：HIDDEN 态滑动会话列表（尤其挂断视频回到 LauncherUI 后）`java.lang.IndexOutOfBoundsException: Invalid position: 15, size: 15 at kc5.v0.getView → ListView.fillDown → FlingRunnable` → 微信进程崩溃。根因推断（L3）：ConvFilter 清洗后 adapter `getCount` 与底层 List size 错位（报 N+1、实际 N）→ 滑到末位越界。**与来电(moduleC)无关**，栈无 com.ghost 帧；属会话热切区（`kc5.v0` / ConvFilter / moduleD），关联 P_CV1 / CONV_REFRESH_PROBLEM / F-32~F-35。**注意**：工作区 `ConvFilter.java` 有未提交改动（非 P_PF2 改动）。**门控**：State only；改前走授权检查官 + 不动 StateMachine/RefreshBus。待复现确认（不拨电话单独滑会话列表是否也崩）后开查。 |（L1 用户截图 + "完美热切"）。`SettingsEntry.java` `buildGuardRow` 重构为 v
+| **P_CF2** | **【待办·BUG】会话列表 `kc5.v0.getView` 越界崩溃** | ⬜ | 2026-05-29 发现（守护内核10）。现象：HIDDEN 态滑动会话列表（尤其挂断视频回到 LauncherUI 后）`java.lang.IndexOutOfBoundsException: Invalid position: 15, size: 15 at kc5.v0.getView → ListView.fillDown → FlingRunnable` → 微信进程崩溃。根因推断（L3）：ConvFilter 清洗后 adapter `getCount` 与底层 List size 错位（报 N+1、实际 N）→ 滑到末位越界。**与来电(moduleC)无关**，栈无 com.ghost 帧；属会话热切区（`kc5.v0` / ConvFilter / moduleD），关联 P_CV1 / CONV_REFRESH_PROBLEM / F-32~F-35。**注意**：工作区 `ConvFilter.java` 有未提交改动（非 P_PF2 改动）。**门控**：State only；改前走授权检查官 + 不动 StateMachine/RefreshBus。待复现确认（不拨电话单独滑会话列表是否也崩）后开查。 |
 | **P_CF4** | **【backlog·低优先级】冷会话（密友/密群）H→V warm 不到不显示** | ⬜ | 2026-05-29 发现（守护内核6，从 P_CF3 分出）。现象：几天无消息的密友/密群，冷启动后 H→V 不出现在会话列表，需进通讯录找、或来一条新消息走热路径才显示。**L1 证据**：`[CF:warmAll:BUS-V] h(<id>) -> null`（如 `wxid_mxq8671r6mgs22`）→ WCDB 未把该会话行加载进内存 → `kc5.x.h(id)` 取不到 → warm 不出来。属 CONV_REFRESH_PROBLEM §8/§12 已记的 **WeChat 数据模型固有限制**，非本次排序回归。**根治受阻**：强 warm 冷会话需直读 WCDB / 造会话行 → 违**铁律 11**（禁 WCDB rawQuery 兜底）+ 高风险。用户 2026-05-29 判定**非主要**（单/多密友排序已完美）。待将来能稳定复现 `h(id)→null` 再评估是否值得做。**门控**：State only。 |
 | **P_CF5** | **已保存群被「成员 wxid」误删修复 + 热切置顶优先** | ✅ | 2026-05-29 装机（守护内核6，P_CF3 衍生）。**Bug**：`filterConvList`/`cleanMvvmList` 旧逻辑用 `extractWxid`（群条目抽到「最后发言成员 wxid」）判隐藏 → 隐藏密友在已保存群（@chatroom）发言 → 整个群被误删，且 V 态 warm 不恢复（群不在隐藏名单）→ 群永久消失。**修**：新增 `hideKeyOf(item)`——群（extractGroupId 非空）只按群 id 判隐藏、无视成员 wxid；单聊按对方 wxid。两处 hide 判定统一改调。**置顶**：新增 `isConvPinned`（`field_flag` bit62=置顶，Frida L1 实证）+ `insertPosByTime` 改置顶优先（置顶会话钉顶、非置顶排其后，组内按时间）。**注**：未保存到通讯录的群微信以「创建人 wxid」表示（非 @chatroom），属微信数据表示，不在本修复范围（用户 2026-05-29 确认非 bug）。提交 `65c24bb`。 |
 | **P_NF1** | **密友消息通知策略——后台震动 + 主进程消息到达点** | ✅(后台) / 🟡(前台) | 2026-05-29 装机（守护内核6）。**已成**：① 主进程 hook 消息到达点 `com.tencent.mm.booter.notification.x.d(x,String,String,int,int,boolean)`——talker 在第一参数(x 实例)字段 `a`（Frida L1 实证 7 命中）；密友消息到达 → 按 `nfyp` 策略 `NotifyRouter.fireAlert(MSG)`，带 1.2s 节流。② 消息震动改 `USAGE_ALARM`（锁屏/后台/勿扰可靠）。③ **后台震动装机验证**（`[NR] fireAlert type=MSG policy=VIBRATE usage=ALARM`）。④ 静默档后台无声无 UI（:push L1 拦）。提交 `a30fd10`/`dcc7216`。**关键坑**：微信原生「消息免打扰」开启 → 不走通知链 → x.d 不触发（产品取舍，尊重免打扰）。**前台未解 → P_NF2**。 |
 | **P_NF2** | **【backlog·硬骨头】ForegroundMute——前台 in-app 消息「叮」声 + 前台震动** | ⬜ | 2026-05-29 发现（守护内核6）。**现象**：微信**前台**收密友消息走 in-app 路径（不建通知）→ `x.d` 不触发 → 前台「静默漏一声叮 + 震动档没震」。**探针结论(L1)**：前台叮声不走 `MediaPlayer/AudioTrack/SoundPool/AudioManager.playSoundEffect` 4 个标准 API 的可识别路径；唯一命中的 `MediaPlayer.start` 栈被 `com.tencent.mm.sdk.platformtools.i3.dispatchMessage`(Handler) 遮挡，真正 caller 在消息队列另一头。**判断**：前台 in-app 音极可能走 native 音频引擎(OpenSL/AAudio/自研) 或深藏 i3 Handler 消息系统。**受阻**：硬钩 native = 铁律23(封号高风险) + 不用 C++。**下次专项**：逆向 i3 Handler 的消息 what + 找微信「播新消息音」上游 Java 决策方法（hook 到它即可同时解静默漏叮 + 前台震动）。探针 `tools/probe_fg_msg_sound.js`、`tools/probe_msg_arrival_8071.js` 留存。**下次先试的候选路径**：① `ToneGenerator`、`Ringtone.play()`（本轮未 hook）；② native 音频 `OpenSL ES`/`AAudio`（要 hook native 函数，碰铁律23）；③ 微信自研 audio mixer（不经系统 MediaPlayer）；④ 顺 `i3.dispatchMessage` 找 Handler 的 message what + post 方。 |
-| **P_NF3** | **杀进程 :push 也能按策略震动/响** | 🟡 | 2026-05-31（Guard Native11，用户授权 :push）。**route1 代码已写已装**：① `Bridge` 把 `nfyp` 多写一份到跨进程文件 `g_nfyp`（app filesDir，主进程写、:push 读，绕开 SP MODE_PRIVATE，不动 SO）；② `NotifyRouter.fireAlertForPolicy(ctx,type,policy)` 显式策略震动（给 :push 用，不读 Bridge）；③ `PushFilter.installL1ForPush` 拦住密友消息后读 `g_nfyp` → 非 OFF 则 `fireAlertForPolicy(MSG)` 震动（1.2s 节流）。**🟡 未现场实证**：本机主进程秒级重生，杀后台测出的震动 L1 显示是主进程(PID 25502)兜底、`[PF:L1:push] alert` 未触发；纯 :push 路径难复现。**时间关系，当前 V1 阶段可通过**，待 MIUI 真狠杀场景再补 `[PF:L1:push] alert` L1。 |ertical LL（8dp 灰 spacer + "隐私功能" 13sp #9A9A9A group header + 白底 "量子密友设置" 17sp #191919 行）；`handleRecyclerView` INJECT 分支写 `sRvRef`；`attachScrollFollow / detachScrollFollow` 用 `ViewTreeObserver.OnScrollChangedListener` + `XposedHelpers.callMethod(rv, "computeVerticalScrollOffset")` 反射调（绕开 `View.computeVerticalScrollOffset()` protected）。永久弃用：pz3.g.onBindViewHolder hook、个人资料行 hijack（RV.OnItemTouchListener 不可靠恢复）、Dialog/液态玻璃 v2、贴顶 sticky banner。详见 `docs/SETTINGS_UI_V2.md` §0 v3 摘要。 |
+| **P_NF3** | **杀进程 :push 也能按策略震动/响** | 🟡 | 2026-05-31（Guard Native11，用户授权 :push）。**route1 代码已写已装**：① `Bridge` 把 `nfyp` 多写一份到跨进程文件 `g_nfyp`（app filesDir，主进程写、:push 读，绕开 SP MODE_PRIVATE，不动 SO）；② `NotifyRouter.fireAlertForPolicy(ctx,type,policy)` 显式策略震动（给 :push 用，不读 Bridge）；③ `PushFilter.installL1ForPush` 拦住密友消息后读 `g_nfyp` → 非 OFF 则 `fireAlertForPolicy(MSG)` 震动（1.2s 节流）。**🟡 未现场实证**：本机主进程秒级重生，杀后台测出的震动 L1 显示是主进程(PID 25502)兜底、`[PF:L1:push] alert` 未触发；纯 :push 路径难复现。**时间关系，当前 V1 阶段可通过**，待 MIUI 真狠杀场景再补 `[PF:L1:push] alert` L1。 |
 
 > 编号从 P15 起，是接续 apk2 项目 QE66 的 P14（保持跨项目可追溯）。`P_CV*` 系列与 `P_NC*` 同属语义号，不占 v2 路线图 P26–P30 / v3 P31–P33 编号位。
 
@@ -289,12 +291,12 @@ W1 脚手架   ─→ 后续所有功能模块
   P17 会话 LSPosed
   P19 通讯录 F07
   A3  密群数据层 + Filter union（2026-05-21 装机已验）
+  P23 F08 防撤回（C1）✅ L1 装机 2026-05-31（jy0.t.f doRevokeMsg + 原文保留 + 系统提示染红）
 
 🟡 v1 进行中（阶段 ①）
   P20 搜索 + 密码入口（B6装机✅；联系人搜索拦截✅；群聊/聊天记录搜索⬜）
   P20B 状态机触发事件 B 模块（B1 摇一摇 / B2 切后台 / B5 锁屏）
   P22  PushFilter 通知策略层（2026-05-22 装机实证 L1/NM ✅；CA 🟡 未实际触发；剩余：L4b 重查 + NotifyPolicy VIBRATE/SOUND + DebugServer HTML 开关）
-  P23  F08 防撤回（资料 T08 调研先行）
 
 🟡 v1 收尾（阶段 ② 替换/加密预热）
   P24  docs/classmap/v8071.yaml + tools/check_classmap.ps1
@@ -323,8 +325,8 @@ W1 脚手架   ─→ 后续所有功能模块
 - 任何想"现在就加密 classmap"的冲动 → 阻塞，写进 `04_review_审稿复核/REJECTED_OPT.md`
 
 **T 调研任务**：
-- T08 F08 防撤回路径调研（P23 前置）
+- ✅ T08 F08 防撤回路径调研 — 已并入 P23（2026-05-31 `jy0.t.f` doRevokeMsg 实证结案）
 - **T09 Catfish L0v3 互动红点探针**（今日执行，Catfish 授权 1 天，产出给 L0v3 实现）
 
 **资料债**：
-- CLAUDE.md 编码损坏（大量 `?` 字符），需要专门一个 P 任务用原始备份恢复或重写
+- ~~CLAUDE.md 编码损坏（大量 `?` 字符），需要专门一个 P 任务用原始备份恢复或重写~~ → ✅ 已清除（2026-06-02）：全 `.md` 扫描 `?{3,}` / `�`(U+FFFD) 均 0 命中，现版 CLAUDE.md 正常，无需重写
