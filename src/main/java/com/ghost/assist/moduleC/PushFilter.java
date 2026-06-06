@@ -30,8 +30,8 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
  *   L1   LinkedList.add(NotificationItem)   后台消息入队拦截（密友 → setResult(false)）
  *   NM   NotificationManager.notify()       唯一通知 hook；VoIP 部分委托 CallGuard.handleNmVoip，
  *                                           其余做 L1-gap 兜底（密友消息漏网二道防线）
- *   L4b  MainTabUI.i()                      底部 tab unread 数字
- *   L4c  h0.d(int)                          OEM 桌面角标（已禁用 stub）
+ *   未读计数过滤（底部 tab + 顶部「微信(N)」标题）见 installUnreadCorrect（P_NF4）。
+ *   旧 L4b(MainTabUI.i 零触发) / L4c(h0.d 已禁用) 已于 2026-06-06 删除，被 UNREADFIX 取代。
  *
  * :push 进程子集：L1 + NM（来电的 SF/VW 由 CallGuard.installForPush 安装）。
  *
@@ -43,7 +43,6 @@ public class PushFilter {
     private static final String TAG = "NCL";
 
     private static final String NI_CLASS        = "com.tencent.mm.booter.notification.NotificationItem";
-    private static final String MAINTABUI_CLASS = "com.tencent.mm.ui.MainTabUI";
 
     private static volatile boolean sInstalled = false;
 
@@ -86,8 +85,6 @@ public class PushFilter {
 
         installL1(lpparam);
         installNmHook(lpparam, false);
-        installL4b(lpparam);
-        installL4c(lpparam);
         installMsgArrivalAlert(lpparam);   // 主进程消息到达 → 按策略震动/铃声（前台+后台-alive）
         installNewMsgArrival(lpparam);     // w.handleMessage 通知 Message（带 talker，前台也触发）
         installForegroundDingMute(lpparam); // 前台 in-app 密友消息「叮」声静音（仅密友，按策略）
@@ -95,7 +92,7 @@ public class PushFilter {
 
         CallGuard.install(lpparam);   // VoIP voice/video call suppression
 
-        Log.i(TAG, "[PF] PushFilter installed (main: L1+NM+L4+MSGALERT+NEWMSG+FGMUTE+UNREADFIX) + CallGuard");
+        Log.i(TAG, "[PF] PushFilter installed (main: L1+NM+MSGALERT+NEWMSG+FGMUTE+UNREADFIX) + CallGuard");
     }
 
     /** :push process install — message push + status-bar call icon (iron rule 30). */
@@ -546,40 +543,6 @@ public class PushFilter {
 
     private static boolean isHideCandidate(String s) {
         return s != null && (s.startsWith("wxid_") || s.endsWith("@chatroom"));
-    }
-
-    // =========================================================================
-    // L4b — MainTabUI.i(): bottom tab unread digit (main process)
-    // =========================================================================
-
-    private static void installL4b(XC_LoadPackage.LoadPackageParam lpparam) {
-        try {
-            XposedHelpers.findAndHookMethod(
-                    MAINTABUI_CLASS, lpparam.classLoader, "i",
-                    new XC_MethodHook() {
-                        @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
-                            if (!StateMachine.getInstance().isActive()) return;
-                            Object result = param.getResult();
-                            int real = (result instanceof Integer) ? (Integer) result : 0;
-                            param.setResult(0);
-                            Log.i(TAG, "[PF:L4b] real=" + real + " out=0");
-                        }
-                    });
-            Log.i(TAG, "[PF:L4b] hooked");
-        } catch (Throwable t) {
-            Log.w(TAG, "[PF:L4b] install fail: " + t);
-        }
-    }
-
-    // =========================================================================
-    // L4c — h0.d(int): OEM desktop badge dispatcher (DISABLED stub)
-    // =========================================================================
-
-    private static void installL4c(XC_LoadPackage.LoadPackageParam lpparam) {
-        // sHiddenBlocked accumulation caused over-subtraction. Will be replaced by
-        // WeChatDND (官方免打扰) which natively excludes hidden friends from the count.
-        Log.i(TAG, "[PF:L4c] disabled (pending WeChatDND)");
     }
 
     // =========================================================================
