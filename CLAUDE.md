@@ -38,10 +38,10 @@
 试错层   ████████████ 100%   31 条已验证失败方案归档 (FAILURE_LOG.md)
 ```
 
-**v1 已稳定**（有日志原文）：D1/D2/D3 朋友圈 · 会话 V→H · 通讯录 · A3 密群 · P21 Layer0b/Layer2 · P20 搜索联系人 v15.1 · B2/B6 触发
-**v1 部分稳定**：ConvFilter **H→V 热切**（热路径 ✅，冷路径 🟡，见 `docs/CONV_REFRESH_PROBLEM.md`）
-**v1 待装机/🟡**：B1/B4/B5 部分触发 · P20 搜索群聊/聊天记录 · H→V 热切冷路径（见 `docs/CONV_REFRESH_PROBLEM.md`）· P18 KPI 基线
-**下一个**：P26 好友 fresh-fetch / P20 搜索分源 → 详见 [`TASK_BOARD.md`](./TASK_BOARD.md)
+**v1 已稳定**（有日志原文）：D1/D2/D3 朋友圈 · 会话 V→H · 会话 H→V fresh-warm（普通有历史 hidden id）· 通讯录 · A2 密友导入 · A3 密群/密群导入 · P21 Layer0b · P20 搜索（联系人/群聊密群/聊天记录关键词场景）· B2/B5/B6 触发
+**v1 部分稳定**：零历史 wxid 的会话行创建仍受微信 DB 限制（见 `docs/CONV_REFRESH_PROBLEM.md`）
+**v1 待装机/🟡**：P22 普通消息通知 + 铃声功能 · P18 KPI 基线 · P20B KPI 发版前重测
+**下一个**：P22 普通消息通知 + 铃声功能 / P26C 搜索高亮 → 详见 [`TASK_BOARD.md`](./TASK_BOARD.md)
 
 ---
 
@@ -160,7 +160,7 @@
  + B 模块 6 个触发事件（摇一摇/切后台/Home/返回/锁屏/搜索）
  + 朋友圈 Proto 层（hookSnsObject 主线 + INIT 兜底）
  + 【代码已入 v1，未结案】PushFilter L1+NM ✅ 装机；L4b/L4c/CA 🟡 / AntiRecall 🟡 代码已写未装机
- + 【代码已入 v1，未结案】P21 朋友圈小红点 Layer0b/Layer2（🟡 L3，证据源 chatfish/frida，待 LSPosed 装机抓 logcat）
+ + 【已下沉 v1】P21 朋友圈小红点 Layer0b ✅（LSPosed 装机实证；Layer2/v18 tab 备用层保留）
 ```
 > **AI 注意**：本"v1 锁定范围"已与现状偏离（C 模块下沉、P21 朋友圈小红点接入等）。新会话以 [`HOOKMAP.md`](./HOOKMAP.md) §二 实体表为准；本节作为产品初心存档，待 v1 收口时统一重写。
 
@@ -192,7 +192,7 @@ P2 / 暂缓 / 禁止 / 系统层破绽点 → **全部不做**
 - `ArrayList.addAll(fc5.g)` → `g.d`（z3 实例）→ `z3.c1()` → remove
 
 ### 6.5 搜索拦截（搜索入口 = 放大镜）
-- `SearchFilter`：hook `ArrayList.addAll` + `z15.ef6` 按 wxid 过滤
+- `SearchFilter`：主路径为 `q2/f0.getView` 渲染层精确 id 过滤（`tz2.u1/tz2.p0/tz2.s1` → wxid/groupId）；聊天记录 `z15.ef6/ch6.e` 仅作分源理解层，不作为主过滤路径
 - `SearchUnlock`：hook EditText 构造器，隐藏态 + 密码 `111111` → 切显形
 - **假返回"未找到"** = 微信本地无数据时的默认行为（显示"添加好友"）
 - `hookSearchContact` 待实现（联系人存在性层）
