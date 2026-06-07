@@ -1,0 +1,328 @@
+     ____
+    / _  |   Frida 17.9.10 - A world-class dynamic instrumentation toolkit
+   | (_| |
+    > _  |   Commands:
+   /_/ |_|       help      -> Displays the help system
+   . . . .       object?   -> Display information about 'object'
+   . . . .       exit/quit -> Exit
+   . . . .
+   . . . .   More info at https://frida.re/docs/home/
+   . . . .
+   . . . .   Connected to MI 9 (id=609b4b18)
+Attaching...
+
+==== com.tencent.mm.plugin.sns.ui.improve.component.unread.SnsUnreadSaveList (5) ====
+  int describeContents()
+  boolean equals(Object)
+  int hashCode()
+  String toString()
+  void writeToParcel(Parcel,int)
+  FIELDS: ArrayList d | Creator CREATOR
+
+==== com.tencent.mm.plugin.sns.ui.improve.component.unread.ImproveUnreadUIC (19) ====
+  x T6(ImproveUnreadUIC)
+  String V6(ImproveUnreadUIC,ArrayList,String)
+  boolean W6()
+  r X6()
+  v Z6()
+  void d7()
+  boolean e7(p)
+  boolean f7(int)
+  boolean g7(p)
+  void h7(LinkedList)
+  void i7()
+  void j7(v)
+  boolean k7(ArrayList)
+  void onCreate(Bundle)
+  void onDestroy()
+  void onSceneEnd(int,int,String,m1)
+  Object onScrollStateChanged(RecyclerView,w1,int,Continuation)
+  void onScrolled(RecyclerView,int,int)
+  void onStop()
+  FIELDS: w d | o4 e | g f | x g | v h | ArrayList i | String m | HashSet n | long o | long p | int q | IListener r | g s | ImproveUnreadUIC t
+
+==== com.tencent.mm.plugin.sns.ui.improve.component.unread.ImproveUnreadTierView (6) ====
+  boolean getLazyInflate()
+  StoryAvatarDotsView getUnreadAvatarView()
+  ViewGroup getUnreadTipView()
+  void a(v,p)
+  void b()
+  void update(Observable,Object)
+  FIELDS: g d | g e | b f | s0 g | g h | int i
+
+==== com.tencent.mm.plugin.sns.ui.improve.component.unread.SnsUnreadSaveItem (5) ====
+  int describeContents()
+  boolean equals(Object)
+  int hashCode()
+  String toString()
+  void writeToParcel(Parcel,int)
+  FIELDS: String d | boolean e | boolean f | Creator CREATOR
+[probe] RedDotManager hooks ready
+[probe] RenderView hook ready
+
+[probe_reddot_runtime] ready -- ����ҳ<->����Ȧ ������ + ���ѵ���
+[MI 9::PID::15048 ]-> [REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+[REN] RenderView.h(0)  strategyId=null
+Process terminated
+
+Thank you for using Frida!
+Fatal Python error: _enter_buffered_busy: could not acquire lock for <_io.BufferedReader name='<stdin>'> at interpreter shutdown, possibly due to daemon threads
+Python runtime state: finalizing (tstate=0x00007ff8e2c72fe8)
+
+Current thread 0x0000655c (most recent call first):
+  <no Python frame>

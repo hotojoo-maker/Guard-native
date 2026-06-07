@@ -30,6 +30,11 @@ node_modules/
 tools/frida_build/
 *.compiled.js
 
+# 装机大日志 / ANR（>1MB 留本地或外部归档，不入 git）
+**/anr_latest.txt
+**/b1_shake_*.log
+**/b4_back_*.log
+
 # 反编译输出（大，可重生成）
 tools/re_8071/
 
