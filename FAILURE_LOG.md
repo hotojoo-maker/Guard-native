@@ -397,6 +397,22 @@ H→V 后：  [BUS:pendingRestore] notified adapter=v0 ← 同上
 
 ---
 
+### F-38：伪装订位 — 消息层坐标候选全部动态证伪（2026-06-07）
+
+> Frida L1 实证。静态 smali 第一轮（子代理）猜的"发位置消息坐标写入点"全部被动态证伪；正解是 LBS 定位分发源头 `pz0.h.c`（详见 `docs/HOOK_MAP_8071_AUTHORITATIVE.md` §一.1）。
+
+| # | 已证伪路径 | 根因 | 正确做法 |
+|---|-----------|------|---------|
+| a | `wy4.a.E(D)/F(D)`（聊天位置消息 XML 写经纬度）| 发位置/共享/朋友圈全程零命中 — 8.0.71 坐标不在此写入 | hook 定位分发源 `pz0.h.c` arg2/arg3 |
+| b | `q2.F(String,String)`（选点确认发送）| 点发送零命中 — 非坐标落点 | 同上 |
+| c | Intent `kwebmap_slat/kwebmap_lng` | `getDoubleExtra` 返回默认值 `-1000`，键根本不存在 | 坐标不走 Intent extra |
+| d | LBS SDK `TencentLocationManager.requestLocationUpdates / onLocationChanged / getLastKnownLocation` | 本轮全未触发（定位走缓存 + `pz0.h.c` 分发链，非 SDK 回调）| 锚分发链 `pz0.h.c`，不锚 SDK 回调 |
+
+**正解**：单 hook `pz0.h.c(...)` beforeHook 改 arg2(纬度)/arg3(经度) → 全局生效；下游 `n83.g.onGetLocation` 自动继承。PoC 装机跳点成功（`tools/probe_loc_poc_8071.js`，天安门 39.9087/116.3975）。
+**教训**：静态 smali 猜的 hook 点必须动态验证（同 F-02）；location 插件主体类 smali11 缺失时，别在缺失 dex 上空推，直接 Frida `enumerateLoadedClasses` + 调用栈定位。
+
+---
+
 1. 写代码前先 grep 本文件查"我要做的事"是否已被否决
 2. 见到 ❌ 标记或本表中任一条 → **立即停手**，找替代方案
 3. 发现新的失败方案 → 立即追加为 F-23/24/25...，**永久不删**

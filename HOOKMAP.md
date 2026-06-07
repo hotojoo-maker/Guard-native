@@ -7,7 +7,7 @@
 > 4. 文档状态与 result.md 不一致 → **停下来问用户，不自行仲裁**
 > 5. 不确定任何字段名/类名 → **停下来问用户，禁止猜测**
 
-更新时间：2026-05-27（P20 搜索 v15.1；文档隔离见 [`docs/README.md`](./docs/README.md)；产品总闸见 [`docs/PRODUCT_GATE.md`](./docs/PRODUCT_GATE.md)）
+更新时间：2026-06-06（P20 搜索 v15.2 灰白收口 06-02 + 密群拦截 L1 装机实证 06-06；朋友圈小红点 Layer 0b ✅；密友/密群导入 UI ✅；文档隔离见 [`docs/README.md`](./docs/README.md)；产品总闸见 [`docs/PRODUCT_GATE.md`](./docs/PRODUCT_GATE.md)）
 当前底座：**微信 8.0.71**（D-014）
 责任人：guard-review_质检门控（资料员/文档员角色已并入此 skill 资料功能档）
 
@@ -18,28 +18,19 @@
 
 | 模块                                    | 状态  | 功能数 | v1 范围                                       | 详情  |
 | ------------------------------------- | --- | --- | ------------------------------------------- | --- |
-| **A. 核心隐私**（密友列表/密群/密码/总开关）           | 🟡  | 4   | A3 密群 ✅装机 2026-05-21；A4 密码 ✅装机 2026-05-22（SearchUnlock，见 §三 A4）；A1 状态机 🟡（isActive 门控已验/VIP 授权 v1 stub）；A2 密友名单 🟡（数据层 Bridge ✅/ContactResolver L4 stub + 设置入口「添加密友」按钮缺）                  | §A  |
-| **B. 隐藏触发**（摇一摇/切后台/Home/锁屏/搜索框 1111） | 🟡  | 6   | B2/B6 **8071 已验**；B5 ✅ 用户确认已验证 2026-06-01；B1 待确认；B4 ⬜ | §B  |
-| **C. 消息控制**（防撤回/通知伪装/未读/通知模式/**来电拦截**）         | 🟡  | 5   | **语音/视频来电拦截 ✅装机 2026-05-29**（→ `docs/P22_PushFilter_VoIP.md`）；PushFilter L1/NM ✅装机 2026-05-22；L4b ❓；L4c 🟡；AntiRecall ✅装机 2026-05-31（jy0.t.f 拦截+原文保留+提示染红）；**通知模式 静默/震动 ✅、铃声占位、:push 独立震 🟡(P_NF3)**；C5 v2 起 | §C  |
+| **A. 核心隐私**（密友列表/密群/密码/总开关）           | 🟡  | 4   | A2/A3/A4 ✅；A1 授权 v2 待接 | §A  |
+| **B. 隐藏触发**（摇一摇/切后台/Home/锁屏/搜索框 1111） | 🟡  | 6   | B1/B2/B6 **8071 已验**；B5 ✅ 用户确认已验证 2026-06-01；B4 因用户设备无返回键，按确认不阻塞（不标 ✅） | §B  |
+| **C. 消息控制**（防撤回/通知伪装/未读/通知模式/**来电拦截**）         | 🟡  | 5   | 来电/防撤回/Push L1-NM/未读计数过滤(P_NF4) ✅；当前缺口：普通消息通知 + 铃声功能 | §C  |
 | **D. 痕迹隐藏**（密友帖/点赞/评论）         | ✅  | 3   | D1+D2+D3 装机确认 2026-05-20（8.0.71） | §D  |
-| **E. 装b 模块**（步数/定位/改零钱）               | ⬜   | 3   | 不在 v1                                       | §E  |
+| **E. 装b 模块**（步数/定位/改零钱）               | 🟡   | 3   | E2 伪装定位 ✅ 装机 2026-06-07；E1/E3 v2/v3      | §E  |
 | **F. 商业彩蛋**（反盗版引流/独家功能/私域链接）          | ⬜   | 3   | 不在 v1                                       | §F  |
 
 
-**v1 锁定范围**（**⚠️ 待收敛**：本节为产品初心口径，已与 §二 实体表/`ModuleMain.java` 实际注册偏离；新决策以 §二 + 代码 ModuleMain.install 列表为准）：
+**v1 锁定范围（收口口径）**：
 
-- **11 个 hook**（历史规划见 [`docs/archive/wechat_8066/HOOK_MAP_V1.md`](./docs/archive/wechat_8066/HOOK_MAP_V1.md) P0+P1；8071 事实见 [`docs/HOOK_MAP_8071_AUTHORITATIVE.md`](./docs/HOOK_MAP_8071_AUTHORITATIVE.md)）
-- **3 态状态机**（显形/隐藏/解锁中，A1 总开关 + A2 密友列表 + A3 密群列表）
-- **A4 搜索框 1111 解锁**（hook EditText 文本监听，不在 11 hook 内）
-- **B 模块 6 个触发事件**（摇一摇/切后台/Home/返回键/锁屏-解锁/搜索框 1111）
-- **朋友圈 Proto 层**（hookSnsObject 主线 + INIT 兜底，不引 native）
-- **【部分入位 v1，未结案】**
-  - PushFilter L1 + NM ✅ 装机实证 2026-05-22（普通消息 + voip 通知拦截）
-  - PushFilter L4b ❓ 未触发 / L4c 🟡 减法逻辑待装机 / CA 🟡 备用层（C3 未读控制对应实现）
-  - AntiRecall ✅ L1 装机实证 2026-05-31：`jy0.t.f` 拦截 + 原文保留 + 系统提示染红（C1 防撤回）
-  - C2 通知伪装：暂由 PushFilter NM 层 cancel 替代，**未单独实现**
-  - C4 通知三档 / C5 语音转发：v2+
-- **【已下沉 v1】P21 朋友圈小红点 Layer0b/Layer2 🟡**（注：当前实证来源仅 chatfish 反编译 + frida trace，尚无 LSPosed 装机日志原文，证据级 L3）
+- 已验主线：A2/A3 导入，B1/B2/B5/B6，D1/D2/D3，P17 会话，P19 通讯录，P20 搜索，P21 Layer0b，P23 防撤回，P22 来电/通知主拦截。
+- 仍待：P18 KPI 基线、C 模块普通消息通知 + 铃声功能；P20B KPI 轻采样已记录，发版前重测；P26 fresh-warm 已有证据，不重复；B4 因用户设备无返回键，按确认不阻塞（无 B4 专属 L1，不标 ✅）。
+- 8071 hook 事实唯一权威：[`docs/HOOK_MAP_8071_AUTHORITATIVE.md`](./docs/HOOK_MAP_8071_AUTHORITATIVE.md)。
 
 门控 / 授权 / 状态机 / 设置入口可见性的权威口径见 [`docs/GUARD_GATE_TRUTH.md`](./docs/GUARD_GATE_TRUTH.md)。
 
@@ -59,24 +50,25 @@
 | **L0v2 朋友圈过滤 D1** | `ArrayList.addAll(na4.b)` → `la4.p` → **`la4.p.field_userName` 直读**（fallback 主路径） → remove post | ✅ 装机确认 2026-05-21 | ⭐⭐⭐ | `h1()` 路径 null miss（F-31）；fallback 命中 5 次实证；**禁止改回 h1() 主路径** |
 | **L0v4 赞评过滤 D2/D3** | `LinkedList.add(z15.e56/cs5.di0/i84.y)` → `entry.d`（或 `f435583d`）=wxid → block | ✅ 装机确认 2026-05-20 | ⭐⭐⭐ | 4 字段轮询：`d / f435583d / username / field_userName`；getCommentList/LikeUserList 走 JNI 不可用 |
 | **F07 通讯录 8.0.71** | `ArrayList.addAll` → `fc5.g` → `g.d`（z3 实例）→ `z3.c1()` → remove | ✅ P19 2026-05-20 | ⭐⭐⭐ | **仅通讯录**；类常量 `com.tencent.mm.storage.z3`；`MvvmList.n/u` 零触发 |
-| **F07B 标签成员 8.0.71** | `ArrayList.addAll` → first item `ye5.j` → `ye5.j.d`（`wxid_xxx-N-M` 去后缀）→ `allHiddenIds().contains` → `Iterator.remove()` | ✅ 装机 2026-05-24 + 用户现场复验 2026-05-31 | ⭐⭐⭐ | 通讯录「标签」分组专用（≠ F07 主列表 `fc5.g`）；同 `addAll` 入口靠 first-item 类名分流，勿删 `fc5.g` 分支；独立为 `moduleD/ContactLabelMemberFilter.java`（日志 `[CLM:label]`，install `[CLM] ... hook ok` 2026-06-01 复跑实证 行 1940）；门控 `isActive()`+`allHiddenIds()` |
-| **朋友圈小红点 P21** | **Layer0b**：`Activity.onResume` 过滤 `SnsMsgUI*`（互动列表入口，进列表后密友条目不显示 + `w1.y` 归零）；**Layer2**：`FMF.g1("album_dyna_photo_ui_title", true)` 拦截（朋友圈行红点）；**v18 tab badge**：`TabRedDotChangeEvent`/`WeChatTabRedDotEvent` ctor int 字段清零 | 🟡 **L3 待装机实证**（证据源：chatfish 反编译 + frida trace，**尚无 LSPosed 自有 logcat 原文**，不得标 ✅）；v18 tab badge 代码已写，未触发 | ⭐⭐⭐ | ❌ Layer1 `w1.v2` **跨进程不可达**（`:push` 进程写，主进程 hook 打不到）；badge 本地状态，进互动列表消费后自然归零；`w1.E1()` getter 零调用（badge 不走 getter）；`g1(true)` 已拦截（阻止新红点）|
+| **F07B 标签成员 8.0.71** | `ArrayList.addAll(ye5.j)` → 去后缀 wxid → `allHiddenIds()` | ✅ 2026-06-01 复跑实证 | ⭐⭐⭐ | 详情：`03_execute_执行任务/P19B_ContactLabel/result.md` |
+| **朋友圈小红点 P21** | Layer0b `Activity.onResume` 过滤 `SnsMsgUI*`；Layer2/v18 备用 | ✅ Layer0b 装机实证 2026-05-21 | ⭐⭐⭐ | 详情：`03_execute_执行任务/P21_MomentsRedDot/worklog.md` |
 | **L1 MvvmList.n/m** | `MvvmList.n(List,bool)` 8.0.71 / `.m`（8066）→ `kc5.v0` / `kc5.y` → `y.d`（l4）→ **`l4.C0()`** wxid（8071 主路径） | ✅ **装机确认 2026-05-20** | ⭐⭐⭐ | 8066 曾用 h1() 轮询；8071 以 C0 实证（P20B） |
 | **L2 MvvmList.s** | `MvvmList.s(List)`                         | ✅ Frida 验证 | ⭐⭐⭐    | 会话备用      |
 | **L4 notify**     | `kc5.v0.notifyDataSetChanged` clean-before → L4-NoDiff（setResult null + Handler.post 全量刷）| ✅ **装机实证 2026-05-23**（F-32 DiffUtil 卡帧修复） | ⭐⭐⭐ | 渲染前兜底；L4 beforeHook 同步更新 `sConvAdapterRef`（仅 kc5.v0）+ `sMvvmListRef`；**禁止把 h0 加入 sConvAdapterRef 更新条件** |
-| **V↔H 实时刷新**  | V→H：`sPendingHide` + LauncherUI.onResume → `cleanConvData` + `cleanAdapterGraph(L4adapter.q.d)` + `notifyConvAdapter(v0)`；H→V：`sPendingRestore` + `expandCacheWithWarm(kc5.x.h(id) fresh)` + `restoreToMvvmList(h/o/p, CME-safe)` + `restoreAdapterGraphFromCache(adapter.q.d)` + `notifyConvAdapter(v0)` + **80ms post-dedup（v27）**：`postDedupAdapterGraph` 按 identity 把同对象引用收敛成 1 份；filterConvList 加密群保底检 `extractGroupId` + 快照式 CME 防御（v28） | 🟡 **2026-05-27 v28 仅会话 tab 收口**：冷启动 H 态不露 / H 态新消息不露 / V↔H 5 轮热切完美 / 冷启动→V 全恢复 / CME=0 / warmAll expanded=3；证据：`bug排查/final_v28_5rounds.log` + `final_v28_coldstart.log`。✅ **通讯录 tab 密友 V↔H 热切已装机收口（2026-05-29，P_CV1）**：`ContactHotReload.handleBusVisible` BUS-V restore 遍历 MvvmList 基类 o/p/h + 80ms 异步 post-dedup（F-35 合规），`ContactFilter.cleanLiveList` 同改 o/p/h 对称；`ContactDiscoveryHook.findAdapterHosts` 深度 8→24 抓到 `AddressLiveList`/`ik3.t0`；证据 `bug排查/final_pcv1_v8_双通成功.log`（V↔H 3 轮 V 注 4 / H 删 4 全稳）。通讯录「群聊」分组密群**隐藏**走 P_CV1-G `ChatroomContactUI`（见 `docs/A3_GROUP_FILTER_IMPL.md` §六）；密群 V 态恢复为 P_CV1 遗留。归属 P_CV1（见 TASK_BOARD §五） | ⭐⭐⭐⭐ | sConvAdapterRef 仅 kc5.v0；禁止 h0/q2 覆盖；禁止 v25 跨 List identity + v26 list-visited 双层强 dedup（已 F-35）；详见 [`docs/CONV_REFRESH_PROBLEM.md`](./docs/CONV_REFRESH_PROBLEM.md) §十二~§十七 |
+| **V↔H 实时刷新**  | 会话/通讯录热切刷新 | 🟡 会话热路径 ✅；通讯录密友 ✅；冷路径/密群恢复仍有债 | ⭐⭐⭐⭐ | 详情：`docs/CONV_REFRESH_PROBLEM.md`、P_CV1 |
 | INIT              | warm-attach 首次进入清理                         | ✅ Frida 验证 | ⭐⭐⭐    | 老数据清理     |
 | 实例轮询              | 3s 检查 hashCode 防 StateFlow 替换              | ✅ Frida 验证 | ⭐⭐⭐    | 朋友圈 o/p   |
-| **PushFilter L1** | `LinkedList.add(NotificationItem)` → `this.h` = talker wxid → `shouldHideId` → setResult(false) | ✅ **装机实证 2026-05-22**（普通消息拦截 block+cancel 双层生效） | ⭐⭐⭐ | 主进程；tinker classloader — 用 `obj.getClass().getDeclaredField("h")` 绕开 |
-| **PushFilter NM** | `NM.notify(tag,id,Notification)` → ① voip channel → HIDDEN 直接 cancel；② L1 block 后 200ms 内 cancel bypass | ✅ **装机实证 2026-05-22**（普通消息 gap=3ms；语音/视频 ch=voip_norify_channel_silent* cancel） | ⭐⭐⭐ | 主进程；voip channel 名含 `voip`/`ringtone` 即拦 |
-| **PushFilter CA** | `Activity.onCreate` 模糊匹配 voip/call/video → HIDDEN 直接 finish | 🟡 代码已写（备用层，voip NM cancel 生效时 Activity 不启动） | ⭐⭐ | 主进程；8.0.71 Flutter VOIP — wxid 不在 Intent/字段，全局静音策略 |
-| **PushFilter L4b** | `MainTabUI.i()` afterHook → 隐藏态 return 0 | ❓ 代码已写，装机未触发（无 `[PF:L4b] real=` 日志）— 方法名可能 8.0.71 已变 | ⭐⭐ | 主进程；底部 tab 未读数字；**方法名需 jadx 重查** |
-| **PushFilter L4c** | `h0.d(int)` beforeHook → `max(0, in - sHiddenBlocked)` 减法 | 🟡 代码已改（减法逻辑），待装机验证 | ⭐⭐ | 主进程；OEM 桌面角标；全归零有误（非密友角标消失），改为减法；`sHiddenBlocked` 仅计本 session 拦截数 |
+| **PushFilter L1** | `LinkedList.add(NotificationItem)` talker 拦截 | ✅ 2026-05-22 装机 | ⭐⭐⭐ | 详情：`docs/P22_PushFilter_VoIP.md` |
+| **PushFilter NM** | `NotificationManager.notify` cancel/bypass | ✅ 2026-05-22 装机 | ⭐⭐⭐ | 普通消息 + voip channel |
+| **CallGuard CA** | `VideoActivity.onResume/onStart` → `moveTaskToBack(true)` 全屏来电屏（后台→前台不露） | ✅ 装机验证 2026-05-29 | ⭐⭐⭐ | 主进程；来电链已拆到 `CallGuard.java`；旧 `onCreate 模糊匹配 finish` 已证伪删除（P22 §七.A）|
+| **UNREADFIX（P_NF4）** | 底部 tab `LauncherUIBottomTabView.l(int)` + 顶部标题 `TaskBarContainer.setActionBarTitle` → 减 `ConvFilter.getHiddenUnread()` | ✅ 装机实证 2026-06-06 | ⭐⭐⭐ | 主进程；默认隐藏态密友未读数在底部 tab 红点 + 顶部「微信(N)」标题两处被**过滤/隐藏**；打开开关 `shu`（显示密友未读消息数，默认关）则**显示**密友未读数；证据 `03_execute_执行任务/P22_PushFilter/pnf4_unread_20260606.log` |
+| ❌ ~~PushFilter L4b~~ | ~~`MainTabUI.i()` afterHook~~ — 装机零触发 | ❌ 旁路废弃 | — | 2026-06-06 实证全程无 `[PF:L4b] real=`，微信未读不走此路径；已被 UNREADFIX 取代 |
+| ❌ ~~PushFilter L4c~~ | ~~`h0.d(int)` 减法~~ — 已禁用 | ❌ 已禁用 stub | — | `installL4c` 仅打 `[PF:L4c] disabled (pending WeChatDND)`，过度扣减问题待 WeChatDND 取代 |
 | **WeChatDND（规划）** | 密友加入时自动开官方「消息免打扰」→ 角标/tab 天然不计入 | 📋 设计确认，待 Frida trace 调用链 | ⭐⭐⭐⭐ | 可替代 L4b/L4c；Layer 1 防线；需找内部方法名 |
-| **NotifyPolicy（规划）** | OFF/VIBRATE/SOUND 三档，Bridge/MMKV 存储，默认 OFF | 📋 方案已出，待 Phase 2 实现 | ⭐⭐⭐ | OFF 已完成；VIBRATE/SOUND 依赖 Phase 2 |
+| **NotifyPolicy（NotifyRouter）** | 密友提醒方式 OFF/VIBRATE/SOUND 三档，Bridge/MMKV 存储，默认 OFF | 🟡 普通消息通知 + 铃声功能待收口 | ⭐⭐⭐ | `moduleC/NotifyRouter.java`；静默/震动已有实证，当前缺口集中在普通消息通知链路与 SOUND 档铃声 |
 | ❌ ~~x.a(f9)~~     | ~~`booter.notification.x.a(f9)`~~ — 8.0.71 零命中证伪 | ❌ 永久废弃 | — | hook 注册成功但运行时零触发，不走此路径 |
 | ❌ ~~NotificationItem.a(Context)~~ | ~~`final` 方法 + ART AOT 内联~~ | ❌ 永久废弃 | — | Xposed 无法拦截；Frida 可以但模块不用 |
-| **搜索框过滤 8.0.71**（主页放大镜 FTS 全局搜索） | `ListView.setAdapter` → q2 → 沿继承链 hookAllMethods("getView") → `com.tencent.mm.plugin.fts.ui.f0.getView(int,View,ViewGroup)` declared → afterHook `adapter.getItem(pos)` 拿 `tz2.u1` → `g.f.s` = wxid → `Bridge.allHiddenIds().contains` → `View.GONE + lp.height=1 + margin=0`；同 callback 内 `lv.setDivider(null) + lv.setDividerHeight(0)` 消除 row gap | ✅ **装机实证 2026-05-27 v15.1**（`[SF:gv] blocked pos=1 id=wxid_lzd2va16jd1622` ×14）；v15.2 2026-06-02 灰白收口（详见权威 §8b） | ⭐⭐⭐ | **仅"主页放大镜"FTS 搜索**；精确 wxid 匹配不伤同昵称非密友；q2.j hook 保留作 backstop（实测 0 触发）；遗留：①隐藏行残留灰白 → ✅ 已解决 v15.2（根因 AbsListView height≤0，详见权威 §8b）；②群聊行"包含:密友名"高亮（P26C 范畴） |
+| **搜索框过滤 8.0.71**（主页放大镜 FTS） | `q2/f0.getView` → `tz2.u1/p0/s1` wxid/groupId → GONE + `lp.height=1` | ✅ P20 收口 L1 | ⭐⭐⭐ | 证据：`tools/p20_search_logcat_runner_20260606_180946.log`；详见权威 §8b |
 | ❌ ~~ss4.p.onBindViewHolder~~ — F-32x | RecyclerView ss4.p 本体 vis=0 但**父级 ConstraintLayout vis=8 GONE**，根本不上屏；2026-05-27 02:23 误锚定，2026-05-27 04:00 推翻 | ❌ 永久废弃 | — | 真渲染容器是 ListView (HeaderViewListAdapter wraps q2)；fts_tree_v2.log L243/273 铁证；hook 装上永不触发 |
 | ❌ ~~q2.j(View, jz2.g, boolean)~~ — F-32y | 8.0.71 搜索结果渲染**不经** q2.j；hook 装上 0 触发（final_v15 终端 AI 实证）；保留陪跑 | ❌ 主路径废弃，仅作 backstop | — | q2 渲染走 q2.getView (从 f0 继承) afterHook 路径；不要试图把 q2.j 当主入口 |
 | ❌ ~~SearchFilter 5-hook offset (getCount/getView/getItem/getItemId/getItemViewType)~~ — F-32z | setResult(orig-skip) 干扰 q2 内部 data swap，搜索结果区**完全空白** + ANR；final_v11/v12/v13/v14 装机连续 4 次空白实证 | ❌ 永久废弃 | — | 单 hook afterHook GONE 就够；不要试图缩 ListView count；如想消空白条用 setDivider(null) + lp.margin=0 而非 count 减 |
@@ -115,19 +107,19 @@
 
 #### A2 密友列表（wxid）
 
-- 状态：🟡（Bridge/MMKV 完成，ContactResolver L4 stub，待 W4 Proto dump 验证）
-- 实现：MMKV 列表存储 + 状态机持久化
-- 用户操作：点击添加 wxid → 反射查微信本地数据库取昵称/头像 → 入名单
-- 详细：W1 P15 已产出 `ContactResolver.java`（L4 待验证）
+- 状态：✅ 数据层 + 导入 UI 已收口（`SelectContactUI` 原生选人器，预选 + diff 增删一体）
+- 实现：`Bridge.addWxid/removeWxid/getWxids/allHiddenIds()` + MMKV `hlst`
+- 用户操作：设置入口「密友列表/添加密友」→ 原生选人器 → 返回 `Select_Conv_User` wxid CSV → diff 增删
+- 详细：`docs/HOOK_MAP_8071_AUTHORITATIVE.md` §3；`ContactResolver.java` 仅作昵称/头像辅助，不作为导入主路径
 
 #### A3 密群列表（groupId）
 
-- 状态：✅（**2026-05-21 装机已验**）
-- 导入入口 ✅ **2026-06-02**：密群列表 → `GroupCardSelectUI` 原生选群器（`already_select_contact` 预选已隐群 + 增删一体），详见 `docs/HOOK_MAP_8071_AUTHORITATIVE.md` §4
+- 状态：✅ 数据层 + 过滤链（2026-05-21）+ 导入 UI（2026-06-02）已收口
+- 导入入口 ✅：密群列表 → `GroupCardSelectUI` 原生选群器（`already_select_contact` 预选已隐群 + 增删一体），详见 `docs/HOOK_MAP_8071_AUTHORITATIVE.md` §4
 - 存储：`Bridge.getGroupIds()` / `addGroupId()` / `removeGroupId()`，键 `glst`
 - groupId 形态：`xxxxxxxxxxxxxxxx@chatroom`（微信群唯一标识）
 - 拦截层复用：
-  - 会话列表（ConvFilter）：`l4.h1()` 取到的 username 已自动包含 `*@chatroom`，直接匹配 `getGroupIds()` 即可，**无需新加 hook**
+  - 会话列表（ConvFilter）：`l4.C0()` 取到的 username 已自动包含 `*@chatroom`，直接匹配 `getGroupIds()` 即可，**无需新加 hook**
   - 通讯录（ContactFilter）：微信「群聊」分组走 `z3.c1()`，同字段，同样匹配
   - 朋友圈：密群消息不出朋友圈，**A3 不涉及 D1/D2/D3**
   - 搜索：FTS 中的群聊条目 wxid 字段即 groupId，复用 SearchFilter
@@ -153,14 +145,14 @@
 
 | #   | 功能 | 方向 | 状态 | Android 技术点 | 难度 |
 | --- | --- | --- | --- | --- | --- |
-| B1  | 摇一摇 → 立即隐藏（**默认关闭**，用户可开） | VISIBLE→HIDDEN | ⬜ 代码已写待装机 | `TriggerGuard.java` SensorManager TYPE_ACCELEROMETER | ⭐⭐ |
+| B1  | 摇一摇 → 立即隐藏（**默认关闭**，用户可开） | VISIBLE→HIDDEN | ✅ 8071 已验 2026-06-07 | `TriggerGuard.java` SensorManager TYPE_ACCELEROMETER；证据 `03_execute_执行任务/P20B_BTriggers_SearchUnlock/logs/b1_shake_fixedkey.log` | ⭐⭐ |
 | B2  | 切后台/Home/手势切 App → 自动隐藏（**默认开启**，不可关） | VISIBLE→HIDDEN | ✅ **8071 已验** | `TriggerGuard.java` ActivityLifecycleCallbacks + CLOSE_SYSTEM_DIALOGS | ⭐ |
 | B3  | ~~Home 键单独~~ | — | ❌ | 被 B2 的 CLOSE_SYSTEM_DIALOGS 覆盖，无需单独实现 | — |
-| B4  | 返回键 → 隐藏（仅会话/通讯录主页） | VISIBLE→HIDDEN | ⬜ 待实现 | hook onBackPressed，按页面判断 | ⭐ |
+| B4  | 返回键 → 隐藏（仅会话/通讯录主页） | VISIBLE→HIDDEN | ⬜ 用户设备无返回键，按确认不阻塞；未取得 B4 专属 L1，不标 ✅ | hook onBackPressed，按页面判断 | ⭐ |
 | B5  | 锁屏 → 自动隐藏（解锁后**不**自动显形） | VISIBLE→HIDDEN | ✅ 用户确认已验证（2026-06-01） | `TriggerGuard.java` ACTION_SCREEN_OFF | ⭐ |
 | B6  | 主界面放大镜输入 111111 → 解锁显形 | HIDDEN→VISIBLE | ✅ **8071 已验** | `SearchUnlock.java` FTS 搜索页 TextWatcher | ⭐⭐ |
 
-**下一步**：B1 待 8071 装机确认（B5 ✅ 用户确认已验证 2026-06-01）；B4 返回键待实现；111111 后密友自动回显 → P20B Bug B / P26。
+**下一步**：P22 普通消息通知 + 铃声功能；P20B KPI 发版前按重档重测；P26C 搜索高亮归 UI 优化。
 
 ---
 
@@ -181,8 +173,8 @@
 | --- | ----------------- | --- | --------------------------------------------- |
 | C1  | 防撤回               | ✅  | `moduleC/AntiRecall.java`：hook `jy0.t.f`(doRevokeMsg)，`setResult(null)` 跳过原地覆盖→**原文(文字/图片/视频)保留** + 插 type=10000 系统提示「─── HH:mm 已拦截对方撤回的消息 ───」(染红，hook `MMNeat7extView` 首参 CharSequence 方法)。自己撤回(isSend==1)放行。**L1 装机 2026-05-31**：logcat `[AR] recall blocked + tip inserted` ×4。旧点 a2.b 已证伪→F-37 |
 | C2  | 通知伪装为 weixin wxid | 🟡  | 原计划"构造来自 weixin 的消息"未单独实现；当前由 PushFilter NM 层 cancel 替代（NM ✅装机 2026-05-22） |
-| C3  | 未读消息条数控制          | 🟡  | PushFilter L4b/L4c 已写（MainTabUI.i / h0.d 减法）；**L4b ❓ 装机未触发**；**L4c 减法逻辑待装机验证** |
-| C4  | 通知模式（静默/震动/铃声）   | 🟡  | 静默/震动 ✅装机实证（前台 FGMUTE + 后台 USAGE_ALARM，主进程活/重生）；铃声占位「功能更新中」未实装；UI 改 iOS 胶囊（静默默认浅绿 #67C23A、字号对齐 16f）；:push 独立震 🟡 待现场（route1 g_nfyp 跨进程 + fireAlertForPolicy）— 见 P_NF3 |
+| C3  | 未读消息条数控制          | ✅  | UNREADFIX（P_NF4）装机 2026-06-06：默认隐藏态密友未读数在底部 tab 红点 + 顶部「微信(N)」标题两处被**过滤/隐藏**；打开「显示密友未读消息数」开关（默认关）则**显示**密友未读数。旧 L4b（零触发）/ L4c（已禁用）已废弃 |
+| C4  | 通知模式（静默/震动/铃声）   | 🟡  | 主拦截/来电/未读已收口；当前缺口集中为普通消息通知链路 + SOUND 档铃声功能。静默/震动已有实证；铃声仍未实装/未验收 |
 | C5  | 语音一键转发（v2）        | ⬜   | 难度高，二阶段                                       |
 
 
@@ -208,7 +200,7 @@
 | #   | 功能          | 状态     |
 | --- | ----------- | ------ |
 | E1  | 步数装b（WeRun） | ⬜ 资料待补 |
-| E2  | 虚拟定位        | ⬜ 资料待补 |
+| E2  | 伪装定位（全局伪造定位）| ✅ 装机 2026-06-07：hook `pz0.h.c` 注入 + 原生选点页设置；详见权威 §一.1 / `moduleE/FakeLocation.java` |
 | E3  | 改零钱显示       | ⬜ 资料待补 |
 
 
@@ -235,14 +227,14 @@
 
 | 功能          | 主拦截层                           | 兜底层                       | 状态         |
 | ----------- | ------------------------------ | ------------------------- | ---------- |
-| F04 会话隐藏    | L1 **MvvmList.n** (8.0.71) / .m（8066 参考） | L4 notify + INIT + V↔H（见 §二） | ✅ P17 装机；**V→H ✅**；**H→V 🟡**（`docs/CONV_REFRESH_PROBLEM.md`） |
+| F04 会话隐藏    | L1 **MvvmList.n** (8.0.71) / .m（8066 参考） | L4 notify + INIT + V↔H（见 §二） | ✅ P17 装机；**V→H ✅**；**H→V fresh-warm ✅**（普通有历史 hidden id；零历史 wxid 仍受微信 DB 限制） |
 | F05 朋友圈隐藏   | **L0v2 addAll D1**             | `e2.getItemCount` 防跳顶   | ✅ W2 装机确认 |
 | F05.2 朋友圈点赞 | L0v4 `LinkedList.add`           | getter after 过滤          | ✅ L1 |
 | F05.3 朋友圈评论 | L0v4 `LinkedList.add`           | getter after 过滤          | ✅ L1 |
 | F07 通讯录隐藏   | **8.0.71** `ArrayList.addAll(fc5.g)` → `g.d`（z3）→ `z3.c1()` | notify + fragResume 兜底 | ✅ P19 装机 2026-05-20 |
 | **A3 密群隐藏**  | 复用 F04 + F07，统一走 `Bridge.allHiddenIds()` | — | ✅ 装机已验（2026-05-21）|
 | F08 防撤回     | `jy0.t.f`(doRevokeMsg) setResult(null) 保原文 + 插 type=10000 系统提示染红 | — | ✅ **P23 L1 装机 2026-05-31**（旧"待 T08 调研"已结案）|
-| F-搜索（放大镜 FTS） | 联系人：`f0.getView` (q2 父类) afterHook 取 `tz2.u1.f.s` = wxid → GONE + ListView divider 清除 | 群聊：groupId 路径待验；聊天记录：z15.ef6 talker 未解析；fz2.e 数据层 c=3 走 UIN 待映射 | 🟡 联系人✅；群聊/聊天记录⬜ |
+| F-搜索（放大镜 FTS） | `f0.getView` (q2 父类) afterHook 取 `tz2.u1/tz2.p0/tz2.s1` 中 wxid/groupId → GONE + `lp.height=1` + ListView divider 清除 | `z15.ef6/ch6.e` 仅作聊天记录分源理解层，不作为主过滤路径 | ✅ P20 收口：联系人 / 群聊密群 / 聊天记录关键词场景均已 L1；普通群放行 |
 
 
 ---

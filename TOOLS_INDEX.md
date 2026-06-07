@@ -1,4 +1,4 @@
-# TOOLS_INDEX — 工具/脚本/资源索引
+TOOLS_INDEX — 工具/脚本/资源索引
 
 > 维护人：guard-review_质检门控
 > 规则：使用任何工具/脚本前先查本表，避免重造轮子
@@ -50,6 +50,14 @@
 |------|------|------|
 | 同步 skill | `./sync_skills.ps1` | `.cursor/skills → .claude/skills` 镜像 |
 | Frida 朋友圈过滤 | `./refs/filter_moments.js` | F05 已验证 v21 |
+| 伪装订位探针 v1（发位置消息层）| `tools/probe_loc_send_8071.js` | hook wy4.a/q2.F/kwebmap intent + 枚举 location/lbssdk 类（候选已证伪，留作回归）|
+| 伪装订位探针 v2（LBS SDK）| `tools/probe_loc_sdk_8071.js` | hook requestLocationUpdates/onLocationChanged + LatLng 构造 |
+| 伪装订位探针 v3（坐标源头栈）| `tools/probe_loc_src_8071.js` | 真实坐标 LatLng 调用栈 → 定位 `pz0.h.c → n83.g.onGetLocation` 源头 |
+| 伪装订位探针 v4（参数契约）| `tools/probe_loc_inject_8071.js` | dump `pz0.h.c` / `n83.g.onGetLocation` 签名 + 入参值（arg2/arg3=纬经度）|
+| 伪装订位 PoC 注入 | `tools/probe_loc_poc_8071.js` | hook `pz0.h.c` 改 arg2/arg3 为天安门，PoC 装机跳点成功（2026-06-07）|
+| 伪装订位 选点结果捕获 | `tools/probe_loc_pick_8071.js` | hook setResult 抓选点页返回（发现 KLocationIntent extra）|
+| 伪装订位 LocationIntent dump | `tools/probe_loc_intent_8071.js` | 反射 dump LocationIntent 字段 → d=纬度/e=经度/h=POI名 |
+| 伪装订位 朋友圈选点排查 | `tools/probe_loc_moments_8071.js` | hook startActivity/setResult 排查朋友圈 POI 选点器（列表式，未采用）|
 
 ---
 

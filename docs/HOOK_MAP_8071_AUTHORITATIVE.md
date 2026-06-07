@@ -35,20 +35,27 @@
 
 ## 一、8 大功能锚定表
 
-### 1. 虚拟定位（伪造位置）
+### 1. 伪装订位（虚拟定位 / 伪造位置）
+
+> 代号「伪装订位」（避敏感词，§6.8）。E2 装b 模块；按阶段铁律属 v2/v3，本条为**调研结论存档**（注入点 L1 已验，未实装成模块）。
 
 | 项 | 内容 |
 |------|------|
-| **8.0.71 状态** | ❌ 未实装 |
-| **竞品锚点（8.0.66）** | `MainEntry.hookLocation(Object tencentLocation)` → `MyLocation.getLocation(loc, json)` |
-| **辅助 hook（8.0.66）** | `UserControll.ckSetLocation(Activity, View cancelBtn, Object addr)` — 从地址选择 UI 捕获用户选择 |
-| **目标类（8.0.66 已知）** | `com.tencent.tencentmap.lbssdk.service.TencentLocation` 或类似 LBS SDK |
-| **存储** | MMKV: `fake_location` (boolean) + `location_info` (JSONObject) |
-| **address 反射字段** | `r / d / t / u / g / f`（竞品记录） |
-| **8.0.71 ⚠️ 缺** | 当前混淆类名（LBS SDK 可能稳定，但具体 hook 签名待 jadx 8.0.71 重查） |
-| **项目代码** | ❌ 无 |
-| **推荐下一步** | jadx 反编译 8.0.71 找 `TencentLocation` hook 点 + 复用竞品 `MyLocation` 思路 |
-| **来源** | `HOOK_IMPLEMENTATION_ANALYSIS.md` §2.8 |
+| **8.0.71 状态** | ✅ **已实装装机验证 2026-06-07** — `moduleE/FakeLocation`：注入 + 原生选点设置 + 全局生效 + 关闭复原，用户现场复验通过 |
+| **项目代码** | `moduleE/FakeLocation.java`（installInjector / installPickCapture / installButtonRename / launchPicker）+ `Bridge` 键 flon/flla/flln/fllb + `SettingsEntry`「特色功能」行 + `ModuleMain` 注册（app classloader）|
+| **★ 全局注入点（主）** | `pz0.h.c(pz0.h, boolean, double, double, int, double, double, double, Bundle)` — 定位结果分发总源头；**arg2=纬度(double)、arg3=经度(double)**；beforeHook 在开关开启且有坐标时把 arg1=true/arg2/arg3 改伪坐标 → 全局生效 |
+| **设置入口（已实装）** | 设置页「特色功能」→ 开关「伪装定位」+「选择伪装位置」拉起原生选点页 `RedirectUI` 拖拽选点 → 右上角「发送」改「保存」（hook 选点页 `onResume` 扫视图树找文字=发送的 TextView 改文案，0/250/700ms 三波）→ `Activity.setResult` 捕获 `KLocationIntent.d/e/h` 存 MMKV，外层 RedirectUI 结果改 CANCELED |
+| **⚠️ 误发兜底（实证教训）** | RedirectUI **内部直接发送位置消息、无视 `map_talker_name`、不走 caller 结果**（改 RESULT_CANCELED 拦不住）。故 launchPicker 把 talker 设 `filehelper` → 即便误发只进自己的文件传输助手（私密可删）。装机实证：选点保存不再发到真实聊天 |
+| **下游回调（继承，可不 hook）** | `n83.g.onGetLocation(boolean, float 经度, float 纬度, int, double×3)` — 接收 pz0.h.c 转发的值；PoC 实证其自动继承上游伪坐标，故单 hook pz0.h.c 即够 |
+| **覆盖场景（L1）** | 发送位置 / 共享实时位置 / 朋友圈发帖位置 / 附近的人 — 同一分发源，一改全改 |
+| **调用链（L1 栈）** | `pz0.l.run → pz0.h.c → n83.g.onGetLocation → lt5.b.setCenter / location_soso.ViewManager.updateLocationPinLayout → new LatLng(lat,lng)` |
+| **LBS SDK（运行时实证存在）** | `com.tencent.map.geolocation.sapp.TencentLocation / TencentLocationListener / TencentLocationManager`；`requestLocationUpdates/onLocationChanged` 本轮未触发（走缓存/分发链，非 SDK 回调）；`getLastKnownLocation()` 已 hook 未命中 |
+| **证伪（旁路，禁重试）** | 消息层坐标候选全部动态证伪：`wy4.a.E/F`、`q2.F`、Intent `kwebmap_slat/lng`（getDoubleExtra 返回默认 -1000=键不存在）。8.0.71 发位置坐标**不走消息层** |
+| **存储（实装时）** | MMKV：开关 + 经纬度（键名 seed 化，§6.7） |
+| **UX 设计（待实装）** | 复用微信原生选点页 `RedirectUI` 选点 → 拦截右上角"发送/保存"读 LatLng 存 MMKV、不发消息（仿 A2/A3 复用原生 UI）；右上角确认方法 + 选中坐标捕获点待补探针 |
+| **混淆名警告** | `pz0.h` / `n83.g` / `lt5.*` 为 8.0.71 专属混淆名，升版必经 classmap 重查 |
+| **探针** | `tools/probe_loc_send_8071.js`(v1) / `probe_loc_sdk_8071.js`(v2) / `probe_loc_src_8071.js`(v3 栈) / `probe_loc_inject_8071.js`(v4 契约) / `probe_loc_poc_8071.js`(PoC 注入) |
+| **历史竞品锚点（8.0.66 参考）** | `MainEntry.hookLocation` → `MyLocation.getLocation`；`ckSetLocation`；目标类 `lbssdk.service.TencentLocation`；address 反射字段 `r/d/t/u/g/f`；来源 `HOOK_IMPLEMENTATION_ANALYSIS.md` §2.8 |
 
 ---
 
@@ -73,15 +80,15 @@
 
 | 项 | 内容 |
 |------|------|
-| **8.0.71 状态** | 🟡 数据层完整、UI 入口缺 |
+| **8.0.71 状态** | ✅ 数据层 + UI 全完整（2026-06 装机使用，与密群导入同套路） |
 | **数据层** | ✅ `Bridge.addWxid(wxid) / removeWxid(wxid) / getWxids() / allHiddenIds()`（密友+密群 union） |
 | **MMKV key** | `hlst`（hidden list） |
 | **wxid → 昵称/头像反射链（8.0.66 参考）** | `com.tencent.mm.storage.ContactStorage` → `field_nickname / field_avatar` |
 | **8.0.71 等价类** | `com.tencent.mm.storage.l4`（contact）→ `C0()` 返 wxid · nickname/avatar getter（如 `j1() / m2()`）需 8.0.71 重查 |
-| **现有项目代码** | ✅ `debug/ContactResolver.java`（P15 W1 已产出 L4 stub）· DebugServer 添加 wxid 接口已实现 |
-| **UI 入口** | ⚠️ `SettingsEntry.showGuardDialog()` 当前只有 3 个按钮（切显隐 / 密友 ON-OFF / 关闭），**缺添加密友按钮** |
-| **推荐下一步** | (a) 完成 ContactResolver L4 wxid→昵称/头像验证 (b) SettingsEntry.showGuardDialog 加"添加密友"按钮触发 wxid 输入对话框 |
-| **来源** | `HOOK_IMPLEMENTATION_ANALYSIS.md` §2.7 + `HOOK_POINTS.md` §F04 |
+| **导入 UI（正路）** | ✅ `SettingsEntry「密友列表/添加密友」→ ContactImportGuard.launchSelectContact → com.tencent.mm.ui.contact.SelectContactUI`（原生选人器）。extras: `list_type=1` / `list_attr=16471` / **`already_select_contact`=现有密友 CSV（预选）**；返回 `setResult(-1)` 的 `Select_Conv_User` = wxid CSV → diff 增删一体（与密群 GroupCardSelectUI 同套路） |
+| **辅助代码** | `debug/ContactResolver.java`（P15 L4 stub，依赖微信 ContactStorage 反射；SelectContactUI 自身显示昵称头像，不强依赖此 stub） |
+| **推荐下一步** | 已结案；仅 8.0.72 升级时复验 SelectContactUI extras 名 |
+| **来源** | `src/main/java/com/ghost/assist/moduleB/ContactImportGuard.java` + 装机使用（2026-06） |
 
 ---
 
@@ -163,26 +170,26 @@
 
 | 项 | 内容 |
 |------|------|
-| **8.0.71 状态** | ✅ P17 装机；V→H ✅；**H→V 热切 🟡**（冷路径见 `CONV_REFRESH_PROBLEM.md`） |
+| **8.0.71 状态** | ✅ P17 装机；V→H ✅；**H→V fresh-warm ✅**（普通有历史 hidden id 可主动 warm 回来；零历史 wxid 仍受微信 DB 限制） |
 | **L1 主路径** | `MvvmList.n(List, boolean)`（8.0.66 是 `.m`） → 入参 List remove 密友 |
 | **L2 备用** | `MvvmList.s(List)` |
 | **L4 兜底** | `kc5.v0.notifyDataSetChanged` clean-before（**禁止用 notifyItemRange**，F-08~F-14 铁律） |
-| **V↔H 刷新链** | `sPendingHide` → `LauncherUI.onResume` → cleanConvData → notifyConvAdapter(v0) |
+| **V↔H 刷新链** | V→H：`sPendingHide` → `LauncherUI.onResume` → cleanConvData → notifyConvAdapter(v0)；H→V：`kc5.x.h(wxid)` fresh-warm → `BUS-V` 注回 → notify/dedup |
 | **wxid 提取** | `kc5.y.d`（`l4` 实例）→ `extractWxid()` 按序回退 `C0() → h1() → j1() → i1() → k1() → getUsername()` ；C0 为 8.0.71 主路径（field_digestUser，2026-05-22 live broad-scan 确认），h1 对公众号 item 返 `"officialaccounts"`，仅作 fallback |
 | **项目代码** | ✅ `moduleD/ConvFilter.java` · ModuleMain.install ✅ |
-| **来源** | `docs/archive/wechat_8066/HOOK_POINTS.md` §F04（历史）+ `P17_会话LSPosed/result.md` + `HOOKMAP.md` |
+| **来源** | `docs/archive/wechat_8066/HOOK_POINTS.md` §F04（历史）+ `P17_会话LSPosed/result.md` + `P_ConvWarm/result.md` + `P26_好友热切fresh触发/result.md` + `docs/CONV_REFRESH_PROBLEM.md` |
 
 ---
 
-### 8b. 全局搜索 — 聚合过滤器分源进度（联系人 v15.1 ✅）
+### 8b. 全局搜索 — 聚合过滤器分源进度（P20 收口 ✅）
 
 | 项 | 内容 |
 |------|------|
-| **8.0.71 状态** | 🟡 **部分完成**：联系人结果 ✅ 装机实证 2026-05-27 v15.1（**v15.2 2026-06-02 灰白块收口**：隐藏行残留 ~173px 灰白 → `lp.height 0→1` 修复，用户验证通过）；群聊 ⬜ 未完成；聊天记录 ⬜ 未完成 |
+| **8.0.71 状态** | ✅ **P20 搜索收口**：联系人结果 ✅ 装机实证 2026-05-27 v15.1；v15.2 2026-06-02 灰白块收口（`lp.height 0→1`）；群聊/密群/聊天记录关键词场景 ✅ 2026-06-06 L1（`tools/p20_search_logcat_runner_20260606_180946.log`：`z15.ef6` 分源出现，同轮 `tz2.p0` 行 `44786160583@chatroom` / `wxid_lzd2va16jd1622` 被 `[SF:gv] blocked`，普通群 `45592178108@chatroom` 放行） |
 | **产品事实** | 全局搜索是聚合大过滤器，来源至少包括最近联系、联系人、群聊、聊天记录；不同来源走不同数据结构和渲染路径 |
 | **已验证：联系人** | `ListView.setAdapter` → 检测 q2 → 沿继承链 hookAllMethods("getView") → 命中 `com.tencent.mm.plugin.fts.ui.f0.getView(int,View,ViewGroup)` declared → afterHook 拿 `adapter.getItem(pos)` 为 `tz2.u1` → 抽 `tz2.u1.f.s` = wxid → 命中 hidden set → `View.GONE + lp.height=1 + topMargin=bottomMargin=0`（**v15.2 起 lp.height 必须 =1 不能 =0**，原因见「配套消空白」行）|
-| **待补：群聊** | 理论候选为 `tz2.s1.s` = groupId，但当前未有密群搜索装机实证；不得标完成 |
-| **待补：聊天记录** | `z15.ef6` / FTS 聊天记录行尚未拿到可靠 talker wxid/groupId，当前不能直接拦 |
+| **已验证：群聊/密群** | `f0.getView` afterHook 主路径；adapter item 走 `tz2.p0.s` / `tz2.s1.s` 等 groupId 路径，2026-06-06 L1 实证 `[SF:gv] blocked id=44786160583@chatroom`，未在密群名单的 `45592178108@chatroom` 正常显示 |
+| **已验证：聊天记录关键词场景** | `z15.ef6/ch6.e` 分源已出现，但不走 protobuf talker 主过滤；最终 `q2/f0.getView` 渲染层 item 为 `tz2.p0`，同轮按 wxid/groupId 精确命中 hidden set 后折叠隐藏，普通群对照放行 |
 | **配套消空白** | ① 同 setAdapter callback 内 `lv.setDivider(null); lv.setDividerHeight(0)` 消除 GONE row divider；② **v15.2 灰白块根因（L1 `[SF:row]` 实证 `pos=2 vis=8 lph=0 h=173`）**：FTS 容器是 ListView(AbsListView)，其 `setupChild()` 仅当 `lp.height>0` 才按 `MeasureSpec.EXACTLY` 量，`height≤0`（含 0）走 `UNSPECIFIED` → 隐藏行按内容原高(~173px)渲染 → 残留灰白块（GONE 对 AbsListView 同样不跳过测量）；故隐藏行必须 `lp.height=1`（EXACTLY 1px≈隐形），`restoreView` 还原判断放宽为「0 或 1」。**禁止用 0/负值折叠 AbsListView 行；消空白只走视图层，禁减 getCount（呼应 F-32z）** |
 | **fz2.e 数据层** | ❌ 已证伪 — `fz2.e.g` 实测是 UIN 或 `SOSItemRelevant:<关键词>`，不含 wxid 字面；保留 [SF:ALLseen] 探针作未来 UIN→wxid 映射 |
 | **过滤原则** | 能确定 wxid/groupId 且命中名单才隐藏；不能确定 id 时只打限流诊断日志，不得猜字段、不得全量隐藏 |
@@ -193,10 +200,10 @@
 |------|:--:|------|
 | 联系人搜索结果 | ✅ v15.1 装机实证 | HIDDEN 态搜密友不显示；VISIBLE 态恢复 |
 | 最近联系 | ⬜ 未单独验 | 需确认是否复用联系人 item，不能默认覆盖 |
-| 群聊搜索结果 | ⬜ 未完成 | HIDDEN 态搜密群名称/groupId 不显示；日志必须能确认 `*@chatroom` |
-| 聊天记录搜索结果 | ⬜ 未完成 | HIDDEN 态搜密友聊天关键词不显示；必须解析真实 talker wxid/groupId |
+| 群聊搜索结果 | ✅ **L1 装机实证 2026-06-06** | `[SF:gv] blocked id=44786160583@chatroom` ×3（已加入密群名单）；未在名单的 `45592178108@chatroom` 正常显示。`tz2.p0.s` = groupId 路径，与联系人 `tz2.u1.f.s` 共用 `f0.getView` afterHook 主路径，日志 `tools/p20_search_logcat_runner_20260606_180946.log` |
+| 聊天记录搜索结果 | ✅ **L1 装机实证 2026-06-06** | HIDDEN 态搜密友/密群聊天关键词不显示；证据 `tools/p20_search_logcat_runner_20260606_180946.log`。技术口径：`z15.ef6/ch6.e` 不是主过滤点，最终由 `q2/f0.getView` 的 `tz2.p0` id 折叠隐藏 |
 
-> 禁止把“联系人搜索已拦截”写成“搜索整体完成”。全局搜索只有四类来源均有 L1 日志后，才能标 ✅。
+> P20 搜索已按产品场景收口；禁止把 `z15.ef6/ch6.e` 写成已解析 talker 的主过滤路径，当前主路径仍是 `q2/f0.getView` 渲染层精确 id 过滤。
 
 ### 8b-路径状态（v15.1 实证后裁决）
 
@@ -223,13 +230,13 @@
 
 | 项 | 内容 |
 |------|------|
-| **8.0.71 状态** | ❌ **空 marker class**，按字段过滤路线走不通 |
+| **8.0.71 状态** | ✅ 产品场景已收口；❌ `z15.ef6/ch6.e` 字段直取 talker 路线仍走不通 |
 | **dump 结果** | `runtime_search_v3.log`: 3 次 dump 全部 `fields:` 空 / widerprobe 实测 `d/e/o` = 查询词+高亮，`p`=`z15.ch6`(protobuf wrapper)，`ch6.e`=byte[]（talker 可能在 protobuf 内但未解析出） |
 | **容器** | `LinkedList.add(Object)`（工作线程） |
-| **真实 talker** | ⚠️ 在 `ch6.e` protobuf byte[] 里，需 protobuf 解析或 FTS DB 读路径 |
-| **推荐策略** | 先以最新装机日志确认 q2/ss4 是否覆盖聊天记录绑定项；未确认 talker 前只做探针或保守兜底，禁止猜字段 |
-| **项目代码** | 🟡 `SearchFilter.java` z15.ef6 dump 探针 + `containsHiddenWxid` 兜底（实测零命中） |
-| **来源** | `runtime_search_v3.log` + 探针子代理报告 2026-05-27 |
+| **真实 talker** | ⚠️ 仍不从 `ch6.e` protobuf byte[] 直接解析；当前无需作为主路径 |
+| **推荐策略** | 已改由最终 `q2/f0.getView` item id 收口；继续禁止猜 `z15.ef6/ch6.e` 字段 |
+| **项目代码** | ✅ `SearchFilter.java` 走 `f0.getView` afterHook；`z15.ef6` dump 探针仅保留作诊断 |
+| **来源** | `runtime_search_v3.log` + 探针子代理报告 2026-05-27；`tools/p20_search_logcat_runner_20260606_180946.log` |
 
 ---
 
@@ -255,19 +262,19 @@
 | # | 功能 | 当前状态 |
 |:-:|------|------|
 | 7 | 过滤通讯录 | ✅ 已 work（P19） |
-| 8a | 过滤会话列表 | ✅ P17；V→H ✅；H→V 热路径 ✅ / 冷路径 🟡 |
+| 8a | 过滤会话列表 | ✅ P17；V→H ✅；H→V fresh-warm ✅（零历史 wxid 仍受微信 DB 限制） |
 | 6b | 通讯录标签隐藏 | ✅ 已 work（P19B + 2026-05-27 补 install） |
 | 2 | 防撤回（C1） | ✅ L1 装机实证 2026-05-31（jy0.t.f doRevokeMsg + 原文保留 + 系统提示染红） |
 | 4 | 添加密群 UI | ✅ 已完成（2026-06-02 GroupCardSelectUI 原生选群器，预选+增删一体） |
-| 3 | 添加密友 UI | 数据层完整，只缺 SettingsEntry 按钮 + ContactResolver L4 验证 |
+| 3 | 添加密友 UI | ✅ 已完成（ContactImportGuard.launchSelectContact 原生 SelectContactUI，预选+增删一体，与密群同套路） |
+| 8b | 全局搜索联系人 / 群聊密群 / 聊天记录关键词场景 | ✅ P20 收口（`f0.getView` afterHook 主路径，`tz2.p0/u1/s1` 共用；聊天记录经最终渲染层 id 折叠） |
 
-### 需要探针 / Frida 验证（3 项）
+### 需要探针 / Frida 验证（1 项）
 
 | # | 功能 | 缺什么 |
 |:-:|------|------|
-| 8b | 全局搜索群聊/聊天记录分源 | P20-S1/S2 待补；联系人主路径 f0.getView ✅ v15.1 |
 | 6a | 朋友圈"分组可见"图标 | 8.0.71 视图层 hook 点（需写 `moments_crawler.js` 跑朋友圈分组发布） |
-| 1 | 虚拟定位 | 8.0.71 TencentLocation hook 点（jadx + Frida 重查） |
+| 1 | 伪装订位 | ✅ pz0.h.c 注入点已验（2026-06-07，PoC 跳点成功）→ 详见 §一.1 |
 
 ### v1 不做（1 项）
 
