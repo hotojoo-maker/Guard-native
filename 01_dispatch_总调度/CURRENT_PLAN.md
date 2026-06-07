@@ -7,9 +7,9 @@
 
 ## 当前阶段：v1 阶段 ① 功能开发（D-015 锁定）
 
-### 当前一句话状态（2026-06-08 01:50）
+### 当前一句话状态（2026-06-08 02:10）
 
-> **E2 伪装订位已收口（应用户要求提前于 v2/v3 落地，06-07 装机验证 + 06-08 文档/git 全收敛）；当前主线收敛到 P22 PushFilter 通知层最后两项缺口：P_NF1 普通消息通知 + P_NF2 铃声功能。**
+> **E2 伪装订位已收口；v1 收尾清单加 3 项（§6a 朋友圈分组图标 / C5 语音转发 / E3 修改余额 UI 层）。这 3 项 + P_NF1/P_NF2 收口后即可进 PROTECTION_MAP Phase 1（真锁 + 心跳）。**
 
 ### 四窗口现状（对齐 TASK_BOARD §一）
 
@@ -41,25 +41,31 @@ W4  离线资料库采集 (P18)           ⬜ 待领（发版前必须补空白 
 ### P2 — native_core Batch 1 装机
 - **P_NC1** 🟡 编译/接入完成，**待 `[native] BATCH1_VERIFY PASS` 装机日志**
 
-### P3 — 待复现 bug
+### P3 — v1 收尾新增（2026-06-08 应用户要求拉入 v1，合 P_NF1/P_NF2 一道收口才进 Phase 1 防破解）
+- **§6a 朋友圈"仅可见分组"图标隐藏** ⬜
+  - 竞品 8.0.66 锚点 `MainEntry.hookSnsGroup → UserControll.hookSnsGroup → isHideGroup`
+  - 8.0.71 视图层 hook 点未查（boolean 返回类候选 / SnsObject item View 渲染层可见性候选）
+  - 探针就绪：`moments_visibility_crawler.js`（2026-05-27 已就绪）
+  - 存储：MMKV `hide_group` boolean
+- **C5 语音转发** ⬜
+  - 原 v2，纳入 v1；竞品锚点 `MainEntry.hookTransFlag → VipPreference.getTransVoiceMsg`
+  - 难度 ⭐⭐⭐⭐：`np.protect` 加固层 8.0.66 jadx 失败 → 8.0.71 需重攻（动态 frida 探针 + smali patch 候选）
+  - 存储：MMKV `trans_voice_msg` boolean
+- **E3 修改余额 UI 层** ⬜
+  - 用户决定走 UI 层方向（**不动金融后端**），按 b 方案：用户自设假数字 UI 显示
+  - **金融敏感**：接入前必走 `/guard-auth-review` 合规预审，产出告知文案 + 截屏水印 + kill switch
+  - 详见 `PROTECTION_MAP.md` §9b E3 行
+  - 反 frida 风险：F-37 钱包页杀进程已实证，必须用 LSPosed + 静态 smali（禁 frida 进支付域）
+
+### P4 — 待复现 bug
 - **P_CF2** ⬜ 会话列表越界崩溃（与 P_PF2 来电拦截重构相关，详见 `docs/P22_PushFilter_VoIP.md`）
 
-### P4 — UI 优化（不阻塞 v1）
+### P5 — UI 优化（不阻塞 v1）
 - **P26C** 搜索高亮（归 UI 优化）
 
-### P5 — 发版前 KPI 基线（W4 P18）
+### P6 — 发版前 KPI 基线（W4 P18）
 - ⬜ 跑 `frida_stats.js` 空白 LSPosed KPI 基线
 - ⬜ 补跑 E2 启停 KPI 对比（F-22 铁律）
-
----
-
-## E3 改零钱（用户曾提，**风险阻塞**）
-
-- ⛔ 调研阶段触发反 frida 杀进程（F-37 MallIndexUIv2）
-- dispatch 风险评估：金融数据伪造，触法律红线（监管高敏区，封号 + 冻结风险）
-- 决策：⬜ 待用户拍板降级方案（B1 仅 debug + 测试 wxid / B2 改余额遮罩 / B3 砍入 REJECTED_OPT）
-- 接入前必走：`/guard-auth-review` 合规预审
-- 已写入 `PROTECTION_MAP.md` §9b 待办
 
 ---
 

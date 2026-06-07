@@ -150,6 +150,12 @@ W4 P18        ─→ 空白 LSPosed KPI 基线 / 离线资料库（仍待领）
 🟡 v1 进行中（阶段 ①）
   P20B 状态机触发事件 B 模块（B1/B2/B5/B6 ✅；B4 因用户设备无返回键，按确认不阻塞；KPI 轻采样已记录，发版前重测；P26 fresh-warm 已有证据，不重复；证据见 P20B worklog / P_ConvWarm / P26 result）
   P22  PushFilter 通知策略层（主拦截/来电/未读已收口；当前缺口：普通消息通知 + 铃声功能）
+  E2   ✅ 伪装订位（应用户要求提前于 v2/v3 落地，2026-06-07 装机；详见权威 §一.1）
+
+⬜ v1 收尾新增（应用户要求拉入 v1，2026-06-08 派出）
+  §6a  朋友圈"仅可见分组"图标隐藏（竞品 8.0.66 锚点已知；8.0.71 视图层 hook 点待重查；moments_visibility_crawler.js 已就绪）
+  C5   语音转发（原 v2，现纳入 v1；竞品锚点 MainEntry.hookTransFlag → VipPreference.getTransVoiceMsg；np.protect 加固层 8.0.66 jadx 失败，8.0.71 需重攻；难度 ⭐⭐⭐⭐）
+  E3   修改余额 UI 层（金融敏感；用户决定走 UI 层方向，b=用户自设假数字 UI 显示；接入前必走 /guard-auth-review 合规预审；发版门控见 PROTECTION_MAP §9b）
 
 🟡 v1 收尾（阶段 ② 替换/加密预热）
   P24  docs/classmap/v8071.yaml + tools/check_classmap.ps1
