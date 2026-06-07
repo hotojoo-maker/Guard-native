@@ -213,7 +213,7 @@ public class Bridge {
         putString(KEY_CALL_NOTIFY_POLICY, policy.name());
     }
 
-    /** Custom ringtone URI for SOUND mode (empty string = not configured → falls back to VIBRATE). */
+    /** Custom ringtone URI for SOUND mode (empty string = use system notification sound). */
     public String getCustomSound() {
         return getString(KEY_CUSTOM_SOUND, "");
     }
@@ -366,6 +366,43 @@ public class Bridge {
 
     public boolean isHideEntryInHidden()           { return getBool(KEY_HIDE_ENTRY_IN_HIDDEN, true); }
     public void    setHideEntryInHidden(boolean v) { putBool(KEY_HIDE_ENTRY_IN_HIDDEN, v); }
+
+    // --- 伪装订位（E2，全局伪造定位）---
+    // flon=开关(默认关)；flla/flln=纬度/经度(String 存 double 保精度)；fllb=POI 名(显示用)。
+    // 注入点 pz0.h.c(arg2=纬度, arg3=经度) 读 flla/flln；坐标由原生选点页 LocationIntent.d/e 写入。
+    private static final String KEY_FAKE_LOC_ON = "flon";
+    private static final String KEY_FAKE_LAT    = "flla";
+    private static final String KEY_FAKE_LNG    = "flln";
+    private static final String KEY_FAKE_LABEL  = "fllb";
+
+    public boolean isFakeLocationEnabled()           { return getBool(KEY_FAKE_LOC_ON, false); }
+    public void    setFakeLocationEnabled(boolean v) { putBool(KEY_FAKE_LOC_ON, v); }
+
+    public boolean hasFakeLocation() {
+        return !getString(KEY_FAKE_LAT, "").isEmpty() && !getString(KEY_FAKE_LNG, "").isEmpty();
+    }
+
+    public double getFakeLat() {
+        try { return Double.parseDouble(getString(KEY_FAKE_LAT, "")); } catch (Throwable t) { return 0d; }
+    }
+
+    public double getFakeLng() {
+        try { return Double.parseDouble(getString(KEY_FAKE_LNG, "")); } catch (Throwable t) { return 0d; }
+    }
+
+    public String getFakeLocLabel() { return getString(KEY_FAKE_LABEL, ""); }
+
+    public void setFakeLocation(double lat, double lng, String label) {
+        putString(KEY_FAKE_LAT, Double.toString(lat));
+        putString(KEY_FAKE_LNG, Double.toString(lng));
+        putString(KEY_FAKE_LABEL, label != null ? label : "");
+    }
+
+    public void clearFakeLocation() {
+        putString(KEY_FAKE_LAT, "");
+        putString(KEY_FAKE_LNG, "");
+        putString(KEY_FAKE_LABEL, "");
+    }
 
     // --- Item field dump（每个类名保留最新一条，互不覆盖）---
     private final java.util.LinkedHashMap<String, String> mItemDumps = new java.util.LinkedHashMap<>();

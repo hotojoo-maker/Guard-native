@@ -33,6 +33,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.ghost.assist.core.Bridge;
+import com.ghost.assist.core.AppConfig;
 import com.ghost.assist.core.StateMachine;
 
 import java.lang.ref.WeakReference;
@@ -194,6 +195,30 @@ public class SettingsEntry {
             }
         });
     }
+
+    /**
+     * E2 伪装定位：从原生选点页设置坐标回来后即时刷新「选择伪装位置」当前值。
+     * 由 FakeLocation.captureLocationIntent 调用；overlay 未显示时静默跳过。
+     */
+    public static void refreshFakeLocation() {
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override public void run() {
+                try {
+                    TextView t = sFakeLocLabelRef != null ? sFakeLocLabelRef.get() : null;
+                    if (t != null) {
+                        t.setText(fakeLocLabelText(Bridge.getInstance()) + " \u203a");
+                    }
+                } catch (Throwable ignored) {}
+            }
+        });
+    }
+
+    /** 「选择伪装位置」行右侧当前值文案：有坐标→POI名/「已设置」，无→「未设置」。 */
+    private static String fakeLocLabelText(Bridge br) {
+        if (!br.hasFakeLocation()) return "\u672a\u8bbe\u7f6e"; // 未设置
+        String label = br.getFakeLocLabel();
+        return (label != null && !label.isEmpty()) ? label : "\u5df2\u8bbe\u7f6e"; // 已设置
+    }
     private static final int        PROFILE_ROW_TAG   = 0x67757a72; // "guzr"
     private static final int        PROFILE_ORIG_TAG  = 0x67757a73; // "guzs" — cache 原 onClick listener
     private static final String     PROFILE_TEXT      = "\u4e2a\u4eba\u8d44\u6599"; // 个人资料
@@ -210,6 +235,10 @@ public class SettingsEntry {
     // refreshImportCounts() 即时刷新这两个数字（修「导入成功 UI 不立刻刷新」bug）。
     private static volatile WeakReference<TextView> sBuddyCountRef;
     private static volatile WeakReference<TextView> sGroupCountRef;
+
+    // E2 伪装定位：overlay 内「选择伪装位置」当前值 TextView 引用。
+    // 从原生选点页设置坐标回来后，FakeLocation.captureLocationIntent 调 refreshFakeLocation() 即时刷新。
+    private static volatile WeakReference<TextView> sFakeLocLabelRef;
 
 
     // -----------------------------------------------------------------------
@@ -1376,6 +1405,17 @@ public class SettingsEntry {
                     }
                 }));
 
+        // B1 入口：默认关，用户显式打开后才注册加速度传感器。
+        content.addView(buildSwitchRow(activity, "摇一摇隐藏好友",
+                "显形时摇一摇立即进入隐藏态",
+                AppConfig.getInstance().isB1Enabled(),
+                new CompoundButton.OnCheckedChangeListener() {
+                    @Override public void onCheckedChanged(CompoundButton b, boolean checked) {
+                        TriggerGuard.setShakeEnabled(activity.getApplicationContext(), checked);
+                        Log.i(TAG, "[SET:overlay] b1Shake=" + checked);
+                    }
+                }));
+
         // 5. 密友列表（点击 = 拉起微信官方选择器，预选已有 + 增删一体）
         final TextView[] buddyCountOut = new TextView[1];
         content.addView(buildButtonRow(activity, "密友列表",
@@ -1410,10 +1450,27 @@ public class SettingsEntry {
                     }
                 }));
 
-        // ===== 特色功能（占位，未接逻辑）=====
+        // ===== 特色功能 =====
         content.addView(buildSectionHeader(activity, "特色功能"));
+        // 伪装定位（E2）：总开关 + 复用微信原生选点页设置坐标，全局生效。
         content.addView(buildSwitchRow(activity, "伪装定位",
-                "伪造 GPS 位置（占位）", false, null));
+                "全局伪造定位（发位置/共享/朋友圈/附近的人）",
+                br.isFakeLocationEnabled(),
+                new CompoundButton.OnCheckedChangeListener() {
+                    @Override public void onCheckedChanged(CompoundButton b, boolean checked) {
+                        br.setFakeLocationEnabled(checked);
+                        Log.i(TAG, "[SET:overlay] fakeLoc=" + checked);
+                    }
+                }));
+        final TextView[] fakeLocOut = new TextView[1];
+        content.addView(buildButtonRow(activity, "\u9009\u62e9\u4f2a\u88c5\u4f4d\u7f6e",
+                fakeLocLabelText(br),
+                new View.OnClickListener() {
+                    @Override public void onClick(View v) {
+                        com.ghost.assist.moduleE.FakeLocation.launchPicker(activity);
+                    }
+                }, fakeLocOut));
+        sFakeLocLabelRef = new WeakReference<>(fakeLocOut[0]);
         content.addView(buildSwitchRow(activity, "余额装X",
                 "功能更新中", false, null));
         content.addView(buildNote(activity, "独家功能 · 请低调使用"));
@@ -1746,9 +1803,12 @@ public class SettingsEntry {
             segs[i] = t;
         }
 
-        // 当前已生效档：铃声未实现 → SOUND/OFF 一律回落到「静默」选中。
         final Bridge.NotifyPolicy[] applied = { br.getNotifyPolicy() };
-        final int[] sel = { (applied[0] == Bridge.NotifyPolicy.VIBRATE) ? 1 : 0 };
+        final int[] sel = {
+                applied[0] == Bridge.NotifyPolicy.SOUND
+                        ? 2
+                        : (applied[0] == Bridge.NotifyPolicy.VIBRATE ? 1 : 0)
+        };
 
         final Runnable repaint = new Runnable() {
             @Override public void run() {
@@ -1775,20 +1835,23 @@ public class SettingsEntry {
             final int idx = i;
             segs[i].setOnClickListener(new View.OnClickListener() {
                 @Override public void onClick(View v) {
-                    if (idx == 2) {
-                        // 铃声为占位档：提示「功能更新中」，不改选中、不落库。
-                        Toast.makeText(ctx, "\u529f\u80fd\u66f4\u65b0\u4e2d..",
-                                Toast.LENGTH_SHORT).show();
-                        return;
-                    }
                     sel[0] = idx;
                     if (idx == 0) {
                         applied[0] = Bridge.NotifyPolicy.OFF;
                         br.setNotifyPolicy(Bridge.NotifyPolicy.OFF);
-                    } else {
+                    } else if (idx == 1) {
                         applied[0] = Bridge.NotifyPolicy.VIBRATE;
                         br.setNotifyPolicy(Bridge.NotifyPolicy.VIBRATE);
-                        // 选「震动」即时给一次震动反馈（与来电提示一致）
+                        // 选「震动」即时给一次震动反馈。
+                        try {
+                            com.ghost.assist.moduleC.NotifyRouter.fireAlert(
+                                    ctx.getApplicationContext(),
+                                    com.ghost.assist.moduleC.NotifyRouter.EventType.MSG);
+                        } catch (Throwable ignored) {}
+                    } else {
+                        applied[0] = Bridge.NotifyPolicy.SOUND;
+                        br.setNotifyPolicy(Bridge.NotifyPolicy.SOUND);
+                        // 选「铃声」即时播放默认通知音，便于用户确认档位生效。
                         try {
                             com.ghost.assist.moduleC.NotifyRouter.fireAlert(
                                     ctx.getApplicationContext(),

@@ -173,6 +173,9 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         TriggerGuard.install(app);  // B1/B2/B5，Android API，不吃 lpparam
         com.ghost.assist.moduleD.ContactDiscoveryHook.install(app); // P_CV1 V1：动态发现通讯录 LiveList/Adapter
 
+        // E2 伪装订位 — 全局伪造定位（pz0.h 是 tinker 运行时类 → 必须用 app classloader）
+        com.ghost.assist.moduleE.FakeLocation.install(lpparam, app.getClassLoader());
+
         // 设置入口 — 微信「我→设置」顶部注入"密友设置 ›"行（仅 VISIBLE 态可见）
         SettingsEntry.install(lpparam);
 
