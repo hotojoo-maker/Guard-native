@@ -21,6 +21,20 @@ cf_*.txt
 cf_*log.txt
 build_err.txt
 build_out.txt
+build_*.log
+tools/*.log
+
+# frida probe build artifacts (regenerable, large)
+node_modules/
+**/_probe_build/
+tools/frida_build/
+*.compiled.js
+
+# 反编译输出（大，可重生成）
+tools/re_8071/
+
+# Cursor MCP 配置备份
+.cursor/mcp.json.bak-*
 
 # Local config
 local.properties
