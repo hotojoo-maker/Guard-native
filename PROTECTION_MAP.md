@@ -129,7 +129,16 @@
 - ⬜ 遗留（发版前）：release 签名链路（当前用 debug keystore 临时签）；release+PROD 关面板的设备实测
 
 ### Phase 1（地基:真锁+心跳）
-- [ ] SO `decrypt_config()`（AES-GCM）实现 + 自测向量
+
+> **Phase 1 本地预制进度（2026-06-08，详见 `03_execute_执行任务/P1C_Registry加密/worklog.md`）**：
+> - [x] **P1A** SO `decrypt_config()` AES-GCM + 自测向量（装机 `PHASE1A_VERIFY PASS`）
+> - [x] **P1B/1C** 核心 4 条 hook registry 抽取 + AES-GCM 加密（单一源 `registry_8071.json` → `registry_cipher.inc`；装机 `PHASE1B/1C_VERIFY PASS`）
+> - [x] **A-step1** 派生 key（去明文 key 常量，SO 内多段散装 + nonce 随机）
+> - [x] **A-step2** registry key 折入模块签名证书 SHA-256（防重打包；装机 `certBind=ca421ec3` + `PHASE1D_VERIFY PASS`）
+> - ⚠️ 仍是**本地锁非真锁**：Frida hook `decrypt_config` 出参仍可拿 registry；服务器短命钥匙/设备绑定 = 下面 miyou-server 项。
+> - V3 形态：cert 绑定证书源需从模块 APK 改为读宿主自身签名（见 DECISION_LOG D-016）。
+
+- [x] SO `decrypt_config()`（AES-GCM）实现 + 自测向量 —— P1A 装机 PASS（见上）
 - [ ] miyou-server 心跳端点：发短命钥匙 + 加密配置；字段伪装 `K2i_m`
 - [ ] `isActive()` 依赖「配方解开成功」；解不开 = 散沙（不崩、不全开）
 - [ ] **离线宽限实测**：拔网后正版在宽限期内正常；超期才降级；重连自愈
