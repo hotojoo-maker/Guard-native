@@ -91,15 +91,25 @@ W4  离线资料库采集 (P18)           ⬜ 待领（发版前必须补空白 
 > 铁律：V3 技术难点（微信自带签名校验 + Tinker 热补丁 + np.protect 加固）没查清**禁止报工期**。先调研，产出可行性报告再排 P31–P33。
 
 ### 调研任务（必须先做，G1–G4：无证据不报方案）
-- **V3-T1 LSPatch 劫持 8.0.71 可行性** ⬜
-  - 问题：LSPatch 劫持模式能否打包 8.0.71？打完能否正常启动登录？np.protect 加固层会不会拒绝？
-  - 产出：可行/不可行 + 拦路点清单（L1 装机现象为准）
+- **V3-T1 LSPatch 劫持 8.0.71 可行性** 🟡 用户装机口述实证（2026-06-08，待补 logcat/截图）
+  - 工具：`02_tools_工具/lspatch.jar`（JingMatrix LSPatch v0.8）；产物 `02_tools_工具/lspatch_out/`（git 忽略，勿入库）。
+  - 命令：`java -jar lspatch.jar 微信8.0.71.apk -m 模块.apk -l 2 -k 固定keystore android androiddebugkey android -o 输出 -v`。
+  - 结果（VIVO V2361GA / Android 15 / 免 root）：LSPatch 打包零报错 ✅（`Embedding modules - com.ghost.assist`）；手动装机能起、过 np.protect、能登录 ✅；模块加载、加密友、隐藏/显示均正常 ✅（用户装机口述，logcat 因 VIVO USB 不稳未抓，待补）。
+  - **关键限制（用户实证）**：改包签名 = 我们的（非腾讯），**微信支付/跳转支付用不了**（支付域签名校验）→ 需要支付的客户必须保留官方 → 见下方共存版需求。
+  - `-l 2` 签名绕过（PM+openat）在 8.0.71 实测够用（np.protect 未拦启动）。
+  - 待补：多天稳定性 + 反检测 KPI（verifiedbootstate 等）+ 防破解证书源切换（V3 改读宿主自身签名，见 D-016）+ logcat/截图存档。
 - **V3-T2 微信签名自校验点定位** ⬜
   - 问题：8.0.71 的 PMS getPackageInfo / CRC 校验 / native 自校验在哪几处？改包重签后哪个会触发下线/闪退？
   - 产出：`SignatureGuard` 需绕过的目标清单（jadx L2 + frida L1）
 - **V3-T3 Tinker 热补丁 × 改包冲突** ⬜
   - 问题：8.0.71 带 Tinker，改包后热补丁会不会覆盖注入代码 / 触发完整性校验 / 类加载器错位？
   - 产出：冲突点 + 规避策略
+
+### V3 副版本：包名隔离共存版（用户 2026-06-08 拉入，刚需）
+- **动机（用户实证）**：劫持改包**用不了微信支付**（签名变→支付域校验拒）。不愿卸官方、或需要支付的客户，必须官方+我们改包**并存**：官方负责支付，改包负责隐私。
+- **做法**：改包名（com.tencent.mm → 独立包名）+ 重写 provider 授权/资源/manifest 引用（微信分身/多开技术）。LSPatch **不支持**改包名（已查 --help 证实），需另开工具链。
+- **难点（D-015 标记的副版本难度）**：微信硬编码包名/provider authority/推送/登录校验多，改名易登不上/推送挂；需专项调研 V3-T4。
+- **V3-T4 调研（待派）**：8.0.71 改包名共存可行性 + 工具链选型（手改 manifest+资源+smali / 现成分身引擎）+ 登录/推送是否存活。
 
 ### 调研通过后的实现任务（工期待 T1–T3 出报告再定）
 - **P31** LSPatch 双模式打包流水线（主：劫持 com.tencent.mm + SignatureGuard 三层绕过；副：共存改包名）

@@ -38,6 +38,11 @@ tools/frida_build/
 # 反编译输出（大，可重生成）
 tools/re_8071/
 
+# 一次性 Frida 探针脚本 / 验证截图 / UI dump（留本地，不入仓）
+tools/probe_*.js
+tools/verify_nf_*.png
+tools/wallet_uidump.xml
+
 # Cursor MCP 配置备份
 .cursor/mcp.json.bak-*
 
@@ -54,3 +59,9 @@ DEV_SECRETS.md
 # OS
 Thumbs.db
 .DS_Store
+
+# V3 LSPatch tooling + outputs (binary, do not commit)
+02_tools_工具/lspatch.jar
+02_tools_工具/lspatch_out/
+*-lspatched.apk
+bug排查/
