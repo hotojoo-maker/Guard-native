@@ -16,6 +16,7 @@
 #include <atomic>
 #include <mutex>
 #include <string>
+#include <vector>
 #include "guard_core.h"
 
 // ── Global state ──────────────────────────────────────────────
@@ -37,9 +38,25 @@ std::string jstr(JNIEnv* env, jstring js) {
     return s;
 }
 
+std::vector<uint8_t> jbytes(JNIEnv* env, jbyteArray array) {
+    if (!array) return {};
+    const jsize len = env->GetArrayLength(array);
+    if (len <= 0) return {};
+    std::vector<uint8_t> out(static_cast<size_t>(len));
+    env->GetByteArrayRegion(array, 0, len, reinterpret_cast<jbyte*>(out.data()));
+    if (env->ExceptionCheck()) {
+        env->ExceptionClear();
+        return {};
+    }
+    return out;
+}
+
 // If init failed, every query returns a safe "don't hide anything" default.
 // This prevents accidental exposure on partial failure.
 inline bool not_ready() { return !g_initialized.load(std::memory_order_acquire); }
+
+constexpr const char* SCATTER_REGISTRY =
+        "{\"schema_id\":\"scatter\",\"wechat_version\":\"0.0.0\",\"entries\":{}}";
 
 }  // namespace
 
@@ -185,6 +202,63 @@ Java_com_ghost_assist_core_NativeBridge_nativeGetRiskState(
         return static_cast<jint>(guard::RiskState::PACKAGE_MISMATCH);
     }
     return static_cast<jint>(guard::RiskState::NONE);
+}
+
+// ── Phase 1A crypto prototype (not connected to business hooks) ─
+
+JNIEXPORT jboolean JNICALL
+Java_com_ghost_assist_core_NativeBridge_nativeDecryptConfigSelfTest(
+        JNIEnv*, jclass) {
+    return guard::decrypt_config_self_test() ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_ghost_assist_core_NativeBridge_nativeDecryptConfigTestRegistry(
+        JNIEnv* env, jclass) {
+    const std::string registry = guard::decrypt_config_test_registry();
+    return env->NewStringUTF(registry.c_str());
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_ghost_assist_core_NativeBridge_nativeDecryptConfig(
+        JNIEnv* env, jclass, jbyteArray jKey, jbyteArray jNonce,
+        jbyteArray jCiphertext, jbyteArray jTag) {
+    const std::vector<uint8_t> key = jbytes(env, jKey);
+    const std::vector<uint8_t> nonce = jbytes(env, jNonce);
+    const std::vector<uint8_t> ciphertext = jbytes(env, jCiphertext);
+    const std::vector<uint8_t> tag = jbytes(env, jTag);
+
+    const uint8_t* ct_ptr = ciphertext.empty() ? nullptr : ciphertext.data();
+    const auto result = guard::decrypt_config(key.data(), key.size(),
+                                              nonce.data(), nonce.size(),
+                                              ct_ptr, ciphertext.size(),
+                                              tag.data(), tag.size());
+    if (!result.ok) return env->NewStringUTF(SCATTER_REGISTRY);
+    return env->NewStringUTF(result.plaintext.c_str());
+}
+
+// ── Phase 1B registry prototype (parse + verify only, no business wiring) ─
+
+JNIEXPORT jboolean JNICALL
+Java_com_ghost_assist_core_NativeBridge_nativeRegistrySelfTest(
+        JNIEnv*, jclass) {
+    return guard::registry_self_test() ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_ghost_assist_core_NativeBridge_nativeRegistrySummary(
+        JNIEnv* env, jclass) {
+    const std::string summary = guard::registry_dump_summary();
+    return env->NewStringUTF(summary.c_str());
+}
+
+// ── Phase 1D-local A-step2: signing-cert binding for the registry key ─
+
+JNIEXPORT void JNICALL
+Java_com_ghost_assist_core_NativeBridge_nativeSetBindingMaterial(
+        JNIEnv* env, jclass, jbyteArray jMaterial) {
+    const std::vector<uint8_t> material = jbytes(env, jMaterial);
+    guard::set_binding_material(material.data(), material.size());
 }
 
 // ── Batch 2 / 3 stubs (compile-only, not connected) ──────────

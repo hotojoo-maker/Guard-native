@@ -45,7 +45,6 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
 public class SearchUnlock {
 
     private static final String TAG = "NCL";
-    private static final String DEFAULT_PWD = "111111";
     // Stable tag key for per-instance watcher dedup
     private static final int WATCHER_TAG = 0x67757264; // "gurd"
 
@@ -57,7 +56,7 @@ public class SearchUnlock {
         StateMachine sm = StateMachine.getInstance();
         String currentPwd = sm.getPassword();
         if (currentPwd == null || currentPwd.isEmpty() || "1111".equals(currentPwd)) {
-            sm.setPassword(DEFAULT_PWD);
+            sm.setPassword(StateMachine.getDefaultPassword());
         }
 
         // Hook android.view.View.onAttachedToWindow — covers all subclasses including

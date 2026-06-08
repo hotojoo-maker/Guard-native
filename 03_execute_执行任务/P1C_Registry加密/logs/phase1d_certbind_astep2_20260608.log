@@ -1,0 +1,1420 @@
+﻿--------- beginning of main
+--------- beginning of system
+06-08 14:34:05.514 20858 20858 I NCL     : [init] pid=20858 proc=com.tencent.mm
+06-08 14:34:05.557 20858 20858 I NCL     : [native] certBind set sha256[0..3]=ca421ec3
+06-08 14:34:05.557 20858 20858 I NCL     : [native] available=true
+06-08 14:34:05.557 20858 20858 I NCL     : [native] init=true
+06-08 14:34:05.557 20858 20858 I NCL     : [native] role=1 (expect 1=MAIN)
+06-08 14:34:05.557 20858 20858 I NCL     : [native] isHidden=true (expect true)
+06-08 14:34:05.557 20858 20858 I NCL     : [native] isHidden after setHidden(false)=false (expect false)
+06-08 14:34:05.557 20858 20858 I NCL     : [native] isHiddenWxid(wxid_lzd2va16jd1622)=true (expect true)
+06-08 14:34:05.557 20858 20858 I NCL     : [native] isHiddenWxid(wxid_other)=false (expect false)
+06-08 14:34:05.557 20858 20858 I NCL     : [native] configVersion=1 (expect 1)
+06-08 14:34:05.558 20858 20858 I NCL     : [native] decryptSelfTest=true (expect true)
+06-08 14:34:05.558 20858 20858 I NCL     : [native] decryptTestRegistry=true
+06-08 14:34:05.558 20858 20858 I NCL     : [native] decryptScatter=true
+06-08 14:34:05.562 20858 20858 I NCL     : [native] registrySelfTest=true (expect true)
+06-08 14:34:05.563 20858 20858 I NCL     : [native] registrySummary=schema=r8071_v1 ver=8.0.71 entries=4 [conv.list adapter=kc5.v0 l4=notifyDataSetChanged] [moments.feed adapter=e2] [contact.address adapter=ik3.t0] [search.gateway]
+06-08 14:34:05.564 20858 20858 I NCL     : [native] BATCH1_VERIFY PASS
+06-08 14:34:05.564 20858 20858 I NCL     : [native] PHASE1A_VERIFY PASS
+06-08 14:34:05.564 20858 20858 I NCL     : [native] PHASE1B_VERIFY PASS
+06-08 14:34:05.565 20858 20858 I NCL     : [native] PHASE1C_VERIFY PASS
+06-08 14:34:05.565 20858 20858 I NCL     : [native] PHASE1D_VERIFY PASS
+06-08 14:34:05.573 20858 20858 I NCL     : [SM] init
+06-08 14:34:05.573 20858 20858 I NCL     : [IC] restored F04=2061 F05=4483 F07=0
+06-08 14:34:05.573 20858 20858 I NCL     : [init] killSwitch=false
+06-08 14:34:05.573 20858 20858 I NCL     : [SM] restoreState: saved=鏄惧舰 鈫?forced HIDDEN (F-27)
+06-08 14:34:05.573 20858 20858 I NCL     : [SM] restored state=闅愯棌
+06-08 14:34:05.573 20858 20858 I NCL     : [auth] NO_LICENSE 鈥?not bound yet
+06-08 14:34:05.573 20858 20858 I NCL     : [native] setAuthState=4
+06-08 14:34:05.573 20858 20858 I NCL     : [auth] evaluate=4 (v1 record-only, not gating)
+06-08 14:34:05.576 20858 20858 I NCL     : [AR] hook installed: jy0.t#f (doRevokeMsg)
+06-08 14:34:05.579 20858 20858 I NCL     : [AR] MMNeat7extView CharSequence-methods hooked=2
+06-08 14:34:05.584 20858 20858 I NCL     : [AR] tip-color hook installed (setText x4)
+06-08 14:34:05.585 20858 20858 I NCL     : [SPC] setText hook installed
+06-08 14:34:05.587 20858 20858 I NCL     : [SU] View.onAttachedToWindow hook ok pwdLen=6
+06-08 14:34:05.594 20858 20858 I NCL     : [SF:ss4p] ss4.p.onBindViewHolder hook installed
+06-08 14:34:05.597 20858 20858 I NCL     : [SF] SearchFilter installed
+06-08 14:34:05.598 20858 20858 I NCL     : [SF:ALLseen] #1 addAll first=java.io.File size=2
+06-08 14:34:05.600 20858 20858 I NCL     : [SF] LinkedList.add hook for B6 + filter installed
+06-08 14:34:05.608 20858 20858 I NCL     : [SF] q2 probe v4 installed (ListView.setAdapter)
+06-08 14:34:05.608 20858 20858 I NCL     : [SM] listener registered SearchFilter
+06-08 14:34:05.608 20858 20858 I NCL     : [BUS] registered SearchFilter
+06-08 14:34:05.609 20858 20858 I NCL     : [MF] addAll firstItem=java.io.File size=2
+06-08 14:34:05.611 20858 20858 I NCL     : [MF] addAll+add hook ok (ArrayList + LinkedList)
+06-08 14:34:05.611 20858 20858 W NCL     : [MF] e2 not found: java.lang.ClassNotFoundException: Didn't find class "e2" on path: DexPathList[[zip file "/data/app/~~3b70A491-llST8--4goL8w==/com.tencent.mm-6Z-QeOfO6j_nv-YH34JDqA==/base.apk"],nativeLibraryDirectories=[/data/app/~~3b70A491-llST8--4goL8w==/com.tencent.mm-6Z-QeOfO6j_nv-YH34JDqA==/lib/arm64, /data/app/~~3b70A491-llST8--4goL8w==/com.tencent.mm-6Z-QeOfO6j_nv-YH34JDqA==/base.apk!/lib/arm64-v8a, /system/lib64, /system/system_ext/lib64]]
+06-08 14:34:05.612 20858 20934 I NCL     : [SF:ALLseen] #2 addAll first=ls4.v size=27
+06-08 14:34:05.612 20858 20934 I NCL     : [MF] addAll firstItem=ls4.v size=27
+06-08 14:34:05.615 20858 20858 I NCL     : [MF] D3 hook: getCommentList() ok
+06-08 14:34:05.617 20858 20937 I NCL     : [MF:LLadd cls=ii5.b]
+06-08 14:34:05.617 20858 20858 I NCL     : [SM] listener registered MomentsFilter
+06-08 14:34:05.618 20858 20858 I NCL     : [BUS] registered MomentsFilter
+06-08 14:34:05.618 20858 20858 I NCL     : [MF] v20 ready (8.0.71)
+06-08 14:34:05.618 20858 20858 I NCL     : [CF] Lh0 stub (h0 covered by L1/L4 in 8.0.71)
+06-08 14:34:05.619 20858 20858 I NCL     : [CF] La hooked: public final void kc5.a.a(java.util.List)
+06-08 14:34:05.621 20858 20858 I NCL     : [CF] L1 hooked: public final void com.tencent.mm.plugin.mvvmlist.MvvmList.m(ik3.d,boolean)
+06-08 14:34:05.622 20858 20942 I NCL     : [MF:LLadd cls=k65.h]
+06-08 14:34:05.622 20858 20858 I NCL     : [CF] L1 hooked: public final void com.tencent.mm.plugin.mvvmlist.MvvmList.n(java.util.List,boolean)
+06-08 14:34:05.624 20858 20858 I NCL     : [CF] L2 hooked: public final void com.tencent.mm.plugin.mvvmlist.MvvmList.s(java.lang.String)
+06-08 14:34:05.626 20858 20858 I NCL     : [CF] L3 hooked: public final void com.tencent.mm.plugin.mvvmlist.MvvmList.d(fv5.l)
+06-08 14:34:05.627 20858 20858 I NCL     : [CF] L3 hooked: public final void com.tencent.mm.plugin.mvvmlist.MvvmList.r(ik3.d)
+06-08 14:34:05.628 20858 20858 I NCL     : [CF] L3 hooked: public final void com.tencent.mm.plugin.mvvmlist.MvvmList.t(java.util.List)
+06-08 14:34:05.629 20858 20858 I NCL     : [CF] L3 hooked: public final void com.tencent.mm.plugin.mvvmlist.MvvmList.w(ik3.o0)
+06-08 14:34:05.630 20858 20858 I NCL     : [CF] L3 hooked: public final void com.tencent.mm.plugin.mvvmlist.MvvmList.x(fv5.l)
+06-08 14:34:05.630 20858 20858 I NCL     : [CF] L3 total hooked=5
+06-08 14:34:05.631 20858 20858 I NCL     : [CF] L0l hooked: public static void com.tencent.mm.plugin.mvvmlist.MvvmList.l(com.tencent.mm.plugin.mvvmlist.MvvmList,ik3.i,boolean,int,java.lang.Object)
+06-08 14:34:05.632 20858 20858 I NCL     : [CF] L0e hooked: public java.util.List com.tencent.mm.plugin.mvvmlist.MvvmList.e(java.util.List)
+06-08 14:34:05.634 20858 20858 I NCL     : [CF] L0k hooked: public final void com.tencent.mm.plugin.mvvmlist.MvvmList.k(ik3.i,boolean)
+06-08 14:34:05.634 20858 20858 I NCL     : [CF] L0w total hooked=3
+06-08 14:34:05.636 20858 20858 I NCL     : [CF] IK3n hooked: public void ik3.n.handleEvent(java.util.List)
+06-08 14:34:05.636 20858 20858 W NCL     : [CF] MvvmConvList no n/m(?,boolean). methods: c(0)
+06-08 14:34:05.636 20858 20858 I NCL     : [CF] MCL-ctor stub
+06-08 14:34:05.636 20858 20858 I NCL     : [CF] ArrayList.addAll hook ok (MainUI path)
+06-08 14:34:05.643 20858 20858 W NCL     : [CF] adapter discovery load fail: Cannot hook abstract methods: public abstract void android.widget.AdapterView.setAdapter(android.widget.Adapter)
+06-08 14:34:05.648 20858 20858 I NCL     : [CF] L4 notifyDataSetChanged hooked: kc5.v0
+06-08 14:34:05.648 20858 20858 I NCL     : [CF] L4 hooked hardcode kc5.v0
+06-08 14:34:05.649 20858 20858 I NCL     : [CF] L4 notifyDataSetChanged hooked: com.tencent.mm.ui.base.preference.h0
+06-08 14:34:05.649 20858 20858 I NCL     : [CF] L4 hooked hardcode com.tencent.mm.ui.base.preference.h0
+06-08 14:34:05.653 20858 20858 I NCL     : [CF] pendingHide LauncherUI resume hook installed
+06-08 14:34:05.654 20858 20929 I NCL     : [MF:LLadd cls=[B]
+06-08 14:34:05.655 20858 20858 I NCL     : [CF] onStart hook installed
+06-08 14:34:05.657 20858 20858 I NCL     : [CF] onWindowFocusChanged hook installed
+06-08 14:34:05.658 20858 20858 I NCL     : [SM] listener registered ConvFilter
+06-08 14:34:05.658 20858 20858 I NCL     : [BUS] registered ConvFilter
+06-08 14:34:05.658 20858 20858 I NCL     : [CF] ConvFilter installed
+06-08 14:34:05.658 20858 20858 I NCL     : [CTF] ArrayList.addAll(fc5.g) hook ok
+06-08 14:34:05.658 20858 20858 I NCL     : [CTHR] install (no hooks; refs discovered by ContactDiscoveryHook)
+06-08 14:34:05.658 20858 20858 I NCL     : [SM] listener registered ContactFilter
+06-08 14:34:05.659 20858 20858 I NCL     : [BUS] registered ContactFilter
+06-08 14:34:05.659 20858 20858 I NCL     : [CTF] ContactFilter installed
+06-08 14:34:05.659 20858 20858 I NCL     : [CLH] ArrayList.addAll(fc5.g) label-entry hook ok
+06-08 14:34:05.659 20858 20858 I NCL     : [CLH] ArrayList.addAll(d4) hook ok
+06-08 14:34:05.663 20858 20858 W NCL     : [CLH] skip activity com.tencent.mm.ui.contact.MvvmContactListUI: java.lang.ClassNotFoundException: Didn't find class "com.tencent.mm.ui.contact.MvvmContactListUI" on path: DexPathList[[zip file "/data/app/~~3b70A491-llST8--4goL8w==/com.tencent.mm-6Z-QeOfO6j_nv-YH34JDqA==/base.apk"],nativeLibraryDirectories=[/data/app/~~3b70A491-llST8--4goL8w==/com.tencent.mm-6Z-QeOfO6j_nv-YH34JDqA==/lib/arm64, /data/app/~~3b70A491-llST8--4goL8w==/com.tencent.mm-6Z-QeOfO6j_nv-YH34JDqA==/base.apk!/lib/arm64-v8a, /system/lib64, /system/system_ext/lib64]]
+06-08 14:34:05.665 20858 20858 I NCL     : [CLH] label activity block hooked=2
+06-08 14:34:05.665 20858 20858 I NCL     : [CLH] ContactLabelHideGuard installed
+06-08 14:34:05.665 20858 20858 I NCL     : [CLM] ArrayList.addAll(ye5.j) label-member hook ok
+06-08 14:34:05.669 20858 20929 I NCL     : [MF:LLadd cls=z15.o0] d=crash
+06-08 14:34:05.670 20858 20858 I NCL     : [CIG] ContactImportGuard installed
+06-08 14:34:05.671 20858 20858 I NCL     : [PF:L1] LinkedList.add hook ok
+06-08 14:34:05.672 20858 20929 I NCL     : [PF:LLseen:main] #1 z15.o0
+06-08 14:34:05.673 20858 20965 I NCL     : [PF:LLseen:main] #2 [B
+06-08 14:34:05.674 20858 20973 I NCL     : [PF:LLseen:main] #3 java.lang.String
+06-08 14:34:05.674 20858 20941 I NCL     : [PF:LLseen:main] #4 ii5.b
+06-08 14:34:05.674 20858 20858 I NCL     : [PF:NM] NotificationManager.notify hook ok
+06-08 14:34:05.676 20858 20858 I NCL     : [PF:MSGALERT] x.d hook ok
+06-08 14:34:05.677 20858 20858 I NCL     : [PF:NEWMSG] Handler.dispatchMessage hook ok
+06-08 14:34:05.680 20858 20858 I NCL     : [PF:FGMUTE] MediaPlayer.start hook ok
+06-08 14:34:05.681 20858 20858 I NCL     : [PF:UNREADFIX] LauncherUIBottomTabView.l hooked
+06-08 14:34:05.682 20858 20858 I NCL     : [PF:UNREADFIX] TaskBarContainer.setActionBarTitle hooked
+06-08 14:34:05.684 20858 20858 I NCL     : [PF:SF] hooked startForeground(int, Notification)
+06-08 14:34:05.685 20858 20858 I NCL     : [PF:SF] hooked startForeground(int, Notification, int)
+06-08 14:34:05.685 20858 20858 I NCL     : [PF:CA] hooked Activity.onResume
+06-08 14:34:05.685 20858 20858 I NCL     : [PF:CA] hooked Activity.onStart
+06-08 14:34:05.686 20858 20858 I NCL     : [PF:VC] onAttachedToWindow hook ok
+06-08 14:34:05.688 20858 20858 I NCL     : [PF:VC] onDetachedFromWindow hook ok
+06-08 14:34:05.689 20858 20858 I NCL     : [PF:FB] WindowManagerImpl.addView hook ok
+06-08 14:34:05.692 20858 20858 I NCL     : [PF:AM] hooked
+06-08 14:34:05.694 20858 20858 I NCL     : [PF:AT] hooked
+06-08 14:34:05.694 20858 20858 I NCL     : [PF:MP] hooked
+06-08 14:34:05.696 20858 20858 I NCL     : [PF:VV] hooked
+06-08 14:34:05.703 20858 20858 I NCL     : [PF:VW] hooked
+06-08 14:34:05.705 20858 20858 I NCL     : [PF:PiP] hooked
+06-08 14:34:05.707 20858 20858 I NCL     : [PF:PiP] setPictureInPictureParams hook ok
+06-08 14:34:05.710 20858 20858 I NCL     : [PF:UL] onUserLeaveHint hook ok
+06-08 14:34:05.710 20858 20858 I NCL     : [CG] CallGuard installed (main, full chain)
+06-08 14:34:05.710 20858 20858 I NCL     : [PF] PushFilter installed (main: L1+NM+MSGALERT+NEWMSG+FGMUTE+UNREADFIX) + CallGuard
+06-08 14:34:05.711 20858 20858 I NCL     : [MRD:evt] com.tencent.mm.autogen.events.WeChatTabRedDotEvent ctor blocker installed (precise)
+06-08 14:34:05.711 20858 20964 I NCL     : [PF:LLseen:main] #5 android.app.SharedPreferencesImpl$2
+06-08 14:34:05.712 20858 20858 I NCL     : [MRD:evt] com.tencent.mm.autogen.events.TabRedDotChangeEvent ctor blocker installed (precise)
+06-08 14:34:05.720 20858 20858 I NCL     : [MRD:view] FinderRedDotTextView hooked 4
+06-08 14:34:05.720 20858 20858 I NCL     : [MRD:ns.c:init] a=false b=false c=false d=false e=0 f=0 g=0 
+06-08 14:34:05.721 20858 20858 I NCL     : [MRD:ns.c] FindMoreFriendsUI.L1() hooked (v9 precise)
+06-08 14:34:05.722 20858 20858 I NCL     : [MRD:ns.c] FindMoreFriendsUI.onResume() hooked (v16 Fragment direct)
+06-08 14:34:05.723 20858 20965 I NCL     : [MF:LLadd cls=z15.sx5] d=104 e=MainUI f=BizTimeLineUI
+06-08 14:34:05.723 20858 20858 I NCL     : [MRD:ns.c] LauncherUI.onResume hooked via Activity hookAllMethods (v14d)
+06-08 14:34:05.723 20858 20858 I NCL     : [MRD:ns.c] aggregation blocker v12b installed
+06-08 14:34:05.723 20858 20965 I NCL     : [PF:LLseen:main] #6 z15.sx5
+06-08 14:34:05.725 20858 20858 I NCL     : [MRD:g1] hooked FMF.g1(String,boolean)
+06-08 14:34:05.726 20858 20858 I NCL     : [MRD:w1] hooked w1.v2()
+06-08 14:34:05.727 20858 20858 I NCL     : [MRD:w1] hooked w1.w2()
+06-08 14:34:05.727 20858 20858 I NCL     : [MRD:w1] interaction filter installed: 2 methods
+06-08 14:34:05.731 20858 20858 I NCL     : [MRD:cursor] interaction list cursor filter installed: 3 methods
+06-08 14:34:05.738 20858 20858 I NCL     : [MRD:scs:fields] d:i0 e:boolean f:String[] 
+06-08 14:34:05.751 20858 20858 I NCL     : [MRD:scs:methods] B1(1):int C2(0):boolean E1(0):int G1(0):String N1(0):Cursor O1(1):Cursor a2(1):Cursor f(0):int j2(0):int o1(1):boolean o2(1):int t2(1):int 
+06-08 14:34:05.751 20858 20858 I NCL     : [MRD:scs] SnsCommentStorage hooked 9 methods
+06-08 14:34:05.754 20858 20858 W NCL     : [MRD:merge] class not found: com.tencent.mm.plugin.sns.model.SnsLogic
+06-08 14:34:05.754 20858 20858 I NCL     : [MRD:merge] snsmsg blacklist hooks=0
+06-08 14:34:05.755 20858 20858 I NCL     : [MRD:smsg] Activity.onResume 鈫?SnsMsgUI* filter installed (v17)
+06-08 14:34:05.765 20858 20965 I NCL     : [MF:LLadd cls=z15.px5] d=101 e=MainUI f=ChattingUIFragment, ChattingUI g=0
+06-08 14:34:05.765 20858 20965 I NCL     : [PF:LLseen:main] #7 z15.px5
+06-08 14:34:05.771 20858 20858 I NCL     : [MRD:adapter] com.tencent.mm.plugin.sns.ui.rm probed
+06-08 14:34:05.776 20858 20858 I NCL     : [MRD:adapter] com.tencent.mm.plugin.sns.ui.bm probed
+06-08 14:34:05.777 20858 20858 I NCL     : [MRD:adapter:flt] BaseAdapter.notifyDataSetChanged hook installed (gated bm/rm)
+06-08 14:34:05.778 20858 20858 I NCL     : [MRD:tab] TabRedDotChangeEvent badge zeroing installed
+06-08 14:34:05.778 20858 20858 I NCL     : [MRD:tab] WeChatTabRedDotEvent badge zeroing installed
+06-08 14:34:05.778 20858 20858 I NCL     : [MRD:tab] tab badge counter suppressor: 2 events hooked
+06-08 14:34:05.778 20858 20858 I NCL     : [MRD:badge] precise badge filter installed (osw/o58 -> 闈炲瘑鍙?
+06-08 14:34:05.778 20858 20858 I NCL     : [MRD:boot:w1] zero deferred to first L1() trigger
+06-08 14:34:05.779 20858 20858 I NCL     : [MRD:tl] bubble prewarm installed
+06-08 14:34:05.780 20858 20858 I NCL     : [MRD:list] SnsMsgUI deep-dump installed
+06-08 14:34:05.780 20858 20858 I NCL     : [MRD] install done (v26dbg3: + full field dump of real adapter bm)
+06-08 14:34:05.780 20858 20858 I NCL     : [UG:diag] fl4.o 0-param bool/int methods: Pg(boolean) Sh(boolean) Th(boolean) Wh(boolean) 
+06-08 14:34:05.785 20858 20858 I NCL     : [UG] fl4.o hooked 4
+06-08 14:34:05.785 20858 20858 I NCL     : [UG] install done
+06-08 14:34:05.785 20858 20858 I NCL     : [TG] B2 foreground tracker installed
+06-08 14:34:05.788 20858 20985 I NCL     : [MF:LLadd cls=x15.l]
+06-08 14:34:05.788 20858 20985 I NCL     : [PF:LLseen:main] #8 x15.l
+06-08 14:34:05.788 20858 20858 I NCL     : [TG] B5 + B2-fallback receiver installed
+06-08 14:34:05.788 20858 20985 I NCL     : [MF:LLadd cls=z15.cv3]
+06-08 14:34:05.788 20858 20985 I NCL     : [PF:LLseen:main] #9 z15.cv3
+06-08 14:34:05.799 20858 20907 I NCL     : [MF:LLadd cls=z15.g40]
+06-08 14:34:05.799 20858 20907 I NCL     : [PF:LLseen:main] #10 z15.g40
+06-08 14:34:05.800 20858 20907 I NCL     : [MF:LLadd cls=ni5.m]
+06-08 14:34:05.800 20858 20907 I NCL     : [PF:LLseen:main] #11 ni5.m
+06-08 14:34:05.801 20858 20907 I NCL     : [MF:LLadd cls=mq5.e] e=OplogServiceKtAsync#l01.m0
+06-08 14:34:05.801 20858 20907 I NCL     : [PF:LLseen:main] #12 mq5.e
+06-08 14:34:05.801 20858 20858 I NCL     : [TG] B1 shake listener installed
+06-08 14:34:05.803 20858 20858 I NCL     : [TG] B4 back key hook installed
+06-08 14:34:05.803 20858 20858 I NCL     : [TG] install done b1=true b2=true b5=true dev=false
+06-08 14:34:05.803 20858 20858 I NCL     : [CDH] install (lifecycle callbacks)
+06-08 14:34:05.804 20858 20858 I NCL     : [FLOC] injector installed on pz0.h.c
+06-08 14:34:05.804 20858 20858 I NCL     : [FLOC] pick capture installed
+06-08 14:34:05.804 20858 20858 I NCL     : [FLOC] button rename (onResume scan) installed
+06-08 14:34:05.804 20858 20858 I NCL     : [SET] entry installed class=com.tencent.mm.plugin.setting.ui.setting_new.MainSettingsUI more=com.tencent.mm.ui.LauncherUI
+06-08 14:34:05.805 20858 20858 I NCL     : [SET:more] TextView attach hook installed
+06-08 14:34:05.805 20858 20858 I NCL     : [SET:more:guard] setText anti-overwrite hook installed
+06-08 14:34:05.805 20858 20858 I NCL     : [init] debug server started port=8080
+06-08 14:34:05.806 20858 20858 I NCL     : [UI] UiContextTracker ok
+06-08 14:34:05.806 20858 20858 I NCL     : [init] ready 鈥?state=闅愯棌
+06-08 14:34:05.810 20858 20991 I NCL     : [HTTP] listening on port 8080
+06-08 14:34:05.820 20858 20858 I NCL     : [SF:ALLseen] #3 addAll first=miui.content.res.ThemeResources$FilterInfo size=1
+06-08 14:34:05.821 20858 20858 I NCL     : [MF] addAll firstItem=miui.content.res.ThemeResources$FilterInfo size=1
+06-08 14:34:05.822 20858 20965 I NCL     : [MF:LLadd cls=z15.p05] d= m=MainUI q=
+06-08 14:34:05.822 20858 20965 I NCL     : [PF:LLseen:main] #13 z15.p05
+06-08 14:34:05.823 20858 20965 I NCL     : [MF:LLadd cls=z15.lt3] d=MainUI g=
+06-08 14:34:05.823 20858 20965 I NCL     : [PF:LLseen:main] #14 z15.lt3
+06-08 14:34:05.828 20858 20962 I NCL     : [MF:LLadd cls=l55.c] a=com.tencent.mm.sensitive.SENSITIVE_PAGE_ENTER b=com.tencent.mm.splash.SplashHackActivity c=109921735 d=com.tencent.mm@20858 f=
+06-08 14:34:05.829 20858 20962 I NCL     : [PF:LLseen:main] #15 l55.c
+06-08 14:34:05.842 20858 20965 I NCL     : [MF:LLadd cls=z15.u05] d=com.tencent.mm.plugin.appbrand.ui.AppBrandUI e=jTG|com.tencent.mm.plugin.appbrand.k,hJQ|Ljava/util/LinkedList;com.tencent.mm.plugin.appbrand.i@0,mAppId|java.lang.String f=0
+06-08 14:34:05.843 20858 20965 I NCL     : [PF:LLseen:main] #16 z15.u05
+06-08 14:34:05.843 20858 20965 I NCL     : [MF:LLadd cls=z15.hy5] d=com.tencent.mm.plugin.appbrand.ui.AppBrandUI
+06-08 14:34:05.843 20858 20965 I NCL     : [PF:LLseen:main] #17 z15.hy5
+06-08 14:34:05.860 20858 20858 I NCL     : [MF:LLadd cls=sn0.s]
+06-08 14:34:05.860 20858 20858 I NCL     : [PF:LLseen:main] #18 sn0.s
+06-08 14:34:05.867 20858 20995 I NCL     : [SF:ALLseen] #4 addAll first=dalvik.system.DexPathList$NativeLibraryElement size=6
+06-08 14:34:05.867 20858 20995 I NCL     : [MF] addAll firstItem=dalvik.system.DexPathList$NativeLibraryElement size=6
+06-08 14:34:05.882 20858 20910 I NCL     : [MF:LLadd cls=z15.sg0] f=report_time_ec
+06-08 14:34:05.882 20858 20910 I NCL     : [PF:LLseen:main] #19 z15.sg0
+06-08 14:34:05.896 20858 20858 I NCL     : [PF:LLseen:main] #20 java.lang.ref.SoftReference
+06-08 14:34:05.901 20858 20910 I NCL     : [MF:LLadd cls=z15.xg0] d=1900725 n=function __run__(data) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : try {
+
+06-08 14:34:05.901 20858 20910 I NCL     : var result = new Array()
+
+06-08 14:34:05.901 20858 20910 I NCL     : var record = []
+
+06-08 14:34:05.901 20858 20910 I NCL     : record.push(parse_tbe(data))
+
+06-08 14:34:05.901 20858 20910 I NCL     : record.push(parse_dwelltime(data))
+
+06-08 14:34:05.901 20858 20910 I NCL     : record.push(parse_session_cnt(data))
+
+06-08 14:34:05.901 20858 20910 I NCL     : record.push(parse_enter_session_cnt(data))
+
+06-08 14:34:05.901 20858 20910 I NCL     : record.push(parse_one_session_time(data, 0))
+
+06-08 14:34:05.901 20858 20910 I NCL     : record.push(parse_one_session_cnt(data, 0))
+
+06-08 14:34:05.901 20858 20910 I NCL     : record.push(parse_one_session_time(data, 1))
+
+06-08 14:34:05.901 20858 20910 I NCL     : record.push(parse_one_session_cnt(data, 1))
+
+06-08 14:34:05.901 20858 20910 I NCL     : record.push(parse_one_session_time(data, 2))
+
+06-08 14:34:05.901 20858 20910 I NCL     : record.push(parse_one_session_cnt(data, 2))
+
+06-08 14:34:05.901 20858 20910 I NCL     : record.push(parse_one_session_time(data, 3))
+
+06-08 14:34:05.901 20858 20910 I NCL     : record.push(parse_one_session_cnt(data, 3))
+
+06-08 14:34:05.901 20858 20910 I NCL     : var expand_json_dict = {}
+
+06-08 14:34:05.901 20858 20910 I NCL     : for (index = 0; index < 70; index++) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : sid = 101 + index
+
+06-08 14:34:05.901 20858 20910 I NCL     : session_time = parse_one_session_time(data, sid)
+
+06-08 14:34:05.901 20858 20910 I NCL     : session_cnt = parse_one_session_cnt(data, sid)
+
+06-08 14:34:05.901 20858 20910 I NCL     : if (session_time < 0 || session_cnt < 0 || session_time >= 86400000 || session_cnt >= 86400000) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : record.push(0)
+
+06-08 14:34:05.901 20858 20910 I NCL     : record.push(0)
+
+06-08 14:34:05.901 20858 20910 I NCL     : } else {
+
+06-08 14:34:05.901 20858 20910 I NCL     : if (sid <= 146) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : record.push(session_time)
+
+06-08 14:34:05.901 20858 20910 I NCL     : record.push(session_cnt)
+
+06-08 14:34:05.901 20858 20910 I NCL     : } else {
+
+06-08 14:34:05.901 20858 20910 I NCL     : expand_json_dict[sid + '_time'] = session_time
+
+06-08 14:34:05.901 20858 20910 I NCL     : expand_json_dict[sid + '_cnt'] = session_cnt
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : record.push(parse_other_time(data))
+
+06-08 14:34:05.901 20858 20910 I NCL     : record.push(parse_other_cnt(data))
+
+06-08 14:34:05.901 20858 20910 I NCL     : record.push(replaceAll(JSON.stringify(expand_json_dict), ',', ';'))
+
+06-08 14:34:05.901 20858 20910 I NCL     : result.push(String(record))
+
+06-08 14:34:05.901 20858 20910 I NCL     : return result
+
+06-08 14:34:05.901 20858 20910 I NCL     : } catch (error) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : return new Array()
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : function parse_tbe(data) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : json = JSON.parse(data)
+
+06-08 14:34:05.901 20858 20910 I NCL     : return String(json['tbe'])
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : function parse_dwelltime(data) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : json = JSON.parse(data)
+
+06-08 14:34:05.901 20858 20910 I NCL     : return String(json['in'])
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : function parse_session_cnt(data) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : json = JSON.parse(data)
+
+06-08 14:34:05.901 20858 20910 I NCL     : var session_cnt = 0
+
+06-08 14:34:05.901 20858 20910 I NCL     : for (i in json['content']) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : session_cnt++
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : return session_cnt
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : function parse_enter_session_cnt(data) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : json = JSON.parse(data)
+
+06-08 14:34:05.901 20858 20910 I NCL     : var enter_session_cnt = 0
+
+06-08 14:34:05.901 20858 20910 I NCL     : for (i in json['content']) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : if ('count' in json['content'][i]) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : enter_session_cnt += json['content'][i]['count']
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : return enter_session_cnt
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : function parse_one_session_time(data, sid) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : json = JSON.parse(data)
+
+06-08 14:34:05.901 20858 20910 I NCL     : var one_time = 0
+
+06-08 14:34:05.901 20858 20910 I NCL     : for (i in json['content']) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : if (json['content'][i]['sid'] == sid) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : if ('in' in json['content'][i]) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : one_time += json['content'][i]['in']
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : return String(one_time)
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : function parse_one_session_cnt(data, sid) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : json = JSON.parse(data)
+
+06-08 14:34:05.901 20858 20910 I NCL     : var one_cnt = 0
+
+06-08 14:34:05.901 20858 20910 I NCL     : for (i in json['content']) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : if (json['content'][i]['sid'] == sid) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : if ('count' in json['content'][i]) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : one_cnt += json['content'][i]['count']
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : return one_cnt
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : function parse_other_time(data, sid) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : json = JSON.parse(data)
+
+06-08 14:34:05.901 20858 20910 I NCL     : var other_time = 0
+
+06-08 14:34:05.901 20858 20910 I NCL     : for (i in json['content']) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : sid = json['content'][i]['sid']
+
+06-08 14:34:05.901 20858 20910 I NCL     : if (!isRealNum(sid) || sid < 0 || json['content'][i]['sid'] > 146) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : other_time += json['content'][i]['in']
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : return String(other_time)
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : function parse_other_cnt(data, sid) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : json = JSON.parse(data)
+
+06-08 14:34:05.901 20858 20910 I NCL     : var other_cnt = 0
+
+06-08 14:34:05.901 20858 20910 I NCL     : for (i in json['content']) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : if (json['content'][i]['sid'] < 0 || json['content'][i]['sid'] > 146) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : other_cnt += json['content'][i]['count']
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : return other_cnt
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : function isRealNum(val) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : if (val === '' || val == null) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : return false;
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : if (!isNaN(val)) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : return true;
+
+06-08 14:34:05.901 20858 20910 I NCL     : } else {
+
+06-08 14:34:05.901 20858 20910 I NCL     : return false;
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : var device
+
+06-08 14:34:05.901 20858 20910 I NCL     : var run_date
+
+06-08 14:34:05.901 20858 20910 I NCL     : var period_start_time
+
+06-08 14:34:05.901 20858 20910 I NCL     : var period_end_time
+
+06-08 14:34:05.901 20858 20910 I NCL     : var uin
+
+06-08 14:34:05.901 20858 20910 I NCL     : function __main__(data, args) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : try {
+
+06-08 14:34:05.901 20858 20910 I NCL     : device = args.split(',')[0]
+
+06-08 14:34:05.901 20858 20910 I NCL     : run_date = args.split(',')[1]
+
+06-08 14:34:05.901 20858 20910 I NCL     : period_start_time = args.split(',')[2]
+
+06-08 14:34:05.901 20858 20910 I NCL     : period_end_time = args.split(',')[3]
+
+06-08 14:34:05.901 20858 20910 I NCL     : uin = args.split(',')[4]
+
+06-08 14:34:05.901 20858 20910 I NCL     : return __run__(data)
+
+06-08 14:34:05.901 20858 20910 I NCL     : } catch (error) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : debugAlert(String(error))
+
+06-08 14:34:05.901 20858 20910 I NCL     : return new Array()
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : return new Array()
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : function readEdgeDBData(sql) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : if (device == '2') {
+
+06-08 14:34:05.901 20858 20910 I NCL     : var datas = read_edge_db_data.call('', sql)
+
+06-08 14:34:05.901 20858 20910 I NCL     : if (datas == null) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : return null
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : var result = new Array()
+
+06-08 14:34:05.901 20858 20910 I NCL     : var datas_ = datas.split(';')
+
+06-08 14:34:05.901 20858 20910 I NCL     : for (var i in datas_) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : var data = datas_[i].split(',')
+
+06-08 14:34:05.901 20858 20910 I NCL     : var r = new Array()
+
+06-08 14:34:05.901 20858 20910 I NCL     : for (var j in data) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : var d = data[j]
+
+06-08 14:34:05.901 20858 20910 I NCL     : d = replaceAll(d, '\\$', ';')
+
+06-08 14:34:05.901 20858 20910 I NCL     : d = replaceAll(d, '\\#', ',')
+
+06-08 14:34:05.901 20858 20910 I NCL     : r.push(d)
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : result.push(r)
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : return result
+
+06-08 14:34:05.901 20858 20910 I NCL     : } else if (device == '1') {
+
+06-08 14:34:05.901 20858 20910 I NCL     : var datas = read_edge_db_data(sql)
+
+06-08 14:34:05.901 20858 20910 I NCL     : if (datas == null) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : return null
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : var result = new Array()
+
+06-08 14:34:05.901 20858 20910 I NCL     : var datas_ = datas.split(';')
+
+06-08 14:34:05.901 20858 20910 I NCL     : for (var i in datas_) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : var data = datas_[i].split(',')
+
+06-08 14:34:05.901 20858 20910 I NCL     : var r = new Array()
+
+06-08 14:34:05.901 20858 20910 I NCL     : for (var j in data) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : var d = data[j]
+
+06-08 14:34:05.901 20858 20910 I NCL     : d = replaceAll(d, '\\$', ';')
+
+06-08 14:34:05.901 20858 20910 I NCL     : d = replaceAll(d, '\\#', ',')
+
+06-08 14:34:05.901 20858 20910 I NCL     : r.push(d)
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : result.push(r)
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : return result
+
+06-08 14:34:05.901 20858 20910 I NCL     : } else {
+
+06-08 14:34:05.901 20858 20910 I NCL     : return null
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : function saveToEdgeTable(table, fields, data) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : if (device == '2') {
+
+06-08 14:34:05.901 20858 20910 I NCL     : return save_to_edge_table.call('', table, fields, data)
+
+06-08 14:34:05.901 20858 20910 I NCL     : } else if (device == '1') {
+
+06-08 14:34:05.901 20858 20910 I NCL     : return save_to_edge_table(table, fields, data)
+
+06-08 14:34:05.901 20858 20910 I NCL     : } else {
+
+06-08 14:34:05.901 20858 20910 I NCL     : return null
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : function debugAlert(msg) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : if (device == '2') {
+
+06-08 14:34:05.901 20858 20910 I NCL     : return debug_alert.call('', msg)
+
+06-08 14:34:05.901 20858 20910 I NCL     : } else if (device == '1') {
+
+06-08 14:34:05.901 20858 20910 I NCL     : return debug_alert(msg)
+
+06-08 14:34:05.901 20858 20910 I NCL     : } else {
+
+06-08 14:34:05.901 20858 20910 I NCL     : return null
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : function replaceAll(str, searchString, replacement) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : if (str == null || searchString == null || replacement == null) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : return str
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : while (str.indexOf(searchString) != -1) {
+
+06-08 14:34:05.901 20858 20910 I NCL     : str = str.replace(searchString, replacement)
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     : return str
+
+06-08 14:34:05.901 20858 20910 I NCL     : }
+
+06-08 14:34:05.901 20858 20910 I NCL     :  o={"dataSourceType":"3","dataSourceID":"0","reportID":"20110","isInstantReport":"0","dbExpireTime":"0","fields":[{"name":"tbe","index":"1","type":"2"},{"name":"dwelltime","index":"2","type":"2"},{"name":"session_cnt","index":"3","type":"1"},{"name":"enter_session_cnt","index":"4","type":"1"},{"name":"main_time","index":"5","type":"2"},{"name":"main_cnt","index":"6","type":"1"},{"name":"contact_time","index":"7","type":"2"},{"name":"contact_cnt","index":"8","type":"1"},{"name":"discover_time","index":"9","type":"2"},{"name":"discover_cnt","index":"10","type":"1"},{"name":"more_time","index":"11","type":"2"},{"name":"more_cnt","index":"12","type":"1"},{"name":"singlechat_time","index":"13","type":"2"},{"name":"singlechat_cnt","index":"14","type":"1"},{"name":"groupchat_time","index":"15","type":"2"},{"name":"groupchat_cnt","index":"16","type":"1"},{"name":"servicechat_time","index":"17","type":"2"},{"name":"servicechat_cnt","index":"18","type":"1"},{"name":"biztimeline_time","index":"19","type":"2"},{"name":"biztimeline_cnt","index":"20","type":"1"},{"name":"miniprogram_time","index":"21","type":"2"},{"name":"miniprogram_cnt","index":"22","type":"1"},{"name":"searchfrommain_time","index":"23","type":"2"},{"name":"searchfrommain_cnt","index":"24","type":"1"},{"name":"newgroupchat_time","index":"25","type":"2"},{"name":"newgroupchat_cnt","index":"26","type":"1"},{"name":"addfriendfrommain_time","index":"27","type":"2"},{"name":"addfriendfrommain_cnt","index":"28","type":"1"},{"name":"scanfrommain_time","index":"29","type":"2"},{"name":"scanfrommain_cnt","index":"30","type":"1"},{"name":"money_time","index":"31","type":"2"},{"name":"money_cnt","index":"32","type":"1"},{"name":"servicenotification_time","index":"33","type":"2"},{"name":"servicenotification_cnt","index":"34","type":"1"},{"name":"werun_time","index":"35","type":"2"},{"name":"werun_cnt","index":"36","type":"1"},{"name":"news_time","index":"37","type":"2"},{"name":"news_cnt","index":"38","type":"1"},{"name":"searchfromcontacts_time","index":"39","type":"2"},{"name":"searchfromcontacts_cnt","index":"40","type":"1"},{"name":"addfriendfromcontacts_time","index":"41","type":"2"},{"name":"addfriendfromcontacts_cnt","index":"42","type":"1"},{"name":"newfriends_time","index":"43","type":"2"},{"name":"newfriends_cnt","index":"44","type":"1"},{"name":"groupchatlist_time","index":"45","type":"2"},{"name":"groupchatlist_cnt","index":"46","type":"1"},{"name":"tags_time","index":"47","type":"2"},{"name":"tags_cnt","index":"48","type":"1"},{"name":"servicebizlist_time","index":"49","type":"2"},{"name":"servicebizlist_cnt","index":"50","type":"1"},{"name":"enterprisebiz_time","index":"51","type":"2"},{"name":"enterprisebiz_cnt","index":"52","type":"1"},{"name":"workwxcontacts_time","index":"53","type":"2"},{"name":"workwxcontacts_cnt","index":"54","type":"1"},{"name":"profile_time","index":"55","type":"2"},{"name":"profile_cnt","index":"56","type":"1"},{"name":"moments_time","index":"57","type":"2"},{"name":"moments_cnt","index":"58","type":"1"},{"name":"scanfromdiscover_time","index":"59","type":"2"},{"name":"scanfromdiscover_cnt","index":"60","type":"1"},{"name":"shake_time","index":"61","type":"2"},{"name":"shake_cnt","index":"62","type":"1"},{"name":"topstories_time","index":"63","type":"2"},{"name":"topstories_cnt","index":"64","type":"1"},{"name":"searchfromdiscover_time","index":"65","type":"2"},{"name":"searchfromdiscover_cnt","index":"66","type":"1"},{"name":"peoplenearby_time","index":"67","type":"2"},{"name":"peoplenearby_cnt","index":"68","type":"1"},{"name":"bottle_time","index":"69","type":"2"},{"name":"bottle_cnt","index":"70","type":"1"},{"name":"diningnearby_time","index":"71","type":"2"},{"name":"diningnearby_cnt","index":"72","type":"1"},{"name":"shopping_time","index":"73","type":"2"},{"name":"shopping_cnt","index":"74","type":"1"},{"name":"game_time","index":"75","type":"2"},{"name":"game_cnt","index":"76","type":"1"},{"name":"miniprogramlist_time","index":"77","type":"2"},{"name":"miniprogramlist_cnt","index":"78","type":"
+06-08 14:34:05.901 20858 20910 I NCL     : [PF:LLseen:main] #21 z15.xg0
+06-08 14:34:05.917 20858 20858 I NCL     : [SF:ALLseen] #5 addAll first=px1.c size=3
+06-08 14:34:05.917 20858 20858 I NCL     : [MF] addAll firstItem=px1.c size=3
+06-08 14:34:05.922 20858 20858 I NCL     : [UI:RAW] com.tencent.mm.app.WeChatSplashActivity
+06-08 14:34:05.922 20858 20858 I NCL     : [UI] page=com.tencent.mm.app.WeChatSplashActivity activity=com.tencent.mm.app.WeChatSplashActivity
+06-08 14:34:05.934 20858 20858 I NCL     : [MF] addAll firstItem=ii5.b size=2
+06-08 14:34:05.934 20858 20858 I NCL     : [MF] suspect class=ii5.b sz=2
+06-08 14:34:05.950 20858 20920 I NCL     : [MF] addAll firstItem=com.tencent.mm.modelbase.r1 size=6
+06-08 14:34:05.981 20858 20920 I NCL     : [SF:ALLseen] #6 addAll first=android.media.AudioDevicePort size=13
+06-08 14:34:05.982 20858 20920 I NCL     : [MF] addAll firstItem=android.media.AudioDevicePort size=13
+06-08 14:34:06.290 20858 20936 I NCL     : [PF:LLseen:main] #22 android.app.SharedPreferencesImpl$EditorImpl$1
+06-08 14:34:06.313 20858 20858 I NCL     : [CF:cold-init] sweep @500ms
+06-08 14:34:06.313 20858 20858 W NCL     : [BUS:cold-init-500] conv adapter null (view=null), skip notify
+06-08 14:34:06.347 20858 20933 I NCL     : [MF:LLadd cls=z15.zc1]
+06-08 14:34:06.347 20858 20933 I NCL     : [PF:LLseen:main] #23 z15.zc1
+06-08 14:34:06.349 20858 20905 I NCL     : [MF:LLadd cls=z15.r14] d=104 e=com.tencent.mm.ui.LauncherUI|false|NULL
+06-08 14:34:06.350 20858 20905 I NCL     : [PF:LLseen:main] #24 z15.r14
+06-08 14:34:06.358 20858 20933 I NCL     : [MF:LLadd cls=z15.bx0]
+06-08 14:34:06.359 20858 20933 I NCL     : [PF:LLseen:main] #25 z15.bx0
+06-08 14:34:06.361 20858 20920 I NCL     : [MF:LLadd cls=z15.q14]
+06-08 14:34:06.361 20858 20920 I NCL     : [PF:LLseen:main] #26 z15.q14
+06-08 14:34:06.370 20858 20933 I NCL     : [MF:LLadd cls=com.tencent.mm.protobuf.g]
+06-08 14:34:06.370 20858 20858 I NCL     : [SF:ALLseen] #7 addAll first=java.lang.String size=2
+06-08 14:34:06.370 20858 20933 I NCL     : [PF:LLseen:main] #27 com.tencent.mm.protobuf.g
+06-08 14:34:06.370 20858 20858 I NCL     : [MF] addAll firstItem=java.lang.String size=2
+06-08 14:34:06.382 20858 20941 I NCL     : [MF:LLadd cls=gd.c]
+06-08 14:34:06.382 20858 20941 I NCL     : [PF:LLseen:main] #28 gd.c
+06-08 14:34:06.392 20858 20911 I NCL     : [MF:LLadd cls=com.tencent.mm.plugin.appbrand.task.k]
+06-08 14:34:06.392 20858 20911 I NCL     : [PF:LLseen:main] #29 com.tencent.mm.plugin.appbrand.task.k
+06-08 14:34:06.395 20858 20911 I NCL     : [MF:LLadd cls=com.tencent.mm.plugin.appbrand.task.m]
+06-08 14:34:06.396 20858 20911 I NCL     : [PF:LLseen:main] #30 com.tencent.mm.plugin.appbrand.task.m
+06-08 14:34:06.401 20858 20911 I NCL     : [MF] addAll firstItem=com.tencent.mm.feature.appbrand.support.m size=5
+06-08 14:34:06.404 20858 20933 I NCL     : [PF:LLseen:main] #31 java.lang.Integer
+06-08 14:34:06.404 20858 20858 I NCL     : [CF:screen] receiver registered
+06-08 14:34:06.405 20858 20858 I NCL     : [CF:start] LauncherUI onStart HIDDEN 鈫?clean+notify
+06-08 14:34:06.406 20858 20858 I NCL     : [CF:overlay] shown coldCleanDone=false
+06-08 14:34:06.406 20858 20858 W NCL     : [BUS:start-H] conv adapter null (view=null), skip notify
+06-08 14:34:06.419 20858 20858 I NCL     : [UI:RAW] com.tencent.mm.ui.LauncherUI
+06-08 14:34:06.419 20858 20858 I NCL     : [UI] page=Main activity=com.tencent.mm.ui.LauncherUI
+06-08 14:34:06.419 20858 20858 I NCL     : [MRD:launcher:entry] en=true act=true wxids=3 fmf=null
+06-08 14:34:06.419 20858 20858 I NCL     : [MRD:launcher] fmf null, pending=true, starting retry loop
+06-08 14:34:06.423 20858 20933 I NCL     : [MF:LLadd cls=z15.e80]
+06-08 14:34:06.423 20858 20933 I NCL     : [PF:LLseen:main] #32 z15.e80
+06-08 14:34:06.429 20858 20933 I NCL     : [MF:LLadd cls=z15.vt3]
+06-08 14:34:06.430 20858 20933 I NCL     : [PF:LLseen:main] #33 z15.vt3
+06-08 14:34:06.431 20858 20858 I NCL     : [MF:LLadd cls=z15.id7]
+06-08 14:34:06.431 20858 20858 I NCL     : [PF:LLseen:main] #34 z15.id7
+06-08 14:34:06.433 20858 20858 I NCL     : [PF:LLseen:main] #35 android.graphics.Matrix
+06-08 14:34:06.433 20858 20858 I NCL     : [MF:LLadd cls=[F]
+06-08 14:34:06.434 20858 20858 I NCL     : [PF:LLseen:main] #36 [F
+06-08 14:34:06.434 20858 20858 I NCL     : [PF:LLseen:main] #37 android.graphics.Paint
+06-08 14:34:06.434 20858 20858 I NCL     : [PF:LLseen:main] #38 android.graphics.Path
+06-08 14:34:06.442 20858 20974 I NCL     : [MF:LLadd cls=g65.e0] a=/::<
+06-08 14:34:06.442 20858 20974 I NCL     : [PF:LLseen:main] #39 g65.e0
+06-08 14:34:06.448 20858 20858 I NCL     : [MF:LLadd cls=com.tencent.mm.ui.HomeUI$$e]
+06-08 14:34:06.448 20858 20858 I NCL     : [PF:LLseen:main] #40 com.tencent.mm.ui.HomeUI$$e
+06-08 14:34:06.457 20858 20974 I NCL     : [SF:ALLseen] #8 addAll first=com.tencent.mm.storage.emotion.EmojiInfo size=178
+06-08 14:34:06.457 20858 20974 I NCL     : [MF] addAll firstItem=com.tencent.mm.storage.emotion.EmojiInfo size=178
+06-08 14:34:06.473 20858 20933 I NCL     : [MF:LLadd cls=z15.ut3]
+06-08 14:34:06.473 20858 20933 I NCL     : [PF:LLseen:main] #41 z15.ut3
+06-08 14:34:06.477 20858 20905 I NCL     : [MF:LLadd cls=z15.b2] g= h= i=
+06-08 14:34:06.477 20858 20905 I NCL     : [PF:LLseen:main] #42 z15.b2
+06-08 14:34:06.477 20858 20905 I NCL     : [MF:LLadd cls=z15.xh6]
+06-08 14:34:06.477 20858 20905 I NCL     : [PF:LLseen:main] #43 z15.xh6
+06-08 14:34:06.512 20858 20905 I NCL     : [SF:ALLseen] #9 addAll first=jw1.d size=1
+06-08 14:34:06.512 20858 20905 I NCL     : [MF] addAll firstItem=jw1.d size=1
+06-08 14:34:06.519 20858 20973 I NCL     : [MF:LLadd cls=nw1.n] g=app_in h={"process_id":20858,"device_id":"05f894e8e1e260fa","device_model":"MI 9arm64-v8a","regcountry":"CN","os_version":"30","view_id":"app_in","mode_flag":322128,"ipv4":"192.168.10.29","app_in_time":1780900446313,"device_brand":"Xiaomi","process_name":"com.tencent.mm","ipv6":"fe80::3e0c:e75:46e3:48cb%rmnet_data0","report_seq":0,"sdk_version":"3.1.1","os_name":"android-Xiaomi","network_type":1,"event_seq":0} o=app_in q={"process_id":20858,"device_id":"05f894e8e1e260fa","device_model":"MI 9arm64-v8a","regcountry":"CN","os_version":"30","view_id":"app_in","cgi_report_monitor_type":2,"mode_flag":322128,"ipv4":"192.168.10.29","app_in_time":1780900446313,"device_brand":"Xiaomi","process_name":"com.tencent.mm","ipv6":"fe80::3e0c:e75:46e3:48cb%rmnet_data0","report_seq":0,"sdk_version":"3.1.1","os_name":"android-Xiaomi","network_type":1,"event_seq":0}
+06-08 14:34:06.519 20858 20973 I NCL     : [PF:LLseen:main] #44 nw1.n
+06-08 14:34:06.522 20858 20858 I NCL     : [SF:ALLseen] #10 addAll first=java.lang.Integer size=512
+06-08 14:34:06.522 20858 20858 I NCL     : [MF] addAll firstItem=java.lang.Integer size=512
+06-08 14:34:06.558 20858 20973 I NCL     : [MF:LLadd cls=z15.cy3] d=16_1001_page_in_1
+06-08 14:34:06.558 20858 20973 I NCL     : [PF:LLseen:main] #45 z15.cy3
+06-08 14:34:06.629 20858 20858 I NCL     : [PF:LLseen:main] #46 android.util.Pair
+06-08 14:34:06.635 20858 20962 I NCL     : [MF:LLadd cls=com.tencent.mm.pluginsdk.res.downloader.checkresupdate.h0]
+06-08 14:34:06.635 20858 20962 I NCL     : [PF:LLseen:main] #47 com.tencent.mm.pluginsdk.res.downloader.checkresupdate.h0
+06-08 14:34:06.636 20858 20962 I NCL     : [MF:LLadd cls=com.tencent.mm.pluginsdk.res.downloader.checkresupdate.n]
+06-08 14:34:06.636 20858 20962 I NCL     : [PF:LLseen:main] #48 com.tencent.mm.pluginsdk.res.downloader.checkresupdate.n
+06-08 14:34:06.648 20858 20962 I NCL     : [MF:LLadd cls=com.tencent.mm.pluginsdk.res.downloader.checkresupdate.e]
+06-08 14:34:06.648 20858 20962 I NCL     : [PF:LLseen:main] #49 com.tencent.mm.pluginsdk.res.downloader.checkresupdate.e
+06-08 14:34:06.708 20858 21021 I NCL     : [SF:ALLseen] #11 addAll first=rc.g size=5
+06-08 14:34:06.708 20858 21021 I NCL     : [MF] addAll firstItem=rc.g size=5
+06-08 14:34:06.740 20858 20858 I NCL     : [MF:LLadd cls=com.tencent.mm.ui.MainTabUI$$c]
+06-08 14:34:06.740 20858 20858 I NCL     : [PF:LLseen:main] #50 com.tencent.mm.ui.MainTabUI$$c
+06-08 14:34:06.761 20858 20858 I NCL     : [MF:LLadd cls=com.tencent.mm.ui.HomeUI$35]
+06-08 14:34:06.761 20858 20858 I NCL     : [PF:LLseen:main] #51 com.tencent.mm.ui.HomeUI$35
+06-08 14:34:06.813 20858 20858 I NCL     : [MF] addAll firstItem=com.tencent.mm.ui.xj size=1
+06-08 14:34:06.860 20858 20919 I NCL     : [MF:LLadd cls=f61.b0] a=0
+06-08 14:34:06.860 20858 20919 I NCL     : [PF:LLseen:main] #52 f61.b0
+06-08 14:34:06.964 20858 20858 I NCL     : [SF:ALLseen] #12 addAll first=androidx.fragment.app.i3 size=4
+06-08 14:34:06.964 20858 20858 I NCL     : [MF] addAll firstItem=androidx.fragment.app.i3 size=4
+06-08 14:34:06.969 20858 20962 I NCL     : [MF:LLadd cls=z15.h53] d=com.tencent.mm.ui.conversation.MainUI e=MainUI f=com.tencent.mm.ui.LauncherUI i= m=
+06-08 14:34:06.969 20858 20962 I NCL     : [PF:LLseen:main] #53 z15.h53
+06-08 14:34:06.984 20858 20858 I NCL     : [MF:LLadd cls=com.tencent.mm.ui.conversation.ConversationListView] TAG=ListView TAG=AbsListView
+06-08 14:34:06.985 20858 20858 I NCL     : [PF:LLseen:main] #54 com.tencent.mm.ui.conversation.ConversationListView
+06-08 14:34:06.985 20858 20858 I NCL     : [MF:LLadd cls=com.tencent.mm.plugin.taskbar.ui.TaskBarView] h2= TAG=ViewGroup
+06-08 14:34:06.985 20858 20858 I NCL     : [PF:LLseen:main] #55 com.tencent.mm.plugin.taskbar.ui.TaskBarView
+06-08 14:34:06.985 20858 20858 I NCL     : [PF:LLseen:main] #56 android.widget.ListView$FixedViewInfo
+06-08 14:34:06.992 20858 20858 I NCL     : [MF:LLadd cls=com.tencent.mm.ui.conversation.m5]
+06-08 14:34:06.992 20858 20858 I NCL     : [PF:LLseen:main] #57 com.tencent.mm.ui.conversation.m5
+06-08 14:34:07.035 20858 20858 I NCL     : [MF:LLadd cls=z15.by4] d=openim_custom_info_header e=浼佷笟淇℃伅
+06-08 14:34:07.035 20858 20858 I NCL     : [PF:LLseen:main] #58 z15.by4
+06-08 14:34:07.036 20858 20858 I NCL     : [MF:LLadd cls=z15.zx4] d=openim_intro_url e=https://work.weixin.qq.com/wework_admin/wxmsg_exchange/profile_intro
+06-08 14:34:07.037 20858 20858 I NCL     : [PF:LLseen:main] #59 z15.zx4
+06-08 14:34:07.365 20858 21001 I NCL     : [MF:LLadd cls=com.tencent.mm.smiley.c]
+06-08 14:34:07.365 20858 21001 I NCL     : [PF:LLseen:main] #60 com.tencent.mm.smiley.c
+06-08 14:34:08.293 20858 21001 I NCL     : [MF:LLadd cls=com.tencent.mm.smiley.a2]
+06-08 14:34:08.293 20858 21001 I NCL     : [PF:LLseen:main] #61 com.tencent.mm.smiley.a2
+06-08 14:34:08.379 20858 21001 I NCL     : [MF:LLadd cls=com.tencent.mm.smiley.f1]
+06-08 14:34:08.379 20858 21001 I NCL     : [PF:LLseen:main] #62 com.tencent.mm.smiley.f1
+06-08 14:34:08.487 20858 20945 I NCL     : [SF:ALLseen] #13 addAll first=kc5.y size=28
+06-08 14:34:08.487 20858 20945 I NCL     : [MF] addAll firstItem=kc5.y size=28
+06-08 14:34:08.489 20858 20858 I NCL     : [MF:LLadd cls=com.tencent.mm.ui.conversation.oa]
+06-08 14:34:08.489 20858 20945 I NCL     : [SF:ALLseen] #14 addAll first=ik3.i size=1
+06-08 14:34:08.489 20858 20858 I NCL     : [PF:LLseen:main] #63 com.tencent.mm.ui.conversation.oa
+06-08 14:34:08.490 20858 20945 I NCL     : [MF] addAll firstItem=ik3.i size=1
+06-08 14:34:08.493 20858 20858 I NCL     : [MF:LLadd cls=com.tencent.mm.ui.i4]
+06-08 14:34:08.494 20858 20858 I NCL     : [PF:LLseen:main] #64 com.tencent.mm.ui.i4
+06-08 14:34:08.521 20858 20858 I NCL     : [MRD:adapter:getItemViewType] pos=0 鈫?java.lang.Integer
+06-08 14:34:08.521 20858 20858 I NCL     : [MRD:item] java.lang.Integer:
+06-08 14:34:08.521 20858 20858 I NCL     :   Integer.value = 0
+06-08 14:34:08.521 20858 20858 I NCL     :   Integer.BYTES = 4
+06-08 14:34:08.521 20858 20858 I NCL     :   Integer.DigitOnes = char[]
+06-08 14:34:08.521 20858 20858 I NCL     :   Integer.DigitTens = char[]
+06-08 14:34:08.521 20858 20858 I NCL     :   Integer.MAX_VALUE = 2147483647
+06-08 14:34:08.521 20858 20858 I NCL     :   Integer.MIN_VALUE = -2147483648
+06-08 14:34:08.521 20858 20858 I NCL     :   Integer.SIZE = 32
+06-08 14:34:08.521 20858 20858 I NCL     :   Integer.SMALL_NEG_VALUES = String[]
+06-08 14:34:08.521 20858 20858 I NCL     :   Integer.SMALL_NONNEG_VALUES = String[]
+06-08 14:34:08.521 20858 20858 I NCL     :   Integer.TYPE = Class
+06-08 14:34:08.521 20858 20858 I NCL     :   Integer.digits = char[]
+06-08 14:34:08.521 20858 20858 I NCL     :   Integer.serialVersionUID = 1360826667806852920
+06-08 14:34:08.521 20858 20858 I NCL     :   Integer.sizeTable = int[]
+06-08 14:34:08.521 20858 20858 I NCL     :   Number.serialVersionUID = -8742448824652078965
+06-08 14:34:08.529 20858 20858 I NCL     : [PF:LLseen:main] #65 java.lang.ref.WeakReference
+06-08 14:34:08.530 20858 20858 I NCL     : [MRD:adapter:isEnabled] pos=0 鈫?java.lang.Boolean
+06-08 14:34:08.530 20858 20858 I NCL     : [MRD:item] java.lang.Boolean:
+06-08 14:34:08.530 20858 20858 I NCL     :   Boolean.value = true
+06-08 14:34:08.530 20858 20858 I NCL     :   Boolean.FALSE = false
+06-08 14:34:08.530 20858 20858 I NCL     :   Boolean.TRUE = true
+06-08 14:34:08.530 20858 20858 I NCL     :   Boolean.TYPE = Class
+06-08 14:34:08.530 20858 20858 I NCL     :   Boolean.serialVersionUID = -3665804199014368530
+06-08 14:34:08.530 20858 20858 I NCL     : [SF:ALLseen] #15 addAll first=kc5.c0 size=1
+06-08 14:34:08.531 20858 20858 I NCL     : [MF] addAll firstItem=kc5.c0 size=1
+06-08 14:34:08.536 20858 20858 I NCL     : [PF:UNREADFIX] title CALLED arg="寰俊" active=true h=0
+06-08 14:34:08.594 20858 20912 I NCL     : [MF:LLadd cls=z15.pu] f=
+06-08 14:34:08.594 20858 20912 I NCL     : [PF:LLseen:main] #66 z15.pu
+06-08 14:34:08.596 20858 20912 I NCL     : [MF:LLadd cls=z15.ou]
+06-08 14:34:08.596 20858 20912 I NCL     : [PF:LLseen:main] #67 z15.ou
+06-08 14:34:08.597 20858 20912 I NCL     : [MF:LLadd cls=z15.jm] d=鐣欒█
+06-08 14:34:08.597 20858 20912 I NCL     : [PF:LLseen:main] #68 z15.jm
+06-08 14:34:08.611 20858 20911 I NCL     : [SF:ALLseen] #16 addAll first=uw5.c size=7
+06-08 14:34:08.611 20858 20911 I NCL     : [MF] addAll firstItem=uw5.c size=7
+06-08 14:34:08.664 20858 20965 I NCL     : [MF:LLadd cls=z15.jn5] e=view_exp g={"process_id":20858,"expose_id":"1780900448605","device_model":"MI 9arm64-v8a","digest_report_json":"eyJwcm9kdWN0X2lkIjowLCJiaXp1aW4iOjMyNzg0MTMyNjEsImFwcG1zZ2lkIjoyMjQ3NjYzNDA2LCJpZHgiOjEsIm1zZ190eXBlIjo0LCJyZWRfZG90IjpmYWxzZSwidXNlcm5hbWUiOiJnaF81NjEyMjVmMjU3MTciLCJkaWdlc3RfcmVjX2luZm8iOiJleUp5WlhGMVpYTjBYMmxrSWpveE56Z3dPREExTlRFMU56UTNPVGsyTENKdGIyUmxiRjl6WTI5eVpWOXFjMjl1WDNOMGNpSTZJbnRjSW0xdlpHVnNYM05qYjNKbFgyUmxkR0ZwYkZ3aU9sdGRmU0lzSW1WNGNIUmZhV1J6SWpvaU1URTJPVFV3TlRnaUxDSnRjRjl5WldOZmFXNW1ieUk2SW50Y0luSmxZMTlwYm1adlhDSTZlMXdpYzI5eWRGOXBaRndpT2pFM09EQTRNRFUxTVRZc1hDSmxlSEJmZEhsd1pWd2lPbHdpYlcxbFkxOTBiSE4yWTE5eVpYTnZjblJmYzNWaWMyTnlhV0psWkY5allYSmtYMlpwYm1WZmNtRnVhMXdpTEZ3aWJXOWtaV3hmYVdSY0lqbzFOekF3TURBc1hDSnlZVzVyWDNKclhDSTZYQ0kxTnpBd01EQTZPVG93T2pBNk1Ub3hPamt1TlRZMU9EUTJYQ0lzWENKMGNuVnVZMkYwWlY5cGJtWnZYQ0k2WENJd09qQTZNRndpTEZ3aWMzVmlYM0J2YjJ4ZlozSnZkWEJmYVc1bWIxd2lPbHdpWENJc1hDSnlaV05mY0c5dmJGOW5jbTkxY0Y5cGJtWnZYQ0k2WENJd1hDSXNYQ0p0YjJSbGJGOXBaRjlzYVhOMFhDSTZXelUzTURBd01GMHNYQ0oxYzJWeVgyRmpkR2wyYVhSNVhDSTZNQ3hjSW5KaGJtdGZaWGgwY21GY0lqcGNJalUzTURBd01GOXRjRjlqYkdsamF6b3dMakF4Tmpnd05TTTFOekF3TURSZmJYQmZaVzUwWlhJNk1DNHdPVGMzTlRJak5UY3dNREF3WDIxd1gyTjBjam94Tmpnd0xqVXhNVEl6STIxcFpGOWxiblJsY2w5cGJYQnZjblJoYm1ObE9qQXVOVE5jSWl4Y0luUnZjREZmWlhoMGNtRmNJanBjSWpVM01EQXdNRjl0Y0Y5amJHbGphem93TGpBeE5qZ3dOU00xTnpBd01EUmZiWEJmWlc1MFpYSTZNQzR3T1RjM05USWpOVGN3TURBd1gyMXdYMk4wY2pveE5qZ3dMalV4TVRJekkyMXBaRjlsYm5SbGNsOXBiWEJ2Y25SaGJtTmxPakF1TlROY0lpeGNJbWRzYjJKaGJGOWhZM1JwZG1sMGVWd2lPakFzWENKeVpXTmZjM0pqWDJsa1hDSTZNek0wTEZ3aWNtVnhYMmxrWENJNk1UYzRNRGd3TlRVeE5UYzBOems1Tml4Y0luVnBibDluWlc1a1pYSmNJam94TEZ3aWRXbHVYMkZuWlZ3aU9qTXhMRndpZFdsdVgyZHlZV1JsWENJNk1DeGNJbTVsZDNObWJHRnphRjlsZUhCMFgyZHliM1Z3WENJNlcxMHNYQ0p1YjNScFpubGZkSGx3WlZ3aU9sdGRMRndpYm05MGFXWjVYMlJoZEdGY0lqcGJYU3hjSW5KbFkyRnNiRjlqZFhOMGIyMWZhVzVtYjF3aU9sdGRmWDBpTENKeVpXUmtiM1JmZEhsd1pTSTZNU3dpYVhOZlpteHZZWFJmWW05NElqb3dmUT09IiwibW9kZWxfc2NvcmVfanNvbiI6IntcIm1vZGVsX3Njb3JlX2RldGFpbFwiOltdfSIsInJlY2FsbGVyX25hbWUiOiIiLCJkaWdlc3RfZXh0X2luZm8iOiJ7XCJncm91cG1zZ19jYW5kaWRhdGVcIjoxfSIsInNlcnZpY2VfdHlwZSI6MiwiaXRlbXNob3d0eXBlIjowfQ==","ui_version":"1","notice_type":"0","ipv4":"192.168.10.29","msg_svr_id":"0","app_in_time":1780900446313,"pos":"6","process_name":"com.tencent.mm","ipv6":"fe80::3e0c:e75:46e3:48cb%rmnet_data0","sdk_version":"3.1.1","report_json":"eyJwcm9kdWN0X2lkIjowLCJiaXp1aW4iOjMyNzg0MTMyNjEsImFwcG1zZ2lkIjoyMjQ3NjYzNDA2LCJpZHgiOjEsIm1zZ190eXBlIjo0LCJyZWRfZG90IjpmYWxzZSwidXNlcm5hbWUiOiJnaF81NjEyMjVmMjU3MTciLCJkaWdlc3RfcmVjX2luZm8iOiJleUp5WlhGMVpYTjBYMmxrSWpveE56Z3dPREExTlRFMU56UTNPVGsyTENKdGIyUmxiRjl6WTI5eVpWOXFjMjl1WDNOMGNpSTZJbnRjSW0xdlpHVnNYM05qYjNKbFgyUmxkR0ZwYkZ3aU9sdGRmU0lzSW1WNGNIUmZhV1J6SWpvaU1URTJPVFV3TlRnaUxDSnRjRjl5WldOZmFXNW1ieUk2SW50Y0luSmxZMTlwYm1adlhDSTZlMXdpYzI5eWRGOXBaRndpT2pFM09EQTRNRFUxTVRZc1hDSmxlSEJmZEhsd1pWd2lPbHdpYlcxbFkxOTBiSE4yWTE5eVpYTnZjblJmYzNWaWMyTnlhV0psWkY5allYSmtYMlpwYm1WZmNtRnVhMXdpTEZ3aWJXOWtaV3hmYVdSY0lqbzFOekF3TURBc1hDSnlZVzVyWDNKclhDSTZYQ0kxTnpBd01EQTZPVG93T2pBNk1Ub3hPamt1TlRZMU9EUTJYQ0lzWENKMGNuVnVZMkYwWlY5cGJtWnZYQ0k2WENJd09qQTZNRndpTEZ3aWMzVmlYM0J2YjJ4ZlozSnZkWEJmYVc1bWIxd2lPbHdpWENJc1hDSnlaV05mY0c5dmJGOW5jbTkxY0Y5cGJtWnZYQ0k2WENJd1hDSXNYQ0p0YjJSbGJGOXBaRjlzYVhOMFhDSTZXelUzTURBd01GMHNYQ0oxYzJWeVgyRmpkR2wyYVhSNVhDSTZNQ3hjSW5KaGJtdGZaWGgwY21GY0lqcGNJalUzTURBd01GOXRjRjlqYkdsamF6b3dMakF4Tmpnd05TTTFOekF3TURSZmJYQmZaVzUwWlhJNk1DNHdPVGMzTlRJak5UY3dNREF3WDIxd1gyTjBjam94Tmpnd0xqVXhNVEl6STIxcFpGOWxiblJsY2w5cGJYQnZjblJoYm1ObE9qQXVOVE5jSWl4Y0luUnZjREZmWlhoMGNtRmNJanBjSWpVM01EQXdNRjl0Y0Y5amJHbGphem93TGpBeE5qZ3dOU00xTnpBd01EUmZiWEJmWlc1MFpYSTZNQzR3T1RjM05USWpOVGN3TURBd1gyMXdYMk4wY2pveE5qZ3dMalV4TVRJekkyMXBaRjlsYm5SbGNsOXBiWEJ2Y25SaGJtTmxPakF1TlROY0lpeGNJbWRzYjJKaGJGOWhZM1JwZG1sMGVWd2lPakFzWENKeVpXTmZjM0pqWDJsa1hDSTZNek0wTEZ3aWNtVnhYMmxrWENJNk1UYzRNRGd3TlRVeE5UYzBOems1Tml4Y0luVnBibDluWlc1a1pYSmNJam94TEZ3aWRXbHVYMkZuWlZ3aU9qTXhMRndpZFdsdVgyZHlZV1JsWENJNk1DeGNJbTVsZDNObWJHRnphRjlsZUhCMFgyZHliM1Z3WENJNlcxMHNYQ0p1YjNScFpubGZkSGx3WlZ3aU9sdGRMRndpYm05MGFXWjVYMlJoZEdGY0lqcGJYU3hjSW5KbFkyRnN
+06-08 14:34:08.664 20858 20965 I NCL     : [PF:LLseen:main] #69 z15.jn5
+06-08 14:34:08.738 20858 20858 W NCL     : [BUS:resume-hide] sAdapterRef=h0 is not v0, skip
+06-08 14:34:08.739 20858 20858 W NCL     : [BUS:resume-hide] conv adapter null (view=null), skip notify
+06-08 14:34:08.758 20858 20858 I NCL     : [MF:LLadd cls=com.tencent.mm.plugin.webview.stub.g0]
+06-08 14:34:08.758 20858 20858 I NCL     : [PF:LLseen:main] #70 com.tencent.mm.plugin.webview.stub.g0
+06-08 14:34:08.785 20858 21060 I NCL     : [MF:LLadd cls=com.tencent.wechat.aff.udr.u] d=extId e=12
+06-08 14:34:08.786 20858 21060 I NCL     : [PF:LLseen:main] #71 com.tencent.wechat.aff.udr.u
+06-08 14:34:08.794 20858 20858 I NCL     : [MF:LLadd cls=cs5.j8]
+06-08 14:34:08.794 20858 20858 I NCL     : [PF:LLseen:main] #72 cs5.j8
+06-08 14:34:08.819 20858 20858 I NCL     : [MF:LLadd cls=z15.m01]
+06-08 14:34:08.820 20858 20858 I NCL     : [PF:LLseen:main] #73 z15.m01
+06-08 14:34:08.821 20858 21058 I NCL     : [MF:LLadd cls=q43.t]
+06-08 14:34:08.821 20858 21058 I NCL     : [PF:LLseen:main] #74 q43.t
+06-08 14:34:08.920 20858 21054 I NCL     : [PF:LLseen:main] #75 java.lang.Long
+06-08 14:34:08.921 20858 21054 I NCL     : [MF:LLadd cls=com.tencent.mm.plugin.finder.extension.reddot.pb] field_dicPath=Game.Entrance field_findTabRedDotPath=Game.Entrance field_freqControlId=Game.Entrance COL_ROWID=rowid FIELD_PREFIX=field_ SYSTEM_ROWID_FIELD=rowid TAG=MicroMsg.SDK.IAutoDBItem
+06-08 14:34:08.921 20858 21054 I NCL     : [PF:LLseen:main] #76 com.tencent.mm.plugin.finder.extension.reddot.pb
+06-08 14:34:09.029 20858 20858 I NCL     : [PF:UNREADFIX] title CALLED arg="寰俊" active=true h=0
+06-08 14:34:09.045 20858 20907 I NCL     : [PF:LLseen:main] #77 java.lang.reflect.Field
+06-08 14:34:09.078 20858 20967 I NCL     : [MF:LLadd cls=ch4.f0] d=en e=Happy Labor Day
+06-08 14:34:09.078 20858 20967 I NCL     : [PF:LLseen:main] #78 ch4.f0
+06-08 14:34:09.083 20858 20967 I NCL     : [MF:LLadd cls=ch4.q1] d=39 f=
+06-08 14:34:09.084 20858 20967 I NCL     : [PF:LLseen:main] #79 ch4.q1
+06-08 14:34:09.093 21080 21080 I NCL     : [native:push] init=true role=2(expect 2=PUSH) hidden=true
+06-08 14:34:09.098 21080 21080 I NCL     : [PF:L1:push] LinkedList.add hook ok
+06-08 14:34:09.099 21080 21080 I NCL     : [PF:NM:push] NotificationManager.notify hook ok
+06-08 14:34:09.116 21080 21080 I NCL     : [PF:SF:push] hooked startForeground(int, Notification)
+06-08 14:34:09.116 21080 21080 I NCL     : [PF:SF:push] hooked startForeground(int, Notification, int)
+06-08 14:34:09.120 20858 20858 I NCL     : [PF:UNREADFIX] tab CALLED arg=37 active=true h=0
+06-08 14:34:09.120 20858 20858 I NCL     : [MRD:badge] hit osw text=37
+06-08 14:34:09.128 21080 21080 I NCL     : [PF:VW] hooked
+06-08 14:34:09.128 21080 21080 I NCL     : [CG] installForPush SF+VW (push-process) ok
+06-08 14:34:09.128 21080 21080 I NCL     : [PF] installForPush L1+NM (push) + CallGuard(SF+VW) ok
+06-08 14:34:09.128 20858 20858 I NCL     : [PF:UNREADFIX] title CALLED arg="寰俊(37)" active=true h=0
+06-08 14:34:09.140 20858 20858 I NCL     : [CF:cold-init] sweep @1500ms
+06-08 14:34:09.140 20858 20858 W NCL     : [BUS:cold-init-1500] sAdapterRef=h0 is not v0, skip
+06-08 14:34:09.140 20858 20858 W NCL     : [BUS:cold-init-1500] conv adapter null (view=null), skip notify
+06-08 14:34:09.144 20858 20858 I NCL     : [CDH:host] act=LauncherUI hostCls=PullDownListView adapterCls=com.tencent.mm.ui.base.preference.h0
+06-08 14:34:09.154 20858 21155 I NCL     : [MRD:badge] w1 via l4.Qi()
+06-08 14:34:09.154 20858 21155 I NCL     : [MRD:w1:FIELDS] com.tencent.mm.plugin.sns.storage.w1 :: d=s45.i0  e=boolean  f=[Ljava.lang.String;  
+06-08 14:34:09.155 20858 21155 I NCL     : [MRD:w1:METHODS] B1(boolean,)int  O1(int,)Cursor  a2(int,)Cursor  o1(long,)boolean  o2(int,)int  p1(long,long,int,)boolean  q1(long,long,int,)v1  t2(int,)int  w2(long,boolean,)boolean  
+06-08 14:34:09.156 20858 21155 I NCL     : [MRD:w1] db handle = field d (com.tencent.mm.plugin.sns.storage.p2)
+06-08 14:34:09.157 20858 21155 I NCL     : [MRD:badge] SQL mark瀵嗗弸 read ret=true via com.tencent.mm.plugin.sns.storage.p2 (bg)
+06-08 14:34:09.161 20858 20945 I NCL     : [MF:LLadd cls=z15.vk0]
+06-08 14:34:09.161 20858 20945 I NCL     : [PF:LLseen:main] #80 z15.vk0
+06-08 14:34:09.178 20858 20858 I NCL     : [CDH:host] act=LauncherUI hostCls=PullDownListView adapterCls=com.tencent.mm.ui.base.preference.h0
+06-08 14:34:09.233 20858 20858 I NCL     : [CDH:host] act=LauncherUI hostCls=ConversationListView adapterCls=android.widget.HeaderViewListAdapter
+06-08 14:34:09.237 20858 20858 I NCL     : [CDH:host] act=LauncherUI hostCls=AppBrandDesktopView adapterCls=jj1.u
+06-08 14:34:09.238 20858 20858 I NCL     : [CDH:host] act=LauncherUI hostCls=TaskBarView adapterCls=com.tencent.mm.plugin.taskbar.ui.w1
+06-08 14:34:09.259 20858 20858 I NCL     : [CDH:scan] act=LauncherUI hosts=6 probed=0 ll=false ad=false
+06-08 14:34:09.263 20858 20858 I NCL     : [CF:mvvmref] remember com.tencent.mm.ui.conversation.adapter.MvvmConvList
+06-08 14:34:09.263 20858 20858 I NCL     : [CF:cold] HIDDEN cold-start scheduled (100ms+300ms)
+06-08 14:34:09.264 20858 20858 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+06-08 14:34:09.264 20858 20858 I NCL     : [CF:uin] S0()=10000 鈫?wxid_lzd2va16jd1622 cls=com.tencent.mm.storage.l4
+06-08 14:34:09.266 20858 20858 I NCL     : [CF:uin-diag] cls=com.tencent.mm.storage.l4 getTableName()=rconversation h1()=newsapp getTableName()=rconversation
+06-08 14:34:09.266 20858 20858 W NCL     : [CF:diag-clean] field=o sz=28 hidden=4 [y wxid=wxid_lzd2va16jd1622 inHidden=true] [y wxid=null inHidden=false] [y wxid=newsapp inHidden=false]
+06-08 14:34:09.267 20858 20858 I NCL     : [CF:cache] save wxid=wxid_lzd2va16jd1622 index=0 field=o
+06-08 14:34:09.268 20858 20858 I NCL     : [CF:cache] save wxid=44786160583@chatroom index=3 field=o
+06-08 14:34:09.280 20858 21060 I NCL     : [MF:LLadd cls=xd0.z] TAG=MicroMsg.FeatureService
+06-08 14:34:09.288 20858 21056 I NCL     : [MF:LLadd cls=ie3.k0] d=message
+06-08 14:34:09.296 20858 20858 I NCL     : [CF:cache] save wxid=wxid_lzd2va16jd1622 index=0 field=p
+06-08 14:34:09.298 20858 20858 I NCL     : [CF:cache] save wxid=44786160583@chatroom index=3 field=p
+06-08 14:34:09.318 20858 20934 I NCL     : [MF:LLadd cls=com.tencent.mm.feature.performance.adpf.z]
+06-08 14:34:09.334 20858 20907 I NCL     : [MF:LLadd cls=z15.zj5] e=闄勮繎甯哥敤
+06-08 14:34:09.340 20858 20858 I NCL     : [CF:cache] save wxid=wxid_lzd2va16jd1622 index=0 field=h
+06-08 14:34:09.351 20858 20858 I NCL     : [CF:cache] save wxid=44786160583@chatroom index=3 field=h
+06-08 14:34:09.352 20858 21057 I NCL     : [MF:LLadd cls=z15.zo5]
+06-08 14:34:09.377 20858 21058 I NCL     : [MF:LLadd cls=com.tencent.mm.pluginsdk.res.downloader.model.n0] field_filePath=/data/user/0/com.tencent.mm/MicroMsg/CheckResUpdate/103.1.data field_fileVersion=126 field_groupId1=CheckResUpdate field_groupId2=CGI field_md5=82bfcf4a45175442cc81a53742bb1f13 field_originalMd5=813fff5348ee8904b49310f160b090b4 field_sampleId= field_url=http://dldir1v6.qq.com/weixin/checkresupdate1/output_74e82b4d23eb4b1a98d661e903111986.zip field_urlKey=103.1.data COL_ROWID=rowid FIELD_PREFIX=field_ SYSTEM_ROWID_FIELD=rowid TAG=MicroMsg.SDK.IAutoDBItem
+06-08 14:34:09.379 20858 20919 I NCL     : [MF:LLadd cls=jx0.k] e=748866c9f0ccc236eaf43a0c3d37feb93c637819 f=748866c9f0ccc236eaf43a0c3d37feb93c637819
+06-08 14:34:09.386 20858 20968 I NCL     : [MF:LLadd cls=pp0.t0]
+06-08 14:34:09.387 20858 20968 I NCL     : [MF:LLadd cls=rp0.a]
+06-08 14:34:09.387 20858 20968 I NCL     : [MF:LLadd cls=op0.p4]
+06-08 14:34:09.402 20858 20907 I NCL     : [MF:LLadd cls=com.tencent.mm.plugin.appbrand.config.WxaAttributes$WxaVersionModuleInfo] d=/npm/@mtfe/yoda-static-weapp/yoda_modules/modules/ e=7afe449e2f37a563fac00250ed654a3a m=
+06-08 14:34:09.412 20858 20858 I NCL     : [CF:diag] item class=kc5.y
+06-08 14:34:09.414 20858 20858 I NCL     : [CF:group] chatroom=45592178108@chatroom name=缇ょ兢
+06-08 14:34:09.418 20858 20858 I NCL     : [CF:group] chatroom=54525031375@chatroom name=缇ょ兢缇ょ兢
+06-08 14:34:09.420 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.h active=true items=26
+06-08 14:34:09.429 20858 20907 I NCL     : [MF:LLadd cls=com.tencent.mm.plugin.appbrand.config.WxaAttributes$WxaPluginCodeInfo] d=wx4d2deeab3aed6e5a f=c3a852282d18ab1e4658cce1e36968bb g=__plugin__/wx4d2deeab3aed6e5a n= o=
+06-08 14:34:09.430 20858 20981 I NCL     : [SF:ALLseen] #17 addAll first=com.android.org.conscrypt.OpenSSLX509Certificate size=2
+06-08 14:34:09.430 20858 20981 I NCL     : [MF] addAll firstItem=com.android.org.conscrypt.OpenSSLX509Certificate size=2
+06-08 14:34:09.447 20858 21059 I NCL     : [MF:LLadd cls=a33.m4] d=commlib
+06-08 14:34:09.450 20858 21059 I NCL     : [MF:LLadd cls=a33.y5] d=^(http://|https://)dlied[4|5].myapp.com/myapp/[\d]*/[^\s]*/[^\s]*.apk$
+06-08 14:34:09.453 20858 20907 I NCL     : [MF:LLadd cls=com.tencent.mm.plugin.appbrand.config.WxaAttributes$WxaWidgetInfo] e=5c728cd59f3934f2e4bada5d9da377a7
+06-08 14:34:09.454 20858 20968 I NCL     : [SF:ALLseen] #18 addAll first=iw5.g size=1
+06-08 14:34:09.454 20858 20968 I NCL     : [MF] addAll firstItem=iw5.g size=1
+06-08 14:34:09.464 20858 21059 I NCL     : [MF:LLadd cls=a33.q4] d=uin e=X-WECHAT-UIN
+06-08 14:34:09.466 20858 21059 I NCL     : [MF:LLadd cls=a33.r5] d=home e=娓告垙鍦?f=#232323 g=#00A6A6 h=#ffffff i=#6DD9D9 m=https://mmgame.qpic.cn/image/e0d378dd29e82bb0c4748f8413ec0a40d6a2fb5e220e65909f1380aa2c56b051/0 n=https://mmgame.qpic.cn/image/054ddb7f9d1e8c9b0784b0149ed6ec62e5c4518165d0759f5f5e1dab8aee009c/0 o=https://mmgame.qpic.cn/image/a30b494e6568363ba7c62ad6c729dee4b94e2e30c98065c8a3e524710b4f058b/0 p=https://mmgame.qpic.cn/image/994231ed694333d80da62e7a296a6e1e4583ec15c09eda40588fb812e82858bb/0 r=https://game.weixin.qq.com/cgi-bin/h5/lite/litecenter/home.html?wechat_pkgid=lite_litecenter&abt=65&ssid=901&immersiveUIStyle=1&immersivePageBgIsDark=2&wechat_immersive=1&open_type=liteapp&ispreloadcgi=1
+06-08 14:34:09.483 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.o active=true items=26
+06-08 14:34:09.490 20858 21059 I NCL     : [MF:LLadd cls=a33.f0] d=缁勯槦娓告垙 f=zh_CN
+06-08 14:34:09.496 20858 21059 I NCL     : [MF:LLadd cls=a33.i] e=groupbattle i=https://game.weixin.qq.com/cgi-bin/h5/static/gamelife/openminiprogram.html n=https://mmgame.qpic.cn/image/1463e3451c1e3da280d8529f9b1cb55616946dfd78578136eecab5f61bf7a873/0 o=https://mmgame.qpic.cn/image/e0669fc8b3293785ec1030edfd7aa968a7f6badcc6dff3c577598a5e9edbea2b/0
+06-08 14:34:09.497 20858 20968 I NCL     : [SF:ALLseen] #19 addAll first=mx5.a1 size=1
+06-08 14:34:09.497 20858 20968 I NCL     : [MF] addAll firstItem=mx5.a1 size=1
+06-08 14:34:09.515 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.p active=true items=26
+06-08 14:34:09.519 20858 21059 I NCL     : [MF:LLadd cls=a33.z] d=zh_CN e=寰呭鏂瑰洖澶嶅悗锛屾墠鍙彂閫佸浘鐗囨垨瑙嗛銆?
+06-08 14:34:09.523 20858 21059 I NCL     : [MF:LLadd cls=a33.h5]
+06-08 14:34:09.529 20858 20858 I NCL     : [CF:group] chatroom=44786160583@chatroom name=娴嬭瘯瀵嗙兢
+06-08 14:34:09.535 20858 20858 I NCL     : [CF:filter] label=L4adapter.q.d active=true items=28
+06-08 14:34:09.545 20858 20967 I NCL     : [MF:LLadd cls=ch4.g0] d=http://wxapp.tc.qq.com/258/20304/stodownload?m=510ffc3168322b4bdb2aa2e6d601c500&filekey=30340201010420301e02020102040253480410510ffc3168322b4bdb2aa2e6d601c50002020314040d00000004627466730000000131&hy=SH&storeid=32303231303531313139353032353030306364616133303030303030303037636638353130393030303030313032&bizid=1023 m=1 p=https://res.wx.qq.com/t/fed_upload/3d559f05-0d02-4cc3-9380-a073a9960421/1000_缇庢粙婊?png q=
+06-08 14:34:09.546 20858 20967 I NCL     : [MF:LLadd cls=ch4.o1] d=1000
+06-08 14:34:09.547 20858 21056 I NCL     : [MF:LLadd cls=com.tencent.mm.app.TempAppForegroundNotifyDeprecated$4]
+06-08 14:34:09.547 20858 21056 I NCL     : [MF:LLadd cls=com.tencent.mm.app.TempAppForegroundNotifyDeprecated$5]
+06-08 14:34:09.548 20858 20907 I NCL     : [MF:LLadd cls=com.tencent.mm.plugin.appbrand.appusage.AppBrandRecentTaskInfo] v=gh_870576f3c6f9@app_0 w=gh_870576f3c6f9@app x=缇庡洟涓ㄥ鍗栧洟璐壒浠风編椋熼厭搴楃數褰?y=http://wx.qlogo.cn/mmhead/OM4v0FU2h0uaKUxzTLeRmuQ9GibmzugclJyqD36q6AYfaRFUoYALQsI48wd9JH8c9RGfmvloWgQ8/96 d=gh_870576f3c6f9@app e=wxde8ac0a21135c07d h=缇庡洟涓ㄥ鍗栧洟璐壒浠风編椋熼厭搴楃數褰?i= m= n=http://wx.qlogo.cn/mmhead/OM4v0FU2h0uaKUxzTLeRmuQ9GibmzugclJyqD36q6AYfaRFUoYALQsI48wd9JH8c9RGfmvloWgQ8/96 s= t=
+06-08 14:34:09.551 20858 21059 I NCL     : [MF:LLadd cls=a33.o3] f=https://game.weixin.qq.com/cgi-bin/h5/static/gamecenter/subscription_list.html?wechat_pkgid=gamecenter_subscription_list&ssid=5
+06-08 14:34:09.556 20858 20858 I NCL     : [CF:cache] save wxid=wxid_lzd2va16jd1622 index=0 field=pre-list
+06-08 14:34:09.556 20858 20858 I NCL     : [CF] L4adapter.q.d removed wxid=wxid_lzd2va16jd1622
+06-08 14:34:09.556 20858 20858 I NCL     : [CF:cache] save wxid=44786160583@chatroom index=4 field=pre-list
+06-08 14:34:09.556 20858 20858 I NCL     : [CF] L4adapter.q.d removed wxid=44786160583@chatroom
+06-08 14:34:09.567 20858 21059 I NCL     : [MF:LLadd cls=a33.e] d=wx95a3a4d7c627e07d e=鐜嬭€呰崳鑰€ f=com.tencent.tmgp.sgame g=鐜嬭€呰崳鑰€绮惧僵鏃跺埢
+06-08 14:34:09.570 20858 20968 I NCL     : [MF:LLadd cls=pp0.a0]
+06-08 14:34:09.575 20858 20858 I NCL     : [CF:L4adapter.q] field=d removed=2 owner=kc5.a
+06-08 14:34:09.575 20858 20858 I NCL     : [CF:L4adapter] cleaned=2
+06-08 14:34:09.575 20858 20858 I NCL     : [CF:L4] cleaned=8
+06-08 14:34:09.575 20858 20858 I NCL     : [CF:L4] sync-notify ok
+06-08 14:34:09.592 20858 20968 I NCL     : [MF:LLadd cls=pp0.j0]
+06-08 14:34:09.605 20858 21059 I NCL     : [MF:LLadd cls=a33.b6] d=GameLifeTabBarViewController
+06-08 14:34:09.606 20858 20922 I NCL     : [MF:LLadd cls=cs5.u10]
+06-08 14:34:09.615 20858 21059 I NCL     : [MF:LLadd cls=a33.b5] e=com.tencent.tmgp.dfm
+06-08 14:34:09.618 20858 21059 I NCL     : [MF:LLadd cls=a33.w4]
+06-08 14:34:09.646 20858 20968 I NCL     : [MF:LLadd cls=com.tencent.mm.vfs.l7]
+06-08 14:34:09.646 20858 20968 I NCL     : [MF:LLadd cls=com.tencent.mm.matrix.monitor.m0]
+06-08 14:34:09.646 20858 20858 I NCL     : [SF:ALLseen] #20 addAll first=za3.u size=7
+06-08 14:34:09.646 20858 20858 I NCL     : [MF] addAll firstItem=za3.u size=7
+06-08 14:34:09.647 20858 20968 I NCL     : [MF:LLadd cls=com.tencent.mm.normsg.f]
+06-08 14:34:09.647 20858 20858 I NCL     : [SF:ALLseen] #21 addAll first=pb3.a size=8
+06-08 14:34:09.647 20858 20858 I NCL     : [MF] addAll firstItem=pb3.a size=8
+06-08 14:34:09.655 20858 21059 I NCL     : [MF:LLadd cls=z15.yj]
+06-08 14:34:09.734 21080 21080 I NCL     : [PF:LLseen:push] #1 ni5.m
+06-08 14:34:09.758 20858 21059 I NCL     : [MF:LLadd cls=vr.g0] TAG=MicroMsg.FeatureService
+06-08 14:34:09.768 20858 20858 I NCL     : [CF:cold-init] sweep @3000ms
+06-08 14:34:09.768 20858 20858 I NCL     : [CF:clean] start ids=4 src=cold-init-3000 mvvm=MvvmConvList
+06-08 14:34:09.768 20858 20858 I NCL     : [CF:mvvmdump cls=com.tencent.mm.ui.conversation.adapter.MvvmConvList] .d:f .e:n0 .f:y .g:i .h[List sz=26 item=kc5.y] .i:boolean .m:boolean .n:int .o[List sz=26 item=kc5.y] .p[List sz=26 item=kc5.y] .q:m0 .r:j0 .s:h2 .t:long .u:g0 .v:m2 .w:AtomicInteger .x:g .y:g .z:g
+06-08 14:34:09.769 20858 20858 I NCL     : [CF:L4diag] field=o sz=26 itemCls=kc5.y
+06-08 14:34:09.770 20858 20858 I NCL     : [CF:itemdump cls=kc5.y] .d[com.tencent.mm.storage.l4].S0()=620757041.getTableName()=rconversation.h1()=officialaccounts.getTableName()=rconversation .f=鍏紬鍙?.g=涓嬪崍2:03 .i=-1 .m=13 .n=0 .o=0 .p=false .q=false .r=false .s=false .t=false .u=true .v=false .w[z15.fe7] .x=false .z=1
+06-08 14:34:09.789 20858 20858 I NCL     : [CF:filter] label=L4collect active=true items=26
+06-08 14:34:09.805 20858 20858 W NCL     : [CF:diag-clean] field=p sz=26 hidden=4 [y wxid=null inHidden=false] [y wxid=newsapp inHidden=false] [y wxid=filehelper inHidden=false]
+06-08 14:34:09.812 20858 20965 I NCL     : [MF:LLadd cls=com.tencent.wechat.aff.newlife.SearchSyncClientCustomInfo$LiteAppVersionInfo] appid=wxalite2fd372f050eecd471a4392786dfae78c version=1.348.0
+06-08 14:34:09.812 20858 21045 I NCL     : [MF:LLadd cls=com.tencent.wechat.mm.brand_service.n0] d=CBEQACIYQ0FRUXpidWltd3dZcnI3aXJ3Z2dBUT09 h=eyJzZXNzaW9uX2lkIjoiMTkzNDg0ODQ4OF8xNzgwODA1NTE2IiwicmVjX3JlcXVlc3RfaWQiOjE3ODA4MDU1MTU3NDc5OTYsInBhZ2VfbnVtIjoxLCJyZWNvbW1lbmRfZmxvdyI6InNhX21haW5fcmVjb21tZW5kIiwiY29udGVudF9pZCI6WyI0XzMyNzg0MTMyNjFfMjI0NzY2MzQwNl8xIl0sImZsb3dfbmFtZSI6InNhX2ZvbGxvd19yZWNvbW1lbmQiLCJyZWNhbGxlcl9uYW1lIjoicmVzb3J0Iiwic2FfdWlfdmVyc2lvbiI6MiwibXBfcmVjX2luZm8iOiJ7XCJyZWNfaW5mb1wiOntcInNvcnRfaWRcIjoxNzgwODA1NTE2LFwiZXhwX3R5cGVcIjpcIm1tZWNfdGxzdmNfcmVzb3J0X3N1YnNjcmliZWRfY2FyZF9maW5lX3JhbmtcIixcIm1vZGVsX2lkXCI6NTcwMDAwLFwicmFua19ya1wiOlwiNTcwMDAwOjk6MDowOjE6MTo5LjU2NTg0NlwiLFwidHJ1bmNhdGVfaW5mb1wiOlwiMDowOjBcIixcInN1Yl9wb29sX2dyb3VwX2luZm9cIjpcIlwiLFwicmVjX3Bvb2xfZ3JvdXBfaW5mb1wiOlwiMFwiLFwibW9kZWxfaWRfbGlzdFwiOls1NzAwMDBdLFwidXNlcl9hY3Rpdml0eVwiOjAsXCJyYW5rX2V4dHJhXCI6XCI1NzAwMDBfbXBfY2xpY2s6MC4wMTY4MDUjNTcwMDA0X21wX2VudGVyOjAuMDk3NzUyIzU3MDAwMF9tcF9jdHI6MTY4MC41MTEyMyNtaWRfZW50ZXJfaW1wb3J0YW5jZTowLjUzXCIsXCJ0b3AxX2V4dHJhXCI6XCI1NzAwMDBfbXBfY2xpY2s6MC4wMTY4MDUjNTcwMDA0X21wX2VudGVyOjAuMDk3NzUyIzU3MDAwMF9tcF9jdHI6MTY4MC41MTEyMyNtaWRfZW50ZXJfaW1wb3J0YW5jZTowLjUzXCIsXCJnbG9iYWxfYWN0aXZpdHlcIjowLFwicmVjX3NyY19pZFwiOjMzNCxcInJlcV9pZFwiOjE3ODA4MDU1MTU3NDc5OTYsXCJ1aW5fZ2VuZGVyXCI6MSxcInVpbl9hZ2VcIjozMSxcInVpbl9ncmFkZVwiOjAsXCJuZXdzZmxhc2hfZXhwdF9ncm91cFwiOltdLFwibm90aWZ5X3R5cGVcIjpbXSxcIm5vdGlmeV9kYXRhXCI6W10sXCJyZWNhbGxfY3VzdG9tX2luZm9cIjpbXX19IiwiZGF0YV9yZXBvcnRfaW5mbyI6eyJpdGVtX3Nob3dfdHlwZSI6MCwicGFnZV90eXBlIjowLCJiaXp1aW4iOjMyNzg0MTMyNjEsIm1zZ2lkIjoyMjQ3NjYzNDA2LCJpdGVtaWR4IjoxLCJyZWNfc2VuZF90aW1lX21zIjoxNzgwODA1NTE1ODY3LCJzZXJ2aWNlX3R5cGUiOjIsIml0ZW1fcHVibGlzaF90aW1lX21zIjoxNzgwNzk5MDc2MDAwLCJjYXJkX3N0eWxlX2ZsYWciOjEsInJhbmtzZXNzaW9uaWRfc3RyIjoiMTc4MDgwNTUxNSIsInBlcnNvbmFsX3JlY19zdGF0IjoyfX0=
+06-08 14:34:09.817 21080 21249 I NCL     : [PF:LLseen:push] #2 ii5.b
+06-08 14:34:09.824 20858 20858 I NCL     : [CF:clean] removed=0 src=cold-init-3000
+06-08 14:34:09.824 20858 20858 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+06-08 14:34:09.840 20858 20858 W NCL     : [CF:diag-clean] field=h sz=26 hidden=4 [y wxid=null inHidden=false] [y wxid=newsapp inHidden=false] [y wxid=filehelper inHidden=false]
+06-08 14:34:09.859 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.h active=true items=26
+06-08 14:34:09.882 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.o active=true items=26
+06-08 14:34:09.895 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.p active=true items=26
+06-08 14:34:09.899 20858 21059 I NCL     : [MF:LLadd cls=z15.x57] f=a89fd0b626fd9c66a8264d30778bc049 g=magicconfig202503
+06-08 14:34:09.908 20858 20858 I NCL     : [CF:filter] label=L4adapter.q.d active=true items=26
+06-08 14:34:09.928 20858 21005 I NCL     : [SF:ALLseen] #22 addAll first=android.media.AudioPatch size=5
+06-08 14:34:09.928 20858 21005 I NCL     : [MF] addAll firstItem=android.media.AudioPatch size=5
+06-08 14:34:09.937 20858 20858 I NCL     : [CF:L4] cleaned=0
+06-08 14:34:09.937 20858 20858 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+06-08 14:34:09.938 20858 21056 I NCL     : [MF:LLadd cls=wh.s]
+06-08 14:34:10.003 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.h active=true items=26
+06-08 14:34:10.033 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.o active=true items=26
+06-08 14:34:10.059 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.p active=true items=26
+06-08 14:34:10.062 20858 21054 I NCL     : [MF:LLadd cls=z15.kx2] f=娣诲姞绗?涓綔鍝?i=FinderMyTab z=
+06-08 14:34:10.063 20858 21054 I NCL     : [MF:LLadd cls=com.tencent.mm.plugin.finder.extension.reddot.jb] field_tipsId=BizPhotoLocal_1.779208267025E9 field_tips_uuid=BizPhotoLocal_1.779208267025E9 field_username= COL_ROWID=rowid FIELD_PREFIX=field_ SYSTEM_ROWID_FIELD=rowid TAG=MicroMsg.SDK.IAutoDBItem
+06-08 14:34:10.073 20858 20858 I NCL     : [CF:filter] label=L4adapter.q.d active=true items=26
+06-08 14:34:10.084 20858 21056 I NCL     : [MF:LLadd cls=hh.y1]
+06-08 14:34:10.092 20858 20858 I NCL     : [CF:L4] cleaned=0
+06-08 14:34:10.092 20858 20858 I NCL     : [BUS:cold-init-3000] notified adapter=v0 cache=2
+06-08 14:34:10.098 20858 21060 I NCL     : [MF:LLadd cls=yl1.f]
+06-08 14:34:10.099 20858 21054 I NCL     : [MF:LLadd cls=z15.wl5]
+06-08 14:34:10.104 20858 20858 I NCL     : [CF:focus] LauncherUI focus HIDDEN 鈫?clean+notify
+06-08 14:34:10.104 20858 20858 I NCL     : [CF:clean] start ids=4 src=focus-H mvvm=MvvmConvList
+06-08 14:34:10.116 20858 20858 I NCL     : [CF:filter] label=L4collect active=true items=26
+06-08 14:34:10.145 20858 20923 I NCL     : [MF] addAll firstItem=l25.p0 size=5
+06-08 14:34:10.173 21080 21248 I NCL     : [PF:LLseen:push] #3 com.tencent.mm.feature.performance.adpf.z
+06-08 14:34:10.175 20858 21054 I NCL     : [MF:LLadd cls=z15.w20]
+06-08 14:34:10.180 20858 20858 I NCL     : [CF:clean] removed=0 src=focus-H
+06-08 14:34:10.190 20858 20858 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+06-08 14:34:10.223 21080 21371 I NCL     : [PF:LLseen:push] #4 com.tencent.mm.feature.performance.scheduler.o
+06-08 14:34:10.228 20858 20899 I NCL     : [MF:LLadd cls=z15.qj4] d=audio/amr-wb
+06-08 14:34:10.251 21080 21386 I NCL     : [PF:LLseen:push] #5 com.tencent.mm.ipcinvoker.extension.d
+06-08 14:34:10.252 21080 21386 I NCL     : [PF:LLseen:push] #6 com.tencent.mm.ipcinvoker.extension.b
+06-08 14:34:10.252 21080 21386 I NCL     : [PF:LLseen:push] #7 com.tencent.mm.ipcinvoker.extension.n
+06-08 14:34:10.252 21080 21386 I NCL     : [PF:LLseen:push] #8 com.tencent.mm.ipcinvoker.wx_extension.l0
+06-08 14:34:10.252 21080 21386 I NCL     : [PF:LLseen:push] #9 com.tencent.mm.ipcinvoker.wx_extension.e
+06-08 14:34:10.253 21080 21386 I NCL     : [PF:LLseen:push] #10 com.tencent.mm.ipcinvoker.wx_extension.m0
+06-08 14:34:10.270 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.h active=true items=26
+06-08 14:34:10.278 20858 21051 I NCL     : [MF:LLadd cls=com.tencent.wechat.mm.biz.e3] d=metab_interactive e=1
+06-08 14:34:10.280 20858 21059 I NCL     : [MF:LLadd cls=xx4.q3] a=MODEL_VIO_CONFIG d=a89fd0b626fd9c66a8264d30778bc049 e=magicconfig202503
+06-08 14:34:10.304 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.o active=true items=26
+06-08 14:34:10.314 21080 21199 I NCL     : [PF:LLseen:push] #11 bh.l0
+06-08 14:34:10.314 21080 21199 I NCL     : [PF:LLseen:push] #12 pp0.t0
+06-08 14:34:10.314 21080 21199 I NCL     : [PF:LLseen:push] #13 rp0.a
+06-08 14:34:10.314 21080 21199 I NCL     : [PF:LLseen:push] #14 op0.p4
+06-08 14:34:10.322 21080 21408 I NCL     : [PF:LLseen:push] #15 android.util.Pair
+06-08 14:34:10.328 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.p active=true items=26
+06-08 14:34:10.350 20858 21054 I NCL     : [MF:LLadd cls=ia2.a]
+06-08 14:34:10.350 20858 21054 I NCL     : [MF:LLadd cls=ia2.f]
+06-08 14:34:10.351 20858 20858 I NCL     : [CF:filter] label=L4adapter.q.d active=true items=26
+06-08 14:34:10.351 20858 21054 I NCL     : [MF:LLadd cls=ia2.j]
+06-08 14:34:10.359 21080 21240 I NCL     : [PF:LLseen:push] #16 mq5.e
+06-08 14:34:10.360 20858 21054 I NCL     : [MF:LLadd cls=i41.z5]
+06-08 14:34:10.371 20858 20858 I NCL     : [CF:L4] cleaned=0
+06-08 14:34:10.371 20858 20858 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+06-08 14:34:10.375 21080 21374 I NCL     : [PF:LLseen:push] #17 android.app.SharedPreferencesImpl$EditorImpl$1
+06-08 14:34:10.414 21080 21374 I NCL     : [PF:LLseen:push] #18 android.app.SharedPreferencesImpl$2
+06-08 14:34:10.425 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.h active=true items=26
+06-08 14:34:10.438 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.o active=true items=26
+06-08 14:34:10.453 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.p active=true items=26
+06-08 14:34:10.471 20858 20858 I NCL     : [CF:filter] label=L4adapter.q.d active=true items=26
+06-08 14:34:10.481 21080 21375 I NCL     : [PF:LLseen:push] #19 wh.s
+06-08 14:34:10.483 20858 20858 I NCL     : [CF:L4] cleaned=0
+06-08 14:34:10.483 20858 20858 I NCL     : [BUS:focus-H] notified adapter=v0 cache=2
+06-08 14:34:10.489 20858 20858 I NCL     : [MF:LLadd cls=sn0.q]
+06-08 14:34:10.503 20858 20921 I NCL     : [MF:LLadd cls=z15.er]
+06-08 14:34:10.512 20858 20974 I NCL     : [SF:ALLseen] #23 addAll first=com.tencent.mm.plugin.appbrand.appusage.AppBrandRecentTaskInfo size=32
+06-08 14:34:10.512 20858 20974 I NCL     : [MF] addAll firstItem=com.tencent.mm.plugin.appbrand.appusage.AppBrandRecentTaskInfo size=32
+06-08 14:34:10.512 20858 20923 I NCL     : [MF:LLadd cls=com.tencent.mm.plugin.performance.watchdogs.z0] a=main
+06-08 14:34:10.534 20858 20858 I NCL     : [SF:ALLseen] #24 addAll first=com.tencent.mm.app.WeChatSplashActivity size=1
+06-08 14:34:10.535 20858 20858 I NCL     : [MF] addAll firstItem=com.tencent.mm.app.WeChatSplashActivity size=1
+06-08 14:34:10.555 21080 21375 I NCL     : [PF:LLseen:push] #20 hh.y1
+06-08 14:34:10.560 20858 20858 I NCL     : [MF:LLadd cls=com.tencent.mm.plugin.appbrand.appstorage.m2]
+06-08 14:34:10.606 20858 20923 I NCL     : [MF] addAll firstItem=com.tencent.mm.plugin.performance.watchdogs.y0 size=77
+06-08 14:34:10.631 20858 21054 I NCL     : [MF:LLadd cls=z15.mq2]
+06-08 14:34:10.640 21080 21199 I NCL     : [PF:LLseen:push] #21 pp0.b0
+06-08 14:34:10.676 21080 21199 I NCL     : [PF:LLseen:push] #22 pp0.j0
+06-08 14:34:10.798 20858 20913 I NCL     : [MF:LLadd cls=z15.pz0]
+06-08 14:34:10.809 20858 20858 I NCL     : [CF:clean] start ids=4 src=cold-100 mvvm=MvvmConvList
+06-08 14:34:10.824 20858 20858 I NCL     : [CF:filter] label=L4collect active=true items=26
+06-08 14:34:10.831 20858 20913 I NCL     : [MF:LLadd cls=z15.ke0]
+06-08 14:34:10.860 21080 21187 I NCL     : [PF:LLseen:push] #23 gh.g0
+06-08 14:34:10.871 20858 20913 I NCL     : [MF:LLadd cls=z15.lv0]
+06-08 14:34:10.880 20858 20858 I NCL     : [CF:clean] removed=0 src=cold-100
+06-08 14:34:10.880 20858 20858 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+06-08 14:34:10.940 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.h active=true items=26
+06-08 14:34:10.960 20858 21170 I NCL     : [MF:LLadd cls=u52.a]
+06-08 14:34:10.960 20858 21170 I NCL     : [MF:LLadd cls=lz2.i]
+06-08 14:34:10.960 20858 21170 I NCL     : [MF:LLadd cls=lz2.j]
+06-08 14:34:10.961 20858 21170 I NCL     : [MF:LLadd cls=lz2.k]
+06-08 14:34:10.961 20858 21170 I NCL     : [MF:LLadd cls=lz2.f]
+06-08 14:34:10.961 20858 21170 I NCL     : [MF:LLadd cls=lz2.b]
+06-08 14:34:10.961 20858 21170 I NCL     : [MF:LLadd cls=lz2.h]
+06-08 14:34:10.961 20858 21170 I NCL     : [MF:LLadd cls=lz2.a]
+06-08 14:34:10.962 20858 21170 I NCL     : [MF:LLadd cls=lz2.g]
+06-08 14:34:10.966 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.o active=true items=26
+06-08 14:34:10.994 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.p active=true items=26
+06-08 14:34:11.012 20858 20858 I NCL     : [CF:filter] label=L4adapter.q.d active=true items=26
+06-08 14:34:11.030 20858 20858 I NCL     : [CF:L4] cleaned=0
+06-08 14:34:11.030 20858 20858 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+06-08 14:34:11.078 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.h active=true items=26
+06-08 14:34:11.095 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.o active=true items=26
+06-08 14:34:11.113 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.p active=true items=26
+06-08 14:34:11.134 20858 20858 I NCL     : [CF:filter] label=L4adapter.q.d active=true items=26
+06-08 14:34:11.144 20858 20858 I NCL     : [CF:L4] cleaned=0
+06-08 14:34:11.145 20858 20858 I NCL     : [BUS:cold-100] notified adapter=v0 cache=2
+06-08 14:34:11.151 20858 20858 I NCL     : [CF:clean] start ids=4 src=cold-300 mvvm=MvvmConvList
+06-08 14:34:11.155 20858 20858 I NCL     : [CF:filter] label=L4collect active=true items=26
+06-08 14:34:11.189 20858 20923 I NCL     : [MF:LLadd cls=jy0.ob] e=17
+06-08 14:34:11.193 20858 20933 I NCL     : [MF:LLadd cls=cs5.wj0] d=en e=Luck Come to Me
+06-08 14:34:11.198 20858 20858 I NCL     : [CF:clean] removed=0 src=cold-300
+06-08 14:34:11.199 20858 20858 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+06-08 14:34:11.210 20858 20933 I NCL     : [MF:LLadd cls=cs5.yj0] d=https://res.wx.qq.com/t/fed_upload/d122d69b-0b1f-4233-aca2-dfcf04a45e79/1056_姹傞敠椴?png m=36 p=https://res.wx.qq.com/t/fed_upload/8a443dc3-f581-4ea0-b53d-64e85484cc62/1056_姹傞敠椴?png q=
+06-08 14:34:11.235 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.h active=true items=26
+06-08 14:34:11.237 20858 20933 I NCL     : [MF:LLadd cls=cs5.tk0] e= f= g= h=
+06-08 14:34:11.250 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.o active=true items=26
+06-08 14:34:11.256 20858 20907 I NCL     : [MF:LLadd cls=com.tencent.wechat.mm.biz.j3] e=tlcolumn_hottopic_1003_1934848488_1780899568_subcolumnindex0 f={"ExtraData":"{\"real_data\":\"{\\\"biz_info\\\":[{\\\"bizuin\\\":3271436617,\\\"appmsg_info\\\":[{\\\"mid\\\":2247980069,\\\"idx\\\":2}]}],\\\"card_id\\\":\\\"tlcolumn_hottopic_1003_1934848488_1780899568_subcolumnindex0\\\",\\\"rec_time\\\":1780899568}\"}","RecommendItem":[{"BizInfo":{"UserName":"gh_1ede6c42db01","NickName":"绾㈡槦鏂伴椈","BrandIconUrl":"http:\/\/mmbiz.qpic.cn\/mmbiz_png\/1tRsGJ6Jk28TnBBVrETJy1P63nAgX8t3N6MBCJUqRvQ68LW5HKYe13Ix4I1tdC0BfZ7p1mTLx1VccBGb5dIOPA\/0?wx_fmt=png"},"ItemInfo":{"Title":"璀︽柟鐮磋幏涓€璧风壒澶т紶閿€妗堬細鏃犵晫鍏徃鎶潃鏁板瓧缁忔祹澶栬。鐙傛暃璐紝鏀跺彇瓒?0浜垮厓鍏ラ棬璐癸紝鍙戝睍32涓囦綑鍚嶄細鍛橈紝40浣欎汉琚姄","Digest":"","ContentUrl":"http:\/\/mp.weixin.qq.com\/s?__biz=MzI3MTQzNjYxNw==&mid=2247980069&idx=2&sn=6772c9254d75c7427a1807e94c9a8783&chksm=eac80a03ddbf8315ceda5646d7f480cc87514269c0b5161de67859e2670ed01f8db79c7a34f9&newsflash_single_card=1&aggr_url=https%3A%2F%2Fbc.weixin.qq.com%2Fmp%2Frecommendtag%3Faction%3Dshow_news_feed%26msg_type%3D1%26tag_type%3D24%26tag%3D%25E5%25BF%25AB%25E8%25AE%25AF%26hotnewsfeed%3D1%26ext%3DHGUvPozYJEln9nBHw5F-DsG_sbljj3oIaR2qRh9cj5WVwjTlnecYYZukKhP0gyqiF8PoyAOq_g%26sn%3DLwIlJimRAnCxm-xyr3sYyNd5xyo%26cardid%3Dtlcolumn_hottopic_1003_1934848488_1780899568_subcolumnindex0%26scene%3D10001%26sessionid%3D1780899568%23wechat_redirect&exptype=aggrpage_newsflash_feeds&scene=281&subscene=90&req_id=1780899567419963#rd","CoverImgUrl":"https:\/\/mmbiz.qpic.cn\/mmbiz_jpg\/lfsfrMPYusFgIAOGcP0KQibs0K5FJkQZ3CRdYTOXpzsOmqMMOtSWfBSeBmkN9s8cibiaEFePn1amHGjviacHSSp4ZlyhzFlz309I34w0icy93UCQ\/0?wx_fmt=jpeg","CoverImgUrl_1_1":"https:\/\/mmbiz.qpic.cn\/mmbiz_jpg\/lfsfrMPYusFJAU4ZnmjQsibMtV7v0PUUKnCsUhPKcESk6sGSUZQgWU3ibQSU0vsibrBwwnDuxvaZuqM7SIibw4q2F3m7HfMs5UicXCVNzr2WqpwU\/0?wx_fmt=jpeg","ItemShowType":0,"VideoInfo":{"VideoDuration":0},"PictureInfo":{"PictureUrl":[],"pictureurl_for_pic":[],"PictureDetailInfo":[],"cover_img_urls":[]},"MediaInfo":[]},"RecInfo":"{\"sort_id\":0,\"recall_rk\":\"1846002:1,1846010:1\",\"exp_type\":\"timeline_hottopic_column_hottopiccolumn\",\"model_id\":0,\"rank_rk\":\"910014#520055:21902956:0\",\"truncate_info\":\"0:0:0\",\"match_portrait\":\"2,2,2,2,2,2\",\"sub_pool_group_info\":\"\",\"rec_pool_group_info\":\"0\",\"model_id_list\":[],\"tag\":\"璀︽柟鐮磋幏涓€璧风壒澶т紶閿€妗堬細鏃犵晫鍏徃鎶潃鏁板瓧缁忔祹澶栬。鐙傛暃璐紝鏀跺彇瓒?0浜垮厓鍏ラ棬璐癸紝鍙戝睍32涓囦綑鍚嶄細鍛橈紝40浣欎汉琚姄\",\"special_column_info\":\"4\",\"hot_event_info\":\";\",\"user_activity\":0,\"rank_extra\":\"910014_rule_FID_I_req_not_po_quan:0#910014_rule_FID_I_req_newsflash_comment_cnt:7#910014_rule_FID_I_req_event_cates:0:鍨傜被蹇#910014_rule_FID_U_req_uin_region_level:5#910014_rule_FID_I_req_is_match_biz_region:1#910014_rule_news_short_cate2:0#910014_rule_news_mid_cate2:0#910014_rule_FID_I_req_is_first_newsflash:1#910014_rule_ui_pretain_emb_dot:0#520055_mp_click:0.412977#520055_mp_ctr:41297.679688#520055_rule_mix_rank_online_dedup_calibrated_linear_func_score:0.366496#520055_rule_mix_rank_online_dedup_top1_calibrated_linear_func_score:0.367641#mid_debug_metis:202512052030#mid_newsflash:0#mid_is_newsflash:1#mid_mc:0#mid_ctr:36649.602652#mid_ctr_reddot:37264.141917#mid_newspctr:36764.141917#mid_dot:0#mid_fusion:21902456.956929\",\"use_column_cache\":0,\"sub_column_index\":0,\"category\":\"绀句細|娉曞埗绾犵悍\",\"mass_send_time\":1780896050,\"bizxitem_quality\":3,\"top1_extra\":\"punish:0#float_today:2#candidate:[3937444961_2247504807_1_0_2392334700_2653216487_2_0_3535085610_2247746270_1_0]#device:2#age:31#gender:1#float:0#reddot_value:1#digest_expose:[0_0_2316927.7_6.833333]#reddot:1#reddot_score:0.144347#mid_debug_metis:202512052030#mid_newsflash:0#mid_is_newsflash:1#mid_mc:0#mid_ctr:36649.602652#mid_ctr_reddot:37264.141917#mid_newspctr:36764.141917#mid_dot:0#mid_fusion:21902456.956929#520040_mp_enter:0.140041#520040_mp_enter_click:0.328498#910014_rule_FID_U_UserFlag_global_activity:2#910014_rule_pacin
+06-08 14:34:11.257 20858 20907 I NCL     : [MF:LLadd cls=yy0.l] b=tlcolumn_hottopic_1003_1934848488_1780899568_subcolumnindex0 c={"ExtraData":"{\"real_data\":\"{\\\"biz_info\\\":[{\\\"bizuin\\\":3271436617,\\\"appmsg_info\\\":[{\\\"mid\\\":2247980069,\\\"idx\\\":2}]}],\\\"card_id\\\":\\\"tlcolumn_hottopic_1003_1934848488_1780899568_subcolumnindex0\\\",\\\"rec_time\\\":1780899568}\"}","RecommendItem":[{"BizInfo":{"UserName":"gh_1ede6c42db01","NickName":"绾㈡槦鏂伴椈","BrandIconUrl":"http:\/\/mmbiz.qpic.cn\/mmbiz_png\/1tRsGJ6Jk28TnBBVrETJy1P63nAgX8t3N6MBCJUqRvQ68LW5HKYe13Ix4I1tdC0BfZ7p1mTLx1VccBGb5dIOPA\/0?wx_fmt=png"},"ItemInfo":{"Title":"璀︽柟鐮磋幏涓€璧风壒澶т紶閿€妗堬細鏃犵晫鍏徃鎶潃鏁板瓧缁忔祹澶栬。鐙傛暃璐紝鏀跺彇瓒?0浜垮厓鍏ラ棬璐癸紝鍙戝睍32涓囦綑鍚嶄細鍛橈紝40浣欎汉琚姄","Digest":"","ContentUrl":"http:\/\/mp.weixin.qq.com\/s?__biz=MzI3MTQzNjYxNw==&mid=2247980069&idx=2&sn=6772c9254d75c7427a1807e94c9a8783&chksm=eac80a03ddbf8315ceda5646d7f480cc87514269c0b5161de67859e2670ed01f8db79c7a34f9&newsflash_single_card=1&aggr_url=https%3A%2F%2Fbc.weixin.qq.com%2Fmp%2Frecommendtag%3Faction%3Dshow_news_feed%26msg_type%3D1%26tag_type%3D24%26tag%3D%25E5%25BF%25AB%25E8%25AE%25AF%26hotnewsfeed%3D1%26ext%3DHGUvPozYJEln9nBHw5F-DsG_sbljj3oIaR2qRh9cj5WVwjTlnecYYZukKhP0gyqiF8PoyAOq_g%26sn%3DLwIlJimRAnCxm-xyr3sYyNd5xyo%26cardid%3Dtlcolumn_hottopic_1003_1934848488_1780899568_subcolumnindex0%26scene%3D10001%26sessionid%3D1780899568%23wechat_redirect&exptype=aggrpage_newsflash_feeds&scene=281&subscene=90&req_id=1780899567419963#rd","CoverImgUrl":"https:\/\/mmbiz.qpic.cn\/mmbiz_jpg\/lfsfrMPYusFgIAOGcP0KQibs0K5FJkQZ3CRdYTOXpzsOmqMMOtSWfBSeBmkN9s8cibiaEFePn1amHGjviacHSSp4ZlyhzFlz309I34w0icy93UCQ\/0?wx_fmt=jpeg","CoverImgUrl_1_1":"https:\/\/mmbiz.qpic.cn\/mmbiz_jpg\/lfsfrMPYusFJAU4ZnmjQsibMtV7v0PUUKnCsUhPKcESk6sGSUZQgWU3ibQSU0vsibrBwwnDuxvaZuqM7SIibw4q2F3m7HfMs5UicXCVNzr2WqpwU\/0?wx_fmt=jpeg","ItemShowType":0,"VideoInfo":{"VideoDuration":0},"PictureInfo":{"PictureUrl":[],"pictureurl_for_pic":[],"PictureDetailInfo":[],"cover_img_urls":[]},"MediaInfo":[]},"RecInfo":"{\"sort_id\":0,\"recall_rk\":\"1846002:1,1846010:1\",\"exp_type\":\"timeline_hottopic_column_hottopiccolumn\",\"model_id\":0,\"rank_rk\":\"910014#520055:21902956:0\",\"truncate_info\":\"0:0:0\",\"match_portrait\":\"2,2,2,2,2,2\",\"sub_pool_group_info\":\"\",\"rec_pool_group_info\":\"0\",\"model_id_list\":[],\"tag\":\"璀︽柟鐮磋幏涓€璧风壒澶т紶閿€妗堬細鏃犵晫鍏徃鎶潃鏁板瓧缁忔祹澶栬。鐙傛暃璐紝鏀跺彇瓒?0浜垮厓鍏ラ棬璐癸紝鍙戝睍32涓囦綑鍚嶄細鍛橈紝40浣欎汉琚姄\",\"special_column_info\":\"4\",\"hot_event_info\":\";\",\"user_activity\":0,\"rank_extra\":\"910014_rule_FID_I_req_not_po_quan:0#910014_rule_FID_I_req_newsflash_comment_cnt:7#910014_rule_FID_I_req_event_cates:0:鍨傜被蹇#910014_rule_FID_U_req_uin_region_level:5#910014_rule_FID_I_req_is_match_biz_region:1#910014_rule_news_short_cate2:0#910014_rule_news_mid_cate2:0#910014_rule_FID_I_req_is_first_newsflash:1#910014_rule_ui_pretain_emb_dot:0#520055_mp_click:0.412977#520055_mp_ctr:41297.679688#520055_rule_mix_rank_online_dedup_calibrated_linear_func_score:0.366496#520055_rule_mix_rank_online_dedup_top1_calibrated_linear_func_score:0.367641#mid_debug_metis:202512052030#mid_newsflash:0#mid_is_newsflash:1#mid_mc:0#mid_ctr:36649.602652#mid_ctr_reddot:37264.141917#mid_newspctr:36764.141917#mid_dot:0#mid_fusion:21902456.956929\",\"use_column_cache\":0,\"sub_column_index\":0,\"category\":\"绀句細|娉曞埗绾犵悍\",\"mass_send_time\":1780896050,\"bizxitem_quality\":3,\"top1_extra\":\"punish:0#float_today:2#candidate:[3937444961_2247504807_1_0_2392334700_2653216487_2_0_3535085610_2247746270_1_0]#device:2#age:31#gender:1#float:0#reddot_value:1#digest_expose:[0_0_2316927.7_6.833333]#reddot:1#reddot_score:0.144347#mid_debug_metis:202512052030#mid_newsflash:0#mid_is_newsflash:1#mid_mc:0#mid_ctr:36649.602652#mid_ctr_reddot:37264.141917#mid_newspctr:36764.141917#mid_dot:0#mid_fusion:21902456.956929#520040_mp_enter:0.140041#520040_mp_enter_click:0.328498#910014_rule_FID_U_UserFlag_global_activity:2#910014_rule_pacing_pid_xgroup_reddot_hig
+06-08 14:34:11.263 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.p active=true items=26
+06-08 14:34:11.274 20858 20858 I NCL     : [CF:filter] label=L4adapter.q.d active=true items=26
+06-08 14:34:11.275 20858 20933 I NCL     : [MF:LLadd cls=cs5.bj0] d=1056 g=v1_4ca82782c5372a547c104929f03fe7a9 h=emoji_or_smiley_merge_title
+06-08 14:34:11.281 20858 20858 I NCL     : [CF:L4] cleaned=0
+06-08 14:34:11.281 20858 20858 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+06-08 14:34:11.312 20858 20933 I NCL     : [MF:LLadd cls=cs5.gk0] d=v2_1880cd7ab47c989adb8b1632dab63c14 e=wxid_pf0086u3i89712 f=MTA1Ng== h=1056
+06-08 14:34:11.321 20858 20933 I NCL     : [MF:LLadd cls=ch4.x] d=1056 g=v1_4ca82782c5372a547c104929f03fe7a9 h=emoji_or_smiley_merge_title
+06-08 14:34:11.337 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.h active=true items=26
+06-08 14:34:11.351 20858 20933 I NCL     : [MF:LLadd cls=cs5.pk0] d=7 f={"username":"gh_416778085acf@app","appId":"wx329d64ec0bab6b42","versionType":0,"version":102,"path":"pages\/index\/index.html?projectId=ThePowerOfAnEgg","headImageURL":"http:\/\/mmbiz.qpic.cn\/mmbiz_png\/1c9UqJ5baq12PPyqW6o6XFUeLJdHxu0ibzcqqVjWZr88egMMCVF0bWxkNvSH0ibP3IYfAwoiap3yhCJib5WJOOfT1A\/640?wx_fmt=png&wxfrom=200"} g=ChJ3eDMyOWQ2NGVjMGJhYjZiNDISMHBhZ2VzL2luZGV4L2luZGV4Lmh0bWw/cHJvamVjdElkPVRoZVBvd2VyT2ZBbkVnZxoTZ2hfNDE2Nzc4MDg1YWNmQGFwcCAAKGYykwFodHRwOi8vbW1iaXoucXBpYy5jbi9tbWJpel9wbmcvMWM5VXFKNWJhcTEyUFB5cVc2bzZYRlVlTEpkSHh1MGliemNxcVZqV1pyODhlZ01NQ1ZGMGJXeGtOdlNIMGliUDNJWWZBd29pYXAzeWhDSmliNVdKT09mVDFBLzY0MD93eF9mbXQ9cG5nJnd4ZnJvbT0yMDA=
+06-08 14:34:11.356 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.o active=true items=26
+06-08 14:34:11.373 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.p active=true items=26
+06-08 14:34:11.392 20858 20858 I NCL     : [CF:filter] label=L4adapter.q.d active=true items=26
+06-08 14:34:11.403 20858 20858 I NCL     : [CF:L4] cleaned=0
+06-08 14:34:11.403 20858 20858 I NCL     : [BUS:cold-300] notified adapter=v0 cache=2
+06-08 14:34:11.418 20858 20933 I NCL     : [MF:LLadd cls=ch4.j0] d=7 f={"username":"gh_416778085acf@app","appId":"wx329d64ec0bab6b42","versionType":0,"version":102,"path":"pages\/index\/index.html?projectId=ThePowerOfAnEgg","headImageURL":"http:\/\/mmbiz.qpic.cn\/mmbiz_png\/1c9UqJ5baq12PPyqW6o6XFUeLJdHxu0ibzcqqVjWZr88egMMCVF0bWxkNvSH0ibP3IYfAwoiap3yhCJib5WJOOfT1A\/640?wx_fmt=png&wxfrom=200"} g=ChJ3eDMyOWQ2NGVjMGJhYjZiNDISMHBhZ2VzL2luZGV4L2luZGV4Lmh0bWw/cHJvamVjdElkPVRoZVBvd2VyT2ZBbkVnZxoTZ2hfNDE2Nzc4MDg1YWNmQGFwcCAAKGYykwFodHRwOi8vbW1iaXoucXBpYy5jbi9tbWJpel9wbmcvMWM5VXFKNWJhcTEyUFB5cVc2bzZYRlVlTEpkSHh1MGliemNxcVZqV1pyODhlZ01NQ1ZGMGJXeGtOdlNIMGliUDNJWWZBd29pYXAzeWhDSmliNVdKT09mVDFBLzY0MD93eF9mbXQ9cG5nJnd4ZnJvbT0yMDA=
+06-08 14:34:11.447 20858 20858 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+06-08 14:34:11.504 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.h active=true items=26
+06-08 14:34:11.523 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.o active=true items=26
+06-08 14:34:11.539 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.p active=true items=26
+06-08 14:34:11.558 20858 20858 I NCL     : [CF:filter] label=L4adapter.q.d active=true items=26
+06-08 14:34:11.574 20858 20858 I NCL     : [CF:L4] cleaned=0
+06-08 14:34:11.574 20858 20858 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+06-08 14:34:11.637 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.h active=true items=26
+06-08 14:34:11.663 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.o active=true items=26
+06-08 14:34:11.686 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.p active=true items=26
+06-08 14:34:11.725 20858 20858 I NCL     : [CF:filter] label=L4adapter.q.d active=true items=26
+06-08 14:34:11.741 20858 20858 I NCL     : [CF:L4] cleaned=0
+06-08 14:34:11.878 20858 20858 I NCL     : [MF:LLadd cls=com.tencent.wechat.aff.newlife.FinderTabTipsDSLRenderTmpl$RenderNode]
+06-08 14:34:11.883 20858 20858 I NCL     : [MF:LLadd cls=com.tencent.wechat.aff.newlife.FinderTipsShowInfo] icon_url=http://wx.qlogo.cn/mmhead/LTpwfH82rickBzhawyrqkujI9ic1icEH8dey2wx07OsEaxrRiaIc6abKarG2JrkUccwwHuAM0rFZozc/0 parent= path=Listen.Entrance title=灏忓彲鐖便€傛渶杩戝垎浜繃闊充箰 username=
+06-08 14:34:11.930 20858 20974 I NCL     : [MF:LLadd cls=z15.iq2]
+06-08 14:34:11.955 20858 20858 I NCL     : [MF:LLadd cls=b65.f]
+06-08 14:34:11.968 20858 21170 I NCL     : [MF:LLadd cls=z15.sk]
+06-08 14:34:11.969 20858 21170 I NCL     : [MF:LLadd cls=z15.nu0]
+06-08 14:34:11.991 20858 20858 I NCL     : [MF:LLadd cls=ht2.b]
+06-08 14:34:12.038 21080 21538 I NCL     : [PF:LLseen:push] #24 java.lang.String
+06-08 14:34:12.120 20858 20973 I NCL     : [MF:LLadd cls=z15.jd2]
+06-08 14:34:12.123 20858 21170 I NCL     : [SF:ALLseen] #25 addAll first=java.lang.Long size=3
+06-08 14:34:12.123 20858 21170 I NCL     : [MF] addAll firstItem=java.lang.Long size=3
+06-08 14:34:12.131 20858 20973 I NCL     : [MF:LLadd cls=z15.to2]
+06-08 14:34:12.133 20858 20973 I NCL     : [MF:LLadd cls=com.tencent.mm.protocal.protobuf.FinderMedia]
+06-08 14:34:12.164 20858 20973 I NCL     : [MF:LLadd cls=z15.li6]
+06-08 14:34:12.194 20858 20858 I NCL     : [PF:UNREADFIX] tab CALLED arg=37 active=true h=0
+06-08 14:34:12.197 20858 20858 I NCL     : [PF:UNREADFIX] title CALLED arg="寰俊(37)" active=true h=0
+06-08 14:34:12.250 20858 20858 I NCL     : [PF:UNREADFIX] tab CALLED arg=37 active=true h=0
+06-08 14:34:12.254 20858 20858 I NCL     : [PF:UNREADFIX] title CALLED arg="寰俊(37)" active=true h=0
+06-08 14:34:12.290 20858 20858 I NCL     : [PF:UNREADFIX] tab CALLED arg=37 active=true h=0
+06-08 14:34:12.300 20858 20858 I NCL     : [PF:UNREADFIX] title CALLED arg="寰俊(37)" active=true h=0
+06-08 14:34:12.318 20858 20858 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+06-08 14:34:12.318 20858 20974 I NCL     : [MF:LLadd cls=vl1.c] b=id c=hello d=ok
+06-08 14:34:12.326 20858 20974 I NCL     : [MF:LLadd cls=zl1.d]
+06-08 14:34:12.330 20858 20974 I NCL     : [MF:LLadd cls=zl1.l] m=MM.Roam.RoamLiteBanner
+06-08 14:34:12.347 20858 20974 I NCL     : [MF:LLadd cls=dm1.a0]
+06-08 14:34:12.357 20858 20974 I NCL     : [MF:LLadd cls=com.tencent.mm.plugin.music.ui.j]
+06-08 14:34:12.361 20858 20974 I NCL     : [MF:LLadd cls=com.tencent.mm.plugin.wenote.ui.nativenote.i2]
+06-08 14:34:12.364 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.h active=true items=26
+06-08 14:34:12.368 20858 20974 I NCL     : [MF:LLadd cls=com.tencent.mm.plugin.expt.ui.z]
+06-08 14:34:12.374 20858 20974 I NCL     : [MF:LLadd cls=os1.b]
+06-08 14:34:12.381 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.o active=true items=26
+06-08 14:34:12.397 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.p active=true items=26
+06-08 14:34:12.398 20858 20974 I NCL     : [MF:LLadd cls=com.tencent.mm.ui.conversation.banner.a0]
+06-08 14:34:12.406 20858 20974 I NCL     : [MF:LLadd cls=com.tencent.mm.ui.conversation.banner.k0] G=http://w.mail.qq.com/cgi-bin/report_mm?failuretype=1&devicetype=2&clientversion=%s&os=%s&username=%s&iport=%s&t=weixin_bulletin&f=xhtml&lang=%s
+06-08 14:34:12.413 20858 20858 I NCL     : [CF:filter] label=L4adapter.q.d active=true items=26
+06-08 14:34:12.425 20858 20974 I NCL     : [MF:LLadd cls=com.tencent.mm.ui.conversation.banner.l0]
+06-08 14:34:12.428 20858 20858 I NCL     : [CF:L4] cleaned=0
+06-08 14:34:12.428 20858 20858 I NCL     : [CF:L4] entry adapter=v0 cleaning=false state=H
+06-08 14:34:12.468 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.h active=true items=26
+06-08 14:34:12.473 20858 20974 I NCL     : [MF:LLadd cls=com.tencent.mm.ui.conversation.banner.q0]
+06-08 14:34:12.475 20858 20974 I NCL     : [MF:LLadd cls=com.tencent.mm.ui.conversation.banner.e]
+06-08 14:34:12.478 20858 20974 I NCL     : [MF:LLadd cls=g85.e] q=
+06-08 14:34:12.479 20858 20974 I NCL     : [MF] addAll firstItem=com.tencent.mm.plugin.music.ui.j size=7
+06-08 14:34:12.479 20858 20974 I NCL     : [MF] addAll firstItem=zl1.d size=4
+06-08 14:34:12.479 20858 20974 I NCL     : [MF] addAll firstItem=com.tencent.mm.ui.conversation.banner.q0 size=1
+06-08 14:34:12.479 20858 20974 I NCL     : [MF] addAll firstItem=com.tencent.mm.ui.conversation.banner.e size=1
+06-08 14:34:12.487 20858 20933 I NCL     : [MF:LLadd cls=ch4.m0] f=http://wxapp.tc.qq.com/256/20302/stodownload?m=3b7c63450b68dd4ff3fc8493821a56ce&filekey=30350201010421301f020201000402535a04103b7c63450b68dd4ff3fc8493821a56ce02030c812a040d00000004627466730000000132&hy=SZ&storeid=56a26400200041f0a385f069e0000010000004f4e535a2f0fc01157087ef2a&bizid=1023 g= h=http://wxapp.tc.qq.com/256/20350/stodownload?m=3392be2071212a56c0e553af8f6d0c3b&filekey=30350201010421301f020201000402535a04103392be2071212a56c0e553af8f6d0c3b02030428d1040d00000004627466730000000132&hy=SZ&storeid=56a264002000453c4385f069e0000010000004f7e535a1f0fd011570989172&bizid=1023 i=
+06-08 14:34:12.491 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.o active=true items=26
+06-08 14:34:12.504 20858 20858 I NCL     : [CF:filter] label=L4adapter.p.p active=true items=26
+06-08 14:34:12.524 20858 20858 I NCL     : [CF:filter] label=L4adapter.q.d active=true items=26
+06-08 14:34:12.535 20858 20858 I NCL     : [CF:L4] cleaned=0
+06-08 14:34:12.556 20858 20858 I NCL     : [CF:overlay] removed src=L4-clean
+06-08 14:34:12.556 20858 20858 I NCL     : [SF:ALLseen] #26 addAll first=af4.a size=3
+06-08 14:34:12.556 20858 20858 I NCL     : [MF] addAll firstItem=af4.a size=3
+06-08 14:34:12.638 20858 20858 I NCL     : [MF:LLadd cls=z15.k84]
+06-08 14:34:12.641 20858 20858 I NCL     : [MF:LLadd cls=z15.xt3]
+06-08 14:34:12.643 20858 20858 I NCL     : [MF:LLadd cls=z15.mc2]
+06-08 14:34:12.657 20858 20858 I NCL     : [MF:LLadd cls=z15.bh4]
+06-08 14:34:12.702 20858 20858 I NCL     : [MF] addAll firstItem=z15.jd2 size=6
+06-08 14:34:12.715 20858 20858 I NCL     : [MF:LLadd cls=com.tencent.wechat.mm.biz.l1]
+06-08 14:34:12.719 20858 20858 I NCL     : [MF:LLadd cls=z15.oo5]
+06-08 14:34:12.733 20858 20858 I NCL     : [MF:LLadd cls=z15.vg6]
+06-08 14:34:12.736 20858 20858 I NCL     : [PF:UNREADFIX] tab CALLED arg=37 active=true h=0
+06-08 14:34:12.744 20858 20858 I NCL     : [PF:UNREADFIX] title CALLED arg="寰俊(37)" active=true h=0
+06-08 14:34:12.749 20858 20858 I NCL     : [PF:UNREADFIX] tab CALLED arg=37 active=true h=0
+06-08 14:34:12.754 20858 20858 I NCL     : [PF:UNREADFIX] title CALLED arg="寰俊(37)" active=true h=0
+06-08 14:34:12.758 20858 20858 I NCL     : [PF:UNREADFIX] tab CALLED arg=37 active=true h=0
+06-08 14:34:12.763 20858 20858 I NCL     : [PF:UNREADFIX] title CALLED arg="寰俊(37)" active=true h=0
+06-08 14:34:12.795 20858 20858 I NCL     : [MF] addAll firstItem=os1.b size=13
+06-08 14:34:12.795 20858 20858 I NCL     : [MF:LLadd cls=com.tencent.mm.ui.conversation.q]
+06-08 14:34:12.978 20858 20858 I NCL     : [PF:UNREADFIX] tab CALLED arg=37 active=true h=0
+06-08 14:34:12.986 20858 20858 I NCL     : [PF:UNREADFIX] title CALLED arg="寰俊(37)" active=true h=0
+06-08 14:34:13.158 20858 20929 I NCL     : [MF] addAll firstItem=com.tencent.mm.modelbase.g size=6
+06-08 14:34:13.158 20858 20929 I NCL     : [MF] addAll firstItem=com.tencent.mm.modelcdntran.y2 size=20
+06-08 14:34:13.235 20858 20858 I NCL     : [PF:UNREADFIX] title CALLED arg="寰俊(37)" active=true h=0
+06-08 14:34:13.253 20858 20858 I NCL     : [SF:ALLseen] #27 addAll first=ki3.u size=1
+06-08 14:34:13.254 20858 20858 I NCL     : [MF] addAll firstItem=ki3.u size=1
+06-08 14:34:13.304 20858 20858 I NCL     : [MF:LLadd cls=fh5.e1]
+06-08 14:34:13.305 20858 20858 I NCL     : [MF:LLadd cls=kh5.m]
+06-08 14:34:13.308 20858 20929 I NCL     : [MF] addAll firstItem=com.tencent.mm.pluginsdk.res.downloader.checkresupdate.k0 size=19
+06-08 14:34:13.404 20858 20858 I NCL     : [MF:LLadd cls=wc5.b]
+06-08 14:34:13.417 20858 20858 I NCL     : [MF:LLadd cls=sh5.t0] a=clipboard b=vivo c=vivo_clipboard_title d=vivo
+06-08 14:34:13.419 20858 20858 I NCL     : [MF:LLadd cls=sh5.k0]
+06-08 14:34:13.420 20858 20858 I NCL     : [MF:LLadd cls=com.tencent.mm.pluginsdk.ui.chat.o1]
+06-08 14:34:13.499 20858 20858 I NCL     : [MF:LLadd cls=dr.w]
+06-08 14:34:13.500 20858 20858 I NCL     : [MF:LLadd cls=dr.v]
+06-08 14:34:13.505 20858 20858 I NCL     : [MF:LLadd cls=com.tencent.mm.pluginsdk.ui.chat.h7]
+06-08 14:34:13.527 20858 20973 I NCL     : [MF:LLadd cls=wq.b]
+06-08 14:34:13.529 20858 20973 I NCL     : [MF:LLadd cls=wq.t]
+06-08 14:34:13.544 20858 20858 I NCL     : [SF:ALLseen] #28 addAll first=com.tencent.mm.plugin.multitask.ui.panel.OverScrollMultiTaskRecyclerView size=1
+06-08 14:34:13.544 20858 20858 I NCL     : [MF] addAll firstItem=com.tencent.mm.plugin.multitask.ui.panel.OverScrollMultiTaskRecyclerView size=1
+06-08 14:34:13.559 20858 20973 I NCL     : [MF:LLadd cls=wq.i0]
+06-08 14:34:13.559 20858 20973 I NCL     : [MF:LLadd cls=wq.a1]
+06-08 14:34:13.587 20858 20973 I NCL     : [MF:LLadd cls=wq.z]
+06-08 14:34:13.587 20858 20973 I NCL     : [MF:LLadd cls=wq.g] d=
+06-08 14:34:13.591 20858 20929 I NCL     : [MF:LLadd cls=z15.xo5]
+06-08 14:34:13.592 20858 20929 I NCL     : [MF] addAll firstItem=z15.zo5 size=1
+06-08 14:34:13.607 20858 20967 I NCL     : [MF:LLadd cls=ch4.y0] d=1035
+06-08 14:34:13.607 20858 20967 I NCL     : [MF:LLadd cls=ch4.l0] d=textstatus_customtitle_expt_param_202208 e=fullscreen_title_icon
+06-08 14:34:13.621 20858 20858 I NCL     : [MF:LLadd cls=lj5.x0]
+06-08 14:34:13.629 20858 20858 I NCL     : [MF] addAll firstItem=lj5.x0 size=1
+06-08 14:34:13.639 20858 20858 I NCL     : [SF:ALLseen] #29 addAll first=wq.y0 size=5
+06-08 14:34:13.640 20858 20858 I NCL     : [MF] addAll firstItem=wq.y0 size=5
+06-08 14:34:13.640 20858 20858 I NCL     : [MF] suspect class=wq.y0 sz=5
+06-08 14:34:13.640 20858 20858 I NCL     : [D2D3] dumping wq.y0 (sz=5)
+06-08 14:34:13.640 20858 20858 I NCL     : [D2D3:wq.y0[0].fields]
+06-08 14:34:13.640 20858 20858 I NCL     :   [0] a (r) = wq.s@a10e257
+06-08 14:34:13.640 20858 20858 I NCL     :   [0] b (int) = -1
+06-08 14:34:13.640 20858 20858 I NCL     :   [1] shadow$_klass_ (Class) = class wq.y0
+06-08 14:34:13.640 20858 20858 I NCL     :   [1] shadow$_monitor_ (int) = 0
+06-08 14:34:13.640 20858 20858 I NCL     : [D2D3:wq.y0[0].allmethods] class=wq.y0  [d=1] internalClone -> Object
+06-08 14:34:13.640 20858 20858 I NCL     : [D2D3:wq.y0[0].allmethods] class=wq.y0  [d=1] clone -> Object
+06-08 14:34:13.640 20858 20858 I NCL     : [D2D3:wq.y0[0].allmethods] class=wq.y0  [d=1] finalize -> void
+06-08 14:34:13.640 20858 20858 I NCL     : [D2D3:wq.y0[0].allmethods] class=wq.y0  [d=1] getClass -> Class
+06-08 14:34:13.640 20858 20858 I NCL     : [D2D3:wq.y0[0].allmethods] class=wq.y0  [d=1] hashCode -> int
+06-08 14:34:13.640 20858 20858 I NCL     : [D2D3:wq.y0[0].allmethods] class=wq.y0  [d=1] notify -> void
+06-08 14:34:13.640 20858 20858 I NCL     : [D2D3:wq.y0[0].allmethods] class=wq.y0  [d=1] notifyAll -> void
+06-08 14:34:13.640 20858 20858 I NCL     : [D2D3:wq.y0[0].allmethods] class=wq.y0  [d=1] toString -> String
+06-08 14:34:13.640 20858 20858 I NCL     : [D2D3:wq.y0[0].allmethods] class=wq.y0  [d=1] wait -> void
+06-08 14:34:13.640 20858 20858 I NCL     : [D2D3:wq.y0[0]] b=-1 wq.s c= d= e=
+06-08 14:34:13.640 20858 20858 I NCL     : [D2D3:wq.y0[1]] b=0 wq.s c=smiley d= e=鎵€鏈夎〃鎯?
+06-08 14:34:13.640 20858 20858 I NCL     : [D2D3:wq.y0[2]] b=1 wq.s c=custom d= e=娣诲姞鐨勫崟涓〃鎯?
+06-08 14:34:13.640 20858 20858 I NCL     : [D2D3:wq.y0[3]] b=2 wq.s c=capture d= e=鎴戠殑鑷媿琛ㄦ儏
+06-08 14:34:13.640 20858 20858 I NCL     : [D2D3:wq.y0[4]] b=3 wq.s c=com.tencent.xin.emoticon.person.stiker_1606189283f7aea903565ff871 d=http://wxapp.tc.qq.com/275/20304/stodownload?m=e813dcb990105c71f682be3bd939fc59&filekey=30340201010420301e02020113040253480410e813dcb990105c71f682be3bd939fc5902020f28040d00000004627466730000000132&hy=SH&storeid=2647865ee000db500000000000000011300004f5053480dd298e0b653c6f23&bizid=1023 e=鑰佸﹩浣犺秴妫?
+06-08 14:34:13.640 20858 20858 I NCL     : [SF:ALLseen] #30 addAll first=wq.c1 size=4
+06-08 14:34:13.640 20858 20858 I NCL     : [MF] addAll firstItem=wq.c1 size=4
+06-08 14:34:13.640 20858 20858 I NCL     : [MF] suspect class=wq.c1 sz=4
+06-08 14:34:13.655 20858 20858 I NCL     : [D2D3:wq.c1.a].methods  [d=1] b() -> java.util.List
+06-08 14:34:13.655 20858 20858 I NCL     : [D2D3:wq.c1.a].allmethods class=wq.b1  [d=0] a -> int
+06-08 14:34:13.655 20858 20858 I NCL     : [D2D3:wq.c1.a].allmethods class=wq.b1  [d=1] b -> List
+06-08 14:34:13.655 20858 20858 I NCL     : [D2D3:wq.c1.a].allmethods class=wq.b1  [d=1] p -> r
+06-08 14:34:13.655 20858 20858 I NCL     : [D2D3:wq.c1.a].allmethods class=wq.b1  [d=2] internalClone -> Object
+06-08 14:34:13.655 20858 20858 I NCL     : [D2D3:wq.c1.a].allmethods class=wq.b1  [d=2] clone -> Object
+06-08 14:34:13.655 20858 20858 I NCL     : [D2D3:wq.c1.a].allmethods class=wq.b1  [d=2] finalize -> void
+06-08 14:34:13.655 20858 20858 I NCL     : [D2D3:wq.c1.a].allmethods class=wq.b1  [d=2] getClass -> Class
+06-08 14:34:13.655 20858 20858 I NCL     : [D2D3:wq.c1.a].allmethods class=wq.b1  [d=2] hashCode -> int
+06-08 14:34:13.655 20858 20858 I NCL     : [D2D3:wq.c1.a].allmethods class=wq.b1  [d=2] notify -> void
+06-08 14:34:13.655 20858 20858 I NCL     : [D2D3:wq.c1.a].allmethods class=wq.b1  [d=2] notifyAll -> void
+06-08 14:34:13.655 20858 20858 I NCL     : [D2D3:wq.c1.a].allmethods class=wq.b1  [d=2] toString -> String
+06-08 14:34:13.656 20858 20858 I NCL     : [D2D3:wq.c1.a].allmethods class=wq.b1  [d=2] wait -> void
+06-08 14:34:13.656 20858 20858 I NCL     : [D2D3:wq.c1.b].methods  [d=1] b() -> java.util.List
+06-08 14:34:13.656 20858 20858 I NCL     : [D2D3:wq.c1.b].allmethods class=wq.b1  [d=0] a -> int
+06-08 14:34:13.656 20858 20858 I NCL     : [D2D3:wq.c1.b].allmethods class=wq.b1  [d=1] b -> List
+06-08 14:34:13.656 20858 20858 I NCL     : [D2D3:wq.c1.b].allmethods class=wq.b1  [d=1] p -> r
+06-08 14:34:13.656 20858 20858 I NCL     : [D2D3:wq.c1.b].allmethods class=wq.b1  [d=2] internalClone -> Object
+06-08 14:34:13.656 20858 20858 I NCL     : [D2D3:wq.c1.b].allmethods class=wq.b1  [d=2] clone -> Object
+06-08 14:34:13.656 20858 20858 I NCL     : [D2D3:wq.c1.b].allmethods class=wq.b1  [d=2] finalize -> void
+06-08 14:34:13.656 20858 20858 I NCL     : [D2D3:wq.c1.b].allmethods class=wq.b1  [d=2] getClass -> Class
+06-08 14:34:13.656 20858 20858 I NCL     : [D2D3:wq.c1.b].allmethods class=wq.b1  [d=2] hashCode -> int
+06-08 14:34:13.656 20858 20858 I NCL     : [D2D3:wq.c1.b].allmethods class=wq.b1  [d=2] notify -> void
+06-08 14:34:13.656 20858 20858 I NCL     : [D2D3:wq.c1.b].allmethods class=wq.b1  [d=2] notifyAll -> void
+06-08 14:34:13.656 20858 20858 I NCL     : [D2D3:wq.c1.b].allmethods class=wq.b1  [d=2] toString -> String
+06-08 14:34:13.656 20858 20858 I NCL     : [D2D3:wq.c1.b].allmethods class=wq.b1  [d=2] wait -> void
+06-08 14:34:13.656 20858 20858 I NCL     : [D2D3:wq.b1.a.b].methods  [d=0] superClone() -> java.util.LinkedList
+06-08 14:34:13.656 20858 20858 I NCL     : [D2D3:wq.b1.a.b].methods  [d=0] listIterator(params) -> java.util.ListIterator
+06-08 14:34:13.656 20858 20858 I NCL     : [D2D3:wq.b1.a.b].methods  [d=0] node(params) -> java.util.LinkedList$Node
+06-08 14:34:13.656 20858 20858 I NCL     : [D2D3:wq.b1.a.b].methods  [d=1] listIterator(params) -> java.util.ListIterator
+06-08 14:34:13.656 20858 20858 I NCL     : [D2D3:wq.b1.a.b].methods  [d=2] listIterator() -> java.util.ListIterator
+06-08 14:34:13.656 20858 20858 I NCL     : [D2D3:wq.b1.a.b].methods  [d=2] listIterator(params) -> java.util.ListIterator
+06-08 14:34:13.656 20858 20858 I NCL     : [D2D3:wq.b1.a.b].methods  [d=2] subList(params) -> java.util.List
+06-08 14:34:13.656 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=0] superClone -> LinkedList
+06-08 14:34:13.656 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=0] clear -> void
+06-08 14:34:13.656 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=0] clone -> Object
+06-08 14:34:13.656 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=0] descendingIterator -> Iterator
+06-08 14:34:13.656 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=0] element -> Object
+06-08 14:34:13.656 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=0] getFirst -> Object
+06-08 14:34:13.656 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=0] getLast -> Object
+06-08 14:34:13.656 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=0] peek -> Object
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=0] peekFirst -> Object
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=0] peekLast -> Object
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=0] poll -> Object
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=0] pollFirst -> Object
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=0] pollLast -> Object
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=0] pop -> Object
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=0] remove -> Object
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=0] removeFirst -> Object
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=0] removeLast -> Object
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=0] size -> int
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=0] spliterator -> Spliterator
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=0] toArray -> Object[]
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=1] iterator -> Iterator
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=2] clear -> void
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=2] hashCode -> int
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=2] iterator -> Iterator
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=2] listIterator -> ListIterator
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=3] clear -> void
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=3] isEmpty -> boolean
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=3] iterator -> Iterator
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=3] size -> int
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=3] toArray -> Object[]
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=3] toString -> String
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=4] internalClone -> Object
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=4] clone -> Object
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=4] finalize -> void
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=4] getClass -> Class
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=4] hashCode -> int
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=4] notify -> void
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=4] notifyAll -> void
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=4] toString -> String
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].allmethods class=java.util.LinkedList  [d=4] wait -> void
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b] elemClass=wq.i0
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].elem.allmethods class=wq.i0  [d=2] internalClone -> Object
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].elem.allmethods class=wq.i0  [d=2] clone -> Object
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].elem.allmethods class=wq.i0  [d=2] finalize -> void
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].elem.allmethods class=wq.i0  [d=2] getClass -> Class
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].elem.allmethods class=wq.i0  [d=2] hashCode -> int
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].elem.allmethods class=wq.i0  [d=2] notify -> void
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].elem.allmethods class=wq.i0  [d=2] notifyAll -> void
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].elem.allmethods class=wq.i0  [d=2] toString -> String
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.a.b].elem.allmethods class=wq.i0  [d=2] wait -> void
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.b.b].methods  [d=0] superClone() -> java.util.LinkedList
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.b.b].methods  [d=0] listIterator(params) -> java.util.ListIterator
+06-08 14:34:13.657 20858 20858 I NCL     : [D2D3:wq.b1.b.b].methods  [d=0] node(params) -> java.util.LinkedList$Node
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].methods  [d=1] listIterator(params) -> java.util.ListIterator
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].methods  [d=2] listIterator() -> java.util.ListIterator
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].methods  [d=2] listIterator(params) -> java.util.ListIterator
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].methods  [d=2] subList(params) -> java.util.List
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=0] superClone -> LinkedList
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=0] clear -> void
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=0] clone -> Object
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=0] descendingIterator -> Iterator
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=0] element -> Object
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=0] getFirst -> Object
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=0] getLast -> Object
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=0] peek -> Object
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=0] peekFirst -> Object
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=0] peekLast -> Object
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=0] poll -> Object
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=0] pollFirst -> Object
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=0] pollLast -> Object
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=0] pop -> Object
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=0] remove -> Object
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=0] removeFirst -> Object
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=0] removeLast -> Object
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=0] size -> int
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=0] spliterator -> Spliterator
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=0] toArray -> Object[]
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=1] iterator -> Iterator
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=2] clear -> void
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=2] hashCode -> int
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=2] iterator -> Iterator
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=2] listIterator -> ListIterator
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=3] clear -> void
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=3] isEmpty -> boolean
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=3] iterator -> Iterator
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=3] size -> int
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=3] toArray -> Object[]
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=3] toString -> String
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=4] internalClone -> Object
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=4] clone -> Object
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=4] finalize -> void
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=4] getClass -> Class
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=4] hashCode -> int
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=4] notify -> void
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=4] notifyAll -> void
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=4] toString -> String
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].allmethods class=java.util.LinkedList  [d=4] wait -> void
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b] elemClass=wq.i0
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].elem.allmethods class=wq.i0  [d=2] internalClone -> Object
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].elem.allmethods class=wq.i0  [d=2] clone -> Object
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].elem.allmethods class=wq.i0  [d=2] finalize -> void
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].elem.allmethods class=wq.i0  [d=2] getClass -> Class
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].elem.allmethods class=wq.i0  [d=2] hashCode -> int
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].elem.allmethods class=wq.i0  [d=2] notify -> void
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].elem.allmethods class=wq.i0  [d=2] notifyAll -> void
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].elem.allmethods class=wq.i0  [d=2] toString -> String
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b.b].elem.allmethods class=wq.i0  [d=2] wait -> void
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b().fields] elemClass=wq.i0
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.b().fields]
+06-08 14:34:13.658 20858 20858 I NCL     :   [0] b (r) = wq.t@16f44dc
+06-08 14:34:13.658 20858 20858 I NCL     :   [0] c (n45) = null
+06-08 14:34:13.658 20858 20858 I NCL     :   [0] d (boolean) = false
+06-08 14:34:13.658 20858 20858 I NCL     :   [0] e (boolean) = false
+06-08 14:34:13.658 20858 20858 I NCL     :   [1] a (int) = 2
+06-08 14:34:13.658 20858 20858 I NCL     :   [2] shadow$_klass_ (Class) = class wq.i0
+06-08 14:34:13.658 20858 20858 I NCL     :   [2] shadow$_monitor_ (int) = 0
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3] dumping wq.b1 full fields (b1b):
+06-08 14:34:13.658 20858 20858 I NCL     : [D2D3:wq.b1.fields]
+06-08 14:34:13.658 20858 20858 I NCL     :   [0] d (boolean) = true
+06-08 14:34:13.658 20858 20858 I NCL     :   [0] e (int) = 114
+06-08 14:34:13.658 20858 20858 I NCL     :   [1] a (r) = wq.t@18389e5
+06-08 14:34:13.658 20858 20858 I NCL     :   [1] b (i0) = wq.i0@523acba
+06-08 14:34:13.658 20858 20858 I NCL     :   [1] c (LinkedList) = List(sz=116,LinkedList)
+06-08 14:34:13.658 20858 20858 I NCL     :   [2] shadow$_klass_ (Class) = class wq.b1
+06-08 14:34:13.658 20858 20858 I NCL     :   [2] shadow$_monitor_ (int) = -2046868947
+06-08 14:34:13.659 20858 20858 I NCL     : [D2D3:wq.t] c=smiley d= e=鎵€鏈夎〃鎯?
+06-08 14:34:13.681 20858 20893 I NCL     : [MF:LLadd cls=z15.hd6] e=0
+06-08 14:34:13.729 20858 20893 I NCL     : [MF:LLadd cls=z15.be0] d=action.brand.qbrand.com e=action.weixin.qq.com
+06-08 14:34:13.832 20858 20893 I NCL     : [MF:LLadd cls=z15.ju3] d=long.weixin.qq.com e=long.weixin.qq.com
+06-08 14:34:13.837 20858 20893 I NCL     : [MF:LLadd cls=z15.xn]
+06-08 14:34:13.853 20858 20893 I NCL     : [MF:LLadd cls=z15.oc] i=/cgi-bin/micromsg-bin/a2auth
+06-08 14:34:13.964 21080 21080 I NCL     : [PF:LLseen:push] #25 [B
+06-08 14:34:13.964 21080 21080 I NCL     : [PF:LLseen:push] #26 z15.hd6
+06-08 14:34:13.967 21080 21080 I NCL     : [PF:LLseen:push] #27 z15.be0
+06-08 14:34:13.970 21080 21080 I NCL     : [PF:LLseen:push] #28 z15.ju3
+06-08 14:34:13.970 21080 21080 I NCL     : [PF:LLseen:push] #29 z15.xn
+06-08 14:34:13.971 21080 21080 I NCL     : [PF:LLseen:push] #30 z15.oc
+06-08 14:34:14.031 21080 21080 I NCL     : [PF:LLseen:push] #31 w15.fh
+--------- beginning of crash
+06-08 14:34:14.304 20858 20890 I NCL     : [MF:LLadd cls=z15.yo5]
+06-08 14:34:14.323 20858 20890 I NCL     : [MF:LLadd cls=z15.xq5] d=36.155.208.254
+06-08 14:34:14.325 20858 20890 I NCL     : [MF:LLadd cls=z15.wr]
+06-08 14:34:14.346 20858 20923 I NCL     : [MF:LLadd cls=z15.zs6]
+06-08 14:34:14.349 20858 20973 I NCL     : [MF:LLadd cls=z15.dt4]
+06-08 14:34:14.785 20858 20858 I NCL     : [MF:LLadd cls=qo0.x]
+06-08 14:34:15.010 21080 21807 I NCL     : [PF:LLseen:push] #32 z15.ku3
+06-08 14:34:15.075 20858 20892 I NCL     : [MF:LLadd cls=z15.ku3] d=mlshort.prepay.wechatpay.cn
+06-08 14:34:15.083 20858 21167 I NCL     : [MF:LLadd cls=z15.df4] d=Liteapp f=/cgi-bin/micromsg-bin/transfer/h5webtransfer g=/cgi-bin/micromsg-bin/transfer/ h=h5webtransfer
+06-08 14:34:15.129 21080 21376 I NCL     : [PF:LLseen:push] #33 com.tencent.wechat.aff.udr.u
+06-08 14:34:15.151 20858 20929 I NCL     : [MF:LLadd cls=z15.kg6] m=208550418_1780900455149
+06-08 14:34:15.205 20858 20929 I NCL     : [MF] addAll firstItem=jy0.qa size=13
+06-08 14:34:15.206 20858 21164 I NCL     : [MF:LLadd cls=lr.e]
+06-08 14:34:15.233 20858 20858 I NCL     : [PF:UNREADFIX] title CALLED arg="寰俊(37)" active=true h=0
+06-08 14:34:15.318 20858 20858 I NCL     : [MF:LLadd cls=z15.s57] d=BodyPoseAlign e=MEDIUM g=livevlog h=cpu
+06-08 14:34:15.319 20858 20858 I NCL     : [MF] addAll firstItem=z15.s57 size=10
+06-08 14:34:15.357 20858 20929 I NCL     : [MF] addAll firstItem=com.tencent.mm.modelbase.a3 size=10
+06-08 14:34:15.384 20858 20929 I NCL     : [MF:LLadd cls=i84.y] d=wxid_lzd2va16jd1622
+06-08 14:34:15.384 20858 20929 I NCL     : [MF] LLadd blocked: i84.y
+06-08 14:34:15.529 20858 21842 I NCL     : [MF:LLadd cls=z15.po5] i=
+06-08 14:34:15.539 20858 21842 I NCL     : [MF:LLadd cls=z15.wy4]
+06-08 14:34:15.597 20858 20890 I NCL     : [MF:LLadd cls=z15.oh2]
+06-08 14:34:15.621 20858 20890 I NCL     : [MF:LLadd cls=z15.sw2]
+06-08 14:34:15.640 20858 20890 I NCL     : [MF:LLadd cls=z15.rw2]
+06-08 14:34:15.696 20858 20890 I NCL     : [MF:LLadd cls=z15.uv0]
+06-08 14:34:15.699 20858 20890 I NCL     : [MF:LLadd cls=z15.mj5]
+06-08 14:34:15.701 20858 20890 I NCL     : [MF:LLadd cls=z15.ij5]
+06-08 14:34:15.767 20858 20929 I NCL     : [MF] addAll firstItem=mw1.j size=3
+06-08 14:34:15.778 20858 21164 I NCL     : [MF:LLadd cls=xx4.b3] b=MODEL_FACE_ALIGNMENT c=FaceAlignmentV4.10.0.26_arm.pbin d=e8bee8088759db0991799534cf25573964085086
+06-08 14:34:15.781 20858 20929 I NCL     : [MF] addAll firstItem=com.tencent.mm.modelsimple.g1 size=21
+06-08 14:34:15.904 20858 20893 I NCL     : [MF:LLadd cls=cs5.v10]
+06-08 14:34:16.125 20858 20929 I NCL     : [MF:LLadd cls=cs5.bh0] d=friend_tab_end_wording e=鏈嬪弸鐩稿叧鍐呭宸茬湅瀹岋紝鏆傛棤鏇村鍐呭
+06-08 14:34:16.125 20858 20929 I NCL     : [MF:LLadd cls=cs5.ch0] d=finderstream_wording_config
+06-08 14:34:16.599 20858 20858 W NCL     : [MRD:retry] gave up after 15 attempts
+06-08 14:34:17.001 20858 20929 I NCL     : [MF] addAll firstItem=com.tencent.mm.plugin.sns.model.c3 size=15
+06-08 14:34:17.024 20858 20905 I NCL     : [MF:LLadd cls=z15.eq2] h=tipsid_1780867619095482 t=eyJzaG93X3R5cGUiOjk5OSwid29yZGluZ19rZXkiOiJUYWJUaXBzVGl0bGVfTGlrZWQiLCJmcmllbmRfY291bnQiOjEsInN0eWxlIjowLCJzY2VuZSI6IiIsInJlZGRvdF9mbGFnIjowLCJ0eXBlIjo3LCJyZW1hcmsiOiJ7XCJhY2N1bV9leHBvc2VfY291bnRcIjo5LFwiYWNjdW1fcGVuYWx0eV9jb3VudFwiOjAsXCJmaW5kZXJfYWN0aXZlX2xldmVsXCI6MCxcImZpbmRlcl9pc19kYXVcIjpmYWxzZSxcImZpbmRlcnVpbnhcIjpcIjAxRUhUVjV2R1haREpoa3FmLzJnWk0yU0FORFBBNTBOVUlWWEtzY2hvckU9XCIsXCJmcmllbmRfbGlrZV9jb3VudFwiOjEsXCJmcmllbmRfbGlrZV90b3RhbF9mZWVkXCI6MSxcImZyaWVuZF9yYW5rXCI6MCxcImZyaWVuZF9yZXN1bHRfc2VsZWN0XCI6XCJUYWJUaXBzX0ZyaWVuZF9PbmVfTGlrZV9Xb3JkaW5nX1RpcHNDb250cm9sXCIsXCJmdWlueFwiOlwib3pET1lkTVljSldwMEFxRUh0SG5RQT09XCIsXCJoYXNfZGlzY292ZXJ5X3JlZGRvdFwiOjEsXCJpbm5lcl9mb2xsb3dcIjowLFwiaW5uZXJfZ3JvdXBpZFwiOlwiXCIsXCJpc19jb2xkXCI6MCxcImxhc3RfcHVuaXNoX3N0YWdlXCI6MCxcImxhc3RfcHVuc2loX3RpbWVzdGFtcFwiOjE3NzkxOTM1MjksXCJtYXhfc2NvcmVcIjowLjAsXCJtaXhlZHJhbmtfbmV3dHlwZVwiOjEwMDEsXCJuZXdfbWl4ZWRyYW5rXzJcIjp7XCJvcmlfY2xpY2tfc2NvcmVcIjpcIjAuMDE3NTlcIixcIm9yaV9tb2RlbF9uYW1lXCI6XCJyYW5rX2FsbF9yZWRkb3RfZ3B1MDgwMlwiLFwib3JpX3Njb3JlX2N0clwiOlwiMC4wMDAwMFwifSxcIm9iamVjdF9pZFwiOlwiMTQ3NDk1MDU4MTcyOTg2NzIwNjBcIixcInB1Ymxpc2hfdGltZXN0YW1wXCI6MCxcInB5cV9saXRlX3Njb3JlXCI6bnVsbCxcInJlY2FsbF9tb3N0bGlrZV9mbGFnXCI6bnVsbCxcInJlcXVlc3RfaWRcIjpcIjE3ODA4Njc2MTkwOTU0ODJcIixcInNhbWVfd2l0aF9sYXN0X2ZpbmRlcnRpcFwiOjAsXCJzY2VuZVwiOjksXCJ0cmFjZWlkXCI6XCIxNzgwODY3NjE5XzE5MzQ4NDg0ODhfMTVcIixcInRyaWdnZXJfcmVxX3NvdXJjZVwiOlwiMjA5NzE1MlwiLFwidHJpZ2dlcl9zZWxlY3RfbW9kZWxfbmFtZVwiOlwiXCIsXCJ0cmlnZ2VyX3NlbGVjdF9tb2RlbF9zY29yZVwiOjAuMCxcInVfM3RhYl9hY3RpdmVfZGF5Y250XzE0ZFwiOjEsXCJ1XzN0YWJfdnZfMzBkXCI6MixcIndpbGxfcGVuYWx0eV9nYXBfY291bnRcIjoxMX1cbiIsImxpdmVfc3ViX3JlY2FsbF90eXBlIjowLCJlbnRlcl9hY3Rpb24iOjAsImp1bXBfbGl2ZV90YWJfaWQiOjAsImZpbmRlcnVpbiI6MTMxMDQ4MDc3ODE1NTgyOTcsImNybV9xdWV1ZSI6MCwiY3JtX3Byb2Nlc3NvciI6IiIsImNybV91cGRhdGVfdGltZSI6MCwicHVzaF90eXBlIjowLCJvcmRlcl91aWQiOjAsImZyb21fZXhwb3NlIjowLCJob3RfaGl0X3B1c2hfZXhwdCI6IiIsImFwcF9wdXNoX3Rhc2tfaWQiOjAsInJlcXVlc3RfaWQiOjE3ODA4Njc2MTkwOTU0ODIsImZpbmRlcl91c2VybmFtZSI6InYyXzA2MDAwMDIzMTAwM2IyMGZhZWM4YzVlNDgxMThjNmQwYzYwNmU1MzNiMDc3NDQyZGFiNTEyYjY1N2IyNTY3ZmYwMTJkNDk4YzZhMDRAZmluZGVyIiwiZm9sbG93X21wX2lkZW50aXR5IjowLCJmb2xsb3dfdXNlcl9pZGVudGl0eSI6MCwiZmluZGVyX3N1Yl9yZWNhbGxfdHlwZSI6MTIsInVpbl9wYWNrX2lkIjowLCJmZWVkX3RhZ19pZCI6MCwicHV0X3N0cmF0ZWd5IjoiIiwidHJpZ2dlcl9zb3VyY2UiOjIwOTcxNTIsInVpbl9mbGFnIjoiIiwidHJpZ2dlcl90b3RhbF9zb3VyY2UiOjIwOTcxNTIsImVudGVyX2xpdmVfaWQiOjAsImJpel9yZXBvcnRfY3VzdG9tX2luZm8iOiIiLCJzdWJ0aXRsZV9leHB0IjoiIiwiY29tcGxldGVfdGV4dCI6IlthdmF0YXJd5rab5raM5b+D5rW377yM54+K5pig5pif6L6w44CCW2ljb25dIiwidGh1bWJuYWlsX3RleHQiOiJbYXZhdGFyXVtpY29uXSIsImRzbF9zaG93X3R5cGUiOjEyLCJyZW1hcmtfZXhwdCI6MCwicmVtYXJrX3Byb2Nlc3NfcmVzdWx0IjowLCJpc19kZWxpdmVyeV9tdWx0aV9pY29ucyI6ZmFsc2UsImRpc3BsYXlfdGFiX3R5cGUiOjQsImZyaWVuZF91c2VybmFtZSI6Ind4aWRfOXFjajJyMW9rMzl4MTIiLCJyZWRkb3RfbW9uaXRvcl9pbmZvIjp7ImZldGNoX3NjZW5lIjo5fSwicmVwb3J0X3RpcHNfYXR0cl9pbmZvIjozLCJyZWxhdGVkX2ZyaWVuZF91aW4iOlsyNTY0NTczMTI3XSwidGFiX3RpcHNfb2JqZWN0X2lkX3R5cGUiOjEsInJlZGRvdF9nZW5lcmFsX3R5cGUiOjF9 x=tipsuuid_1780867619095482_150933828_7
+06-08 14:34:17.026 20858 20905 I NCL     : [MF] addAll firstItem=z15.eq2 size=1
+06-08 14:34:17.049 20858 20960 I NCL     : [MF:LLadd cls=cs5.y7] d=mmecpreload_14_preload_new_present_recommend_1st_page_items_single_chat
+06-08 14:34:17.055 20858 20858 I NCL     : [PF:UNREADFIX] title CALLED arg="寰俊(37)" active=true h=0
+06-08 14:34:18.805 20858 20985 I NCL     : [MF:LLadd cls=z15.zm4]
+06-08 14:34:18.969 20858 20893 I NCL     : [MF:LLadd cls=z15.vs4]
+06-08 14:34:18.985 20858 20893 I NCL     : [MF:LLadd cls=z15.oc6]
+06-08 14:34:19.023 20858 20929 I NCL     : [MF:LLadd cls=x15.n]
+06-08 14:34:19.036 20858 20929 I NCL     : [MF:LLadd cls=x15.m]
+06-08 14:34:19.393 20858 20967 I NCL     : [MF:LLadd cls=ch4.p1] e=weapp_panel
+06-08 14:34:19.395 20858 20967 I NCL     : [MF:LLadd cls=ch4.h0] d=weapp_panel
+06-08 14:34:19.907 20858 21274 I NCL     : [MF:LLadd cls=l25.p0] c=MicroMsg.recovery.safePoint d=auto clear point e=matrix_batt
+06-08 14:34:20.104 21080 21372 I NCL     : [PF:LLseen:push] #34 com.tencent.mm.plugin.report.service.BroadCastData

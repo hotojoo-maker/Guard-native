@@ -22,6 +22,8 @@ add_library(
     src/push_guard.cpp
     src/anti_tamper.cpp
     src/log_limiter.cpp
+    src/config_crypto.cpp
+    src/registry_loader.cpp
 )
 
 target_include_directories(guardcore PRIVATE include)

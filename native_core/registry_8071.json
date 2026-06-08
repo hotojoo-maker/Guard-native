@@ -1,0 +1,52 @@
+{
+  "schema_id": "r8071_v1",
+  "wechat_version": "8.0.71",
+  "_note": "Phase 1B plaintext source of truth. Anchors mirror moduleD/ConvFilter.java (L2-confirmed, P17 installed). This loader only surfaces the recipe for verification; it does NOT take over filtering. 1C: tools/ will generate the SO-embedded (and later AES-GCM encrypted) copy from this file.",
+  "entries": {
+    "conv.list": {
+      "mvvmlist_class": "com.tencent.mm.plugin.mvvmlist.MvvmList",
+      "adapter_class": "kc5.v0",
+      "item_class": "kc5.y",
+      "contact_class": "com.tencent.mm.storage.l4",
+      "l1_methods": "n,m",
+      "l2_method": "s",
+      "l4_notify": "notifyDataSetChanged",
+      "contact_fields": "d,e",
+      "wxid_getters": "C0,h1,j1,i1,k1,getUsername,getUserName"
+    },
+    "moments.feed": {
+      "item_friend": "na4.b",
+      "item_promo": "la4.p",
+      "adapter_class": "e2",
+      "wxid_field": "field_userName",
+      "inner_field": "d",
+      "sns_getter": "h1",
+      "list_addall": "ArrayList.addAll,LinkedList.addAll",
+      "like_list": "LikeUserList",
+      "comment_list": "CommentUserList",
+      "actor_class": "z15.e56",
+      "actor_wxid_field": "f435583d",
+      "actor_field_names": "d,f435583d,username,field_userName"
+    },
+    "contact.address": {
+      "live_list": "com.tencent.mm.ui.contact.address.AddressLiveList",
+      "mvvmlist_class": "com.tencent.mm.plugin.mvvmlist.MvvmList",
+      "adapter_class": "ik3.t0",
+      "item_class": "fc5.g",
+      "contact_class": "com.tencent.mm.storage.z3",
+      "contact_field": "d",
+      "type_field": "e",
+      "wxid_getter": "c1",
+      "list_addall": "ArrayList.addAll"
+    },
+    "search.gateway": {
+      "gateway": "fts_result_view",
+      "adapter_family": "q2,f0",
+      "render_hook": "getView",
+      "policy": "hide_if_target_in_hidden_union",
+      "extractor_profile": "wechat8071_fts_mixed",
+      "scope": "result_render_only",
+      "unlock_entry": "excluded_search_unlock_111111"
+    }
+  }
+}

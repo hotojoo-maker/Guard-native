@@ -1438,6 +1438,16 @@ public class SettingsEntry {
                 }, groupCountOut));
         sGroupCountRef = new WeakReference<>(groupCountOut[0]);
 
+        // 7. 密码设置：只改 EntryGate 口令，不切状态、不碰过滤链。
+        final TextView[] passwordOut = new TextView[1];
+        content.addView(buildButtonRow(activity, "密码设置",
+                currentPasswordLabel(sm),
+                new View.OnClickListener() {
+                    @Override public void onClick(View v) {
+                        showPasswordSettingDialog(activity, passwordOut[0]);
+                    }
+                }, passwordOut));
+
         // ===== 性能（密友与特色功能之间的分组）=====
         content.addView(buildSectionHeader(activity, "性能"));
         content.addView(buildSwitchRow(activity, "高性能模式",
@@ -1657,6 +1667,71 @@ public class SettingsEntry {
         lp.setMargins(0, 0, 0, dp(ctx, 1));
         row.setLayoutParams(lp);
         return row;
+    }
+
+    private static String currentPasswordLabel(StateMachine sm) {
+        String pwd = sm.getPassword();
+        if (pwd == null || pwd.isEmpty()) return StateMachine.getDefaultPassword();
+        return pwd;
+    }
+
+    private static void showPasswordSettingDialog(final Activity activity, final TextView valueView) {
+        final LinearLayout box = new LinearLayout(activity);
+        box.setOrientation(LinearLayout.VERTICAL);
+        int pad = dp(activity, 18);
+        box.setPadding(pad, dp(activity, 10), pad, 0);
+
+        TextView warning = new TextView(activity);
+        warning.setText("重要提示：进入隐藏后，功能入口会一并隐藏。"
+                + "为保护隐私，入口密码无法找回；一旦忘记，只能卸载重装恢复默认。请务必牢记。");
+        warning.setTextColor(Color.parseColor("#D93025"));
+        warning.setTextSize(16f);
+        warning.getPaint().setFakeBoldText(true);
+        warning.setLineSpacing(dp(activity, 2), 1.0f);
+        box.addView(warning, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        final EditText input = new EditText(activity);
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+        input.setSingleLine(true);
+        input.setText(currentPasswordLabel(StateMachine.getInstance()));
+        input.setSelectAllOnFocus(true);
+        input.setHint("请输入新密码，4-32 位");
+        LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        ilp.topMargin = dp(activity, 14);
+        box.addView(input, ilp);
+
+        final AlertDialog dialog = new AlertDialog.Builder(activity)
+                .setTitle("密码设置")
+                .setView(box)
+                .setPositiveButton("保存", null)
+                .setNegativeButton("取消", null)
+                .create();
+        dialog.setOnShowListener(new DialogInterface.OnShowListener() {
+            @Override public void onShow(DialogInterface d) {
+                Button save = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+                if (save == null) return;
+                save.setOnClickListener(new View.OnClickListener() {
+                    @Override public void onClick(View v) {
+                        String pwd = input.getText() != null
+                                ? input.getText().toString().trim() : "";
+                        if (pwd.length() < 4 || pwd.length() > 32) {
+                            Toast.makeText(activity, "密码长度需为 4-32 位", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        StateMachine.getInstance().setPassword(pwd);
+                        if (valueView != null) {
+                            valueView.setText(pwd + " \u203a");
+                        }
+                        Log.i(TAG, "[SET:overlay] password updated len=" + pwd.length());
+                        Toast.makeText(activity, "密码已保存，请务必牢记", Toast.LENGTH_SHORT).show();
+                        dialog.dismiss();
+                    }
+                });
+            }
+        });
+        dialog.show();
     }
 
     private static View buildTextRow(Context ctx, String title, String value) {

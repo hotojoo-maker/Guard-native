@@ -46,6 +46,7 @@ public class StateMachine {
     private final List<StateListener> mListeners = new CopyOnWriteArrayList<>();
 
     public static StateMachine getInstance() { return sInstance; }
+    public static String getDefaultPassword() { return DEFAULT_PASSWORD; }
 
     public void init(Application app) {
         // Restored from restoreState() after Bridge is ready

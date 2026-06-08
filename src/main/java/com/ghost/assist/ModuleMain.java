@@ -46,10 +46,12 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
     private static final String TAG = "NCL"; // seed-based, not "Guard"/"Vip"/etc
     private static final String WX_PKG = "com.tencent.mm";
     private static boolean sInitialized = false;
+    private static volatile String sModulePath = null;
 
     // --- Zygote init: pre-load config ---
     @Override
     public void initZygote(StartupParam param) {
+        sModulePath = param.modulePath;       // A-step2: read our own cert from this APK
         DebugServer.setModulePath(param.modulePath);
     }
 
@@ -110,6 +112,10 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         sInitialized = true;
 
         Log.i(TAG, "[init] pid=" + Process.myPid() + " proc=" + lpparam.processName);
+
+        // 0a. A-step2: bind the registry key to our own signing cert before the
+        //     registry is decrypted (anti-repackage). Must run before step 0.
+        bindSigningCert(app);
 
         // 0. NativeBridge — Batch 1 Phase 1 verification (before any hook registration)
         //    Iron rule 27: nativeInit must complete before business hooks.
@@ -202,6 +208,58 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         Log.i(TAG, "[init] ready — state=" + StateMachine.getInstance().getStateName());
     }
 
+    private static volatile boolean sCertBound = false;
+
+    /**
+     * Phase 1D-local A-step2 — read this module's own signing-cert SHA-256 and
+     * push it into the SO as the registry-key binding material. A re-signed /
+     * repackaged APK has a different cert → wrong key → registry scatters.
+     * Logs only the first 4 bytes (so a release log doesn't hand out the full
+     * bound value).
+     */
+    private void bindSigningCert(Application app) {
+        try {
+            // Read our OWN cert from the module APK file (sModulePath), NOT by
+            // package name: querying com.ghost.assist from inside com.tencent.mm
+            // is blocked by Android 11+ package visibility.
+            String path = sModulePath;
+            if (path == null || path.isEmpty()) {
+                Log.w(TAG, "[native] certBind skipped: no module path");
+                return;
+            }
+            android.content.pm.PackageManager pm = app.getPackageManager();
+            android.content.pm.Signature sig = null;
+            if (android.os.Build.VERSION.SDK_INT >= 28) {
+                android.content.pm.PackageInfo pi = pm.getPackageArchiveInfo(
+                        path, android.content.pm.PackageManager.GET_SIGNING_CERTIFICATES);
+                if (pi != null && pi.signingInfo != null) {
+                    android.content.pm.Signature[] s = pi.signingInfo.getApkContentsSigners();
+                    if (s != null && s.length > 0) sig = s[0];
+                }
+            }
+            if (sig == null) {
+                @SuppressWarnings("deprecation")
+                android.content.pm.PackageInfo pi = pm.getPackageArchiveInfo(
+                        path, android.content.pm.PackageManager.GET_SIGNATURES);
+                if (pi != null && pi.signatures != null && pi.signatures.length > 0) {
+                    sig = pi.signatures[0];
+                }
+            }
+            if (sig == null) {
+                Log.w(TAG, "[native] certBind skipped: no signatures in " + path);
+                return;
+            }
+            byte[] sha = java.security.MessageDigest.getInstance("SHA-256")
+                    .digest(sig.toByteArray());
+            NativeBridge.setBindingMaterial(sha);
+            sCertBound = true;
+            Log.i(TAG, "[native] certBind set sha256[0..3]="
+                    + String.format("%02x%02x%02x%02x", sha[0], sha[1], sha[2], sha[3]));
+        } catch (Throwable t) {
+            Log.e(TAG, "[native] certBind crash: " + t);
+        }
+    }
+
     /**
      * Batch 1 Phase 1 — NativeBridge smoke-test.
      * Logs init result + 7 verification checks to logcat TAG "NCL".
@@ -242,10 +300,54 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
             int cfgVer = NativeBridge.getConfigVersion();
             Log.i(TAG, "[native] configVersion=" + cfgVer + " (expect 1)");
 
+            // (9) Phase 1A: AES-GCM self-test
+            boolean decryptSelfTest = NativeBridge.decryptConfigSelfTest();
+            Log.i(TAG, "[native] decryptSelfTest=" + decryptSelfTest + " (expect true)");
+
+            // (10) Phase 1A: test registry roundtrip
+            String testRegistry = NativeBridge.decryptConfigTestRegistry();
+            boolean registryOk = testRegistry != null
+                    && testRegistry.contains("test_r8071")
+                    && testRegistry.contains("kc5.v0");
+            Log.i(TAG, "[native] decryptTestRegistry=" + registryOk);
+
+            // (11) Phase 1A: tampered tag must scatter (no real class names)
+            byte[] badTag = new byte[]{
+                    0x16, (byte) 0x85, 0x56, (byte) 0xad, 0x2d, 0x0b, 0x25, (byte) 0xab,
+                    0x2a, (byte) 0xc7, (byte) 0x9f, 0x54, 0x34, (byte) 0xeb, 0x6a, 0x7a};
+            String scatter = NativeBridge.decryptConfig(
+                    new byte[]{0x67, 0x75, 0x61, 0x72, 0x64, 0x5f, 0x70, 0x31,
+                               0x61, 0x5f, 0x6b, 0x65, 0x79, 0x21, 0x00, 0x00},
+                    new byte[]{0x67, 0x75, 0x61, 0x72, 0x64, 0x6e, 0x6f, 0x6e,
+                               0x63, 0x65, 0x30, 0x31},
+                    new byte[]{0x01},
+                    badTag);
+            boolean scatterOk = scatter != null
+                    && scatter.contains("scatter")
+                    && !scatter.contains("kc5.v0");
+            Log.i(TAG, "[native] decryptScatter=" + scatterOk);
+
+            // (12) Phase 1B: registry parse self-test (no business wiring)
+            boolean registrySelfTest = NativeBridge.registrySelfTest();
+            Log.i(TAG, "[native] registrySelfTest=" + registrySelfTest + " (expect true)");
+            Log.i(TAG, "[native] registrySummary=" + NativeBridge.registrySummary());
+
             // Summary line for quick grep
             boolean allPass = ok && role == NativeBridge.ROLE_MAIN && hidden
-                    && !hiddenAfterFalse && testWxidTrue && !testWxidFalse && cfgVer == 1;
+                    && !hiddenAfterFalse && testWxidTrue && !testWxidFalse && cfgVer == 1
+                    && decryptSelfTest && registryOk && scatterOk;
             Log.i(TAG, "[native] BATCH1_VERIFY " + (allPass ? "PASS" : "FAIL"));
+            Log.i(TAG, "[native] PHASE1A_VERIFY " + (decryptSelfTest && registryOk && scatterOk ? "PASS" : "FAIL"));
+            Log.i(TAG, "[native] PHASE1B_VERIFY " + (registrySelfTest ? "PASS" : "FAIL"));
+            // Phase 1C: encrypted registry + search.gateway coarse-grained entry.
+            // registrySelfTest now also verifies the search.gateway semantics.
+            boolean hasGateway = NativeBridge.registrySummary().contains("search.gateway");
+            Log.i(TAG, "[native] PHASE1C_VERIFY " + (registrySelfTest && hasGateway ? "PASS" : "FAIL"));
+            // Phase 1D-local A-step2: registry key is bound to our signing cert.
+            // registrySelfTest passing while certBound proves the cert-folded key
+            // decrypts the embedded blob (a wrong cert would scatter).
+            Log.i(TAG, "[native] PHASE1D_VERIFY "
+                    + (registrySelfTest && hasGateway && sCertBound ? "PASS" : "FAIL"));
         } catch (Throwable t) {
             Log.e(TAG, "[native] verification crash: " + t);
         }

@@ -221,6 +221,63 @@ public final class NativeBridge {
         }
     }
 
+    // ── Phase 1A: ConfigCrypto (AES-GCM prototype, no business wiring) ─
+
+    /** Runs fixed AES-GCM vectors + tamper checks inside libguardcore.so. */
+    public static boolean decryptConfigSelfTest() {
+        if (!sAvailable) return false;
+        return nativeDecryptConfigSelfTest();
+    }
+
+    /** Smoke-test registry decrypted from an in-SO test vector. */
+    public static String decryptConfigTestRegistry() {
+        if (!sAvailable) return "";
+        return nativeDecryptConfigTestRegistry();
+    }
+
+    /**
+     * Decrypt an encrypted registry blob. On failure returns scatter JSON
+     * (empty entries), never throws, never opens all features.
+     */
+    public static String decryptConfig(byte[] key, byte[] nonce, byte[] ciphertext, byte[] tag) {
+        if (!sAvailable || key == null || nonce == null || tag == null) {
+            return "{\"schema_id\":\"scatter\",\"wechat_version\":\"0.0.0\",\"entries\":{}}";
+        }
+        if (ciphertext == null) ciphertext = new byte[0];
+        return nativeDecryptConfig(key, nonce, ciphertext, tag);
+    }
+
+    // ── Phase 1B: ConfigRegistry (plaintext parse, no business wiring) ─
+
+    /**
+     * Parses the SO-embedded registry and verifies conv.list anchors match
+     * ConvFilter.java, plus malformed-input scatter paths. Does not touch
+     * any business hook. Returns false if SO unavailable or any check fails.
+     */
+    public static boolean registrySelfTest() {
+        if (!sAvailable) return false;
+        return nativeRegistrySelfTest();
+    }
+
+    /** One-line summary of the embedded registry (for verification log). */
+    public static String registrySummary() {
+        if (!sAvailable) return "";
+        return nativeRegistrySummary();
+    }
+
+    // ── Phase 1D-local A-step2: signing-cert binding ──────────
+
+    /**
+     * Push the module's own signing-cert SHA-256 into the SO. The registry key
+     * derivation folds this in, so a re-signed / repackaged APK derives a wrong
+     * key → scatter. Must be called BEFORE registrySelfTest()/registrySummary()
+     * (i.e. before the embedded registry is decrypted). No-op if SO unavailable.
+     */
+    public static void setBindingMaterial(byte[] certSha256) {
+        if (!sAvailable || certSha256 == null || certSha256.length == 0) return;
+        nativeSetBindingMaterial(certSha256);
+    }
+
     // TODO Batch 2: nativeGetNotifyMode()
     // TODO Batch 2: nativeShouldShowSecretUnreadCount()
     // TODO Batch 2: nativeShouldNotifySecret(String wxid)
@@ -244,4 +301,11 @@ public final class NativeBridge {
     private static native boolean nativeShouldBlockBadge(String wxid);
     private static native int     nativeGetConfigVersion();
     private static native int     nativeGetRiskState();
+    private static native boolean nativeDecryptConfigSelfTest();
+    private static native String  nativeDecryptConfigTestRegistry();
+    private static native String  nativeDecryptConfig(byte[] key, byte[] nonce,
+                                                      byte[] ciphertext, byte[] tag);
+    private static native boolean nativeRegistrySelfTest();
+    private static native String  nativeRegistrySummary();
+    private static native void    nativeSetBindingMaterial(byte[] certSha256);
 }

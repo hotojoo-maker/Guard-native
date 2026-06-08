@@ -2,6 +2,9 @@
 
 #include <string>
 #include <cstdint>
+#include <cstddef>
+#include <vector>
+#include <utility>
 
 // ─────────────────────────────────────────────────────────────
 //  Guard Native — libguardcore.so  (Batch 1 / Phase 1 skeleton)
@@ -131,6 +134,79 @@ bool  push_is_guard_active();
 /// Batch 1：包名 + config_version 轻量校验；异常返回 RISK_* 枚举，触发 SAFE_MODE
 /// Batch 3 TODO: device_hash / customer_seed / package_hash / 蜜罐字段
 RiskState tamper_check(const std::string& package_name, int config_version);
+
+// ── Module: ConfigCrypto ──────────────────────────────────────
+
+struct ConfigDecryptResult {
+    bool ok;                 ///< true only when AES-GCM tag verifies
+    std::string plaintext;   ///< registry JSON on success; empty scatter result on failure
+};
+
+/// Phase 1A local prototype only: AES-128-GCM decrypt for encrypted registry blobs.
+/// key/nonce/tag are test-vector inputs in this phase, not上线授权 key material.
+ConfigDecryptResult decrypt_config(const uint8_t* key,
+                                   size_t key_len,
+                                   const uint8_t* nonce,
+                                   size_t nonce_len,
+                                   const uint8_t* ciphertext,
+                                   size_t ciphertext_len,
+                                   const uint8_t* tag,
+                                   size_t tag_len);
+
+/// Runs fixed AES-GCM vectors and tamper failures. Does not touch business hooks.
+bool decrypt_config_self_test();
+
+/// Phase 1D-local A-step2: set the runtime binding material (the module's own
+/// signing-cert SHA-256, read by Java via PackageManager). Must be called before
+/// loading the embedded registry. Folded into derive_registry_key() so a
+/// re-signed / repackaged APK derives a wrong key → scatter. Passing null/0
+/// clears it (key reverts to the unbound A-step1 derivation → also wrong key).
+void set_binding_material(const uint8_t* data, size_t len);
+
+/// Phase 1D-local: derive the registry AES key from scattered in-SO segments +
+/// a light non-linear transform + the binding material (A-step2), so no single
+/// 16-byte key constant is visible in the binary AND the key is bound to the
+/// module signing cert. tools/gen_registry_cipher.py MUST mirror this exact
+/// routine (with the baked cert hash as binding), otherwise the embedded
+/// ciphertext won't decrypt (→ scatter).
+/// [GUARD-TRAP] Do not replace with a literal key array. See PROTECTION_MAP §4.
+void derive_registry_key(uint8_t out[16]);
+
+/// Java smoke-test helper: returns a test registry after an in-native AES-GCM roundtrip.
+std::string decrypt_config_test_registry();
+
+// ── Module: ConfigRegistry (Phase 1B) ─────────────────────────
+//
+// Plaintext hook-config registry prototype. Parses a registry JSON into
+// structured entries. Phase 1B scope: parse + surface for verification only.
+// It does NOT take over any business filtering (ConvFilter etc. untouched).
+// Parse failure → scatter registry (ok=false, no entries), never throws.
+
+struct RegistryEntry {
+    std::string id;  ///< entry key, e.g. "conv.list"
+    std::vector<std::pair<std::string, std::string>> fields;  ///< recipe fields
+};
+
+struct ConfigRegistry {
+    bool ok;                   ///< false → scatter (parse failure / malformed)
+    std::string schema_id;     ///< "scatter" on failure
+    std::string wechat_version;
+    std::vector<RegistryEntry> entries;
+};
+
+/// Parse a registry JSON string. Objects + strings only; any malformed
+/// input → scatter. No exceptions (built with -fno-exceptions).
+ConfigRegistry registry_parse(const std::string& json);
+
+/// Load the SO-embedded plaintext registry (mirror of registry_8071.json).
+ConfigRegistry registry_load_embedded();
+
+/// One-line human-readable summary of the embedded registry (for verify log).
+std::string registry_dump_summary();
+
+/// Parses embedded registry + a malformed input; verifies conv.list anchors
+/// match ConvFilter.java and that malformed input scatters. No business hooks.
+bool registry_self_test();
 
 // ── Module: LogLimiter ────────────────────────────────────────
 
