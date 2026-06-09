@@ -133,29 +133,48 @@ Java.perform(function () {
         } catch(e) { return false; }
     }
 
-    // 候选 1：通用 RecyclerView.Adapter 基类（最稳但量大）
+    // 候选 1：找到包含 RecyclerView$Adapter 的 app classloader（tinker 下默认 classloader 找不到）
+    function findAppClassLoader() {
+        var picked = null;
+        var loaders = Java.enumerateClassLoadersSync();
+        for (var i = 0; i < loaders.length; i++) {
+            try {
+                var L = loaders[i];
+                L.loadClass('androidx.recyclerview.widget.RecyclerView$Adapter');
+                picked = L;
+                break;
+            } catch(e) {}
+        }
+        return picked;
+    }
     try {
-        var Adapter = Java.use('androidx.recyclerview.widget.RecyclerView$Adapter');
-        Adapter.onBindViewHolder.overload('androidx.recyclerview.widget.RecyclerView$ViewHolder', 'int')
-            .implementation = function(holder, pos) {
-                this.onBindViewHolder(holder, pos);
-                try {
-                    var itemView = holder.itemView.value;
-                    var itemCls = itemView.getClass().getName();
-                    // 只看朋友圈相关 item（按类名包含 sns / TimeLine / Moments 过滤）
-                    if (itemCls.indexOf('sns') === -1
-                        && itemCls.indexOf('TimeLine') === -1
-                        && itemCls.indexOf('Moments') === -1
-                        && itemCls.indexOf('plugin.sns') === -1) return;
-                    if (!seenItemCls[itemCls]) {
-                        seenItemCls[itemCls] = true;
-                        console.log('[MGI:item] cls=' + itemCls + ' adapter=' + this.getClass().getName());
-                    }
-                    bindCount++;
-                    if (bindCount < 50) walkView(itemView, 0, itemCls);
-                } catch(e) {}
-            };
-        console.log('[MGI:adapter] hooked RecyclerView$Adapter (filtered to sns/TimeLine/Moments)');
+        var appCL = findAppClassLoader();
+        if (appCL) {
+            Java.classFactory.loader = appCL;
+            console.log('[MGI:adapter] switched classFactory.loader to app loader');
+            var Adapter = Java.use('androidx.recyclerview.widget.RecyclerView$Adapter');
+            Adapter.onBindViewHolder.overload('androidx.recyclerview.widget.RecyclerView$ViewHolder', 'int')
+                .implementation = function(holder, pos) {
+                    this.onBindViewHolder(holder, pos);
+                    try {
+                        var itemView = holder.itemView.value;
+                        var itemCls = itemView.getClass().getName();
+                        if (itemCls.indexOf('sns') === -1
+                            && itemCls.indexOf('TimeLine') === -1
+                            && itemCls.indexOf('Moments') === -1
+                            && itemCls.indexOf('plugin.sns') === -1) return;
+                        if (!seenItemCls[itemCls]) {
+                            seenItemCls[itemCls] = true;
+                            console.log('[MGI:item] cls=' + itemCls + ' adapter=' + this.getClass().getName());
+                        }
+                        bindCount++;
+                        if (bindCount < 100) walkView(itemView, 0, itemCls);
+                    } catch(e) {}
+                };
+            console.log('[MGI:adapter] hooked RecyclerView$Adapter (filtered to sns/TimeLine/Moments)');
+        } else {
+            console.log('[MGI:adapter] no classloader found for RecyclerView$Adapter — skip');
+        }
     } catch(e) {
         console.log('[MGI:adapter] RecyclerView$Adapter hook fail: ' + e);
     }
