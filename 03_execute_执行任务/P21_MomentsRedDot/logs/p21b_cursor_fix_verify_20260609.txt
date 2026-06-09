@@ -1,0 +1,60 @@
+06-09 16:45:33.432 I/AndroidRuntime(18375): VM exiting with result code 0, cleanup skipped.
+06-09 16:45:45.943 D/AndroidRuntime(18904): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+06-09 16:45:45.946 I/AndroidRuntime(18904): Using default boot image
+06-09 16:45:45.946 I/AndroidRuntime(18904): Leaving lock profiling enabled
+06-09 16:45:46.063 D/AndroidRuntime(18904): Calling main entry com.android.commands.input.Input
+06-09 16:45:46.077 D/AndroidRuntime(18904): Shutting down VM
+06-09 16:46:34.027 D/AndroidRuntime(18946): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+06-09 16:46:34.030 I/AndroidRuntime(18946): Using default boot image
+06-09 16:46:34.030 I/AndroidRuntime(18946): Leaving lock profiling enabled
+06-09 16:46:34.126 D/AndroidRuntime(18946): Calling main entry com.android.commands.monkey.Monkey
+06-09 16:46:34.213 I/AndroidRuntime(18946): VM exiting with result code 0.
+06-09 16:46:34.662 I/NCL     (18966): [native] registrySummary=schema=r8071_v1 ver=8.0.71 entries=4 [conv.list adapter=kc5.v0 l4=notifyDataSetChanged] [moments.feed adapter=e2] [contact.address adapter=ik3.t0] [search.gateway]
+06-09 16:46:34.662 I/NCL     (18966): [native] BATCH1_VERIFY PASS
+06-09 16:46:34.662 I/NCL     (18966): [native] PHASE1A_VERIFY PASS
+06-09 16:46:34.662 I/NCL     (18966): [native] PHASE1B_VERIFY PASS
+06-09 16:46:34.663 I/NCL     (18966): [native] PHASE1C_VERIFY PASS
+06-09 16:46:34.663 I/NCL     (18966): [native] PHASE1D_VERIFY PASS
+06-09 16:46:34.670 I/NCL     (18966): [native] PHASE1E_VERIFY PASS
+06-09 16:46:34.720 I/NCL     (18966): [MF] recipes friend=na4.b promo=la4.p adapter=e2 wxid=field_userName inner=d sns=h1 like=LikeUserList cmt=CommentUserList fallbackSelfTest=ok
+06-09 16:46:34.739 I/NCL     (18966): [CF] recipes mvvm=com.tencent.mm.plugin.mvvmlist.MvvmList adapter=kc5.v0 getters=[C0, h1, j1, i1, k1, getUsername, getUserName] fallbackSelfTest=ok
+06-09 16:46:34.777 I/NCL     (18966): [CTF] recipes adapter=ik3.t0 item=fc5.g contact=com.tencent.mm.storage.z3 getter=c1 live=com.tencent.mm.ui.contact.address.AddressLiveList fallbackSelfTest=ok
+06-09 16:46:34.813 I/NCL     (18966): [MRD:cursor:live] s9 cursor hooks=2
+06-09 16:46:34.828 I/NCL     (18966): [MRD:adapter:flt] BaseAdapter.notifyDataSetChanged hook installed (gated bm/rm)
+06-09 16:47:41.986 D/AndroidRuntime(20040): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+06-09 16:47:41.988 I/AndroidRuntime(20040): Using default boot image
+06-09 16:47:41.988 I/AndroidRuntime(20040): Leaving lock profiling enabled
+06-09 16:47:42.083 D/AndroidRuntime(20040): Calling main entry com.android.commands.input.Input
+06-09 16:47:42.113 D/AndroidRuntime(20040): Shutting down VM
+06-09 16:47:44.438 D/AndroidRuntime(20340): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+06-09 16:47:44.440 I/AndroidRuntime(20340): Using default boot image
+06-09 16:47:44.440 I/AndroidRuntime(20340): Leaving lock profiling enabled
+06-09 16:47:44.529 D/AndroidRuntime(20340): Calling main entry com.android.commands.input.Input
+06-09 16:47:44.539 D/AndroidRuntime(20340): Shutting down VM
+06-09 16:48:14.566 D/AndroidRuntime(20398): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+06-09 16:48:14.568 I/AndroidRuntime(20398): Using default boot image
+06-09 16:48:14.568 I/AndroidRuntime(20398): Leaving lock profiling enabled
+06-09 16:48:14.676 D/AndroidRuntime(20398): Calling main entry com.android.commands.input.Input
+06-09 16:48:14.689 D/AndroidRuntime(20398): Shutting down VM
+06-09 16:48:48.199 D/AndroidRuntime(20437): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+06-09 16:48:48.202 I/AndroidRuntime(20437): Using default boot image
+06-09 16:48:48.202 I/AndroidRuntime(20437): Leaving lock profiling enabled
+06-09 16:48:48.296 D/AndroidRuntime(20437): Calling main entry com.android.commands.input.Input
+06-09 16:48:48.314 D/AndroidRuntime(20437): Shutting down VM
+06-09 16:49:26.103 D/AndroidRuntime(20473): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+06-09 16:49:26.106 I/AndroidRuntime(20473): Using default boot image
+06-09 16:49:26.106 I/AndroidRuntime(20473): Leaving lock profiling enabled
+06-09 16:49:26.202 D/AndroidRuntime(20473): Calling main entry com.android.commands.input.Input
+06-09 16:49:26.210 D/AndroidRuntime(20473): Shutting down VM
+06-09 16:49:26.301 I/NCL     (18966): [MRD:adapter:flt] notify fired on com.tencent.mm.plugin.sns.ui.bm
+06-09 16:49:26.301 I/NCL     (18966): [MRD:cursor:live] notify:com.tencent.mm.plugin.sns.ui.bm.f 10鈫?
+06-09 16:49:26.302 I/NCL     (18966): [MRD:adapter:flt] com.tencent.mm.plugin.sns.ui.bm removed=9 (cursor=9, list=0, before notify)
+06-09 16:49:26.326 I/NCL     (18966): [MRD:smsg:enter] com.tencent.mm.plugin.sns.ui.SnsMsgUIWithAll.onResume
+06-09 16:49:26.330 I/NCL     (18966): [MRD:smsg:badge] zeroed via smsg.s=k4 removed=0
+06-09 16:50:00.223 I/NCL     (18966): [MRD:smsg:enter] com.tencent.mm.plugin.sns.ui.SnsMsgUIWithAll.onResume
+06-09 16:50:00.223 I/NCL     (18966): [MRD:smsg:badge] zeroed via smsg.s=k4 removed=0
+06-09 16:50:45.149 D/AndroidRuntime(21083): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+06-09 16:50:45.183 I/AndroidRuntime(21083): Using default boot image
+06-09 16:50:45.183 I/AndroidRuntime(21083): Leaving lock profiling enabled
+06-09 16:50:45.318 D/AndroidRuntime(21083): Calling main entry com.android.commands.input.Input
+06-09 16:50:45.326 D/AndroidRuntime(21083): Shutting down VM

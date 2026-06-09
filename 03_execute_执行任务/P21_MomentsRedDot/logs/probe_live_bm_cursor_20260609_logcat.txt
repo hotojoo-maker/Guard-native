@@ -1,0 +1,20 @@
+06-09 16:29:07.589 I/NCL     (12140): [BMCUR] hidden=wxid_y9o6e9ty875a22,wxid_mxq8671r6mgs22,wxid_lzd2va16jd1622
+06-09 16:29:07.633 I/NCL     (12140): [BMCUR] FOUND bm inst=com.tencent.mm.plugin.sns.ui.bm
+06-09 16:29:07.634 I/NCL     (12140): [BMCUR] bm classDepth0=com.tencent.mm.plugin.sns.ui.bm
+06-09 16:29:07.641 I/NCL     (12140): [BMCUR] bm classDepth1=com.tencent.mm.ui.s9
+06-09 16:29:07.643 I/NCL     (12140): [BMCUR] bm field com.tencent.mm.ui.s9.f:android.database.Cursor = com.tencent.wcdb.compat.ValueCursor
+06-09 16:29:07.645 I/NCL     (12140): [BMCUR] bm.f cursor=[object Object] count=10 pos=8
+06-09 16:29:07.645 I/NCL     (12140): [BMCUR] bm.f cols=snsID,parentID,isRead,createTime,talker,type,isSend,curActionBuf,refActionBuf,commentSvrID,clientId,commentflag,isSilence,springWishFlag,msgRelevanceType,isReminding,rowid
+06-09 16:29:07.647 I/NCL     (12140): [BMCUR] bm.f row0 HIDDEN 0:snsID=-3506737895981968672 | 1:parentID=0 | 2:isRead=1 | 3:createTime=1780992140 | 4:talker=wxid_lzd2va16jd1622 | 5:type=2 | 6:isSend=0 | 7:curActionBuf=
+06-09 16:29:07.648 I/NCL     (12140): [BMCUR] bm.f row1 0:snsID=-3506737895981968672 | 1:parentID=0 | 2:isRead=1 | 3:createTime=1780987535 | 4:talker=majinhui791190252 | 5:type=1 | 6:isSend=0 | 7:curActionBuf=
+06-09 16:29:07.649 I/NCL     (12140): [BMCUR] bm.f row2 HIDDEN 0:snsID=-3506737895981968672 | 1:parentID=0 | 2:isRead=1 | 3:createTime=1780987528 | 4:talker=wxid_lzd2va16jd1622 | 5:type=1 | 6:isSend=0 | 7:curActionBuf=
+06-09 16:29:07.650 I/NCL     (12140): [BMCUR] bm.f row3 HIDDEN 0:snsID=-3521543110388346154 | 1:parentID=0 | 2:isRead=1 | 3:createTime=1780359266 | 4:talker=wxid_lzd2va16jd1622 | 5:type=2 | 6:isSend=0 | 7:curActionBuf=
+06-09 16:29:07.651 I/NCL     (12140): [BMCUR] bm.f row4 HIDDEN 0:snsID=-3521543110388346154 | 1:parentID=0 | 2:isRead=1 | 3:createTime=1780359265 | 4:talker=wxid_lzd2va16jd1622 | 5:type=2 | 6:isSend=0 | 7:curActionBuf=
+06-09 16:29:07.652 I/NCL     (12140): [BMCUR] bm.f row5 HIDDEN 0:snsID=-3521543110388346154 | 1:parentID=0 | 2:isRead=1 | 3:createTime=1780359264 | 4:talker=wxid_lzd2va16jd1622 | 5:type=2 | 6:isSend=0 | 7:curActionBuf=
+06-09 16:29:07.653 I/NCL     (12140): [BMCUR] bm.f row6 HIDDEN 0:snsID=-3521543110388346154 | 1:parentID=0 | 2:isRead=1 | 3:createTime=1780359263 | 4:talker=wxid_lzd2va16jd1622 | 5:type=2 | 6:isSend=0 | 7:curActionBuf=
+06-09 16:29:07.654 I/NCL     (12140): [BMCUR] bm.f row7 HIDDEN 0:snsID=-3521543110388346154 | 1:parentID=0 | 2:isRead=1 | 3:createTime=1780359262 | 4:talker=wxid_lzd2va16jd1622 | 5:type=2 | 6:isSend=0 | 7:curActionBuf=
+06-09 16:29:07.655 I/NCL     (12140): [BMCUR] bm.f row8 HIDDEN 0:snsID=-3521543110388346154 | 1:parentID=0 | 2:isRead=1 | 3:createTime=1780359261 | 4:talker=wxid_lzd2va16jd1622 | 5:type=2 | 6:isSend=0 | 7:curActionBuf=
+06-09 16:29:07.656 I/NCL     (12140): [BMCUR] bm.f row9 HIDDEN 0:snsID=-3521543110388346154 | 1:parentID=0 | 2:isRead=1 | 3:createTime=1780359260 | 4:talker=wxid_lzd2va16jd1622 | 5:type=2 | 6:isSend=0 | 7:curActionBuf=
+06-09 16:29:07.657 I/NCL     (12140): [BMCUR] bm.f sampleHiddenRows=9/10
+06-09 16:29:07.659 I/NCL     (12140): [BMCUR] choose done com.tencent.mm.plugin.sns.ui.bm
+06-09 16:29:07.687 I/NCL     (12140): [BMCUR] choose done com.tencent.mm.plugin.sns.ui.rm

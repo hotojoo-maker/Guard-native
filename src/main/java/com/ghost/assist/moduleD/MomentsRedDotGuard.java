@@ -13,6 +13,7 @@ import java.util.Set;
 
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedBridge;
+import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
 /**
@@ -125,6 +126,7 @@ public class MomentsRedDotGuard {
     public static void install(XC_LoadPackage.LoadPackageParam lpparam) {
         if (sInstalled) return;
         sInstalled = true;
+        sClassLoader = lpparam.classLoader;
 
         // v2 兜底：Event ctor + View（精准 wxid 过滤）
         installEventBlocker(lpparam, CLS_WECHAT_TAB_EVT);
@@ -137,6 +139,12 @@ public class MomentsRedDotGuard {
         // v10 精准路径：w1 写入拦截
         installW1InteractionFilter(lpparam);
 
+        // v22 互动列表游标过滤（非破坏「压制」）：hook w1.O1/a2 返回的 Cursor，
+        // 跳过 talker∈密友 的行 → 与我相关 + 全部互动消息 都不显示密友，DB 记录不删。
+        installInteractionListCursorFilter(lpparam);
+        // P21B L1: WithAll 屏幕真源是 bm/rm -> s9.f(ValueCursor)，不走 w1.N1/O1/a2。
+        installSnsMsgLiveCursorFilter(lpparam);
+
         // v11 出口封堵：SnsCommentStorage int/long getter → 0 + 捕获 sW1Instance
         installSnsCommentStorageHook(lpparam);
 
@@ -144,14 +152,136 @@ public class MomentsRedDotGuard {
         installCatfishSnsMsgListHook(lpparam);
         installSnsMsgUIFilter(lpparam);
         installAdapterGetCountBlocker(lpparam);
+        installSnsMsgAdapterFilter(lpparam); // v24: 过滤 bm/rm 适配器内部 c 列表(互动列表显示层真源)
 
         // v18 tab 角标计数器清零：TabRedDotChangeEvent int 字段 → 0（发现 tab 数字）
         installTabBadgeCounterSuppressor(lpparam);
 
+        // v19 B 精准：显示层拦截 —— 发现 tab(osw)/朋友圈行(o58)红点数字改成非密友数
+        installBadgePreciseFilter(lpparam);
+
         // boot-time 追溯清零
         retroactiveZeroOnBoot(lpparam);
 
-        Log.i(TAG, "[MRD] install done (v18: tab badge counter suppressor)");
+        // [tl-bubble] 朋友圈顶部"X条新消息"互动气泡: 预热非密友计数缓存（供 n_t.setText 重算用）
+        installTimelineBubblePrewarm(lpparam);
+        // [list-dump] 只读: 互动列表(WithRelevance/WithAll) 真 adapter 结构 dump，供下一步过滤定位
+        installSnsMsgListDump(lpparam);
+
+        Log.i(TAG, "[MRD] install done (v26dbg3: + full field dump of real adapter bm)");
+    }
+
+    // -------------------------------------------------------------------------
+    // P21B: 互动列表 bm/rm live Cursor 过滤.
+    //   L1 2026-06-09: bm -> super com.tencent.mm.ui.s9.f = ValueCursor,
+    //   cols include talker; AA熵 wxid_lzd2va16jd1622 is in talker.
+    //   s9.t(Cursor) is the cursor setter; s9.g() returns current cursor.
+    // -------------------------------------------------------------------------
+    private static void installSnsMsgLiveCursorFilter(XC_LoadPackage.LoadPackageParam lpparam) {
+        try {
+            Class<?> s9 = lpparam.classLoader.loadClass("com.tencent.mm.ui.s9");
+            int hooked = 0;
+            for (Method m : s9.getDeclaredMethods()) {
+                Class<?>[] pt = m.getParameterTypes();
+                if (pt.length == 1 && android.database.Cursor.class.isAssignableFrom(pt[0])
+                        && m.getReturnType() == void.class) {
+                    final String mn = m.getName();
+                    XposedBridge.hookMethod(m, new XC_MethodHook() {
+                        @Override
+                        protected void beforeHookedMethod(MethodHookParam param) {
+                            try {
+                                if (!isSnsMsgAdapter(param.thisObject)) return;
+                                if (!isFilteringActive()) return;
+                                Object curObj = param.args[0];
+                                if (!(curObj instanceof android.database.Cursor)) return;
+                                android.database.Cursor wrapped = wrapSnsMsgCursor(
+                                        (android.database.Cursor) curObj,
+                                        "set:" + param.thisObject.getClass().getSimpleName() + "." + mn);
+                                if (wrapped != curObj) param.args[0] = wrapped;
+                            } catch (Throwable t) {
+                                if (sDiagSeen.add("livecur_set_err"))
+                                    Log.w(TAG, "[MRD:cursor:live] set err: " + t);
+                            }
+                        }
+                    });
+                    hooked++;
+                } else if (pt.length == 0
+                        && android.database.Cursor.class.isAssignableFrom(m.getReturnType())) {
+                    final String mn = m.getName();
+                    XposedBridge.hookMethod(m, new XC_MethodHook() {
+                        @Override
+                        protected void afterHookedMethod(MethodHookParam param) {
+                            try {
+                                if (!isSnsMsgAdapter(param.thisObject)) return;
+                                if (!isFilteringActive()) return;
+                                Object res = param.getResult();
+                                if (!(res instanceof android.database.Cursor)) return;
+                                android.database.Cursor wrapped = wrapSnsMsgCursor(
+                                        (android.database.Cursor) res,
+                                        "get:" + param.thisObject.getClass().getSimpleName() + "." + mn);
+                                if (wrapped != res) param.setResult(wrapped);
+                            } catch (Throwable t) {
+                                if (sDiagSeen.add("livecur_get_err"))
+                                    Log.w(TAG, "[MRD:cursor:live] get err: " + t);
+                            }
+                        }
+                    });
+                    hooked++;
+                }
+            }
+            Log.i(TAG, "[MRD:cursor:live] s9 cursor hooks=" + hooked);
+        } catch (Throwable t) {
+            Log.w(TAG, "[MRD:cursor:live] install failed: " + t);
+        }
+    }
+
+    private static boolean isSnsMsgAdapter(Object obj) {
+        if (obj == null) return false;
+        String cn = obj.getClass().getName();
+        return "com.tencent.mm.plugin.sns.ui.bm".equals(cn)
+                || "com.tencent.mm.plugin.sns.ui.rm".equals(cn);
+    }
+
+    private static int wrapSnsMsgCursorFields(Object adapter, String source) {
+        if (!isSnsMsgAdapter(adapter)) return 0;
+        int total = 0;
+        Class<?> cls = adapter.getClass();
+        for (int d = 0; cls != null && d < 6; d++) {
+            if (cls.getName().startsWith("android.") || cls.getName().startsWith("java.")) break;
+            for (java.lang.reflect.Field f : cls.getDeclaredFields()) {
+                try {
+                    f.setAccessible(true);
+                    Object v = f.get(adapter);
+                    if (!(v instanceof android.database.Cursor)) continue;
+                    android.database.Cursor orig = (android.database.Cursor) v;
+                    if (orig instanceof TalkerFilterCursor) continue;
+                    android.database.Cursor wrapped = wrapSnsMsgCursor(orig, source + "." + f.getName());
+                    if (wrapped == orig) continue;
+                    int removed = orig.getCount() - wrapped.getCount();
+                    f.set(adapter, wrapped);
+                    total += Math.max(removed, 0);
+                } catch (Throwable t) {
+                    if (sDiagSeen.add("livecur_field_err"))
+                        Log.w(TAG, "[MRD:cursor:live] field err: " + t);
+                }
+            }
+            cls = cls.getSuperclass();
+        }
+        return total;
+    }
+
+    private static android.database.Cursor wrapSnsMsgCursor(android.database.Cursor cursor, String source) {
+        if (cursor == null || cursor instanceof TalkerFilterCursor) return cursor;
+        java.util.Set<String> hidden = Bridge.getInstance().getWxids();
+        if (hidden == null || hidden.isEmpty()) return cursor;
+        TalkerFilterCursor fc = new TalkerFilterCursor(cursor, hidden);
+        if (!fc.didFilter()) return cursor;
+        if (sDiagSeen.add("livecur_" + source)) {
+            Log.i(TAG, "[MRD:cursor:live] " + source + " "
+                    + cursor.getCount() + "→" + fc.getCount());
+        }
+        InterceptCounter.getInstance().incF05("MRD-live-cursor");
+        return fc;
     }
 
     // -------------------------------------------------------------------------
@@ -400,6 +530,205 @@ public class MomentsRedDotGuard {
         Log.i(TAG, sb.toString());
     }
 
+    // -------------------------------------------------------------------------
+    // [tl-bubble] 朋友圈顶部"X条新消息"互动气泡 (TextView id=n_t) 精准过滤.
+    //   气泡=互动(点赞/评论)未读数, 点它→与我的互动→全部互动. 数据=SnsComment(talker=互动方wxid).
+    //   做法: 拦 n_t.setText → HIDDEN 态重算为"非密友未读数"(复用 computeNonMiyouSnsUnread);
+    //         >0 改写文字, =0/不可算 隐藏整条气泡. 计数走 1.5s 缓存+后台刷新, 不在 UI 线程查 DB(防 ANR).
+    // -------------------------------------------------------------------------
+    /** 进朋友圈时后台预热"非密友未读数"缓存, 让气泡 setText 时直接命中, 不卡 UI / 不闪. */
+    private static void installTimelineBubblePrewarm(XC_LoadPackage.LoadPackageParam lpparam) {
+        try {
+            XposedBridge.hookAllMethods(android.app.Activity.class, "onResume",
+                    new XC_MethodHook() {
+                        @Override
+                        protected void afterHookedMethod(MethodHookParam param) {
+                            final Object act = param.thisObject;
+                            if (!act.getClass().getName().contains("SnsTimelineUI")) return;
+                            if (!StateMachine.getInstance().isActive()) return;
+                            sBgExec.execute(new Runnable() {
+                                @Override public void run() {
+                                    try { computeNonMiyouSnsUnread(act); } catch (Throwable ignored) {}
+                                }
+                            });
+                        }
+                    });
+            Log.i(TAG, "[MRD:tl] bubble prewarm installed");
+        } catch (Throwable t) {
+            Log.w(TAG, "[MRD:tl] prewarm install failed: " + t);
+        }
+    }
+
+    /** 返回非密友未读数缓存; 过期则后台刷新, 本次返回旧值(可能 -1=从未算过), 绝不阻塞 UI 线程. */
+    private static int nonMiyouCachedOrRefresh(final Object view) {
+        long now = System.currentTimeMillis();
+        int cached = sNonMiyouCache;
+        if (cached >= 0 && now - sNonMiyouCacheTime < 1500L) return cached;
+        sBgExec.execute(new Runnable() {
+            @Override public void run() {
+                try { computeNonMiyouSnsUnread(view); } catch (Throwable ignored) {}
+            }
+        });
+        return cached;
+    }
+
+    /** 隐藏气泡药丸: 从 n_t 向上找 id=txa 的祖先(药丸容器)GONE; 找不到退回直接父. 每次都执行(微信会重建). */
+    private static void hideBubbleContainer(android.view.View bubbleTv) {
+        try {
+            android.view.ViewParent p = bubbleTv.getParent();
+            android.view.View firstParent = null;
+            android.view.View pill = null;
+            for (int i = 0; i < 6 && p instanceof android.view.View; i++) {
+                android.view.View pv = (android.view.View) p;
+                if (firstParent == null) firstParent = pv;
+                if ("txa".equals(viewIdName(pv))) { pill = pv; break; }
+                p = pv.getParent();
+            }
+            android.view.View target = (pill != null) ? pill : firstParent;
+            if (target != null) {
+                target.setVisibility(android.view.View.GONE);
+                if (sDiagSeen.add("bubble_hide_target")) {
+                    Log.i(TAG, "[MRD:tl] hide container=" + target.getClass().getName()
+                            + " id=" + viewIdName(target));
+                }
+            }
+        } catch (Throwable t) {
+            if (sDiagSeen.add("bubble_hide_err")) Log.w(TAG, "[MRD:tl] hideContainer err: " + t);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // [list-dump] 只读: 进 SnsMsgUIWithRelevance/WithAll 后延迟 3s, 找屏上真 RecyclerView/ListView
+    //   → getAdapter() → dump 适配器内 List 字段 + 首元素字段树(找 wxid). 解决 v24e removed=0
+    //   (之前只猜 bm/rm, 没从 view 拿真 adapter). 纯日志, 不改显示.
+    // -------------------------------------------------------------------------
+    private static void installSnsMsgListDump(XC_LoadPackage.LoadPackageParam lpparam) {
+        try {
+            XposedBridge.hookAllMethods(android.app.Activity.class, "onResume",
+                    new XC_MethodHook() {
+                        @Override
+                        protected void afterHookedMethod(MethodHookParam param) {
+                            final Object act = param.thisObject;
+                            final String cn = act.getClass().getName();
+                            if (!cn.contains("SnsMsgUI")) return;
+                            if (!sDiagSeen.add("smsglist_deepdump_" + cn)) return;
+                            Log.i(TAG, "[MRD:list] enter " + cn + " — deep dump @3s");
+                            try {
+                                new android.os.Handler(android.os.Looper.getMainLooper())
+                                        .postDelayed(new Runnable() {
+                                            @Override public void run() { deepDumpSnsMsgList(act, cn); }
+                                        }, 3000);
+                            } catch (Throwable ignored) {}
+                        }
+                    });
+            Log.i(TAG, "[MRD:list] SnsMsgUI deep-dump installed");
+        } catch (Throwable t) {
+            Log.w(TAG, "[MRD:list] install failed: " + t);
+        }
+    }
+
+    private static void deepDumpSnsMsgList(Object act, String cn) {
+        Log.i(TAG, "[MRD:list] === deep dump " + cn + " ===");
+        try {
+            android.view.View root = ((android.app.Activity) act).getWindow().getDecorView();
+            java.util.List<android.view.View> lists = new java.util.ArrayList<>();
+            findListContainers(root, lists, 0);
+            Log.i(TAG, "[MRD:list] found " + lists.size() + " list container(s)");
+            for (android.view.View lv : lists) {
+                Object adapter = null;
+                try { adapter = XposedHelpers.callMethod(lv, "getAdapter"); } catch (Throwable ignored) {}
+                String acn = (adapter == null) ? "null" : adapter.getClass().getName();
+                Log.i(TAG, "[MRD:list] " + lv.getClass().getName() + "#" + viewIdName(lv)
+                        + " adapter=" + acn);
+                // HeaderViewListAdapter(android 包装类) → 拆出里面的真 adapter
+                if (adapter instanceof android.widget.HeaderViewListAdapter) {
+                    Object real = ((android.widget.HeaderViewListAdapter) adapter).getWrappedAdapter();
+                    Log.i(TAG, "[MRD:list]   unwrapped -> " + (real == null ? "null" : real.getClass().getName()));
+                    adapter = real;
+                }
+                if (adapter != null) dumpAdapterListAndItem(adapter);
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "[MRD:list] deep dump err: " + t);
+        }
+    }
+
+    private static void findListContainers(android.view.View v, java.util.List<android.view.View> out, int depth) {
+        if (v == null || depth > 30) return;
+        String c = v.getClass().getName();
+        if (c.contains("RecyclerView") || v instanceof android.widget.ListView) out.add(v);
+        if (v instanceof android.view.ViewGroup) {
+            android.view.ViewGroup g = (android.view.ViewGroup) v;
+            for (int i = 0; i < g.getChildCount(); i++) findListContainers(g.getChildAt(i), out, depth + 1);
+        }
+    }
+
+    // 拆 adapter 全字段: 名/类型/值类/集合或数组 size; 对任意非空集合/数组首元素再 dump wxid 路径.
+    private static void dumpAdapterListAndItem(Object adapter) {
+        try {
+            Class<?> cls = adapter.getClass();
+            for (int d = 0; cls != null && d < 5; d++) {
+                String cn = cls.getName();
+                if (cn.startsWith("android.") || cn.startsWith("java.")) break;
+                Log.i(TAG, "[MRD:list]   -- fields of " + cn + " --");
+                for (java.lang.reflect.Field f : cls.getDeclaredFields()) {
+                    try {
+                        if (java.lang.reflect.Modifier.isStatic(f.getModifiers())) continue;
+                        f.setAccessible(true);
+                        Object v = f.get(adapter);
+                        if (v == null) continue;
+                        Object firstItem = null;
+                        String desc;
+                        if (v instanceof java.util.Collection) {
+                            java.util.Collection<?> col = (java.util.Collection<?>) v;
+                            desc = v.getClass().getName() + " size=" + col.size();
+                            for (Object o : col) { if (o != null) { firstItem = o; break; } }
+                        } else if (v instanceof java.util.Map) {
+                            desc = v.getClass().getName() + " mapSize=" + ((java.util.Map<?, ?>) v).size();
+                        } else if (v.getClass().isArray()) {
+                            int len = java.lang.reflect.Array.getLength(v);
+                            desc = v.getClass().getName() + " arrLen=" + len;
+                            for (int i = 0; i < len; i++) {
+                                Object o = java.lang.reflect.Array.get(v, i);
+                                if (o != null) { firstItem = o; break; }
+                            }
+                        } else {
+                            desc = v.getClass().getName();
+                        }
+                        Log.i(TAG, "[MRD:list]     " + f.getName() + ":" + f.getType().getSimpleName() + " = " + desc);
+                        if (firstItem != null) {
+                            Log.i(TAG, "[MRD:list]       " + f.getName() + "[0]=" + firstItem.getClass().getName());
+                            dumpItemFieldsForWxid(firstItem, "         ", 0);
+                        }
+                    } catch (Throwable ignored) {}
+                }
+                cls = cls.getSuperclass();
+            }
+        } catch (Throwable t) { Log.w(TAG, "[MRD:list]   adapter dump err: " + t); }
+    }
+
+    private static String viewIdName(android.view.View v) {
+        try {
+            int id = v.getId();
+            if (id == android.view.View.NO_ID) return "NO_ID";
+            return v.getResources().getResourceEntryName(id);
+        } catch (Throwable t) { return "?"; }
+    }
+
+    private static String parentChain(android.view.View v, int up) {
+        StringBuilder sb = new StringBuilder();
+        try {
+            android.view.ViewParent p = v.getParent();
+            for (int i = 0; i < up && p instanceof android.view.View; i++) {
+                android.view.View pv = (android.view.View) p;
+                sb.append(pv.getClass().getSimpleName()).append("#")
+                  .append(viewIdName(pv)).append(" < ");
+                p = pv.getParent();
+            }
+        } catch (Throwable ignored) {}
+        return sb.toString();
+    }
+
     @SuppressWarnings({"rawtypes", "unchecked"})
     private static int filterListFields(Object instance, java.util.Set<String> hidden) {
         int total = 0;
@@ -407,11 +736,10 @@ public class MomentsRedDotGuard {
         for (int d = 0; cls != null && d < 5; d++) {
             if (cls.getName().startsWith("android.")) break;
             for (java.lang.reflect.Field f : cls.getDeclaredFields()) {
-                if (!java.util.List.class.isAssignableFrom(f.getType())) continue;
                 try {
                     f.setAccessible(true);
                     Object listObj = f.get(instance);
-                    if (!(listObj instanceof java.util.List)) continue;
+                    if (!(listObj instanceof java.util.List)) continue; // v24e: 按值判断, 不靠声明类型(c 声明非List)
                     java.util.List rawList = (java.util.List) listObj;
                     if (rawList.isEmpty()) continue;
 
@@ -1150,6 +1478,108 @@ public class MomentsRedDotGuard {
         }
     }
 
+    // -------------------------------------------------------------------------
+    // v24: 互动列表显示层真源过滤
+    //   bm(全部互动) / rm(与我的互动) 适配器内部的 c(LinkedList) 才是屏幕上那几十行数据
+    //   (w1.N1/O1/a2 是小查询, 非显示源)。
+    //   做法: hook BaseAdapter.notifyDataSetChanged, 仅对 bm/rm 生效 —— 通知前先把密友项
+    //   从适配器内部 List 删掉, 随后微信自己的 notify 让 ListView 按过滤后的 c 重画。
+    //   合规: clear-before-notify(铁律#21); 不自调 notify(避#17 SIGSEGV); 不 hook getCount/getItem(避#14);
+    //         按类名精确门控, 非 bm/rm 立即返回(低开销)。
+    // -------------------------------------------------------------------------
+    private static void installSnsMsgAdapterFilter(XC_LoadPackage.LoadPackageParam lpparam) {
+        final java.util.Set<String> targets = new java.util.HashSet<>(java.util.Arrays.asList(
+                "com.tencent.mm.plugin.sns.ui.bm", "com.tencent.mm.plugin.sns.ui.rm"));
+        try {
+            XposedHelpers.findAndHookMethod("android.widget.BaseAdapter", lpparam.classLoader,
+                    "notifyDataSetChanged", new XC_MethodHook() {
+                @Override
+                protected void beforeHookedMethod(MethodHookParam param) {
+                    try {
+                        String cn = param.thisObject.getClass().getName();
+                        if (!targets.contains(cn)) return;
+                        if (sDiagSeen.add("adapter_notify_seen_" + cn))
+                            Log.i(TAG, "[MRD:adapter:flt] notify fired on " + cn);
+                        if (!isFilteringActive()) return;
+                        java.util.Set<String> hidden = Bridge.getInstance().getWxids();
+                        if (hidden.isEmpty()) return;
+                        int cursorRemoved = wrapSnsMsgCursorFields(param.thisObject, "notify:" + cn);
+                        int removed = filterListFields(param.thisObject, hidden);
+                        int total = cursorRemoved + removed;
+                        if (total > 0) {
+                            Log.i(TAG, "[MRD:adapter:flt] " + cn + " removed=" + total
+                                    + " (cursor=" + cursorRemoved + ", list=" + removed + ", before notify)");
+                            InterceptCounter.getInstance().incF05("MRD-adapter-flt");
+                        } else if (sDiagSeen.add("adapter_struct_" + cn)) {
+                            Log.i(TAG, "[MRD:dump] " + cn + " removed=0 — dumping list/item structure:");
+                            dumpSmsgAdapterStructure(param.thisObject);
+                        }
+                    } catch (Throwable t) {
+                        if (sDiagSeen.add("adapterflt_err")) Log.w(TAG, "[MRD:adapter:flt] err: " + t);
+                    }
+                }
+            });
+            Log.i(TAG, "[MRD:adapter:flt] BaseAdapter.notifyDataSetChanged hook installed (gated bm/rm)");
+        } catch (Throwable t) {
+            Log.w(TAG, "[MRD:adapter:flt] install failed: " + t);
+        }
+    }
+
+    // v24d 一次性诊断：removed=0 时把适配器的 List 字段 + 第一条 item 的字段全打出来，找 wxid 真路径。
+    private static void dumpSmsgAdapterStructure(Object adapter) {
+        try {
+            Class<?> cls = adapter.getClass();
+            for (int d = 0; cls != null && d < 5; d++) {
+                if (cls.getName().startsWith("android.")) break;
+                for (java.lang.reflect.Field f : cls.getDeclaredFields()) {
+                    f.setAccessible(true);
+                    Object lv = f.get(adapter);
+                    if (!(lv instanceof java.util.List)) continue;
+                    java.util.List<?> list = (java.util.List<?>) lv;
+                    Log.i(TAG, "[MRD:dump] List '" + f.getName() + "':" + f.getType().getSimpleName()
+                            + " size=" + list.size());
+                    Object item = null;
+                    for (Object o : list) { if (o != null) { item = o; break; } }
+                    if (item == null) continue;
+                    Log.i(TAG, "[MRD:dump]   item0 = " + item.getClass().getName());
+                    dumpItemFieldsForWxid(item, "      ", 0);
+                }
+                cls = cls.getSuperclass();
+            }
+        } catch (Throwable t) { Log.w(TAG, "[MRD:dump] err " + t); }
+    }
+
+    private static void dumpItemFieldsForWxid(Object item, String indent, int depth) {
+        if (item == null || depth > 1) return;
+        Class<?> ic = item.getClass();
+        for (int d = 0; ic != null && d < 4; d++) {
+            String icn = ic.getName();
+            if (icn.startsWith("android.") || icn.startsWith("java.")) break;
+            for (java.lang.reflect.Field f : ic.getDeclaredFields()) {
+                try {
+                    f.setAccessible(true);
+                    Object v = f.get(item);
+                    if (v == null) continue;
+                    String tn = f.getType().getSimpleName();
+                    if (v instanceof String) {
+                        String s = (String) v;
+                        Log.i(TAG, indent + f.getName() + ":" + tn + " = \""
+                                + (s.length() > 48 ? s.substring(0, 48) : s) + "\"");
+                    } else if (f.getType().isPrimitive()) {
+                        Log.i(TAG, indent + f.getName() + ":" + tn + " = " + v);
+                    } else {
+                        String vcn = v.getClass().getName();
+                        if (!vcn.startsWith("java.") && !vcn.startsWith("android.") && depth < 1) {
+                            Log.i(TAG, indent + f.getName() + ":" + tn + " = [" + vcn + "] ↓");
+                            dumpItemFieldsForWxid(v, indent + "    ", depth + 1);
+                        }
+                    }
+                } catch (Throwable ignored) {}
+            }
+            ic = ic.getSuperclass();
+        }
+    }
+
     /**
      * boot-time 追溯清零（仅 HIDDEN 态）。
      *
@@ -1839,6 +2269,113 @@ public class MomentsRedDotGuard {
         }
     }
 
+    // -------------------------------------------------------------------------
+    // v22 互动列表游标过滤（非破坏性「压制」，不删历史）
+    //   w1.O1(int)/a2(int) 返回互动列表 Cursor（SnsMsgUIWithRelevance + WithAll 共用）。
+    //   afterHook 包一层 TalkerFilterCursor，跳过 talker∈密友 的行 → 列表不显示密友，
+    //   SnsComment 记录原样保留（用户自己关模块仍能看到全部历史）。
+    // -------------------------------------------------------------------------
+    private static void installInteractionListCursorFilter(XC_LoadPackage.LoadPackageParam lpparam) {
+        try {
+            Class<?> w1 = lpparam.classLoader.loadClass(SNS_COMMENT_STORAGE);
+            int hooked = 0;
+            for (Method m : w1.getDeclaredMethods()) {
+                final String mn = m.getName();
+                if (!"N1".equals(mn) && !"O1".equals(mn) && !"a2".equals(mn)) continue; // v23b: 加 N1(与我的互动)
+                if (m.getReturnType() != android.database.Cursor.class) continue;
+                XposedBridge.hookMethod(m, new XC_MethodHook() {
+                    @Override
+                    protected void afterHookedMethod(MethodHookParam param) {
+                        try {
+                            if (!isFilteringActive()) return;
+                            java.util.Set<String> hidden = Bridge.getInstance().getWxids();
+                            if (hidden.isEmpty()) return;
+                            Object res = param.getResult();
+                            if (!(res instanceof android.database.Cursor)) return;
+                            if (res instanceof TalkerFilterCursor) return;
+                            android.database.Cursor orig = (android.database.Cursor) res;
+                            TalkerFilterCursor fc = new TalkerFilterCursor(orig, hidden);
+                            if (fc.didFilter()) {
+                                param.setResult(fc);
+                                if (sDiagSeen.add("cursorflt_" + mn)) {
+                                    Log.i(TAG, "[MRD:cursor] " + mn + " filtered "
+                                            + orig.getCount() + "→" + fc.getCount());
+                                }
+                                InterceptCounter.getInstance().incF05("MRD-cursor-" + mn);
+                            }
+                        } catch (Throwable t) {
+                            if (sDiagSeen.add("cursorflt_err_" + mn))
+                                Log.w(TAG, "[MRD:cursor] " + mn + " wrap err: " + t);
+                        }
+                    }
+                });
+                hooked++;
+            }
+            Log.i(TAG, "[MRD:cursor] interaction list cursor filter installed: " + hooked + " methods");
+        } catch (Throwable t) {
+            Log.w(TAG, "[MRD:cursor] install failed: " + t);
+        }
+    }
+
+    /**
+     * 非破坏性游标过滤：跳过 talker∈密友 的行，DB 记录不动。
+     * 位置重映射，不复制数据。
+     */
+    static final class TalkerFilterCursor extends android.database.CursorWrapper {
+        private final int[] map;     // 过滤后位置 → 原始位置
+        private int pos = -1;
+        private final boolean filtered;
+
+        TalkerFilterCursor(android.database.Cursor c, java.util.Set<String> hidden) {
+            super(c);
+            int n = c.getCount();
+            int talkerIdx = c.getColumnIndex("talker");
+            if (talkerIdx < 0) {
+                // 列名不是 talker → 打一次列名表（供下一版定位），全保留（安全不误伤）
+                if (sDiagSeen.add("cursor_cols")) {
+                    Log.i(TAG, "[MRD:cursor] no 'talker' col; cols="
+                            + java.util.Arrays.toString(c.getColumnNames()));
+                }
+                int[] all = new int[n];
+                for (int i = 0; i < n; i++) all[i] = i;
+                map = all;
+                filtered = false;
+                return;
+            }
+            int saved = c.getPosition();
+            java.util.ArrayList<Integer> keep = new java.util.ArrayList<>(n);
+            for (int i = 0; i < n; i++) {
+                c.moveToPosition(i);
+                String t = c.getString(talkerIdx);
+                if (t == null || !hidden.contains(t)) keep.add(i);
+            }
+            c.moveToPosition(saved);
+            map = new int[keep.size()];
+            for (int i = 0; i < map.length; i++) map[i] = keep.get(i);
+            filtered = (map.length != n);
+        }
+
+        boolean didFilter() { return filtered; }
+
+        @Override public int getCount() { return map.length; }
+        @Override public int getPosition() { return pos; }
+        @Override public boolean moveToPosition(int p) {
+            if (p < 0) { pos = -1; super.moveToPosition(-1); return false; }
+            if (p >= map.length) { pos = map.length; return false; }
+            pos = p;
+            return super.moveToPosition(map[p]);
+        }
+        @Override public boolean moveToFirst() { return moveToPosition(0); }
+        @Override public boolean moveToLast() { return moveToPosition(map.length - 1); }
+        @Override public boolean moveToNext() { return moveToPosition(pos + 1); }
+        @Override public boolean moveToPrevious() { return moveToPosition(pos - 1); }
+        @Override public boolean move(int offset) { return moveToPosition(pos + offset); }
+        @Override public boolean isBeforeFirst() { return map.length == 0 || pos < 0; }
+        @Override public boolean isAfterLast() { return map.length == 0 || pos >= map.length; }
+        @Override public boolean isFirst() { return pos == 0 && map.length > 0; }
+        @Override public boolean isLast() { return pos == map.length - 1 && map.length > 0; }
+    }
+
     /** 从 w1.insertLike/insertComment 参数中读 SnsAction.fromUserName */
     private static String getSnsActionFromUserName(Object[] args) {
         if (args == null) return null;
@@ -1892,6 +2429,22 @@ public class MomentsRedDotGuard {
         try {
             Class<?> cls = lpparam.classLoader.loadClass(SNS_COMMENT_STORAGE);
 
+            // v19 修复：int getter 实测不被微信调用 → sW1Instance 一直 null。
+            // 改用构造器捕获实例（w1 在 SNS 存储首次访问时创建，晚于模块装载）。
+            try {
+                XposedBridge.hookAllConstructors(cls, new XC_MethodHook() {
+                    @Override
+                    protected void afterHookedMethod(MethodHookParam param) {
+                        if (sW1Instance == null && param.thisObject != null) {
+                            sW1Instance = param.thisObject;
+                            Log.i(TAG, "[MRD:scs] sW1Instance captured via <init>");
+                        }
+                    }
+                });
+            } catch (Throwable t) {
+                Log.w(TAG, "[MRD:scs] ctor capture fail: " + t);
+            }
+
             // 一次性 dump 字段 + 方法（给后续精准 hook 提供证据）
             StringBuilder fsb = new StringBuilder("[MRD:scs:fields] ");
             for (java.lang.reflect.Field f : cls.getDeclaredFields()) {
@@ -1914,6 +2467,23 @@ public class MomentsRedDotGuard {
 
                 // hook：0-1 param + 返回 int/long（最可能的计数 getter）
                 if (pt.length > 1) continue;
+
+                // v19: Cursor 方法（N1/O1/a2，互动列表读取时调用）捕获 sW1Instance 兜底
+                if (rt == android.database.Cursor.class) {
+                    final String cmn = mn;
+                    XposedBridge.hookMethod(m, new XC_MethodHook() {
+                        @Override
+                        protected void afterHookedMethod(MethodHookParam param) {
+                            if (sW1Instance == null && param.thisObject != null) {
+                                sW1Instance = param.thisObject;
+                                Log.i(TAG, "[MRD:scs] sW1Instance captured via " + cmn + " (cursor)");
+                            }
+                        }
+                    });
+                    hooked++;
+                    continue;
+                }
+
                 if (rt != int.class && rt != long.class
                         && rt != Integer.class && rt != Long.class) continue;
 
@@ -2149,6 +2719,289 @@ public class MomentsRedDotGuard {
             }
         }
         Log.i(TAG, "[MRD:tab] tab badge counter suppressor: " + installed + " events hooked");
+    }
+
+    // -------------------------------------------------------------------------
+    // v19 B 精准：显示层拦截 —— TextView.setText 限定 osw(发现tab)/o58(朋友圈行)
+    //   HIDDEN+enabled 态把红点数字改成「非密友未读数」
+    //   依据(本会话 L1)：v18 event 0 命中、scs getter 清零对 badge 无效 → 显示层才可靠；
+    //   w1.rawQuery(SnsComment, talker not in 密友) 已 Frida 实证可行。
+    // -------------------------------------------------------------------------
+    private static volatile int sNonMiyouCache = -1;
+    private static volatile long sNonMiyouCacheTime = 0L;
+    private static volatile ClassLoader sClassLoader = null;
+    private static volatile long sLastMarkTime = 0L;
+    private static volatile Object sDbHandle = null;          // v23: 缓存 WCDB 写句柄, 避免每次反射扫
+    // v23: 专用后台线程, 把"找句柄 + 写库 UPDATE"移出主线程, 防 WCDB 锁阻塞主线程 ANR
+    private static final java.util.concurrent.ExecutorService sBgExec =
+            java.util.concurrent.Executors.newSingleThreadExecutor(new java.util.concurrent.ThreadFactory() {
+                @Override public Thread newThread(Runnable r) {
+                    Thread t = new Thread(r, "mrd-bg");
+                    t.setDaemon(true);
+                    return t;
+                }
+            });
+
+    private static void installBadgePreciseFilter(XC_LoadPackage.LoadPackageParam lpparam) {
+        try {
+            XposedHelpers.findAndHookMethod("android.widget.TextView", lpparam.classLoader,
+                    "setText", CharSequence.class, new XC_MethodHook() {
+                @Override
+                protected void beforeHookedMethod(MethodHookParam param) {
+                    try {
+                        // [tl-bubble] "X条新消息"互动气泡 (TextView id=n_t): HIDDEN 态重算为非密友数, 0/不可算则隐藏整条
+                        try {
+                            Object a0 = param.args[0];
+                            if (a0 != null && a0.toString().contains("条新消息")
+                                    && "n_t".equals(getResEntryName(param.thisObject))) {
+                                String bt = a0.toString();
+                                if (sDiagSeen.add("tlbubble_seen")) {
+                                    Log.i(TAG, "[MRD:tl] bubble n_t raw=\"" + bt + "\" parents="
+                                            + parentChain((android.view.View) param.thisObject, 6));
+                                }
+                                if (AppConfig.getInstance().isMomentsRedDotEnabled()
+                                        && StateMachine.getInstance().isActive()
+                                        && !Bridge.getInstance().getWxids().isEmpty()) {
+                                    int nonMiyou = nonMiyouCachedOrRefresh(param.thisObject);
+                                    if (nonMiyou > 0) {
+                                        param.args[0] = nonMiyou + "条新消息";
+                                        if (sDiagSeen.add("tlbubble_recompute"))
+                                            Log.i(TAG, "[MRD:tl] bubble recompute " + bt + " -> " + nonMiyou + "条新消息");
+                                    } else {
+                                        param.args[0] = "";
+                                        hideBubbleContainer((android.view.View) param.thisObject);
+                                        if (sDiagSeen.add("tlbubble_hidden"))
+                                            Log.i(TAG, "[MRD:tl] bubble hidden (nonMiyou=" + nonMiyou + " raw=" + bt + ")");
+                                    }
+                                }
+                            }
+                        } catch (Throwable e2) {
+                            if (sDiagSeen.add("tlbubble_err")) Log.w(TAG, "[MRD:tl] bubble err: " + e2);
+                        }
+
+                        if (!AppConfig.getInstance().isMomentsRedDotEnabled()) return;
+                        if (!StateMachine.getInstance().isActive()) return;
+
+                        Object arg = param.args[0];
+                        if (arg == null) return;
+                        String s = arg.toString().trim();
+                        int len = s.length();
+                        if (len == 0 || len > 3) return;
+                        for (int i = 0; i < len; i++) {
+                            char c = s.charAt(i);
+                            if (c < '0' || c > '9') return;
+                        }
+
+                        String rid = getResEntryName(param.thisObject);
+                        if (!("osw".equals(rid) || "o58".equals(rid))) return;
+
+                        if (sDiagSeen.add("badge_seen_" + rid)) {
+                            Log.i(TAG, "[MRD:badge] hit " + rid + " text=" + s);
+                        }
+
+                        // v20: SQL 方案 —— 标记密友互动已读，微信自己重算未读数
+                        // （整链一致：发现 tab/朋友圈红点/气泡/互动列表，且不误伤微信 tab）
+                        markMiyouRead(param.thisObject);
+                    } catch (Throwable t) {
+                        Log.w(TAG, "[MRD:badge] filter err: " + t);
+                    }
+                }
+            });
+            Log.i(TAG, "[MRD:badge] precise badge filter installed (osw/o58 -> 非密友)");
+        } catch (Throwable t) {
+            Log.w(TAG, "[MRD:badge] install failed: " + t);
+        }
+    }
+
+    /**
+     * 非密友未读互动数：select count(*) from SnsComment where isRead=0 and isSilence!=1
+     *   and talker not in (密友 wxids)。走 w1.rawQuery（本会话 Frida 实证可行）。1.5s 缓存。
+     * @return &gt;=0 非密友数；-1 = 不可算（保持原红点）
+     */
+    private static int computeNonMiyouSnsUnread(Object view) {
+        long now = System.currentTimeMillis();
+        int cached = sNonMiyouCache;
+        if (cached >= 0 && now - sNonMiyouCacheTime < 1500L) return cached;
+
+        Object w1 = getSnsCommentStorage(view);
+        if (w1 == null) return -1;
+        try {
+            Set<String> miyou = Bridge.getInstance().getWxids();
+            if (miyou == null || miyou.isEmpty()) return -1;
+            StringBuilder in = new StringBuilder();
+            for (String w : miyou) {
+                if (w == null || w.length() == 0) continue;
+                if (in.length() > 0) in.append(",");
+                in.append("'").append(w.replace("'", "")).append("'");
+            }
+            if (in.length() == 0) return -1;
+            String sql = "select count(*) from SnsComment where isRead=0 and isSilence!=1 and talker not in ("
+                    + in + ")";
+            Object curObj = XposedHelpers.callMethod(w1, "rawQuery", sql, new String[0]);
+            if (curObj == null) return 0;
+            android.database.Cursor cursor = (android.database.Cursor) curObj;
+            int cnt = 0;
+            try {
+                if (cursor.moveToFirst()) cnt = cursor.getInt(0);
+            } finally {
+                try { cursor.close(); } catch (Throwable ignored) {}
+            }
+            sNonMiyouCache = cnt;
+            sNonMiyouCacheTime = now;
+            return cnt;
+        } catch (Throwable t) {
+            Log.w(TAG, "[MRD:badge] computeNonMiyou err: " + t);
+            return -1;
+        }
+    }
+
+    private static String getResEntryName(Object view) {
+        try {
+            Object idObj = XposedHelpers.callMethod(view, "getId");
+            if (!(idObj instanceof Integer)) return null;
+            int id = (Integer) idObj;
+            if (id == -1 || id == 0) return null;
+            Object res = XposedHelpers.callMethod(view, "getResources");
+            Object name = XposedHelpers.callMethod(res, "getResourceEntryName", id);
+            return (name instanceof String) ? (String) name : null;
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /**
+     * 主动获取 SnsCommentStorage(w1)：优先已捕获实例，否则 l4.Qi() 静态取。
+     * jadx 实证（hm.java）：com.tencent.mm.plugin.sns.model.l4.Qi() → w1 单例。
+     * 这样不依赖"打开互动列表"才创建 w1。
+     */
+    /**
+     * v20 SQL 方案：把密友未读互动在 DB 标记为已读，微信自己重算未读数 →
+     * 发现 tab/朋友圈红点/气泡/互动列表整条链自然变成非密友数。3s 去抖。
+     * 用微信自己的更新通道 f149254d.i（同 C2 updateToRead），触发 WCDB 观察者刷新。
+     */
+    private static void markMiyouRead(final Object view) {
+        long now = System.currentTimeMillis();
+        if (now - sLastMarkTime < 3000L) return;
+        sLastMarkTime = now;            // v23: 提前置位 → 去抖 + 防止重复派发后台任务
+        // v23 降 ANR：把"找句柄 + 写库 UPDATE"整段移出主线程。
+        //   旧版同步写 WCDB → 主线程 futex_wait 等 DB 锁 → ImproveSnsTimelineUI ANR（已 L1 实证）。
+        sBgExec.execute(new Runnable() {
+            @Override public void run() {
+                try {
+                    Object w1 = getSnsCommentStorage(view);
+                    if (w1 == null) return;
+                    // v21 一次性结构 dump：找正确 DB 写通道（后台线程, 不卡 UI）
+                    if (sDiagSeen.add("w1_struct_dump")) dumpW1Structure(w1);
+                    Set<String> miyou = Bridge.getInstance().getWxids();
+                    if (miyou == null || miyou.isEmpty()) return;
+                    StringBuilder in = new StringBuilder();
+                    for (String w : miyou) {
+                        if (w == null || w.length() == 0) continue;
+                        if (in.length() > 0) in.append(",");
+                        in.append("'").append(w.replace("'", "")).append("'");
+                    }
+                    if (in.length() == 0) return;
+                    String sql = "update SnsComment set isRead=1, isReminding=0 where isRead=0 and talker in ("
+                            + in + ")";
+                    // v23: 句柄缓存，只在首次反射扫一次，之后复用
+                    Object db = sDbHandle;
+                    if (db == null) {
+                        db = findW1DbHandle(w1);
+                        if (db != null) sDbHandle = db;
+                    }
+                    if (db == null) {
+                        if (sDiagSeen.add("db_not_found")) Log.w(TAG, "[MRD:badge] db handle not found on w1");
+                        return;
+                    }
+                    Object ret = XposedHelpers.callMethod(db, "i", "SnsComment", sql);
+                    if (sDiagSeen.add("sql_mark_done")) {
+                        Log.i(TAG, "[MRD:badge] SQL mark密友 read ret=" + ret
+                                + " via " + db.getClass().getName() + " (bg)");
+                    }
+                    InterceptCounter.getInstance().incF05("MRD-badge-sql");
+                } catch (Throwable t) {
+                    if (sDiagSeen.add("sql_mark_err")) Log.w(TAG, "[MRD:badge] markMiyouRead err: " + t);
+                }
+            }
+        });
+    }
+
+    /** v21 一次性 dump w1(SnsCommentStorage) 字段+方法 → logcat，找 DB 写通道真名。 */
+    private static void dumpW1Structure(Object w1) {
+        try {
+            Class<?> wc = w1.getClass();
+            StringBuilder fb = new StringBuilder("[MRD:w1:FIELDS] " + wc.getName() + " :: ");
+            for (java.lang.reflect.Field f : wc.getDeclaredFields()) {
+                fb.append(f.getName()).append("=").append(f.getType().getName()).append("  ");
+            }
+            Log.i(TAG, fb.toString());
+            StringBuilder mb = new StringBuilder("[MRD:w1:METHODS] ");
+            for (Method m : wc.getDeclaredMethods()) {
+                Class<?>[] ps = m.getParameterTypes();
+                if (ps.length == 0 || ps.length > 3) continue;
+                mb.append(m.getName()).append("(");
+                for (Class<?> p : ps) mb.append(p.getSimpleName()).append(",");
+                mb.append(")").append(m.getReturnType().getSimpleName()).append("  ");
+            }
+            Log.i(TAG, mb.toString());
+        } catch (Throwable t) {
+            Log.w(TAG, "[MRD:w1:dump] " + t);
+        }
+    }
+
+    /** v21 扫 w1 字段，返回第一个带 i(String,String,...) 方法的对象（WCDB 写句柄候选）。 */
+    private static Object findW1DbHandle(Object w1) {
+        Class<?> wc = w1.getClass();
+        for (int d = 0; wc != null && wc != Object.class && d < 3; d++) {
+            for (java.lang.reflect.Field f : wc.getDeclaredFields()) {
+                try {
+                    f.setAccessible(true);
+                    Object v = f.get(w1);
+                    if (v == null || v instanceof String) continue;
+                    Class<?> vc = v.getClass();
+                    for (int dd = 0; vc != null && vc != Object.class && dd < 4; dd++) {
+                        for (Method m : vc.getDeclaredMethods()) {
+                            if (!"i".equals(m.getName())) continue;
+                            Class<?>[] ps = m.getParameterTypes();
+                            if (ps.length >= 2 && ps[0] == String.class && ps[1] == String.class) {
+                                Log.i(TAG, "[MRD:w1] db handle = field " + f.getName()
+                                        + " (" + v.getClass().getName() + ")");
+                                return v;
+                            }
+                        }
+                        vc = vc.getSuperclass();
+                    }
+                } catch (Throwable ignored) {}
+            }
+            wc = wc.getSuperclass();
+        }
+        return null;
+    }
+
+    private static Object getSnsCommentStorage(Object view) {
+        Object w1 = sW1Instance;
+        if (w1 != null) return w1;
+        // 用 view 的 context classloader（Tinker 合并后的"活"loader）；
+        // lpparam.classLoader 可能是 Tinker 前副本 → l4.Qi() 报 Kernel not initialized。
+        ClassLoader cl = null;
+        try {
+            Object ctx = XposedHelpers.callMethod(view, "getContext");
+            if (ctx != null) cl = (ClassLoader) XposedHelpers.callMethod(ctx, "getClassLoader");
+        } catch (Throwable ignored) {}
+        if (cl == null) cl = sClassLoader;
+        if (cl == null) return null;
+        try {
+            Class<?> l4 = cl.loadClass("com.tencent.mm.plugin.sns.model.l4");
+            Object got = XposedHelpers.callStaticMethod(l4, "Qi");
+            if (got != null) {
+                sW1Instance = got;
+                if (sDiagSeen.add("w1_via_Qi")) Log.i(TAG, "[MRD:badge] w1 via l4.Qi()");
+                return got;
+            }
+        } catch (Throwable t) {
+            if (sDiagSeen.add("w1_Qi_fail")) Log.w(TAG, "[MRD:badge] l4.Qi() fail: " + t);
+        }
+        return null;
     }
 
     // -------------------------------------------------------------------------
