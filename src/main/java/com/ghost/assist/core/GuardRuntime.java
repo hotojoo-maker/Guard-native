@@ -3,15 +3,14 @@ package com.ghost.assist.core;
 /**
  * GuardRuntime — single entry point for hook recipes (class/field names).
  *
- * Phase 1E Step1 (skeleton, NOT wired into any Filter).
+ * P_SEC1 / P1E: GuardRuntime + encrypted registry access shell.
  *
  * Why this class exists
  * ---------------------
- * The encrypted registry (AES-GCM, P1A–P1D) only protects anything once the
- * Filters stop hard-coding class names and read them from the decrypted SO
- * registry instead. This class is the ONE funnel that surfaces those recipes
- * to the Java side, so the "where does a class name come from" decision lives
- * in a single place (auth-review module-boundary requirement).
+ * The encrypted registry only protects the valuable hook recipes when Java code
+ * reads those recipes through one controlled outlet. This class is that outlet:
+ * business code asks GuardRuntime for a recipe, and GuardRuntime delegates the
+ * readiness / scatter decision to EncryptedConfigLoader.
  *
  * Scope / boundaries (guard-auth-review PASS, 2026-06-09)
  * ------------------------------------------------------
@@ -20,27 +19,37 @@ package com.ghost.assist.core;
  *     orthogonal to authorization and hide/visible state.
  *   • fail-closed: when the registry is not usable (SO missing, scatter, or a
  *     future LeaseClock / RiskState gate trips) every lookup returns "" so the
- *     caller skips its hook install (no class name → no hook → no crash).
- *   • Step1 does NOT change any Filter. Migrating ConvFilter/SearchFilter/etc.
- *     to read from here is Step2+ and needs a fresh auth-review round.
+ *     caller keeps its fallback or skips its hook install.
+ *   • Filters may consume recipes, but hide/show decisions still belong to
+ *     StateMachine.isActive() + the hidden-id lists.
  *
- * TODO Phase 1D-server: fold the real gate into {@link #isRegistryActive()} —
- *   LeaseClock (short-lived lease) + EncryptedConfigLoader + RiskState — so an
- *   expired lease / tampered package degrades to scatter (empty recipes).
+ * TODO Phase 1D-server: fold LeaseClock + RiskState into
+ *   EncryptedConfigLoader so expired/tampered envelopes degrade to scatter.
  */
 public final class GuardRuntime {
 
     private GuardRuntime() {}
 
     /**
-     * Whether the recipe registry is currently usable.
-     *
-     * Step1 skeleton: gated only on the SO being loaded. Phase 1D-server will
-     * fold in LeaseClock + RiskState here; until then any future gate failure
-     * must also make this return false (fail-closed).
+     * Whether the encrypted registry is currently usable.
      */
+    public static boolean isConfigReady() {
+        return EncryptedConfigLoader.isConfigReady();
+    }
+
+    /** Backward-compatible alias used by early P1E notes. */
     public static boolean isRegistryActive() {
-        return NativeBridge.isAvailable();
+        return isConfigReady();
+    }
+
+    /** Debug-only one-line summary of the active registry. */
+    public static String getActiveRegistrySummary() {
+        return EncryptedConfigLoader.getActiveRegistrySummary();
+    }
+
+    /** Clear cached registry readiness after binding material / future refresh. */
+    public static void resetConfigCache() {
+        EncryptedConfigLoader.reset();
     }
 
     /**
@@ -52,7 +61,6 @@ public final class GuardRuntime {
      *         an empty result as "skip this hook").
      */
     public static String getRecipe(String gateway, String key) {
-        if (!isRegistryActive()) return "";
-        return NativeBridge.getRecipe(gateway, key);
+        return EncryptedConfigLoader.getRecipe(gateway, key);
     }
 }

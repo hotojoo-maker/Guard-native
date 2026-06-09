@@ -8,6 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.ghost.assist.core.Bridge;
+import com.ghost.assist.core.GuardRuntime;
 import com.ghost.assist.core.RefreshBus;
 import com.ghost.assist.core.StateMachine;
 import com.ghost.assist.debug.UiContextTracker;
@@ -31,14 +32,10 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
  *
  * Two-tier strategy:
  *
- *  ⭐ Primary (View binding layer, 装机实证 2026-05-27 by user dynamic_crawler):
- *     Hook q2.j(View, jz2.g, boolean) on the FTS ListView adapter q2.
- *     Determine result type by g.a, then extract id:
- *       g.a == 1 → tz2.u1 contact → g.f.s = wxid
- *       g.a == 2 → tz2.s1 chatroom → g.s = groupId
- *       g.a == 0 → tz2.g0 group header (no wxid)
- *     Hidden hit → View.GONE + lp.height=0 + param.setResult(null) to skip bind.
- *     ViewHolder recycling: explicitly restore VISIBLE + WRAP_CONTENT on miss.
+ *  ⭐ Primary (View binding layer, P20 v15.2):
+ *     Detect the q2/f0 adapter family, then hook f0.getView after render.
+ *     Extract the rendered item's wxid/groupId and collapse hidden rows to 1px.
+ *     The q2.j path remains a diagnostic/backstop, not the primary renderer.
  *
  *  Secondary (data layer, diagnostic + fallback):
  *     ArrayList.addAll first-item = fz2.e → dump fields. fz2.e.g is UIN digits
@@ -76,7 +73,49 @@ public class SearchFilter {
     // WeChat classloader — saved at install() for reflective class lookups
     private static ClassLoader sCl;
 
-    // q2 adapter probe — dynamically hook onBindViewHolder to discover rendered item class
+    // P_SEC1: search.gateway is a coarse registry profile. It records the
+    // adapter family and render hook only; it does NOT decide hide/show and it
+    // explicitly excludes SearchUnlock / 111111 entry logic.
+    private static final String REGISTRY_ENTRY = "search.gateway";
+    private static String sGateway = "fts_result_view";
+    private static String sAdapterFamily = "q2,f0";
+    private static String sRenderHook = "getView";
+    private static String sExtractorProfile = "wechat8071_fts_mixed";
+    private static String sScope = "result_render_only";
+    private static volatile boolean sRecipesResolved = false;
+
+    private static String recipe(String key, String fallback) {
+        String v = GuardRuntime.getRecipe(REGISTRY_ENTRY, key);
+        return (v == null || v.isEmpty()) ? fallback : v;
+    }
+
+    private static void resolveRecipes() {
+        if (sRecipesResolved) return;
+        sGateway = recipe("gateway", sGateway);
+        sAdapterFamily = recipe("adapter_family", sAdapterFamily);
+        sRenderHook = recipe("render_hook", sRenderHook);
+        sExtractorProfile = recipe("extractor_profile", sExtractorProfile);
+        sScope = recipe("scope", sScope);
+        sRecipesResolved = true;
+        boolean fbOk = "getView".equals(recipe("__no_such_key__", "getView"));
+        Log.i(TAG, "[SF] recipes gateway=" + sGateway
+                + " adapterFamily=" + sAdapterFamily
+                + " renderHook=" + sRenderHook
+                + " profile=" + sExtractorProfile
+                + " scope=" + sScope
+                + " fallbackSelfTest=" + (fbOk ? "ok" : "FAIL"));
+    }
+
+    private static boolean adapterFamilyContains(String simpleName) {
+        if (simpleName == null || simpleName.isEmpty()) return false;
+        String[] parts = sAdapterFamily.split(",");
+        for (String p : parts) {
+            if (simpleName.equals(p.trim())) return true;
+        }
+        return false;
+    }
+
+    // FTS adapter probe — dynamically detect the q2/f0 family and hook render method.
     private static volatile boolean sQ2Hooked = false;
     private static volatile int sQ2DumpCount = 0;
     private static final int Q2_DUMP_LIMIT = 8;
@@ -145,6 +184,7 @@ public class SearchFilter {
             java.util.Collections.synchronizedSet(new HashSet<String>());
 
     public static void install(XC_LoadPackage.LoadPackageParam lpparam) {
+        resolveRecipes();
         sCl = lpparam.classLoader;
 
         // ── DISABLED 2026-05-27 v13: fts-tree view-tree dump (UI ANR root cause) ──
@@ -359,7 +399,8 @@ public class SearchFilter {
                         @Override
                         protected void beforeHookedMethod(MethodHookParam param) {
                             Object adapter = param.args[0];
-                            if (adapter == null || !"q2".equals(adapter.getClass().getSimpleName())) return;
+                            if (adapter == null
+                                    || !adapterFamilyContains(adapter.getClass().getSimpleName())) return;
 
                             // Instance-level housekeeping that MUST run for every new q2 adapter,
                             // not only the first one — divider on the new ListView must be cleared,
@@ -501,17 +542,18 @@ public class SearchFilter {
                                      c = c.getSuperclass()) {
                                     boolean has = false;
                                     for (Method m : c.getDeclaredMethods()) {
-                                        if ("getView".equals(m.getName())) { has = true; break; }
+                                        if (sRenderHook.equals(m.getName())) { has = true; break; }
                                     }
                                     if (has) { gvCls = c; break; }
                                 }
                                 if (gvCls == null) {
-                                    Log.w(TAG, "[SF:gv] no declared getView in hierarchy of "
+                                    Log.w(TAG, "[SF:gv] no declared " + sRenderHook + " in hierarchy of "
                                             + adapter.getClass().getName() + " — single-hook skipped");
-                                    throw new NoSuchMethodException("getView not declared");
+                                    throw new NoSuchMethodException(sRenderHook + " not declared");
                                 }
-                                Log.i(TAG, "[SF:gv] hooking single-hook getView on " + gvCls.getName());
-                                XposedBridge.hookAllMethods(gvCls, "getView", new XC_MethodHook() {
+                                Log.i(TAG, "[SF:gv] hooking single-hook " + sRenderHook
+                                        + " on " + gvCls.getName());
+                                XposedBridge.hookAllMethods(gvCls, sRenderHook, new XC_MethodHook() {
                                     @Override
                                     protected void afterHookedMethod(MethodHookParam p) {
                                         if (p.args.length < 1 || !(p.args[0] instanceof Integer)) return;
@@ -680,17 +722,17 @@ public class SearchFilter {
                                      c = c.getSuperclass()) {
                                     int cnt = 0;
                                     for (Method m : c.getDeclaredMethods()) {
-                                        if ("getView".equals(m.getName())) cnt++;
+                                        if (sRenderHook.equals(m.getName())) cnt++;
                                     }
                                     if (cnt > 0) { gvCls = c; gvDeclared = cnt; break; }
                                 }
                                 if (gvCls == null) {
-                                    Log.w(TAG, "[SF:gv] no declared getView in hierarchy of "
+                                    Log.w(TAG, "[SF:gv] no declared " + sRenderHook + " in hierarchy of "
                                             + adapter.getClass().getName() + " — hook skipped");
-                                    throw new NoSuchMethodException("getView not declared");
+                                    throw new NoSuchMethodException(sRenderHook + " not declared");
                                 }
                                 Log.i(TAG, "[SF:gv] hooking 5-hook offset on " + gvCls.getName()
-                                        + " getView declared count=" + gvDeclared);
+                                        + " " + sRenderHook + " declared count=" + gvDeclared);
 
                                 // 1) getCount: shrink + rebuild skip map (throttled)
                                 XposedBridge.hookAllMethods(gvCls, "getCount",

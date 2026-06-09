@@ -17,7 +17,7 @@
 | **Layer 0 黑名单注入** | `hookSnsMsgList()` → `addBlackList2(ArrayList)` | `installCatfishSnsMsgListHook` — 8.0.71 无匹配 ArrayList 入参       | ❌ 0 hooks（跳过） |
 | **Layer 0b 消费层**  | 进互动列表消红点                                        | v17: `Activity.class.onResume` 过滤 `SnsMsgUI*`，密友条目不显示 | ✅ **实证有效** |
 | **Layer 1 写入拦截**  | `hookSnsCommentOne` / 数据层                       | `w1.v2(arg[1]=wxid)` block — 写入在 `:push` 进程，主进程 hook 打不到 | ❌ 跨进程不可达 |
-| **Layer 2 视觉兜底**  | SnsObject 清零后 UI 自然不亮                           | `FMF.g1(..., false)` + g1(true) 拦截（已装，未触发）                | ⏳ 已装待触发 |
+| **Layer 2 视觉兜底**  | SnsObject 清零后 UI 自然不亮                           | `FMF.g1(...)` 备用层保留；当前 v1 以 Layer0b + P21B WithAll/bm 主线为准 | 备用复验项，不阻塞当前 v1 |
 | **时间线气泡**         | —                                               | `MomentsFilter` L0v3 `jw1.d` LinkedList.add（P16 已有）             | ✅ D1 侧 |
 
 

@@ -193,9 +193,29 @@
 - **l1_methods**：**核准=本就正确，无漂移（误报撤销）**。代码 `installMvvmListHooks:379` hook `n`+`m`；HOOK_MAP §174 `L1 主路径=MvvmList.n(List,boolean)`（8.0.66 是 .m）→ n 主 m 旧都 hook。之前疑漂移的 `w/e`（ConvFilter:306）实为 `IK3n.handleEvent→MvvmList.w/e` 链路叙述 + L0w 写入路径（hook e/k/l），**非 L1**。registry `n,m` 不变。
 - **l2_method**：`s` 核准正确（`installMvvmListHooks:432` hook 单参 `s`）。
 
+### P_SEC1 + SearchFilter 粗粒度 registry 壳 — 装机通过（2026-06-09）✅
+- 新增 `EncryptedConfigLoader`，`GuardRuntime` 改为统一走 loader 判断 registry 是否 ready；不接服务器心跳，不宣称真锁完成。
+- `SearchFilter.java` 只接 `search.gateway` 粗粒度壳：`gateway / adapter_family / render_hook / extractor_profile / scope`；旧值 `q2,f0 / getView / wechat8071_fts_mixed` 保留 fallback。
+- **未改 SearchUnlock**：`111111` 入口仍走原 `beginUnlock()` / `attemptUnlock()`；registry 注释明确排除 `SearchUnlock`。
+- **未改隐藏判断**：搜索过滤仍走 `StateMachine.isActive()` + hidden set；recipe 只决定“hook 哪个 adapter family / 方法名”。
+- 装机信息：设备 `609b4b18`，微信 8.0.71 `versionCode=3080`，主进程 pid `24801`，`:push` pid `25004`。
+- 关键 L1 日志：
+  ```text
+  [native] configReady=true summary=schema=r8071_v1 ver=8.0.71 entries=4 ... [search.gateway]
+  [native] PHASE1E_VERIFY PASS
+  [SF] recipes gateway=fts_result_view adapterFamily=q2,f0 renderHook=getView profile=wechat8071_fts_mixed scope=result_render_only fallbackSelfTest=ok
+  [SF:q2] setAdapter q2 detected adapterCls=com.tencent.mm.plugin.fts.ui.q2
+  [SF:gv] single-hook getView filter installed on com.tencent.mm.plugin.fts.ui.f0
+  [SF:gv] blocked pos=1 id=wxid_lzd2va16jd1622
+  ```
+- 异常核查：日志中 `SIGABRT` 属系统进程 `media.extractor`（pid `18180`），非微信主进程；微信主进程存活，不判模块崩溃。
+- 证据：
+  - `logs/psec1_search_registry_install_20260609.log`
+  - `logs/psec1_search_registry_runtime_20260609.log`
+
 ### 当前状态 / 诚实边界
-- ✅ 取件口通 + 三个 Filter（ContactFilter / MomentsFilter / ConvFilter）真从 registry 读类名且装机验过 → 加密最初一步真走通。
+- ✅ 取件口通 + 三个 Filter（ContactFilter / MomentsFilter / ConvFilter）真从 registry 读类名且装机验过；SearchFilter 粗粒度 `search.gateway` 壳也已装机命中 → 加密最初一步真走通。
 - ⚠️ 现为「registry + 旧常量 fallback 双份」，明文双份**未完全消除**；删 fallback 是后续步（需多跑几天稳定后再删，防回归）。
 - ✅ conv.list 漂移债已核准结案（contact_fields 补全为 d,e,f,a,b,c；l1_methods n,m 确认正确）。
-- ⬜ 待迁：SearchFilter（registry 粗粒度 profile + ss4.p 那种过期风险，迁移收益有限，暂缓）；ConvFilter 剩余内联锚点（kc5.y/notify，在回调体内，撞雷区暂缓）。
+- ⬜ 待迁：ConvFilter 剩余内联锚点（kc5.y/notify，在回调体内，撞雷区暂缓）；SearchFilter 目前只做粗粒度 profile 壳，不删 fallback。
 - ⬜ 真锁（服务器短命钥匙）= Phase 1D-server，仍未做，对外不得宣称真锁完成。

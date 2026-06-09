@@ -28,8 +28,6 @@ import com.ghost.assist.moduleD.ContactLabelHideGuard;
 import com.ghost.assist.moduleD.ContactLabelMemberFilter;
 import com.ghost.assist.moduleD.ConvFilter;
 import com.ghost.assist.moduleD.MomentsFilter;
-// MomentsRedDotGuard — 朋友圈小红点（P21）；Layer0b/Layer2 证据来源 chatfish 反编译 + frida trace，
-// LSPosed 自有装机日志尚未抓到原文（证据级 L3），但代码已注册 install（见下方 L149）
 import com.ghost.assist.moduleD.MomentsRedDotGuard;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
@@ -173,7 +171,8 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         // 与 lpparam.classLoader（base.apk）不是同一份。hook 这类类必须用 app.getClassLoader()。
         PushFilter.install(lpparam, app.getClassLoader());
 
-        // P21: 更新小红点 + 状态机自动触发器（代码已写，待装机验证）
+        // P21: moments red-dot guard. Main path is verified; keep installed without
+        // changing the validated D1/D2/D3 moments filters.
         MomentsRedDotGuard.install(lpparam);
         UpdateGuard.install(lpparam);
         TriggerGuard.install(app);  // B1/B2/B5，Android API，不吃 lpparam
@@ -252,6 +251,7 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
             byte[] sha = java.security.MessageDigest.getInstance("SHA-256")
                     .digest(sig.toByteArray());
             NativeBridge.setBindingMaterial(sha);
+            com.ghost.assist.core.GuardRuntime.resetConfigCache();
             sCertBound = true;
             Log.i(TAG, "[native] certBind set sha256[0..3]="
                     + String.format("%02x%02x%02x%02x", sha[0], sha[1], sha[2], sha[3]));
@@ -348,9 +348,11 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
             // decrypts the embedded blob (a wrong cert would scatter).
             Log.i(TAG, "[native] PHASE1D_VERIFY "
                     + (registrySelfTest && hasGateway && sCertBound ? "PASS" : "FAIL"));
-            // Phase 1E Step1: GuardRuntime → NativeBridge.getRecipe channel works
-            // and is fail-closed on miss. No Filter is wired (ConvFilter etc.
-            // untouched); this only proves the recipe getter surfaces values.
+            boolean configReady = com.ghost.assist.core.GuardRuntime.isConfigReady();
+            Log.i(TAG, "[native] configReady=" + configReady
+                    + " summary=" + com.ghost.assist.core.GuardRuntime.getActiveRegistrySummary());
+            // Phase 1E/P_SEC1: GuardRuntime → EncryptedConfigLoader →
+            // NativeBridge.getRecipe channel works and is fail-closed on miss.
             String convAdapter = com.ghost.assist.core.GuardRuntime.getRecipe("conv.list", "adapter_class");
             String searchGw = com.ghost.assist.core.GuardRuntime.getRecipe("search.gateway", "gateway");
             String missEntry = com.ghost.assist.core.GuardRuntime.getRecipe("no.such.gateway", "adapter_class");
@@ -360,7 +362,7 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
                     && missEntry.isEmpty() && missField.isEmpty();
             Log.i(TAG, "[native] recipeGet conv.list/adapter_class=" + convAdapter);
             Log.i(TAG, "[native] PHASE1E_VERIFY "
-                    + (recipeOk && sCertBound ? "PASS" : "FAIL"));
+                    + (recipeOk && configReady && sCertBound ? "PASS" : "FAIL"));
         } catch (Throwable t) {
             Log.e(TAG, "[native] verification crash: " + t);
         }
