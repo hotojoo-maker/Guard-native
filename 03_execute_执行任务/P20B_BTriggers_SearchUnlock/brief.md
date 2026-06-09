@@ -1,22 +1,22 @@
-# P21 brief — 状态机 B 模块 + 朋友圈小红点屏蔽
+# P20B brief — 状态机 B 模块 + 历史 P21 入口
 
 > 执行窗口直接读这个，不用翻 TASK_BOARD 全文
 > 接手人：W1 主开发 / 2026-05-21 开 / 半天工时
-> 用户优先级：**朋友圈小红点 > B 触发器 > 更新小红点**
+> 历史说明：早期把 P21 朋友圈小红点和 B 触发器写在同一 brief；当前 P21/P21B 已迁到 `03_execute_执行任务/P21_MomentsRedDot/worklog.md`。
 
 ---
 
 ## 当前状态
 
-🟡 进行中。状态机 3 态已实现，密码进出已通；本任务做 4 件事：
-1. **朋友圈好友动态小红点屏蔽**（蜘蛛/iOS 蜘蛛密友已知未解决漏洞 → 我们差异化点）
-2. B1/B2/B5 状态机自动触发器
-3. B7 屏蔽更新小红点（用户已给 8.0.71 类名）
-4. `KEY_STATE` 写盘 apply → commit（防杀进程丢盘）
+🟡 P20B 历史任务。状态机 3 态已实现，密码进出已通；P21 小红点已独立收口：
+1. **P21/P21B 朋友圈小红点**：Layer0b + WithAll/bm live Cursor ✅，详见 P21 worklog。
+2. B1/B2/B5 状态机自动触发器。
+3. B7 屏蔽更新小红点（用户已给 8.0.71 类名）。
+4. `KEY_STATE` 写盘 apply → commit（防杀进程丢盘）。
 
 ## 本任务实现的 hook 点
 
-### ⭐ 优先 #1：朋友圈小红点（MomentsRedDotGuard）
+### 历史项：朋友圈小红点（MomentsRedDotGuard）
 
 | 候选 hook | 类名（用户调研，8.0.71）| 命中预期 |
 |---|---|---|
@@ -27,7 +27,7 @@
 
 > iOS 端实证：密友 hook 了 `WCTimeLineViewController.viewDidAppear` 过滤内容，但小红点 badge 走**独立通知路径**没覆盖 → 隐藏密友后仍冒红点。Android 端我们提前解决这个差异化点。
 
-> 实施策略：**保守探针**优先——先写 hook 框架 + log，**装机时观察哪个候选真的命中** + 计数，命中的留下，没命中的删；不一次性押注单点。
+> 当前结论：P21 Layer0b + P21B WithAll/bm live Cursor 已装机；本 brief 不再承载 P21 待办。
 
 ### 优先 #2：状态机自动触发器（TriggerGuard）
 
@@ -83,7 +83,6 @@ ModuleMain.onApplicationCreated:
 
 ## 待完成
 
-- [ ] `moduleD/MomentsRedDotGuard.java` — 朋友圈小红点屏蔽（保守探针，多候选 hook）
 - [ ] `moduleB/TriggerGuard.java` — B1/B2/B5 三合一触发器
 - [ ] `moduleB/UpdateGuard.java` — B7 更新小红点（fl4.o / SettingsAboutMicroMsgUI / SettingsUI.P7()）
 - [ ] `Bridge.putInt` `KEY_STATE` 写盘改 commit
@@ -94,12 +93,13 @@ ModuleMain.onApplicationCreated:
 ## 关键文件
 
 ```
-新增:
-  src/main/java/com/ghost/assist/moduleD/MomentsRedDotGuard.java  ← ⭐ 优先#1
+已迁出:
+  src/main/java/com/ghost/assist/moduleD/MomentsRedDotGuard.java  ← P21/P21B，见 P21 worklog
+
+新增/修改:
   src/main/java/com/ghost/assist/moduleB/TriggerGuard.java        ← B1/B2/B5
   src/main/java/com/ghost/assist/moduleB/UpdateGuard.java         ← B7
 
-修改:
   src/main/java/com/ghost/assist/core/Bridge.java                 ← putInt commit
   src/main/java/com/ghost/assist/core/AppConfig.java              ← 4 个 boolean
   src/main/java/com/ghost/assist/ModuleMain.java                  ← install 调用

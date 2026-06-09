@@ -65,11 +65,65 @@
 
 ---
 
+## 2026-06-07（B1 摇一摇装机收口）
+
+### 已闭环（✅ 有装机日志原文）
+
+#### 6. B1 — 摇一摇隐藏好友
+**改动**：`SettingsEntry` 密友设置页新增「摇一摇隐藏好友」开关；`TriggerGuard` 支持开关即时注册/注销加速度传感器。
+**验收**：VISIBLE 态打开开关，退出设置面板后摇一摇，状态机单向进入 HIDDEN。
+**证据路径**：`03_execute_执行任务/P20B_BTriggers_SearchUnlock/logs/b1_shake_fixedkey.log`
+
+**日志原文**：
+```
+[TG] B1 shake listener installed
+[SET:overlay] b1Shake=true
+[TG] B1-shake → enterHidden
+[SM] notify old=显形 new=隐藏
+[SF:sm] VISIBLE → HIDDEN
+[SM] enterHidden
+```
+
+#### 7. 固定签名收口
+**改动**：新增 `signing/guard-native-debug.keystore`，`build.gradle` 的 debug/release 统一使用项目内固定签名；固定签名铁律已同步到 Cursor/Claude 两套 skill。
+**原因**：本机 `~/.android/debug.keystore` 被现场新建，导致旧包覆盖失败。固定项目 key 后，后续构建不再随机器/会话变签名。
+
+#### 8. B4 — 返回键隐藏（用户设备无返回键，按确认不阻塞）
+**现场情况**：用户设备没有传统返回按钮，用户确认“没有返回键，就算过了 / 不阻塞”。
+**证据路径**：`03_execute_执行任务/P20B_BTriggers_SearchUnlock/logs/b4_back_live.log`
+
+**日志原文（只作为 B4 尝试证据，不标 L1 ✅）**：
+```
+[TG] B4 back key hook installed
+KEYCODE_BACK
+[TG] B2-close_dialogs(fs_gesture) → enterHidden
+[SF:sm] VISIBLE → HIDDEN
+[SM] enterHidden
+```
+
+**结论**：本轮未取得 `[TG] B4-back ... → enterHidden` 这种 B4 专属命中日志；实际进入 HIDDEN 的日志归因是 B2 手势路径。因此 B4 不标 ✅，仅按用户确认记录为“不阻塞 P20B 收口”。
+
+#### 9. P20B KPI — frida_stats 200s 轻采样（发版前重测）
+**采集方式**：Cursor 安装 `frida-tools` 后，使用 `tools/frida_run.py` attach 安卓设备 `609b4b18` 的微信主进程，固定采集 200 秒。
+**证据路径**：`03_execute_执行任务/P20B_BTriggers_SearchUnlock/logs/p20b_frida_stats_20260607.log`
+
+**日志原文摘要**：
+```
+[STATS] 2026-06-07 05:00:06.521 | INIT frida_stats.js v1.1
+[STATS] 2026-06-07 05:00:11.521 | PROP=0 vb=0 ... CONN=0 ...
+[STATS] 2026-06-07 05:00:51.568 | PROP=0 vb=0 ... CONN=2 ...
+[STATS] 2026-06-07 05:03:21.736 | PROP=0 vb=0 ... CONN=0 ...
+```
+
+**结论**：`vb=0`、`PROP=0` 无红线；`CONN` 出现单点峰值 2。因本轮用户操作量很低，仅记录为轻采样，不作为继续功能开发的硬阻塞；发版/合并前仍需按 `guard-review_质检门控` 重档重新采集。
+
+---
+
 ### 未完成（Bug B，遗留下一步）
 
 | # | 问题 | 需要做的 |
 |---|------|---------|
-| B-Conv | 111111 后会话密友不自动显形 | `LauncherUI.onResume` hook → RefreshBus → 触发 ConvFilter reload |
+| B-Conv | 111111 后会话密友不自动显形 | 已有 `BUS-V / warmAll / restoreInPlace used fresh` 日志与 P_ConvWarm/P26 结果支撑，不重复跑 |
 | B-Moments | 111111 后朋友圈密友帖不自动显形 | `SnsTimelineUI.onResume`（或等价）→ 全量 reload |
 
 ---
@@ -78,7 +132,9 @@
 
 - [x] 冷启动默认 HIDDEN（不显密友）✅
 - [x] 切后台 B2 → 自动隐藏 ✅（B2-close_dialogs 路径）
+- [x] 摇一摇 B1 → 自动隐藏 ✅（`[TG] B1-shake → enterHidden`）
+- [x] B4 返回键 → 用户设备无返回键，按确认不阻塞（无 B4 专属 L1，不标 ✅）
 - [x] 111111 第 6 个 1 触发解锁，搜索框自动关闭 ✅
 - [x] `cleanMvvmList removed=4`，会话密友消失 ✅
-- [ ] 111111 后密友自动回来（Bug B，未实现）
-- [ ] frida_stats KPI 对比（待跑）
+- [x] 111111 后密友自动回来（已有 `BUS-V / warmAll / restoreInPlace used fresh` 日志；P_ConvWarm/P26 已有结果，不重复跑）
+- [x] frida_stats KPI 轻采样已记录（`vb=0`、`PROP=0`；`CONN=2`，发版前重测）

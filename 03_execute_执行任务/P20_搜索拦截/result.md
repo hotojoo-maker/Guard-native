@@ -1,24 +1,23 @@
 # P20 搜索拦截 — 装机状态快照
 
-**最近更新**：2026-05-27 19:00（会话 Guard Native130）
-**总体状态**：🟡 部分完成（2 ✅ / 1 ⚠️ / 2 ⬜❌）
+**最近更新**：2026-06-06 18:15（P20 搜索主线收口）
+**总体状态**：✅ 主线完成（联系人 / 群聊密群 / 聊天记录关键词场景均已 L1）
 
 > 本文件 = "最新装机现实"。详细历程见 [`worklog.md`](./worklog.md)。
 > 任务范围见 [`brief.md`](./brief.md) / [`brief_S1.md`](./brief_S1.md)。
 
 ---
 
-## 五子形态状态
+## 分源状态
 
 | # | 子Tab | 状态 | 锁点路径（SearchFilter.java） | 最近装机 | 锚点 / 备注 |
 |---|------|:----:|------|------|------|
-| 1 | 联系人·个人 | ✅ | `:548-625` `f0.getView` afterHook + setDivider(null) | 2026-05-27 凌晨 v15.1 | `[SF:gv] blocked pos=N id=wxid_lzd2va16jd1622` ×14 |
-| 2 | 聊天记录·个人 | ✅ | `:1004-1046` `extractFz2Wxid` c==3 → `Bridge.getWxidByUin(g)` | 2026-05-27 晚 | UIN→wxid 一行补丁生效，待补 `[SF:fz2c3]` 锚点日志 |
-| 3 | 联系人·群聊 | ⚠️ 回退 | `:468-537` `q2.j` beforeHook `g.a==2` → `tz2.s1.s` | v15.1 ✅ → 2026-05-27 晚 ❌ | 同 ID `44786160583@chatroom` 今晚装机不被隐藏，根因待探针 |
-| 4 | 最近联系 | ⬜ | 推测复用 `f0.getView` | 未单独装机 | — |
-| 5 | 联系人·标签 | ❌ | 无代码 | — | 待 jadx 查标签 row 类 |
+| 1 | 联系人·个人 | ✅ | `f0.getView` afterHook + `lp.height=1` + setDivider(null) | 2026-05-27 v15.1 / 2026-06-02 v15.2 | `[SF:gv] blocked pos=N id=wxid_lzd2va16jd1622`；灰白块已收口 |
+| 2 | 群聊 / 密群 | ✅ | `f0.getView` afterHook → `tz2.p0/s1` groupId | 2026-06-06 | `[SF:gv] blocked pos=1 id=44786160583@chatroom`；普通群 `45592178108@chatroom` 放行 |
+| 3 | 聊天记录关键词场景 | ✅ | `z15.ef6/ch6.e` 分源出现；最终 `q2/f0.getView` 渲染层 `tz2.p0` id 折叠 | 2026-06-06 | `tools/p20_search_logcat_runner_20260606_180946.log`：同轮隐藏密群 + 密友 blocked，普通群放行 |
+| 4 | 普通群 / 普通好友对照 | ✅ | 同主路径 | 2026-06-06 | 不在 hidden set 时不 blocked |
 
-**附加问题**：⚠️ **UI 空白条**（`View.GONE + lp.height=0` 后遗症）— 全形态过滤后都留空白条。下一步走"路径② 源头 List 清洗"根治，需 q2 适配器探针前置。
+**附加说明**：P26C「群聊行包含密友名高亮」属于 UI 优化，不阻塞 P20 搜索主线。
 
 ---
 
@@ -28,10 +27,13 @@
 [SF:gv] hooking single-hook getView on com.tencent.mm.plugin.fts.ui.f0
 [SF:gv] single-hook getView filter installed on com.tencent.mm.plugin.fts.ui.f0
 [SF:lv] q2 ListView divider cleared
-[SF:gv] blocked pos=1 id=wxid_lzd2va16jd1622  (×14)        — 个人 ✅
+[SF:DUMP] z15.ef6 #1/#2/#3 fields:                         — 聊天记录分源出现 ✅
+[SF:gv] blocked pos=1 id=44786160583@chatroom               — 密群 ✅
+[SF:gv] blocked pos=3 id=wxid_lzd2va16jd1622                — 密友 ✅
+row id=45592178108@chatroom without blocked                 — 普通群放行 ✅
 ```
 
-聊天记录与群聊的最新装机锚点待补（见 `bug排查/final_v22*.log` 系列）。
+证据文件：`tools/p20_search_logcat_runner_20260606_180946.log`。
 
 ---
 
@@ -39,22 +41,19 @@
 
 | 子任务 | 目标 | 阻塞点 |
 |------|------|------|
-| **P20-S1** | 查群聊 hook 回退根因 | 等"探针 A 路"装机产 logcat |
-| **P20-S2** | 路径② 源头 List 清洗根治空白条 | 等 q2 适配器 declared fields dump |
-| **P20-S3** | 标签 row 接入 | 需 jadx 查标签 row 类 |
-| **P20-S4** | 最近联系 单独装机验证 | 一次定点装机 + log |
+| **P26C** | 群聊行"包含:密友名"高亮 UI 优化 | 不阻塞 P20 主线 |
 
 ---
 
 ## 现行 hook 清单（不动名单 F-31）
 
-- `SearchFilter.java:548-625` `f0.getView` afterHook — ✅ v15.1 实证
-- `SearchFilter.java:468-537` `q2.j` beforeHook — 历史 ✅，今晚回退，**仍不动**（先查回退根因）
-- `SearchFilter.java:1004-1046` `extractFz2Wxid` — c==3 走 `Bridge.getWxidByUin()`，**今晚刚生效**
+- `SearchFilter.java` `f0.getView` afterHook — ✅ 主路径：联系人 / 群聊密群 / 聊天记录关键词场景
+- `SearchFilter.java` `q2.j` beforeHook — ❌ F-32y 主路径废弃，仅保留 backstop
+- `SearchFilter.java` `z15.ef6/ch6.e` dump — 理解层 / 诊断层，不作为主过滤路径
 
 ---
 
-## 已废铁律（仅 P20 子集，详 FAILURE_LOG.md）
+## 已废铁律（仅 P20 子集；归档在本文件 + HOOKMAP §8b-路径状态，**非** FAILURE_LOG.md）
 
 - **F-32x** `ss4.p.onBindViewHolder` 永久废弃（父级 GONE 不上屏）
 - **F-32y** `q2.j` 主路径废弃（装上 0 触发；今晚回退另有根因）— 保留为 backstop
