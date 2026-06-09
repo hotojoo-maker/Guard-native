@@ -1,13 +1,15 @@
-﻿# P21 工作日志 — 朋友圈气泡小红点守护
+# P21 工作日志 — 朋友圈气泡小红点守护
 
-> 更新时间：2026-05-22 **校准：私有化阶段补的是桌面角标，不是朋友圈红点**
-> 结论：**红点/气泡 = 独立 unread 链**；**badge = 本地 DB 状态（不随发送方删除同步）**；**Layer0b（SnsMsgUI 过滤）实证有效**（v17 Activity.class.onResume 方案）
+> 更新时间：2026-06-09 **P21 主线收尾：Layer0b + WithAll/bm live Cursor 过滤已装机**
+> 结论：**红点/气泡 = 独立 unread 链**；**badge = 本地 DB 状态（不随发送方删除同步）**；**Layer0b 入口归零 + P21B WithAll/bm 条目过滤均已 L1**；`rm/SnsMsgUIWithRelevance` 同路径覆盖，后续有入口再复验，不阻塞当前 v1。
 
 ---
 
 ## 当前状态
 
-✅ **v17 Layer0b 实证有效**。进互动列表时 `[MRD:smsg:enter]` 命中，密友条目被过滤，badge 进入后归零。
+✅ **Layer0b 入口归零有效**。进互动列表时 `[MRD:smsg:enter]` 命中，badge 进入后归零。
+
+✅ **P21B WithAll/bm 条目过滤有效**。`bm -> s9.f(Cursor)` live 游标按 `talker` 包装为 `TalkerFilterCursor`，2026-06-09 装机实证 `10→1`，AA熵条目不显示。`rm/SnsMsgUIWithRelevance` 代码同路径覆盖，后续有入口时补 L1，不阻塞当前 v1。
 
 
 | 层                 | Catfish 8.0.70                                  | Guard 8.0.71 v17                                                | 状态     |
@@ -217,6 +219,26 @@ badge = 本地 DB 计数 (w1.y)
 - 进互动列表 → 密友条目不显示 → 退出 → badge 归零 ✅
 - 新密友互动到来 → `g1(show=true)` 被拦截（不增新红点）✅（未实测，待密友点赞触发）
 - 已存 badge 数字 → 进一次互动列表就消费掉 ✅
+
+### 2026-06-09 P21B 修复：bm live Cursor 过滤
+
+**根因（L1）**：`SnsMsgUIWithAll` 屏幕数据不是 adapter 内部 List，而是 `bm` 父类 `com.tencent.mm.ui.s9.f` 的 `Cursor`（`com.tencent.wcdb.compat.ValueCursor`）。游标列含 `talker`，AA熵 wxid `wxid_lzd2va16jd1622` 位于 `talker` 列；旧 `filterListFields()` 只扫 List 字段，所以 `removed=0`。
+
+**修复**：`MomentsRedDotGuard` 在 `bm/rm` 的 `notifyDataSetChanged` 前包装 live cursor 字段 `s9.f`，复用 `TalkerFilterCursor` 按 `talker ∈ Bridge.getWxids()` 跳过密友行；不自调 notify、不做 View.GONE、不改状态机/授权链。
+
+**验收（L1）**：
+- `WithAll/bm`：`[MRD:adapter:flt] notify fired on com.tencent.mm.plugin.sns.ui.bm`
+- `WithAll/bm`：`[MRD:cursor:live] notify:com.tencent.mm.plugin.sns.ui.bm.f 10→1`
+- `WithAll/bm`：`[MRD:adapter:flt] com.tencent.mm.plugin.sns.ui.bm removed=9 (cursor=9, list=0, before notify)`
+- 截图：`logs/p21_after_fix_pass_withall.png`，全部互动消息页仅剩非密友“马万能”，AA熵条目不显示。
+- Native 回归：同轮日志有 `BATCH1_VERIFY PASS` 与 `PHASE1A`~`PHASE1E_VERIFY PASS`。
+
+**证据文件**：
+- 根因探针：`logs/probe_live_bm_cursor_20260609_logcat.txt`
+- 修复验收：`logs/p21b_cursor_fix_verify_20260609.txt`
+- 截图：`logs/p21_after_fix_pass_withall.png`
+
+**后续复验**：`rm/SnsMsgUIWithRelevance` 代码同路径覆盖，但本轮无可触发的“与我的互动”入口；待下次有顶部互动气泡时补 L1。该项为复验证据，不阻塞当前 v1 收口。
 
 ---
 

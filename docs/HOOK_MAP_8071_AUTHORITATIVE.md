@@ -211,9 +211,9 @@
 |----|---------|
 | `com.tencent.mm.plugin.fts.ui.f0.getView` (afterHook GONE) | ✅ **主路径**，v15.1 装机实证 ×14 命中 |
 | `q2.j(View, jz2.g, boolean)` | ❌ **F-32y 主路径废弃**：装上 0 触发；保留作 backstop 无害 |
-| `ss4.p.onBindViewHolder` | ❌ **F-32x 永久废弃**：父级 ConstraintLayout vis=8 GONE 不上屏（fts_tree_v2.log L243 铁证）|
+| `ss4.p.onBindViewHolder` | ❌ **F-32x 永久废弃**：父级 ConstraintLayout vis=8 GONE 不上屏（fts_tree_v2.log L243 铁证）。**2026-06-09 已从 SearchFilter.java 删除**（0 命中僵尸 hook；删后 L1 装机复验 `f0.getView` 仍 ×29 命中、无回归）|
 | `SearchFilter 5-hook offset` (getCount/getView/getItem/getItemId/getItemViewType 联动) | ❌ **F-32z 永久废弃**：setResult(orig-skip) 干扰 q2 内部 data swap，搜索结果区**全空白** + ANR（final_v11..v14 实证）|
-| **遗留代码** | SearchFilter.java 内 q2.j / ss4.p / 5-hook offset 用 `if (false)` 保留供考古，不删除 |
+| **遗留代码** | SearchFilter.java 内 q2.j / 5-hook offset 用 `if (false)` 保留供考古，不删除；**ss4.p 已删除（非 if(false)）** |
 
 ### 8c. 全局搜索 — fz2.e 数据层（已证伪 wxid 路径）
 
@@ -237,6 +237,19 @@
 | **推荐策略** | 已改由最终 `q2/f0.getView` item id 收口；继续禁止猜 `z15.ef6/ch6.e` 字段 |
 | **项目代码** | ✅ `SearchFilter.java` 走 `f0.getView` afterHook；`z15.ef6` dump 探针仅保留作诊断 |
 | **来源** | `runtime_search_v3.log` + 探针子代理报告 2026-05-27；`tools/p20_search_logcat_runner_20260606_180946.log` |
+
+### 8e. 朋友圈互动消息 / 小红点（P21）
+
+| 项 | 内容 |
+|------|------|
+| **8.0.71 状态** | ✅ **P21 主线收尾**：Layer0b 入口归零 2026-05-21；P21B WithAll/bm 条目过滤装机实证 2026-06-09 |
+| **Layer0b 入口** | `Activity.onResume` 全局 hook → class name 包含 `SnsMsgUI` 时进入 `handleSnsMsgUIEnter()`，清 `w1.y` / `SnsMsgUI.s` badge 计数；用于互动列表消费后红点归零 |
+| **P21B 主路径（WithAll/bm）** | `com.tencent.mm.plugin.sns.ui.bm` 继承 `com.tencent.mm.ui.s9`；屏幕数据源为父类字段 `s9.f: Cursor = com.tencent.wcdb.compat.ValueCursor`；游标列含 `talker`，AA熵 wxid 位于 `talker` 列 |
+| **过滤实现** | `BaseAdapter.notifyDataSetChanged` beforeHook（仅 bm/rm）→ 包装 live `s9.f` 为 `TalkerFilterCursor` → `talker ∈ Bridge.getWxids()` 的行跳过 → 交给微信原 notify 重画 |
+| **覆盖状态** | ✅ `SnsMsgUIWithAll / bm` L1：10 行过滤为 1 行，AA熵不显示；`SnsMsgUIWithRelevance / rm` 代码同路径覆盖，后续有“与我的互动”入口/顶部气泡时补 L1，不阻塞当前 v1 |
+| **铁律** | 禁 `View.GONE`；禁反射自调 `notifyDataSetChanged`；禁 `notifyItemRange*`。游标层只做位置重映射，不写 DB、不改 UI、不碰状态机/授权链 |
+| **项目代码** | `src/main/java/com/ghost/assist/moduleD/MomentsRedDotGuard.java` — `installSnsMsgLiveCursorFilter` / `wrapSnsMsgCursorFields` / `TalkerFilterCursor` |
+| **证据** | 根因：`03_execute_执行任务/P21_MomentsRedDot/logs/probe_live_bm_cursor_20260609_logcat.txt`；验收：`03_execute_执行任务/P21_MomentsRedDot/logs/p21b_cursor_fix_verify_20260609.txt`；截图：`03_execute_执行任务/P21_MomentsRedDot/logs/p21_after_fix_pass_withall.png`；工作记录：`03_execute_执行任务/P21_MomentsRedDot/worklog.md` |
 
 ---
 

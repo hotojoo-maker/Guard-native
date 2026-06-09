@@ -3,7 +3,15 @@ name: guard-auth-review_授权检查官
 description: Guard Native 授权检查官（别名：授权执行官、授权门控、auth-gate）。大框架守门人——管 状态机/授权/模块边界/过滤位置/拆代码/模块化决策，防止"乱接导致混乱"。改动 SearchUnlock/StateMachine/AuthManager/NativeBridge/DebugServer/C++ auth 前必审；新增 Filter 链或拆/合代码前也要它点头。
 ---
 
+> ⚠️ 输出前自查：禁止错别字、黑话、客户看不懂的话。
+
 # guard-auth-review — 授权检查官（大框架守门人）
+
+## 🔐 固定签名铁律（所有角色必读）
+- 项目唯一固定签名文件：`signing/guard-native-debug.keystore`。
+- `build.gradle` 的 debug/release 必须都指向该文件；禁止依赖或重建 `~/.android/debug.keystore`。
+- `INSTALL_FAILED_UPDATE_INCOMPATIBLE` 必须先停、比对已装 APK 与固定 key 指纹，未经用户确认禁止卸载。
+- 缺少固定 key 时停止 build/装机；日志只能写当前 P 任务 `logs/`，禁止写进 docs/skill 目录。
 
 > **职责范围（用户口径，2026-05-27 锁定）**
 >
@@ -23,6 +31,36 @@ description: Guard Native 授权检查官（别名：授权执行官、授权门
 > Filter 只做过滤、状态机只管态、AuthGate 只管授权 — **三者各管一摊，串得清的链路才能改**。
 
 **门控权威**：[`docs/GUARD_GATE_TRUTH.md`](../../docs/GUARD_GATE_TRUTH.md)（高于 HOOKMAP 旧口径）。**8071 hook** → `docs/HOOK_MAP_8071_AUTHORITATIVE.md`；勿读 archive 8066 类名表写码。
+
+**防破解 / 防盗版总账**：[`PROTECTION_MAP.md`](../../PROTECTION_MAP.md)（上线前门控 + 阶段路线图 + 关节表 + 蜜罐）。改 SO 解密 / 心跳 / proguard / 诱饵 / DebugServer 前先读它。
+
+### ★ 防破解大框架红线（Phase 0 已落地装机；详见 PROTECTION_MAP.md）
+
+| 红线 | 说明 |
+|------|------|
+| **真锁在服务器+SO，不在客户端布尔** | 授权「通过」不能是能被 NOP 的 if；要「服务器下发加密配方 → SO 解密 → 解不开=散沙」。门卫(返回是/否)=诱饵，翻译官(解密)=真锁。|
+| **NativeBridge 禁混淆** | JNI 静态名绑定 `Java_com_ghost_..._native*`（无 RegisterNatives），proguard 改名 → UnsatisfiedLinkError；`proguard-rules.pro` 必须 keep。|
+| **失败往「半残/散沙」掉** | 解密失败/租约过期 → 喂乱码（时藏时不藏），不全开、不崩、重连自愈，**别清用户名单/密码**。|
+| **只打破解、不误伤付费** | 强制弹窗/降级仅「确认篡改」或「宽限耗尽」触发；离线策略统一按安全官口径：24h 提醒、72h 降级/散沙；若保留 10 天，只能作为最大离线重校阈值，不能作为固定锁定或固定引流策略。|
+| **DebugServer 仅 DEV/HONEY** | `if(BuildConfig.DEBUG \|\| isDebugEnabled())`；release+PROD 不开（不漏 `/api/hidden`）。|
+| **v1 放行不擅自收紧** | AuthManager NO_LICENSE/MISMATCH 仍放行（record-only）；v2 前不 gate（GUARD_GATE_TRUTH §4）。|
+| **不破坏已验证 hook** | 防护只加在 网关/配方/钥匙 层，不进已跑通的 hook 回调体（铁律 29 / F-31）。|
+
+> 阶段：Phase 0（止血+诱饵）✅ 装机验过；下一步 Phase 1（真锁+心跳，接 miyou-server）。
+
+### ★ 加密配方收敛红线（防止越拆越碎）
+
+安全官口径已收敛为 **五个 pack + 一个 GuardRuntime 出口**：`license_pack` / `registry_pack` / `risk_pack` / `watermark_pack` / `compat_pack`，业务层只通过 `GuardRuntime`、`RiskState`、`LeaseClock`、`StateMachine` 的白名单接口消费结果。
+
+审查时遇到以下情况直接 WARN / BLOCK：
+
+| 情况 | 裁决 |
+|------|------|
+| 新功能自己新增 `xxx_pack` / `xxx_decrypt` / `xxx_license` | BLOCK：先归并到五个 pack 之一 |
+| Filter 里读取授权、risk、租约、服务器时间 | BLOCK：Filter 只拿 recipe，不做门控 |
+| recipe 决定「藏不藏」而不是只决定「hook 哪个类」 | BLOCK：隐藏决策仍走 `isActive()` + 名单 |
+| Java 业务代码散落 schema/key/risk 分支 | WARN：收回 GuardRuntime / RiskState / LeaseClock |
+| fallback 明文常量未标迁移期却宣称真锁完成 | BLOCK：服务器短命钥匙未接入前不能叫真锁 |
 
 ---
 

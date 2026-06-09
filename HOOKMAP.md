@@ -7,7 +7,7 @@
 > 4. 文档状态与 result.md 不一致 → **停下来问用户，不自行仲裁**
 > 5. 不确定任何字段名/类名 → **停下来问用户，禁止猜测**
 
-更新时间：2026-06-06（P20 搜索 v15.2 灰白收口 06-02 + 密群拦截 L1 装机实证 06-06；朋友圈小红点 Layer 0b ✅；密友/密群导入 UI ✅；文档隔离见 [`docs/README.md`](./docs/README.md)；产品总闸见 [`docs/PRODUCT_GATE.md`](./docs/PRODUCT_GATE.md)）
+更新时间：2026-06-09（v1 收口口径：P21 主线收尾；P18 基线本轮跳过；P22 普通消息通知/铃声转 v1.1；P20 搜索 v15.2 灰白收口；密友/密群导入 UI ✅）
 当前底座：**微信 8.0.71**（D-014）
 责任人：guard-review_质检门控（资料员/文档员角色已并入此 skill 资料功能档）
 
@@ -20,7 +20,7 @@
 | ------------------------------------- | --- | --- | ------------------------------------------- | --- |
 | **A. 核心隐私**（密友列表/密群/密码/总开关）           | 🟡  | 4   | A2/A3/A4 ✅；A1 授权 v2 待接 | §A  |
 | **B. 隐藏触发**（摇一摇/切后台/Home/锁屏/搜索框 1111） | 🟡  | 6   | B1/B2/B6 **8071 已验**；B5 ✅ 用户确认已验证 2026-06-01；B4 因用户设备无返回键，按确认不阻塞（不标 ✅） | §B  |
-| **C. 消息控制**（防撤回/通知伪装/未读/通知模式/**来电拦截**）         | 🟡  | 5   | 来电/防撤回/Push L1-NM/未读计数过滤(P_NF4) ✅；当前缺口：普通消息通知 + 铃声功能 | §C  |
+| **C. 消息控制**（防撤回/通知伪装/未读/通知模式/**来电拦截**）         | 🟡  | 5   | 来电/防撤回/Push L1-NM/未读计数过滤(P_NF4) ✅；普通消息通知 + 铃声功能转 v1.1 | §C  |
 | **D. 痕迹隐藏**（密友帖/点赞/评论）         | ✅  | 3   | D1+D2+D3 装机确认 2026-05-20（8.0.71） | §D  |
 | **E. 装b 模块**（步数/定位/改零钱）               | 🟡   | 3   | E2 伪装定位 ✅ 装机 2026-06-07；E1/E3 v2/v3      | §E  |
 | **F. 商业彩蛋**（反盗版引流/独家功能/私域链接）          | ⬜   | 3   | 不在 v1                                       | §F  |
@@ -28,8 +28,8 @@
 
 **v1 锁定范围（收口口径）**：
 
-- 已验主线：A2/A3 导入，B1/B2/B5/B6，D1/D2/D3，P17 会话，P19 通讯录，P20 搜索，P21 Layer0b，P23 防撤回，P22 来电/通知主拦截。
-- 仍待：P18 KPI 基线、C 模块普通消息通知 + 铃声功能；P20B KPI 轻采样已记录，发版前重测；P26 fresh-warm 已有证据，不重复；B4 因用户设备无返回键，按确认不阻塞（无 B4 专属 L1，不标 ✅）。
+- 已验主线：A2/A3 导入，B1/B2/B5/B6，D1/D2/D3，P17 会话，P19 通讯录，P20 搜索，P21 Layer0b + P21B WithAll/bm，P23 防撤回，P22 来电/通知主拦截。
+- 本轮不阻塞：P18 KPI 基线跳过；C 模块普通消息通知 + 铃声功能转 v1.1；P20B KPI 轻采样已记录但不作为当前 v1 阻塞；P26 fresh-warm 已有证据，不重复；B4 因用户设备无返回键，按确认不阻塞（无 B4 专属 L1，不标 ✅）。
 - 8071 hook 事实唯一权威：[`docs/HOOK_MAP_8071_AUTHORITATIVE.md`](./docs/HOOK_MAP_8071_AUTHORITATIVE.md)。
 
 门控 / 授权 / 状态机 / 设置入口可见性的权威口径见 [`docs/GUARD_GATE_TRUTH.md`](./docs/GUARD_GATE_TRUTH.md)。
@@ -51,7 +51,7 @@
 | **L0v4 赞评过滤 D2/D3** | `LinkedList.add(z15.e56/cs5.di0/i84.y)` → `entry.d`（或 `f435583d`）=wxid → block | ✅ 装机确认 2026-05-20 | ⭐⭐⭐ | 4 字段轮询：`d / f435583d / username / field_userName`；getCommentList/LikeUserList 走 JNI 不可用 |
 | **F07 通讯录 8.0.71** | `ArrayList.addAll` → `fc5.g` → `g.d`（z3 实例）→ `z3.c1()` → remove | ✅ P19 2026-05-20 | ⭐⭐⭐ | **仅通讯录**；类常量 `com.tencent.mm.storage.z3`；`MvvmList.n/u` 零触发 |
 | **F07B 标签成员 8.0.71** | `ArrayList.addAll(ye5.j)` → 去后缀 wxid → `allHiddenIds()` | ✅ 2026-06-01 复跑实证 | ⭐⭐⭐ | 详情：`03_execute_执行任务/P19B_ContactLabel/result.md` |
-| **朋友圈小红点 P21** | Layer0b `Activity.onResume` 过滤 `SnsMsgUI*`；Layer2/v18 备用 | ✅ Layer0b 装机实证 2026-05-21 | ⭐⭐⭐ | 详情：`03_execute_执行任务/P21_MomentsRedDot/worklog.md` |
+| **朋友圈小红点 P21** | Layer0b `Activity.onResume` 入口归零；P21B `bm/rm -> s9.f(Cursor)` live 游标按 `talker` 过滤互动条目；Layer2/v18 备用 | ✅ 主线收尾：Layer0b 2026-05-21；P21B WithAll/bm 2026-06-09 | ⭐⭐⭐ | 证据：`03_execute_执行任务/P21_MomentsRedDot/logs/p21b_cursor_fix_verify_20260609.txt`；`rm` 同路径覆盖，后续有场景再复验；详情：`03_execute_执行任务/P21_MomentsRedDot/worklog.md` |
 | **L1 MvvmList.n/m** | `MvvmList.n(List,bool)` 8.0.71 / `.m`（8066）→ `kc5.v0` / `kc5.y` → `y.d`（l4）→ **`l4.C0()`** wxid（8071 主路径） | ✅ **装机确认 2026-05-20** | ⭐⭐⭐ | 8066 曾用 h1() 轮询；8071 以 C0 实证（P20B） |
 | **L2 MvvmList.s** | `MvvmList.s(List)`                         | ✅ Frida 验证 | ⭐⭐⭐    | 会话备用      |
 | **L4 notify**     | `kc5.v0.notifyDataSetChanged` clean-before → L4-NoDiff（setResult null + Handler.post 全量刷）| ✅ **装机实证 2026-05-23**（F-32 DiffUtil 卡帧修复） | ⭐⭐⭐ | 渲染前兜底；L4 beforeHook 同步更新 `sConvAdapterRef`（仅 kc5.v0）+ `sMvvmListRef`；**禁止把 h0 加入 sConvAdapterRef 更新条件** |
@@ -65,7 +65,7 @@
 | ❌ ~~PushFilter L4b~~ | ~~`MainTabUI.i()` afterHook~~ — 装机零触发 | ❌ 旁路废弃 | — | 2026-06-06 实证全程无 `[PF:L4b] real=`，微信未读不走此路径；已被 UNREADFIX 取代 |
 | ❌ ~~PushFilter L4c~~ | ~~`h0.d(int)` 减法~~ — 已禁用 | ❌ 已禁用 stub | — | `installL4c` 仅打 `[PF:L4c] disabled (pending WeChatDND)`，过度扣减问题待 WeChatDND 取代 |
 | **WeChatDND（规划）** | 密友加入时自动开官方「消息免打扰」→ 角标/tab 天然不计入 | 📋 设计确认，待 Frida trace 调用链 | ⭐⭐⭐⭐ | 可替代 L4b/L4c；Layer 1 防线；需找内部方法名 |
-| **NotifyPolicy（NotifyRouter）** | 密友提醒方式 OFF/VIBRATE/SOUND 三档，Bridge/MMKV 存储，默认 OFF | 🟡 普通消息通知 + 铃声功能待收口 | ⭐⭐⭐ | `moduleC/NotifyRouter.java`；静默/震动已有实证，当前缺口集中在普通消息通知链路与 SOUND 档铃声 |
+| **NotifyPolicy（NotifyRouter）** | 密友提醒方式 OFF/VIBRATE/SOUND 三档，Bridge/MMKV 存储，默认 OFF | 🟡 v1.1 backlog | ⭐⭐⭐ | `moduleC/NotifyRouter.java`；静默/震动已有实证，普通消息完整链路与 SOUND 档铃声转 v1.1 |
 | ❌ ~~x.a(f9)~~     | ~~`booter.notification.x.a(f9)`~~ — 8.0.71 零命中证伪 | ❌ 永久废弃 | — | hook 注册成功但运行时零触发，不走此路径 |
 | ❌ ~~NotificationItem.a(Context)~~ | ~~`final` 方法 + ART AOT 内联~~ | ❌ 永久废弃 | — | Xposed 无法拦截；Frida 可以但模块不用 |
 | **搜索框过滤 8.0.71**（主页放大镜 FTS） | `q2/f0.getView` → `tz2.u1/p0/s1` wxid/groupId → GONE + `lp.height=1` | ✅ P20 收口 L1 | ⭐⭐⭐ | 证据：`tools/p20_search_logcat_runner_20260606_180946.log`；详见权威 §8b |
@@ -152,7 +152,7 @@
 | B5  | 锁屏 → 自动隐藏（解锁后**不**自动显形） | VISIBLE→HIDDEN | ✅ 用户确认已验证（2026-06-01） | `TriggerGuard.java` ACTION_SCREEN_OFF | ⭐ |
 | B6  | 主界面放大镜输入 111111 → 解锁显形 | HIDDEN→VISIBLE | ✅ **8071 已验** | `SearchUnlock.java` FTS 搜索页 TextWatcher | ⭐⭐ |
 
-**下一步**：P22 普通消息通知 + 铃声功能；P20B KPI 发版前按重档重测；P26C 搜索高亮归 UI 优化。
+**下一步**：当前 v1 不再以 P22 普通消息通知 + 铃声功能 / P18 KPI 作为阻塞；二者分别转 v1.1 / 正式发布门控补跑。P26C 搜索高亮归 UI 优化。
 
 ---
 
@@ -174,7 +174,7 @@
 | C1  | 防撤回               | ✅  | `moduleC/AntiRecall.java`：hook `jy0.t.f`(doRevokeMsg)，`setResult(null)` 跳过原地覆盖→**原文(文字/图片/视频)保留** + 插 type=10000 系统提示「─── HH:mm 已拦截对方撤回的消息 ───」(染红，hook `MMNeat7extView` 首参 CharSequence 方法)。自己撤回(isSend==1)放行。**L1 装机 2026-05-31**：logcat `[AR] recall blocked + tip inserted` ×4。旧点 a2.b 已证伪→F-37 |
 | C2  | 通知伪装为 weixin wxid | 🟡  | 原计划"构造来自 weixin 的消息"未单独实现；当前由 PushFilter NM 层 cancel 替代（NM ✅装机 2026-05-22） |
 | C3  | 未读消息条数控制          | ✅  | UNREADFIX（P_NF4）装机 2026-06-06：默认隐藏态密友未读数在底部 tab 红点 + 顶部「微信(N)」标题两处被**过滤/隐藏**；打开「显示密友未读消息数」开关（默认关）则**显示**密友未读数。旧 L4b（零触发）/ L4c（已禁用）已废弃 |
-| C4  | 通知模式（静默/震动/铃声）   | 🟡  | 主拦截/来电/未读已收口；当前缺口集中为普通消息通知链路 + SOUND 档铃声功能。静默/震动已有实证；铃声仍未实装/未验收 |
+| C4  | 通知模式（静默/震动/铃声）   | 🟡  | 主拦截/来电/未读已收口；普通消息完整链路 + SOUND 档铃声功能转 v1.1。静默/震动已有实证；铃声仍未实装/未验收 |
 | C5  | 语音一键转发（v2）        | ⬜   | 难度高，二阶段                                       |
 
 
