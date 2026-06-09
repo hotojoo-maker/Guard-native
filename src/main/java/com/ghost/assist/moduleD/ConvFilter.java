@@ -55,11 +55,17 @@ public class ConvFilter {
 
     static final String TAG = "NCL";
 
-    private static final String MVVMLIST_CLASS      = "com.tencent.mm.plugin.mvvmlist.MvvmList";
+    // P1E Step4: 3 named anchors sourced from encrypted registry (conv.list) via
+    // GuardRuntime.getRecipe(), literal kept as fallback. resolveRecipes() (first
+    // in install()) overrides on hit; scatter/SO-missing → keep literal. NON-FINAL
+    // so resolved value replaces fallback. Only these 3 — inline literals ("kc5.y",
+    // "notifyDataSetChanged") inside hook callbacks are NOT touched (iron rules
+    // 13-22). registry contact_fields(subset)/l1_methods drift left as a debt.
+    private static String MVVMLIST_CLASS      = "com.tencent.mm.plugin.mvvmlist.MvvmList";
     // 8.0.71: MvvmList subclass for conversation list (static analysis confirmed)
     static final String MVVMCONV_CLASS      = "com.tencent.mm.ui.conversation.adapter.MvvmConvList";
     private static final String CONV_LIST_VIEW      = "com.tencent.mm.ui.conversation.ConversationListView";
-    static final String ADAPTER_CLASS_71    = "kc5.v0";   // confirmed 8.0.71
+    static String ADAPTER_CLASS_71    = "kc5.v0";   // confirmed 8.0.71 (ConvHotReload reads it)
     static final String ADAPTER_CLASS_66    = "f45.s0";
 
     // MvvmList internal ArrayList field names
@@ -75,12 +81,47 @@ public class ConvFilter {
     // Methods on contact obj that return wxid
     // C0() = 8.0.71 l4.C0() → field_digestUser = wxid  (confirmed by live broad-scan 2026-05-22)
     // h1() = returns "officialaccounts" for public account items — NOT wxid for regular contacts
-    private static final String[] WXID_GETTER_NAMES = {"C0", "h1", "j1", "i1", "k1", "getUsername", "getUserName"};
+    private static String[] WXID_GETTER_NAMES = {"C0", "h1", "j1", "i1", "k1", "getUsername", "getUserName"};
     // Fields on contact obj that hold wxid directly
     private static final String[] WXID_FIELD_NAMES = {"field_userName", "username", "d", "e"};
     private static final String UNREAD_FIELD = "field_unReadCount";
     // Adapter fields that may hold MvvmList — f286278p confirmed 8.0.71 kc5.v0
     private static final String[] MVVMLIST_HOLDER_FIELDS = {"f286278p", "p", "q", "o", "r", "a", "b"};
+
+    private static volatile boolean sRecipesResolved = false;
+
+    /** Resolve one recipe field from registry conv.list; "" → keep fallback. */
+    private static String recipe(String key, String fallback) {
+        String v = com.ghost.assist.core.GuardRuntime.getRecipe("conv.list", key);
+        return (v == null || v.isEmpty()) ? fallback : v;
+    }
+
+    /** Resolve a comma-separated recipe field into an array; "" → keep fallback. */
+    private static String[] recipeArr(String key, String[] fallback) {
+        String v = com.ghost.assist.core.GuardRuntime.getRecipe("conv.list", key);
+        if (v == null || v.isEmpty()) return fallback;
+        String[] parts = v.split(",");
+        return parts.length > 0 ? parts : fallback;
+    }
+
+    /**
+     * P1E Step4: pull the 3 SAFE named anchors from the encrypted registry,
+     * falling back to literals on registry miss. Idempotent; called once at
+     * install() before any hook fires. ONLY the class/method-name SOURCE changes —
+     * does NOT touch L1/L2/L4 callbacks, clean-before, notify, or H↔V refresh
+     * (iron rules 13-22). Inline literals stay hard-coded this round.
+     */
+    private static void resolveRecipes() {
+        if (sRecipesResolved) return;
+        MVVMLIST_CLASS    = recipe("mvvmlist_class", MVVMLIST_CLASS);
+        ADAPTER_CLASS_71  = recipe("adapter_class", ADAPTER_CLASS_71);
+        WXID_GETTER_NAMES = recipeArr("wxid_getters", WXID_GETTER_NAMES);
+        sRecipesResolved = true;
+        boolean fbOk = "kc5.v0".equals(recipe("__no_such_key__", "kc5.v0"));
+        Log.i(TAG, "[CF] recipes mvvm=" + MVVMLIST_CLASS + " adapter=" + ADAPTER_CLASS_71
+                + " getters=" + java.util.Arrays.toString(WXID_GETTER_NAMES)
+                + " fallbackSelfTest=" + (fbOk ? "ok" : "FAIL"));
+    }
 
     private static volatile boolean sInstalled = false;
     private static volatile boolean gCleaning = false;
@@ -152,6 +193,10 @@ public class ConvFilter {
     public static void install(XC_LoadPackage.LoadPackageParam lpparam) {
         if (sInstalled) return;
         sInstalled = true;
+
+        // P1E Step4: resolve conv.list anchors from registry (fallback=literals)
+        // BEFORE any hook installs (ConvHotReload also reads ADAPTER_CLASS_71).
+        resolveRecipes();
 
         installH0DataHook(lpparam);
         installKc5AHook(lpparam);

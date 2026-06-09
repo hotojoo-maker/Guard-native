@@ -104,10 +104,6 @@ public class SearchFilter {
     private static final int FTS_TREE_DUMP_LIMIT = 3;
     private static volatile boolean sFtsTreeReDumpScheduled = false;
 
-    // ss4.p (real FTS RecyclerView adapter) probe + filter
-    private static volatile int sSs4DumpCount = 0;
-    private static final int SS4_DUMP_LIMIT = 8;
-
     // ── B' 方案 (2026-05-27) ──
     // f0/q2 search adapter position-offset state. Eliminates the empty row gap
     // left by setVisibility(GONE)+lp.height=0 by making the adapter pretend the
@@ -181,74 +177,6 @@ public class SearchFilter {
             Log.i(TAG, "[SF:fts-tree] FTSMainUI tree probe installed");
         } catch (Throwable t) {
             Log.w(TAG, "[SF:fts-tree] probe install fail: " + t);
-        }
-
-        // ── ⭐ TRUE PRIMARY: ss4.p RecyclerView onBindViewHolder (2026-05-27 02:23 锚定) ──
-        // FTSMainUI 真正的搜索结果渲染走 ss4.p (RecyclerView Adapter), 不是 q2/f0 ListView.
-        // q2 的 ListView 是 GONE (vis=8) 状态，f0.getView 永不触发。
-        // 在 onBindViewHolder 后改 itemView：命中密友 → GONE + lp.height=0；miss → restoreView。
-        try {
-            Class<?> ss4pCls = XposedHelpers.findClass("ss4.p", lpparam.classLoader);
-            XposedBridge.hookAllMethods(ss4pCls, "onBindViewHolder",
-                    new XC_MethodHook() {
-                        @Override
-                        protected void afterHookedMethod(MethodHookParam p) {
-                            if (p.args.length < 2) return;
-                            if (!(p.args[1] instanceof Integer)) return;
-                            int pos = (Integer) p.args[1];
-                            Object holder = p.args[0];
-                            if (holder == null) return;
-
-                            // Get itemView from holder
-                            View itemView;
-                            try {
-                                itemView = (View) holder.getClass()
-                                        .getField("itemView").get(holder);
-                            } catch (Throwable t) {
-                                return;
-                            }
-
-                            // Resolve data item from adapter
-                            Object adapter = p.thisObject;
-                            Object dataItem = resolveAdapterItem(adapter, pos);
-                            if (dataItem == null) return;
-
-                            if (sSs4DumpCount < SS4_DUMP_LIMIT) {
-                                sSs4DumpCount++;
-                                Log.i(TAG, "[SF:ss4p] pos=" + pos
-                                        + " item=" + dataItem.getClass().getName());
-                                dumpQ2DataItem(dataItem, pos, adapter);
-                            }
-
-                            if (!StateMachine.getInstance().isActive()) {
-                                restoreView(itemView);
-                                return;
-                            }
-                            Set<String> hidden = Bridge.getInstance().allHiddenIds();
-                            if (hidden.isEmpty()) {
-                                restoreView(itemView);
-                                return;
-                            }
-
-                            String id = extractAnyWxid(dataItem);
-                            if (id == null || !hidden.contains(id)) {
-                                restoreView(itemView);
-                                return;
-                            }
-
-                            itemView.setVisibility(View.GONE);
-                            ViewGroup.LayoutParams lp = itemView.getLayoutParams();
-                            if (lp != null) {
-                                lp.height = 0;
-                                itemView.setLayoutParams(lp);
-                            }
-                            Log.i(TAG, "[SF:ss4p] blocked pos=" + pos + " id=" + id);
-                            Bridge.getInstance().addRawFeedLine("[SF:ss4p] blocked " + id);
-                        }
-                    });
-            Log.i(TAG, "[SF:ss4p] ss4.p.onBindViewHolder hook installed");
-        } catch (Throwable t) {
-            Log.w(TAG, "[SF:ss4p] hook fail: " + t);
         }
 
         // Static f0.getView hook removed (2026-05-27 fix):
@@ -1562,46 +1490,6 @@ public class SearchFilter {
                     + extra);
             if (child instanceof ViewGroup) walkFtsTree((ViewGroup) child, depth + 1);
         }
-    }
-
-    /**
-     * Resolve the data item at a given position from any RecyclerView/ListView adapter.
-     * Tries common method names first (getItem / y / z / a / getData), then falls back
-     * to scanning declared fields for a List with enough elements.
-     */
-    private static Object resolveAdapterItem(Object adapter, int pos) {
-        if (adapter == null || pos < 0) return null;
-        // Try common methods
-        String[] candidateMethods = {"getItem", "y", "z", "a", "getData"};
-        for (String mn : candidateMethods) {
-            for (Class<?> c = adapter.getClass(); c != null && c != Object.class; c = c.getSuperclass()) {
-                try {
-                    Method m = c.getDeclaredMethod(mn, int.class);
-                    m.setAccessible(true);
-                    Object v = m.invoke(adapter, pos);
-                    if (v != null) return v;
-                } catch (Throwable ignored) {}
-            }
-        }
-        // Fallback: scan fields for a backing List of sufficient size
-        for (Class<?> c = adapter.getClass(); c != null && c != Object.class; c = c.getSuperclass()) {
-            Field[] fields;
-            try { fields = c.getDeclaredFields(); } catch (Throwable t) { continue; }
-            for (Field f : fields) {
-                try {
-                    f.setAccessible(true);
-                    Object v = f.get(adapter);
-                    if (v instanceof java.util.List) {
-                        java.util.List<?> ll = (java.util.List<?>) v;
-                        if (ll.size() > pos) {
-                            Object item = ll.get(pos);
-                            if (item != null) return item;
-                        }
-                    }
-                } catch (Throwable ignored) {}
-            }
-        }
-        return null;
     }
 
     /** Restore a previously-hidden ListView row so ViewHolder recycling does not leak. */

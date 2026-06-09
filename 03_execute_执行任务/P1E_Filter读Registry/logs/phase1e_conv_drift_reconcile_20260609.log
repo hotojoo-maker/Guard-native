@@ -1,0 +1,14 @@
+﻿
+06-09 15:40:37.834 12140 12140 I NCL     : [native] registrySummary=schema=r8071_v1 ver=8.0.71 entries=4 [conv.list adapter=kc5.v0 l4=notifyDataSetChanged] [moments.feed
+ adapter=e2] [contact.address adapter=ik3.t0] [search.gateway]
+06-09 15:40:37.834 12140 12140 I NCL     : [native] BATCH1_VERIFY PASS
+06-09 15:40:37.834 12140 12140 I NCL     : [native] PHASE1A_VERIFY PASS
+06-09 15:40:37.834 12140 12140 I NCL     : [native] PHASE1B_VERIFY PASS
+06-09 15:40:37.835 12140 12140 I NCL     : [native] PHASE1C_VERIFY PASS
+06-09 15:40:37.835 12140 12140 I NCL     : [native] PHASE1D_VERIFY PASS
+06-09 15:40:37.841 12140 12140 I NCL     : [native] PHASE1E_VERIFY PASS
+06-09 15:40:37.890 12140 12140 I NCL     : [CF] recipes mvvm=com.tencent.mm.plugin.mvvmlist.MvvmList adapter=kc5.v0 getters=[C0, h1, j1, i1, k1, getUsername, getUserName
+] fallbackSelfTest=ok
+
+
+--- conv.list.contact_fields d,e -> d,e,f,a,b,c (核准补全); l1_methods n,m 核准本就正确; cipher pt 1330 ---

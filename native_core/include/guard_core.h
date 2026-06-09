@@ -208,6 +208,12 @@ std::string registry_dump_summary();
 /// match ConvFilter.java and that malformed input scatters. No business hooks.
 bool registry_self_test();
 
+/// Phase 1E Step1: single recipe lookup for the SO→Java channel.
+/// Returns entries[gateway].fields[key]; fail-closed to "" on scatter /
+/// unknown gateway / unknown field. Pure read — does NOT drive any Filter.
+std::string registry_get_recipe(const std::string& gateway,
+                                const std::string& key);
+
 // ── Module: LogLimiter ────────────────────────────────────────
 
 /// 限流日志：每个 tag+msg 每 window_seconds 最多输出一次；Release 构建完全 no-op

@@ -1,0 +1,16 @@
+﻿
+06-09 14:56:41.722  8352  8352 I NCL     : [native] BATCH1_VERIFY PASS
+06-09 14:56:41.722  8352  8352 I NCL     : [native] PHASE1A_VERIFY PASS
+06-09 14:56:41.722  8352  8352 I NCL     : [native] PHASE1B_VERIFY PASS
+06-09 14:56:41.724  8352  8352 I NCL     : [native] PHASE1C_VERIFY PASS
+06-09 14:56:41.724  8352  8352 I NCL     : [native] PHASE1D_VERIFY PASS
+06-09 14:56:41.730  8352  8352 I NCL     : [native] PHASE1E_VERIFY PASS
+06-09 14:56:41.775  8352  8352 I NCL     : [MF] recipes friend=na4.b promo=la4.p adapter=e2 wxid=field_userName inner=d sns=h1 like=LikeUserList cmt=CommentUserList fall
+backSelfTest=ok
+06-09 14:56:41.793  8352  8352 I NCL     : [CF] recipes mvvm=com.tencent.mm.plugin.mvvmlist.MvvmList adapter=kc5.v0 getters=[C0, h1, j1, i1, k1, getUsername, getUserName
+] fallbackSelfTest=ok
+06-09 14:56:41.888  8352  8352 I NCL     : [CTF] recipes adapter=ik3.t0 item=fc5.g contact=com.tencent.mm.storage.z3 getter=c1 live=com.tencent.mm.ui.contact.address.Add
+ressLiveList fallbackSelfTest=ok
+
+
+--- crash check: media.extractor SIGABRT = system proc, com.tencent.mm pid 8352 ALIVE, unrelated ---

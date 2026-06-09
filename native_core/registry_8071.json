@@ -11,7 +11,7 @@
       "l1_methods": "n,m",
       "l2_method": "s",
       "l4_notify": "notifyDataSetChanged",
-      "contact_fields": "d,e",
+      "contact_fields": "d,e,f,a,b,c",
       "wxid_getters": "C0,h1,j1,i1,k1,getUsername,getUserName"
     },
     "moments.feed": {

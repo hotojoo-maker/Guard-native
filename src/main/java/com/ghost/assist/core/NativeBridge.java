@@ -265,6 +265,20 @@ public final class NativeBridge {
         return nativeRegistrySummary();
     }
 
+    // ── Phase 1E Step1: single recipe getter (read-only SO→Java channel) ─
+
+    /**
+     * Fetch one recipe field from the decrypted registry:
+     * {@code entries[gateway].fields[key]}. Returns "" (fail-closed) when the
+     * SO is unavailable, the registry scattered, or the gateway/field is
+     * unknown. Pure read — does NOT take over any Filter; callers opt in.
+     */
+    public static String getRecipe(String gateway, String key) {
+        if (!sAvailable || gateway == null || key == null) return "";
+        String v = nativeGetRecipe(gateway, key);
+        return v == null ? "" : v;
+    }
+
     // ── Phase 1D-local A-step2: signing-cert binding ──────────
 
     /**
@@ -308,4 +322,5 @@ public final class NativeBridge {
     private static native boolean nativeRegistrySelfTest();
     private static native String  nativeRegistrySummary();
     private static native void    nativeSetBindingMaterial(byte[] certSha256);
+    private static native String  nativeGetRecipe(String gateway, String key);
 }

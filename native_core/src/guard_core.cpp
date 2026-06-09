@@ -252,6 +252,20 @@ Java_com_ghost_assist_core_NativeBridge_nativeRegistrySummary(
     return env->NewStringUTF(summary.c_str());
 }
 
+// ── Phase 1E Step1: single recipe getter (read-only SO→Java channel) ──
+//
+// Returns entries[gateway].fields[key] from the decrypted registry, or "" on
+// scatter / unknown gateway / unknown field (fail-closed). No business wiring:
+// callers (later GuardRuntime → Filters) opt in; this only surfaces a value.
+
+JNIEXPORT jstring JNICALL
+Java_com_ghost_assist_core_NativeBridge_nativeGetRecipe(
+        JNIEnv* env, jclass, jstring jGateway, jstring jKey) {
+    const std::string recipe =
+            guard::registry_get_recipe(jstr(env, jGateway), jstr(env, jKey));
+    return env->NewStringUTF(recipe.c_str());
+}
+
 // ── Phase 1D-local A-step2: signing-cert binding for the registry key ─
 
 JNIEXPORT void JNICALL

@@ -34,23 +34,29 @@ public class MomentsFilter {
 
     private static final String TAG = "NCL";
 
-    private static final String ITEM_PROMO      = "la4.p";
-    private static final String ITEM_FRIEND     = "na4.b";
+    // P1E Step3: these 8 anchors are now sourced from the encrypted SO registry
+    // (moments.feed) via GuardRuntime.getRecipe(), literal kept as fallback.
+    // resolveRecipes() (called first in install()) overrides each on registry hit;
+    // scatter / SO-unavailable → keeps literal → behaviour unchanged. NON-FINAL so
+    // the resolved value can replace the fallback. (z15.e56 actor_class /
+    // f435583d FIELD_E56_WXID NOT migrated — no live anchor / dead constant.)
+    private static String ITEM_PROMO      = "la4.p";
+    private static String ITEM_FRIEND     = "na4.b";
     private static final String ITEM_BUBBLE     = "com.tencent.mm.plugin.sns.ui.SnsMsgUIWithRelevance";
     private static final String ITEM_NOTIFY     = "jw1.d";
     // 控制台高频类，待确认语义（疑似 like/comment 元素）
     private static final String ITEM_WQ_C1      = "wq.c1";
     private static final String ITEM_WQ_Y0      = "wq.y0";
     private static final String ITEM_II5_B      = "ii5.b";
-    private static final String METHOD_SNS_OBJ  = "h1";   // la4.p.h1() → TimeLineObject（p1 字段的解包 getter）
+    private static String METHOD_SNS_OBJ  = "h1";   // la4.p.h1() → TimeLineObject（p1 字段的解包 getter）
     private static final String METHOD_NICKNAME = "O0";
-    private static final String FIELD_WXID      = "field_userName";
-    private static final String FIELD_INNER     = "d";
-    private static final String ADAPTER_CLASS   = "e2";
+    private static String FIELD_WXID      = "field_userName";
+    private static String FIELD_INNER     = "d";
+    private static String ADAPTER_CLASS   = "e2";
 
     // SnsObject 字段（agent 实证 2026-05-20）
-    private static final String FIELD_LIKE_LIST    = "LikeUserList";     // LinkedList<e56>
-    private static final String FIELD_COMMENT_LIST = "CommentUserList";  // LinkedList<e56>
+    private static String FIELD_LIKE_LIST    = "LikeUserList";     // LinkedList<e56>
+    private static String FIELD_COMMENT_LIST = "CommentUserList";  // LinkedList<e56>
     private static final String FIELD_LIKE_COUNT   = "LikeCount";
     private static final String FIELD_LIKE_UC      = "LikeUserListCount";
     private static final String FIELD_CMT_COUNT    = "CommentCount";
@@ -65,6 +71,40 @@ public class MomentsFilter {
             "d", "f435583d", "username", "field_userName"
     };
 
+    private static volatile boolean sRecipesResolved = false;
+
+    /** Resolve one recipe field from registry moments.feed; "" → keep fallback. */
+    private static String recipe(String key, String fallback) {
+        String v = com.ghost.assist.core.GuardRuntime.getRecipe("moments.feed", key);
+        return (v == null || v.isEmpty()) ? fallback : v;
+    }
+
+    /**
+     * P1E Step3: pull the 8 live moments.feed anchors from the encrypted registry,
+     * falling back to the embedded literals when the registry is unavailable /
+     * scattered. Idempotent; called once at install() before any hook fires.
+     * Only swaps the class-name SOURCE — does not touch addAll/remove callback
+     * logic (iron rules 28/29).
+     */
+    private static void resolveRecipes() {
+        if (sRecipesResolved) return;
+        ITEM_FRIEND        = recipe("item_friend", ITEM_FRIEND);
+        ITEM_PROMO         = recipe("item_promo", ITEM_PROMO);
+        ADAPTER_CLASS      = recipe("adapter_class", ADAPTER_CLASS);
+        FIELD_WXID         = recipe("wxid_field", FIELD_WXID);
+        FIELD_INNER        = recipe("inner_field", FIELD_INNER);
+        METHOD_SNS_OBJ     = recipe("sns_getter", METHOD_SNS_OBJ);
+        FIELD_LIKE_LIST    = recipe("like_list", FIELD_LIKE_LIST);
+        FIELD_COMMENT_LIST = recipe("comment_list", FIELD_COMMENT_LIST);
+        sRecipesResolved = true;
+        boolean fbOk = "na4.b".equals(recipe("__no_such_key__", "na4.b"));
+        Log.i(TAG, "[MF] recipes friend=" + ITEM_FRIEND + " promo=" + ITEM_PROMO
+                + " adapter=" + ADAPTER_CLASS + " wxid=" + FIELD_WXID
+                + " inner=" + FIELD_INNER + " sns=" + METHOD_SNS_OBJ
+                + " like=" + FIELD_LIKE_LIST + " cmt=" + FIELD_COMMENT_LIST
+                + " fallbackSelfTest=" + (fbOk ? "ok" : "FAIL"));
+    }
+
     private static volatile Method sSnsInfoMethod  = null;
     private static volatile Method sNicknameMethod = null;
     private static boolean sInstalled = false;
@@ -78,6 +118,10 @@ public class MomentsFilter {
     public static void install(XC_LoadPackage.LoadPackageParam lpparam) {
         if (sInstalled) return;
         sInstalled = true;
+
+        // P1E Step3: resolve moments.feed anchors from registry (fallback=literals)
+        // BEFORE any hook installs.
+        resolveRecipes();
 
         try {
             XC_MethodHook addAllHook = new XC_MethodHook() {

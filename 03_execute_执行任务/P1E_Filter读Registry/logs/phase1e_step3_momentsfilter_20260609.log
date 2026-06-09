@@ -1,0 +1,13 @@
+﻿
+06-09 14:43:07.938  4266  4266 I NCL     : [native] BATCH1_VERIFY PASS
+06-09 14:43:07.938  4266  4266 I NCL     : [native] PHASE1A_VERIFY PASS
+06-09 14:43:07.938  4266  4266 I NCL     : [native] PHASE1B_VERIFY PASS
+06-09 14:43:07.939  4266  4266 I NCL     : [native] PHASE1C_VERIFY PASS
+06-09 14:43:07.939  4266  4266 I NCL     : [native] PHASE1D_VERIFY PASS
+06-09 14:43:07.953  4266  4266 I NCL     : [native] PHASE1E_VERIFY PASS
+06-09 14:43:08.011  4266  4266 I NCL     : [MF] recipes friend=na4.b promo=la4.p adapter=e2 wxid=field_userName inner=d sns=h1 like=LikeUserList cmt=CommentUserList fall
+backSelfTest=ok
+06-09 14:43:08.084  4266  4266 I NCL     : [CTF] recipes adapter=ik3.t0 item=fc5.g contact=com.tencent.mm.storage.z3 getter=c1 live=com.tencent.mm.ui.contact.address.Add
+ressLiveList fallbackSelfTest=ok
+
+

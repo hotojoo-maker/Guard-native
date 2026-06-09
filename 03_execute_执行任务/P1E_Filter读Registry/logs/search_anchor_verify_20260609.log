@@ -1,0 +1,66 @@
+﻿
+06-09 13:17:29.152 I/NCL     (23776): [SF:gv] hooking single-hook getView on com.tencent.mm.plugin.fts.ui.f0
+06-09 13:17:29.153 I/NCL     (23776): [SF:gv] single-hook getView filter installed on com.tencent.mm.plugin.fts.ui.f0
+06-09 13:17:44.272 I/NCL     (23776): [SF:row] pos=0 vcls=android.widget.RelativeLayout h=0 mh=0 lph=-1 vis=0 item=tz2.g0 id=null
+06-09 13:17:44.277 I/NCL     (23776): [SF:row] pos=1 vcls=android.widget.RelativeLayout h=0 mh=0 lph=-2 vis=0 item=tz2.s1 id=45592178108@chatroom
+06-09 13:17:44.283 I/NCL     (23776): [SF:row] pos=2 vcls=android.widget.RelativeLayout h=0 mh=0 lph=-2 vis=0 item=tz2.u1 id=wxid_lzd2va16jd1622
+06-09 13:17:44.283 I/NCL     (23776): [SF:gv] blocked pos=2 id=wxid_lzd2va16jd1622
+06-09 13:17:44.286 I/NCL     (23776): [SF:row] pos=0 vcls=android.widget.RelativeLayout h=108 mh=108 lph=-1 vis=0 item=tz2.g0 id=null
+06-09 13:17:44.286 I/NCL     (23776): [SF:row] pos=1 vcls=android.widget.RelativeLayout h=173 mh=173 lph=-2 vis=0 item=tz2.s1 id=45592178108@chatroom
+06-09 13:17:44.288 I/NCL     (23776): [SF:row] pos=2 vcls=android.widget.RelativeLayout h=1 mh=1 lph=1 vis=8 item=tz2.u1 id=wxid_lzd2va16jd1622
+06-09 13:17:44.288 I/NCL     (23776): [SF:gv] blocked pos=2 id=wxid_lzd2va16jd1622
+06-09 13:17:44.303 I/NCL     (23776): [SF:row] pos=0 vcls=android.widget.RelativeLayout h=108 mh=108 lph=-1 vis=0 item=tz2.g0 id=null
+06-09 13:17:44.304 I/NCL     (23776): [SF:row] pos=1 vcls=android.widget.RelativeLayout h=173 mh=173 lph=-2 vis=0 item=tz2.s1 id=45592178108@chatroom
+06-09 13:17:44.306 I/NCL     (23776): [SF:row] pos=2 vcls=android.widget.RelativeLayout h=1 mh=1 lph=1 vis=8 item=tz2.u1 id=wxid_lzd2va16jd1622
+06-09 13:17:44.306 I/NCL     (23776): [SF:gv] blocked pos=2 id=wxid_lzd2va16jd1622
+06-09 13:17:44.520 I/NCL     (23776): [SF:row] pos=0 vcls=android.widget.RelativeLayout h=108 mh=108 lph=-1 vis=0 item=tz2.g0 id=null
+06-09 13:17:44.521 I/NCL     (23776): [SF:row] pos=1 vcls=android.widget.RelativeLayout h=173 mh=173 lph=-2 vis=0 item=tz2.s1 id=45592178108@chatroom
+06-09 13:17:44.524 I/NCL     (23776): [SF:row] pos=2 vcls=android.widget.RelativeLayout h=1 mh=1 lph=1 vis=8 item=tz2.u1 id=wxid_lzd2va16jd1622
+06-09 13:17:44.524 I/NCL     (23776): [SF:gv] blocked pos=2 id=wxid_lzd2va16jd1622
+06-09 13:17:44.528 I/NCL     (23776): [SF:row] pos=3 vcls=android.widget.RelativeLayout h=0 mh=0 lph=-1 vis=0 item=tz2.g0 id=null
+06-09 13:17:44.533 I/NCL     (23776): [SF:row] pos=4 vcls=android.widget.RelativeLayout h=0 mh=0 lph=-2 vis=0 item=tz2.s1 id=44786160583@chatroom
+06-09 13:17:44.533 I/NCL     (23776): [SF:gv] blocked pos=4 id=44786160583@chatroom
+06-09 13:17:44.548 I/NCL     (23776): [SF:row] pos=0 vcls=android.widget.RelativeLayout h=108 mh=108 lph=-1 vis=0 item=tz2.g0 id=null
+06-09 13:17:44.549 I/NCL     (23776): [SF:row] pos=1 vcls=android.widget.RelativeLayout h=173 mh=173 lph=-2 vis=0 item=tz2.s1 id=45592178108@chatroom
+06-09 13:17:44.551 I/NCL     (23776): [SF:row] pos=2 vcls=android.widget.RelativeLayout h=1 mh=1 lph=1 vis=8 item=tz2.u1 id=wxid_lzd2va16jd1622
+06-09 13:17:44.552 I/NCL     (23776): [SF:gv] blocked pos=2 id=wxid_lzd2va16jd1622
+06-09 13:17:44.552 I/NCL     (23776): [SF:row] pos=3 vcls=android.widget.RelativeLayout h=130 mh=130 lph=-1 vis=0 item=tz2.g0 id=null
+06-09 13:17:44.553 I/NCL     (23776): [SF:row] pos=4 vcls=android.widget.RelativeLayout h=1 mh=1 lph=1 vis=8 item=tz2.s1 id=44786160583@chatroom
+06-09 13:17:44.553 I/NCL     (23776): [SF:gv] blocked pos=4 id=44786160583@chatroom
+06-09 13:17:44.569 I/NCL     (23776): [SF:row] pos=0 vcls=android.widget.RelativeLayout h=108 mh=108 lph=-1 vis=0 item=tz2.g0 id=null
+06-09 13:17:44.570 I/NCL     (23776): [SF:row] pos=1 vcls=android.widget.RelativeLayout h=173 mh=173 lph=-2 vis=0 item=tz2.s1 id=45592178108@chatroom
+06-09 13:17:44.572 I/NCL     (23776): [SF:row] pos=2 vcls=android.widget.RelativeLayout h=1 mh=1 lph=1 vis=8 item=tz2.u1 id=wxid_lzd2va16jd1622
+06-09 13:17:44.572 I/NCL     (23776): [SF:gv] blocked pos=2 id=wxid_lzd2va16jd1622
+06-09 13:17:44.573 I/NCL     (23776): [SF:row] pos=3 vcls=android.widget.RelativeLayout h=130 mh=130 lph=-1 vis=0 item=tz2.g0 id=null
+06-09 13:17:44.574 I/NCL     (23776): [SF:row] pos=4 vcls=android.widget.RelativeLayout h=1 mh=1 lph=1 vis=8 item=tz2.s1 id=44786160583@chatroom
+06-09 13:17:44.574 I/NCL     (23776): [SF:gv] blocked pos=4 id=44786160583@chatroom
+06-09 13:17:44.589 I/NCL     (23776): [SF:row] pos=0 vcls=android.widget.RelativeLayout h=108 mh=108 lph=-1 vis=0 item=tz2.g0 id=null
+06-09 13:17:44.590 I/NCL     (23776): [SF:row] pos=1 vcls=android.widget.RelativeLayout h=173 mh=173 lph=-2 vis=0 item=tz2.s1 id=45592178108@chatroom
+06-09 13:17:44.593 I/NCL     (23776): [SF:row] pos=2 vcls=android.widget.RelativeLayout h=1 mh=1 lph=1 vis=8 item=tz2.u1 id=wxid_lzd2va16jd1622
+06-09 13:17:44.593 I/NCL     (23776): [SF:gv] blocked pos=2 id=wxid_lzd2va16jd1622
+06-09 13:17:44.594 I/NCL     (23776): [SF:row] pos=3 vcls=android.widget.RelativeLayout h=130 mh=130 lph=-1 vis=0 item=tz2.g0 id=null
+06-09 13:17:44.595 I/NCL     (23776): [SF:row] pos=4 vcls=android.widget.RelativeLayout h=1 mh=1 lph=1 vis=8 item=tz2.s1 id=44786160583@chatroom
+06-09 13:17:44.595 I/NCL     (23776): [SF:gv] blocked pos=4 id=44786160583@chatroom
+06-09 13:17:44.609 I/NCL     (23776): [SF:row] pos=0 vcls=android.widget.RelativeLayout h=108 mh=108 lph=-1 vis=0 item=tz2.g0 id=null
+06-09 13:17:44.610 I/NCL     (23776): [SF:row] pos=1 vcls=android.widget.RelativeLayout h=173 mh=173 lph=-2 vis=0 item=tz2.s1 id=45592178108@chatroom
+06-09 13:17:44.612 I/NCL     (23776): [SF:row] pos=2 vcls=android.widget.RelativeLayout h=1 mh=1 lph=1 vis=8 item=tz2.u1 id=wxid_lzd2va16jd1622
+06-09 13:17:44.612 I/NCL     (23776): [SF:gv] blocked pos=2 id=wxid_lzd2va16jd1622
+06-09 13:17:44.613 I/NCL     (23776): [SF:row] pos=3 vcls=android.widget.RelativeLayout h=130 mh=130 lph=-1 vis=0 item=tz2.g0 id=null
+06-09 13:17:44.613 I/NCL     (23776): [SF:row] pos=4 vcls=android.widget.RelativeLayout h=1 mh=1 lph=1 vis=8 item=tz2.s1 id=44786160583@chatroom
+06-09 13:17:44.613 I/NCL     (23776): [SF:gv] blocked pos=4 id=44786160583@chatroom
+06-09 13:17:44.635 I/NCL     (23776): [SF:row] pos=0 vcls=android.widget.RelativeLayout h=108 mh=108 lph=-1 vis=0 item=tz2.g0 id=null
+06-09 13:17:44.635 I/NCL     (23776): [SF:row] pos=1 vcls=android.widget.RelativeLayout h=173 mh=173 lph=-2 vis=0 item=tz2.s1 id=45592178108@chatroom
+06-09 13:17:44.637 I/NCL     (23776): [SF:row] pos=2 vcls=android.widget.RelativeLayout h=1 mh=1 lph=1 vis=8 item=tz2.u1 id=wxid_lzd2va16jd1622
+06-09 13:17:44.637 I/NCL     (23776): [SF:gv] blocked pos=2 id=wxid_lzd2va16jd1622
+06-09 13:17:44.638 I/NCL     (23776): [SF:row] pos=3 vcls=android.widget.RelativeLayout h=130 mh=130 lph=-1 vis=0 item=tz2.g0 id=null
+06-09 13:17:44.639 I/NCL     (23776): [SF:row] pos=4 vcls=android.widget.RelativeLayout h=1 mh=1 lph=1 vis=8 item=tz2.s1 id=44786160583@chatroom
+06-09 13:17:44.639 I/NCL     (23776): [SF:gv] blocked pos=4 id=44786160583@chatroom
+06-09 13:17:44.653 I/NCL     (23776): [SF:row] pos=0 vcls=android.widget.RelativeLayout h=108 mh=108 lph=-1 vis=0 item=tz2.g0 id=null
+06-09 13:17:44.655 I/NCL     (23776): [SF:gv] blocked pos=2 id=wxid_lzd2va16jd1622
+06-09 13:17:44.657 I/NCL     (23776): [SF:gv] blocked pos=4 id=44786160583@chatroom
+06-09 13:17:44.676 I/NCL     (23776): [SF:gv] blocked pos=2 id=wxid_lzd2va16jd1622
+06-09 13:17:44.678 I/NCL     (23776): [SF:gv] blocked pos=4 id=44786160583@chatroom
+06-09 13:17:44.708 I/NCL     (23776): [SF:gv] blocked pos=2 id=wxid_lzd2va16jd1622
+06-09 13:17:44.710 I/NCL     (23776): [SF:gv] blocked pos=4 id=44786160583@chatroom
+
+

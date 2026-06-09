@@ -348,6 +348,19 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
             // decrypts the embedded blob (a wrong cert would scatter).
             Log.i(TAG, "[native] PHASE1D_VERIFY "
                     + (registrySelfTest && hasGateway && sCertBound ? "PASS" : "FAIL"));
+            // Phase 1E Step1: GuardRuntime → NativeBridge.getRecipe channel works
+            // and is fail-closed on miss. No Filter is wired (ConvFilter etc.
+            // untouched); this only proves the recipe getter surfaces values.
+            String convAdapter = com.ghost.assist.core.GuardRuntime.getRecipe("conv.list", "adapter_class");
+            String searchGw = com.ghost.assist.core.GuardRuntime.getRecipe("search.gateway", "gateway");
+            String missEntry = com.ghost.assist.core.GuardRuntime.getRecipe("no.such.gateway", "adapter_class");
+            String missField = com.ghost.assist.core.GuardRuntime.getRecipe("conv.list", "no_such_field");
+            boolean recipeOk = "kc5.v0".equals(convAdapter)
+                    && "fts_result_view".equals(searchGw)
+                    && missEntry.isEmpty() && missField.isEmpty();
+            Log.i(TAG, "[native] recipeGet conv.list/adapter_class=" + convAdapter);
+            Log.i(TAG, "[native] PHASE1E_VERIFY "
+                    + (recipeOk && sCertBound ? "PASS" : "FAIL"));
         } catch (Throwable t) {
             Log.e(TAG, "[native] verification crash: " + t);
         }

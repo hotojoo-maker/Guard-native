@@ -1,0 +1,13 @@
+﻿
+06-09 14:00:31.508 30879 30879 I NCL     : [native] BATCH1_VERIFY PASS
+06-09 14:00:31.508 30879 30879 I NCL     : [native] PHASE1A_VERIFY PASS
+06-09 14:00:31.508 30879 30879 I NCL     : [native] PHASE1B_VERIFY PASS
+06-09 14:00:31.509 30879 30879 I NCL     : [native] PHASE1C_VERIFY PASS
+06-09 14:00:31.509 30879 30879 I NCL     : [native] PHASE1D_VERIFY PASS
+06-09 14:00:31.515 30879 30879 I NCL     : [native] PHASE1E_VERIFY PASS
+06-09 14:00:31.635 30879 30879 I NCL     : [CTF] recipes adapter=ik3.t0 item=fc5.g contact=com.tencent.mm.storage.z3 getter=c1 live=com.tencent.mm.ui.contact.address.Add
+ressLiveList fallbackSelfTest=ok
+06-09 14:00:31.635 30879 30879 I NCL     : [CTF] ArrayList.addAll(fc5.g) hook ok
+06-09 14:00:31.636 30879 30879 I NCL     : [CTF] ContactFilter installed
+
+

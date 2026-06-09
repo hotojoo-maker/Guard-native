@@ -214,6 +214,21 @@ bool field_eq(const ConfigRegistry& r, const std::string& id,
 }
 }  // namespace
 
+// Phase 1E Step1: single recipe lookup for the SO→Java channel.
+// Decrypts the embedded registry, returns entries[gateway].fields[key].
+// fail-closed: scatter (decrypt fail) / unknown gateway / unknown field → "".
+// Pure read; does NOT take over any Filter (ConvFilter etc. untouched).
+std::string registry_get_recipe(const std::string& gateway,
+                                const std::string& key) {
+    ConfigRegistry r = registry_load_embedded();
+    if (!r.ok) return std::string();
+    const RegistryEntry* e = find_entry(r, gateway);
+    if (e == nullptr) return std::string();
+    const std::string* v = find_field(*e, key);
+    if (v == nullptr) return std::string();
+    return *v;
+}
+
 std::string registry_dump_summary() {
     ConfigRegistry r = registry_load_embedded();
     if (!r.ok) return "scatter";
@@ -305,6 +320,13 @@ bool registry_self_test() {
             kRegistryTag, sizeof(kRegistryTag));
         if (dec.ok) return false;
     }
+
+    // (1e) Phase 1E Step1: recipe getter returns the right field, and misses
+    //      fail-closed to empty string (unknown gateway / unknown field).
+    if (registry_get_recipe("conv.list", "adapter_class") != "kc5.v0") return false;
+    if (registry_get_recipe("search.gateway", "gateway") != "fts_result_view") return false;
+    if (!registry_get_recipe("no.such.gateway", "adapter_class").empty()) return false;
+    if (!registry_get_recipe("conv.list", "no_such_field").empty()) return false;
 
     // (2) Malformed inputs must scatter (not throw, not partial-open).
     if (registry_parse("").ok) return false;

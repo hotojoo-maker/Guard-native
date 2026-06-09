@@ -1,0 +1,13 @@
+﻿
+06-09 13:30:15.669 25910 25910 I NCL     : [native] certBind set sha256[0..3]=ca421ec3
+06-09 13:30:15.708 25910 25910 I NCL     : [native] registrySummary=schema=r8071_v1 ver=8.0.71 entries=4 [conv.list adapter=kc5.v0 l4=notifyDataSetChanged] [moments.feed
+ adapter=e2] [contact.address adapter=ik3.t0] [search.gateway]
+06-09 13:30:15.709 25910 25910 I NCL     : [native] BATCH1_VERIFY PASS
+06-09 13:30:15.709 25910 25910 I NCL     : [native] PHASE1A_VERIFY PASS
+06-09 13:30:15.709 25910 25910 I NCL     : [native] PHASE1B_VERIFY PASS
+06-09 13:30:15.712 25910 25910 I NCL     : [native] PHASE1C_VERIFY PASS
+06-09 13:30:15.712 25910 25910 I NCL     : [native] PHASE1D_VERIFY PASS
+06-09 13:30:15.743 25910 25910 I NCL     : [native] recipeGet conv.list/adapter_class=kc5.v0 search.primary_adapter=ss4.p
+06-09 13:30:15.743 25910 25910 I NCL     : [native] PHASE1E_VERIFY PASS
+
+
