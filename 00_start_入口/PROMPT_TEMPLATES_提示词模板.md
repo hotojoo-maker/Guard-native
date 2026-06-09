@@ -29,7 +29,7 @@
 进入 P<编号> 实现 <模块名,如 StateMachine / MomentsFilter / ConvFilter>。
 
 请用 guard-execute-one_单任务执行 skill：
-1. 必读: CLAUDE.md §<对应章节>, HOOKMAP.md §<对应模块>, FAILURE_LOG.md 全部 34 条（F-01~F-34）
+1. 必读: CLAUDE.md §<对应章节>, HOOKMAP.md §<对应模块>, FAILURE_LOG.md 全部 F-01~F-38
 2. 进入 03_execute_执行任务/P<编号>_<主题>/ 目录
 3. 按 result.md 模板开干，每完成一个子任务勾一项
 4. 写代码禁用敏感词（vip/hide/pirate/wechat/catfish/myauth/wmiyou）
@@ -123,7 +123,7 @@ v<N> 准备<进主线 | 发版 | 改 APK>。
 - 报错日志: <粘 10 行>
 
 请：
-1. 先 grep FAILURE_LOG.md 看是不是 34 条 F-XX 失败档案之一
+1. 先 grep FAILURE_LOG.md 看是不是 F-XX 失败档案之一
 2. 看 docs/HOOK_MAP_8071_AUTHORITATIVE.md（8071）；历史见 docs/archive/INDEX.md
 3. 看 refs/MainEntry.java 看 Catfish 怎么做的
 4. 如以上都不行 → 派 T 调研任务到 04_review_审稿复核/T_TASKS/

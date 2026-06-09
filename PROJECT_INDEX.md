@@ -1,11 +1,11 @@
 # PROJECT_INDEX — 项目导航 + 路径表
 
 > 所有路径在一处维护，SKILL.md 不写死路径，统一查本文件
-> 更新时间：2026-05-27（8071 主车道 + archive 隔离）
+> 更新时间：2026-06-10（文档收敛：FAILURE_LOG 至 F-38；补 PROTECTION_MAP；以 06-09 看板 + 代码为准）
 
 ---
 
-## 一、根目录核心文档（12 份）
+## 一、根目录核心文档（13 份）
 
 > doc-audit / 资料员 / 文档员 三个角色已于 2026-05-27 合并入 **guard-review_质检门控** 的"资料功能"档。
 
@@ -19,7 +19,8 @@
 | [`TASK_BOARD.md`](./TASK_BOARD.md) | 4 窗口分工 / P 任务进度 | dispatch |
 | [`DECISION_LOG.md`](./DECISION_LOG.md) | 重大决策履历 | dispatch |
 | [`RISK_REGISTER.md`](./RISK_REGISTER.md) | 风险表 | risk-check |
-| [`FAILURE_LOG.md`](./FAILURE_LOG.md) | 34 条 F-XX 失败方案档案（F-34 最新：sConvCache 死循环）| review |
+| [`FAILURE_LOG.md`](./FAILURE_LOG.md) | F-01~F-38 失败方案档案（F-38 最新：伪装订位坐标候选证伪）| review |
+| [`PROTECTION_MAP.md`](./PROTECTION_MAP.md) | **上线前防破解总账 / 四阶段路线图 / 发版门控** | security |
 | [`TOOLS_INDEX.md`](./TOOLS_INDEX.md) | 工具 / 脚本索引 | review |
 | [`FINDINGS.md`](./FINDINGS.md) | 发现即落盘 / 防压缩断链 | review |
 | [`docs/DOC_AUDIT_2026-05-27.md`](./docs/DOC_AUDIT_2026-05-27.md) | 8071 隔离后文档审计报告 | review |
@@ -191,7 +192,7 @@ I:/apk2_build/
 | 8071 某 hook 点怎么写 | [`./docs/HOOK_MAP_8071_AUTHORITATIVE.md`](./docs/HOOK_MAP_8071_AUTHORITATIVE.md) |
 | 8066 历史类名（仅 diff） | [`./docs/archive/INDEX.md`](./docs/archive/INDEX.md) |
 | Catfish 行为参考 | [`./docs/isolation/INDEX_COMPETITOR.md`](./docs/isolation/INDEX_COMPETITOR.md) |
-| 我能不能做 X | [`FAILURE_LOG.md`](./FAILURE_LOG.md) 34 条 F-XX 档案 + CLAUDE.md §三 29 条战略铁律 先查 |
+| 我能不能做 X | [`FAILURE_LOG.md`](./FAILURE_LOG.md) F-01~F-38 档案 + CLAUDE.md §三 29 条战略铁律 先查 |
 | Catfish 怎么做的 | [`./refs/MainEntry.java`](./refs/MainEntry.java) + [`UserControll.java`](./refs/UserControll.java) |
 | 历史版本对比 | 外部 `apk2/_4__samples/sample_history_research/VERSION_INDEX.md` |
 | 防封号边界 | 外部 `apk2/QE66_RESUME.md` + [`CLAUDE.md`](./CLAUDE.md) §六 KPI |

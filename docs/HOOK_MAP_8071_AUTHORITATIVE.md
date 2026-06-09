@@ -316,6 +316,6 @@
 | `docs/archive/wechat_8066/HOOK_POINTS.md` | 8066 历史伪代码（仅 diff） |
 | `docs/archive/wechat_8066/HOOK_MAP_V1.md` | v1 规划 DEPRECATED |
 | `refs/FEATURE_MATRIX.md` | 功能 × 状态 × 失败档案矩阵 |
-| `FAILURE_LOG.md` | F-01 ~ F-34 禁止方案铁律（F-32 ConvFilter L4 卡帧、F-33 V↔H adapter ref 污染、F-34 sConvCache 死循环） |
+| `FAILURE_LOG.md` | F-01 ~ F-38 禁止方案铁律（F-36 来电拦截 6 证伪、F-37 防撤回 a2.b→jy0.t.f、F-38 伪装订位坐标候选证伪） |
 | `02_tools_工具/dynamic_crawler_动态爬虫/README.md` | 动态探针工具集 |
 | `03_execute_执行任务/P*/result.md` | 14 份 P 任务装机实证 |
