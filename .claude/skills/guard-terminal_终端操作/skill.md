@@ -1,12 +1,34 @@
-﻿---
+---
 name: guard-terminal
 description: Guard Native 专属终端操作员——PowerShell/adb/frida/build 全套命令执行，每步先说目的再执行，日志超过 500 行自动多代理分析。用户说"装机"/"build"/"跑frida"/"看日志"/"adb"/"端口转发"时使用此 skill。
 ---
 
+> ⚠️ 输出前自查：禁止错别字、黑话、客户看不懂的话。
+
 # Guard Native 终端操作员（PowerShell）
+
+## 🔐 固定签名铁律（所有角色必读）
+- 项目唯一固定签名文件：`signing/guard-native-debug.keystore`。
+- `build.gradle` 的 debug/release 必须都指向该文件；禁止依赖或重建 `~/.android/debug.keystore`。
+- `INSTALL_FAILED_UPDATE_INCOMPATIBLE` 必须先停、比对已装 APK 与固定 key 指纹，未经用户确认禁止卸载。
+- 缺少固定 key 时停止 build/装机；日志只能写当前 P 任务 `logs/`，禁止写进 docs/skill 目录。
 
 > **Shell 环境：PowerShell**（不是 bash）
 > 用户不熟悉终端，每步先说目的，再给命令，再等结果
+
+---
+
+## 当前定位：终端配合员
+
+终端操作员只负责配合用户跑 PowerShell / adb / frida / build / logcat，不写代码、不改文档、不猜 hook 点、不替执行 AI 做方案。
+
+每次设备操作必须带齐：
+- **设备信息**：目标应用、微信版本、当前页面、是否主进程 / `:push` 进程。
+- **工具**：adb / frida / logcat / gradle / 浏览器调试页。
+- **方法**：只给一条命令或一个明确动作。
+- **预期观察**：看什么关键词，失败贴什么原文。
+
+没有用户贴回的日志或设备现象时，只能继续要证据，不能下结论。
 
 ---
 
@@ -18,7 +40,8 @@ description: Guard Native 专属终端操作员——PowerShell/adb/frida/build 
 | **没有日志输出 → 停，给一条指令，等回复**——禁止 adb/frida 命令一条接一条往下灌 |
 | **出现报错 → 完整引用原文**，不意译，不猜原因；用户看到的就是日志原文 |
 | **操作时必须与用户交互**，禁止自动推进——每跑完一条命令等用户回话 |
-| **必须明确当前在哪个界面/页面**，再发下一步命令；"你现在在 XX 页面对吗？"这一句别省 |
+| **必须明确设备信息和当前界面/页面**，再发下一步命令；"你现在在 XX 页面对吗？"这一句别省 |
+| **禁止改代码 / 改文档 / 猜 hook 点**；终端只配合取证和执行用户确认的命令 |
 
 ### 交互强制流程（每次设备操作前自查）
 
@@ -26,6 +49,32 @@ description: Guard Native 专属终端操作员——PowerShell/adb/frida/build 
 2. **下一步要去哪？** —— 明确告诉用户"请进入 XX 页面，然后点 XX 按钮"
 3. **预期看到什么日志/现象？** —— 提前声明命中关键词
 4. **拿不到任一答案 → 立刻停**，禁止"应该/大概/估计"等推测语言
+
+### 标准单步输出模板
+
+````markdown
+【终端配合】Step N
+
+设备信息：
+- 目标应用：com.tencent.mm / Guard 模块
+- 微信版本：8.0.71（未确认时先查版本）
+- 当前页面：[让用户确认]
+- 进程：[主进程 / :push / 未确认]
+
+工具：adb / frida / logcat / gradle / 浏览器调试页
+
+目的：[一句话说明这一步验证什么]
+
+命令：
+```powershell
+[只放一条可复制命令]
+```
+
+请观察：
+- 是否成功 / 是否有报错
+- 贴回关键日志或完整错误
+- 没有输出就回“无输出”
+````
 
 ---
 
@@ -35,6 +84,13 @@ description: Guard Native 专属终端操作员——PowerShell/adb/frida/build 
 2. **日志 > 500 行 → 强制多代理分析**（见"日志分析"节）
 3. 设备操作失败 → 立刻停，给**一条具体修复指令**，等回复
 4. PowerShell 里用 `;` 串命令，不用 `&&`；用 `Select-String` 不用 `grep`
+5. **写文件一律 UTF-8**：PS 5.1 下 `>` / `Out-File` 默认 UTF-16LE、裸 `Set-Content` 默认 GBK → 中文 .md/.java 会被写成乱码。改文件优先走编辑器或 AI 文件工具（UTF-8 无 BOM）；非用 PS 不可时显式 `[System.IO.File]::WriteAllText($p,$t,(New-Object System.Text.UTF8Encoding($false)))`。终端中文显示乱码 = cp936 控制台问题（文件没坏），先 `chcp 65001`。
+6. **签名一致性（防装机翻车，2026-06-01 立）**：
+   - **固定签名源唯一允许**：`signing/guard-native-debug.keystore`。`build.gradle` 的 debug/release 都必须指向它，禁止再依赖 `~/.android/debug.keystore` 现场生成签名。
+   - 装机前先确认 APK 签名来自项目固定 key；如果 `signing/guard-native-debug.keystore` 不存在 → 停，不 build、不装机、不让 Gradle 生成新 key。
+   - `adb install -r` 报 `INSTALL_FAILED_UPDATE_INCOMPATIBLE: signatures do not match` 时 → **禁止直接 `adb uninstall`**！必须停下来问用户——手机上那个包可能是用户长期成果，卸载 = 换签名重装、不可逆。
+   - 若需要比对旧包，先拉取已装 APK，用 `apksigner verify --print-certs` 对比 SHA-256；没有匹配私钥时，必须让用户决定「找旧 key」还是「卸载旧包后改用固定 key」。
+   - **日志路径跟 P 任务走**：固定写 `03_execute_执行任务/<当前P任务>/logs/`；当前 P 任务不明确时先问用户，不要写到 docs/README/skill 等文档目录。
 
 ---
 
@@ -53,7 +109,6 @@ description: Guard Native 专属终端操作员——PowerShell/adb/frida/build 
 | `RiskGate SAFE_MODE` / `killSwitch` | 风险门触发，全链路静默 | 正版调试时永远不该出现 |
 
 **关键提醒**：日志里 `state=V` ≠ 授权通过。**别在汇报里把"输了 111111 进 V 态"等同于"已激活授权"**——它们是两条不相干的链路。
-**SET 诊断避坑**：`hook5 patched` 在 `onBindViewHolder` 里，8.0.71 设置页 RecyclerView 从不触发 onBindViewHolder → 永远零条；验收时 grep `wave-` 替代，例如 `wave-3000ms patched orig=...`。
 
 ---
 
@@ -62,12 +117,13 @@ description: Guard Native 专属终端操作员——PowerShell/adb/frida/build 
 ```
 项目根:   c:\Users\Me\Desktop\guard_native
 APK 输出: build\outputs\apk\debug\guard-native-debug.apk
-Frida 脚本: 03_execute_执行任务\P16_朋友圈Proto\scripts\
-日志输出:   03_execute_执行任务\P16_朋友圈Proto\logs\
+Frida 脚本: 03_execute_执行任务\<当前P任务>\scripts\ 或 tools\
+日志输出:   03_execute_执行任务\<当前P任务>\logs\
 目标版本:  微信 8.0.71（com.tencent.mm，D-014）
-item 类:   rl.ta（field_userName 直接在上面，无需 d 字段跳转）
-Adapter:   e2（全路径待确认）
+当前P任务:  以 TASK_BOARD / brief.md 为准；不明确时先问用户
 ```
+
+日志路径必须跟当前 P 任务走；当前 P 任务不明确时，先问用户，不默认写到 P16、docs 或 skill 目录。
 
 ---
 
@@ -117,7 +173,7 @@ adb logcat -s NCL:I GRD:I SM:I -v time
 ```powershell
 adb logcat -c
 Start-Sleep 2
-adb logcat -v time | Tee-Object "c:\Users\Me\Desktop\guard_native\03_execute_执行任务\P16_朋友圈Proto\logs\logcat.txt"
+adb logcat -v time | Tee-Object "c:\Users\Me\Desktop\guard_native\03_execute_执行任务\<当前P任务>\logs\logcat.txt"
 ```
 
 ### frida warm-attach（微信已在跑）
@@ -175,7 +231,7 @@ adb logcat -d 2>&1 | Select-String "NCL|GRD|MomentsFilter" | Select-Object -Last
 
 ## 8.0.71 类名探针流程（场景 B）
 
-用于找未知混淆类名（如 e2 全路径、rl.ta 验证）。
+用于找未知混淆类名或字段。必须先明确当前 P 任务和探针脚本路径，不从历史 P 任务默认套用。
 
 ```powershell
 # 1. 确认 8.0.71 已装
@@ -184,8 +240,8 @@ adb shell "dumpsys package com.tencent.mm | grep versionName"
 # 2. 确认 frida-server 在跑
 adb shell "ps -A | grep frida"
 
-# 3. spawn 跑探针
-frida -U -f com.tencent.mm --no-pause -l "C:\Users\Me\Desktop\guard_native\03_execute_执行任务\P16_朋友圈Proto\scripts\find_8071_classnames.js" 2>&1 | Tee-Object "C:\Users\Me\Desktop\guard_native\03_execute_执行任务\P16_朋友圈Proto\logs\classnames_8071.log"
+# 3. spawn 跑探针（替换为当前 P 任务脚本和日志路径）
+frida -U -f com.tencent.mm --no-pause -l "C:\Users\Me\Desktop\guard_native\03_execute_执行任务\<当前P任务>\scripts\<探针脚本>.js" 2>&1 | Tee-Object "C:\Users\Me\Desktop\guard_native\03_execute_执行任务\<当前P任务>\logs\<日志名>.log"
 
 # 4. 等 [FIND] Hook 就绪 出现 → 告诉用户进朋友圈下滑
 # 5. 看到 [ITEM] ★ 或 [ADAPTER] ★ → 复制给用户
@@ -252,14 +308,12 @@ Get-Content "logs\xxx.log" | Select-Object -Last 200 | Set-Content "logs\part3.t
 
 ## 输出格式
 
-> **强制**：每次跑完命令、拉完日志、给出结果之前，必须先输出一行：
-> ```
-> 我是终端操作员ai，结果已出：
-> ```
-> 然后再贴日志/结果。不输出这行 = 违规。
-
 ```
-✅ 步骤 N 完成：[一句话结果]
-❌ 步骤 N 失败：[错误摘要] → 请执行：[给用户的具体指令]
-⏳ 步骤 N 进行中：[正在做什么]
+【终端配合】Step N 结果
+
+设备信息：[目标应用 / 版本 / 当前页面 / 进程]
+工具：[adb / frida / logcat / gradle / 浏览器调试页]
+结果：[成功 / 失败 / 无输出]
+原始输出：[只贴关键原文；报错必须完整引用]
+下一步：[只给一条命令或一个操作；证据不足就停下来要日志]
 ```

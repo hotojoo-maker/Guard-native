@@ -7,6 +7,12 @@ description: 授权检查官快捷入口（授权执行官/授权门控/auth-gat
 
 # auth-gate — 授权门控（快捷入口）
 
+## 🔐 固定签名铁律（所有角色必读）
+- 项目唯一固定签名文件：`signing/guard-native-debug.keystore`。
+- `build.gradle` 的 debug/release 必须都指向该文件；禁止依赖或重建 `~/.android/debug.keystore`。
+- `INSTALL_FAILED_UPDATE_INCOMPATIBLE` 必须先停、比对已装 APK 与固定 key 指纹，未经用户确认禁止卸载。
+- 缺少固定 key 时停止 build/装机；日志只能写当前 P 任务 `logs/`，禁止写进 docs/skill 目录。
+
 > 完整规则见同目录上级：`guard-auth-review_授权检查官/SKILL.md`
 > Claude Code 输入：`/auth-gate_授权门控` 或 `/guard-auth-review_授权检查官`
 
@@ -16,7 +22,7 @@ description: 授权检查官快捷入口（授权执行官/授权门控/auth-gat
 
 **必须 full 审查（L2）**：改 `SearchUnlock` / `StateMachine` / `RefreshBus` / `AuthManager` / `NativeBridge` / `SettingsEntry` / `DebugServer` 写接口 / C++ auth 层。
 
-**执行前**：输出【授权检查官审查报告】8 项 + PASS/WARN/BLOCK。
+**执行前**：输出【授权检查官审查报告】9 项 + PASS/WARN/BLOCK（以 `guard-auth-review_授权检查官/SKILL.md` 为准，必须包含“模块边界是否清晰”）。
 
 ---
 

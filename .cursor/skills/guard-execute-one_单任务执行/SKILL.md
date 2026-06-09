@@ -1,4 +1,4 @@
-﻿---
+---
 name: guard-execute_执行
 description: Guard Native 执行——写代码/跑脚本/设备调试/单个 P 任务。从 TASK_BOARD 领到 P 任务后立即用这个 skill。调试时必须与用户交互，禁止盲猜。
 ---
@@ -6,6 +6,12 @@ description: Guard Native 执行——写代码/跑脚本/设备调试/单个 P 
 > ⚠️ 输出前自查：禁止错别字、黑话、客户看不懂的话。
 
 # guard-execute — 执行
+
+## 🔐 固定签名铁律（所有角色必读）
+- 项目唯一固定签名文件：`signing/guard-native-debug.keystore`。
+- `build.gradle` 的 debug/release 必须都指向该文件；禁止依赖或重建 `~/.android/debug.keystore`。
+- `INSTALL_FAILED_UPDATE_INCOMPATIBLE` 必须先停、比对已装 APK 与固定 key 指纹，未经用户确认禁止卸载。
+- 缺少固定 key 时停止 build/装机；日志只能写当前 P 任务 `logs/`，禁止写进 docs/skill 目录。
 
 ---
 
@@ -171,6 +177,12 @@ adb logcat -d 2>&1 | findstr "SF:gv MRD"
 - 更新 `HOOKMAP.md` 对应行 ⬜→🟡 或 🟡→✅（须用户同意）
 - 新失败教训 **报告给总调度归档**（不自己写 FAILURE_LOG，除非用户明确同意）
 - 切到 `guard-review_质检门控` skill 自审
+
+**瘦身写法（2026-06-06 起强制）**：
+- `result.md/worklog.md` 可写细节；`HOOKMAP.md/TASK_BOARD.md` 只写一句状态 + 证据路径
+- 不把日志原文、长 hook 链、失败推理反灌进总览文档
+- P 任务完成后，优先把 `TASK_BOARD.md` 的进行中描述压成一行历史摘要
+- 需要保留历史时写"详见 result/worklog"，不要复制正文
 
 ---
 

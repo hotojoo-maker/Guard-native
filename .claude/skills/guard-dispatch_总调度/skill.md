@@ -3,7 +3,15 @@ name: guard-dispatch_总调度
 description: Guard Native 总调度——制定 P 任务计划/分配 4 窗口/接手新会话/更新 TASK_BOARD。新会话第一件事就是用这个 skill；分配任务时也用这个 skill。
 ---
 
+> ⚠️ 输出前自查：禁止错别字、黑话、客户看不懂的话。
+
 # guard-dispatch — 总调度
+
+## 🔐 固定签名铁律（所有角色必读）
+- 项目唯一固定签名文件：`signing/guard-native-debug.keystore`。
+- `build.gradle` 的 debug/release 必须都指向该文件；禁止依赖或重建 `~/.android/debug.keystore`。
+- `INSTALL_FAILED_UPDATE_INCOMPATIBLE` 必须先停、比对已装 APK 与固定 key 指纹，未经用户确认禁止卸载。
+- 缺少固定 key 时停止 build/装机；日志只能写当前 P 任务 `logs/`，禁止写进 docs/skill 目录。
 
 ---
 
@@ -34,6 +42,14 @@ description: Guard Native 总调度——制定 P 任务计划/分配 4 窗口/�
 - **新建 md 门槛**：用户**明确点名**"新建 XX 文档"才能建
 - 每次产出 md 前自问：能不能塞进现有的哪个 md？能塞 → 不新建
 - 临时调研 / 一次性日志 → 进 `bug排查/` 或 `03_execute_执行任务/P<N>/logs/`，不进根目录
+
+### 文档瘦身原则（2026-06-06 起强制）
+
+- **三层结构**：`docs/HOOK_MAP_8071_AUTHORITATIVE.md` 放事实细节；`HOOKMAP.md` 只放功能总图；`TASK_BOARD.md` 只放当前任务和下一步
+- **禁止复制细节**：同一 hook 链、日志原文、失败原因不得在三处重复展开；总览只写一句 + 链接
+- **已完成任务压缩**：P 历史行只保留状态、日期、证据路径；实现细节回链到 P 任务 `result.md` 或权威 hook 文档
+- **边缘项降级**：UI 高亮、备用层、历史探针、已证伪细节只留在 result/worklog/权威文档，不写进 `TASK_BOARD.md` 主状态
+- **更新看板时先删后加**：新增 1 行状态前，先检查能否删掉旧解释，保持看板短
 
 **接手新会话时必须做的 3 件事（缺一不做）：**
 1. 读 `TASK_BOARD.md` §一，只看 ✅ 且有装机日志的条目当"已完成"
@@ -197,6 +213,7 @@ adb logcat -d 2>&1 | findstr "NCL"
 - 任何分歧 → 不自决，先问用户
 - 跨窗口共享数据 → 经过 `06_refs_参考资料/`
 - 失败教训 → 必须写进 `FAILURE_LOG.md`
+- **签名固定（防装机翻车，2026-06-01 立）**：项目应在 `build.gradle` 配固定 `signingConfig`（指向项目内/固定备份的 keystore），保证任何机器、任何会话编译出的包签名一致、能互相覆盖装。立项 / 换机 / 发版前必查；迁移机器时 `~/.android/debug.keystore` 必须一并带走，禁止让 Gradle 现场重建（重建 = 签名变 = 旧装机包覆盖不上，详见终端 skill §铁律 6）。
 
 ---
 

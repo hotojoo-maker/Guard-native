@@ -7,6 +7,12 @@ description: Guard Native 质检门控——P任务自审(轻档) + 发版门控
 
 # guard-review — 质检门控（三合一）
 
+## 🔐 固定签名铁律（所有角色必读）
+- 项目唯一固定签名文件：`signing/guard-native-debug.keystore`。
+- `build.gradle` 的 debug/release 必须都指向该文件；禁止依赖或重建 `~/.android/debug.keystore`。
+- `INSTALL_FAILED_UPDATE_INCOMPATIBLE` 必须先停、比对已装 APK 与固定 key 指纹，未经用户确认禁止卸载。
+- 缺少固定 key 时停止 build/装机；日志只能写当前 P 任务 `logs/`，禁止写进 docs/skill 目录。
+
 ---
 
 ## ⛔ 绝对禁止（质检特有；通用 G1–G6 见 `CLAUDE.md` §三.五）
@@ -40,7 +46,8 @@ grep 代码是否有被禁模式：
 - `findMethodExact` 用在 protobuf 类 → F-26
 - `notifyItemRange` → F-13~15
 - `ro.boot.` → 铁律5
-- `JniHook` / `System.loadLibrary` → F-23
+- `JniHook` / 微信自身 SO 加载 / 第三方底层注入 / 非模块自有 `System.loadLibrary` → F-23
+- 允许：模块自有 `libguardcore.so` 正常加载（当前 `native_core` 路线）；但不得加载微信自身 SO，不得接 `JNI_OnLoad` 注入链，不得 hook 微信 native 方法
 - 敏感词 `vip` `hide` `catfish` `wechat` → §5.8
 
 ### ② 自洽性
@@ -116,6 +123,16 @@ frida -U -f com.tencent.mm --no-pause -l "I:/apk2/_3__D_wechat_ban/official_wech
 
 ### 路径表维护
 - 新增/移动资料 → 改 `PROJECT_INDEX.md` + 必要时 `docs/archive/INDEX.md`
+
+### 文档瘦身审查（2026-06-06 起）
+
+资料盘点时同时检查"重复写胖"：
+- `docs/HOOK_MAP_8071_AUTHORITATIVE.md` = hook 点 / 证据 / 技术细节唯一权威
+- `HOOKMAP.md` = 功能总图，只留状态、主路径一句话、证据链接
+- `TASK_BOARD.md` = 当前任务，只留下一步和 P 历史一句话
+- P 任务 `result.md/worklog.md` = 历史流水和详细日志
+
+发现同一段 hook 链、日志原文、失败原因在 2 个以上总览文档重复展开 → 标 🟡，建议压成"一句话 + 链接"。不要删证据，只把证据集中到权威文档或 P 任务目录。
 
 ### 冲突检测
 - 同一结论多处矛盾 → 写 `04_review_审稿复核/CONFLICTS.md`：
