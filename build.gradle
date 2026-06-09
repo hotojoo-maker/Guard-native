@@ -49,10 +49,10 @@ android {
     }
 
     signingConfigs {
-        // Sign release with the SAME debug keystore → release installs over debug
-        // without signature mismatch, and dev keeps one consistent signature.
-        release {
-            storeFile file("${System.properties['user.home']}/.android/debug.keystore")
+        // Fixed project-local key. Do not fall back to ~/.android/debug.keystore:
+        // Gradle may regenerate it on a new machine, changing the package signature.
+        guardFixed {
+            storeFile file("signing/guard-native-debug.keystore")
             storePassword "android"
             keyAlias "androiddebugkey"
             keyPassword "android"
@@ -61,11 +61,12 @@ android {
 
     buildTypes {
         debug {
+            signingConfig signingConfigs.guardFixed
             minifyEnabled false
             debuggable true
         }
         release {
-            signingConfig signingConfigs.release
+            signingConfig signingConfigs.guardFixed
             minifyEnabled true
             shrinkResources false   // keep xposed_init asset
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'

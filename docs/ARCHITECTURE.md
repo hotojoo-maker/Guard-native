@@ -23,7 +23,7 @@
 - `ArrayList.addAll(fc5.g)` → `g.d`（z3 实例）→ `z3.c1()` → remove
 
 ## 6.5 搜索拦截（搜索入口 = 放大镜）
-- `SearchFilter`：hook `ArrayList.addAll` + `z15.ef6` 按 wxid 过滤
+- `SearchFilter`：主路径为 `q2/f0.getView` 渲染层精确 id 过滤（`tz2.u1/tz2.p0/tz2.s1` → wxid/groupId）；聊天记录 `z15.ef6/ch6.e` 仅作分源理解层，不作为主过滤路径
 - `SearchUnlock`：hook EditText，隐藏态 + 入口口令命中（默认 `111111`）→ `unlockEntry()` + 关闭搜索页
 - `SettingsEntry`：v10 文字替换——入口可见时「我的资料」→「量子密友」（点击弹设置对话框）；进 HIDDEN → 自动还原
 - **假返回"未找到"** = 微信本地无数据时的默认行为（显示"添加好友"）
@@ -32,7 +32,8 @@
 ## 6.6 朋友圈小红点（P21，两个视觉层）
 - **MomentsEntryBadge**（朋友圈行入口角标）：`FMF.g1("album_dyna_photo_ui_title", true)` 拦截
 - **DiscoverTabBadge**（发现 tab 底部角标）：`TabRedDotChangeEvent`/`WeChatTabRedDotEvent` ctor 清零
-- **Layer0b**（互动列表过滤）：`Activity.onResume` 过滤 `SnsMsgUI*`，密友条目不显示 + badge 归零
+- **Layer0b**（互动列表入口）：`Activity.onResume` 过滤 `SnsMsgUI*`，badge 归零
+- **P21B 互动列表条目过滤**：`bm/rm -> com.tencent.mm.ui.s9.f(Cursor)` live 游标按 `talker` 跳过隐藏 wxid；WithAll/bm ✅ 2026-06-09，rm 待补 L1
 
 ## 6.7 MMKV
 - namespace: `g_<seed4>`（每客户独立 seed）

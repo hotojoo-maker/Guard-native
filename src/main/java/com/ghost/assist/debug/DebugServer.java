@@ -121,6 +121,8 @@ public class DebugServer {
                 response = apiTrigger(body);
             } else if ("/api/mode".equals(path) && "POST".equals(method)) {
                 response = apiSetMode(body);
+            } else if ("/api/password".equals(path) && "POST".equals(method)) {
+                response = apiSetPassword(body);
             } else if ("/api/config".equals(path)) {
                 response = apiConfig();
             } else if ("/api/contact".equals(path) && "POST".equals(method)) {
@@ -299,6 +301,21 @@ public class DebugServer {
             return jsonResponse("{\"error\":\"invalid mode\"}", 400);
         }
         return apiConfig();
+    }
+
+    private static byte[] apiSetPassword(String body) {
+        if (!StateMachine.getInstance().isVipAuthorized()) {
+            return jsonResponse("{\"error\":\"not authorized\"}", 403);
+        }
+        String password = extractJsonField(body, "password");
+        if (password == null) password = "";
+        password = password.trim();
+        if (password.length() < 4 || password.length() > 32) {
+            return jsonResponse("{\"error\":\"invalid password\"}", 400);
+        }
+        StateMachine.getInstance().setPassword(password);
+        android.util.Log.i("NCL", "[DBG] password updated");
+        return jsonResponse("{\"ok\":true}");
     }
 
     private static byte[] apiConfig() {

@@ -38,7 +38,7 @@
 试错层   ████████████ 100%   31 条已验证失败方案归档 (FAILURE_LOG.md)
 ```
 
-**v1 已稳定**（有日志原文）：D1/D2/D3 朋友圈 · 会话 V→H · 会话 H→V fresh-warm（普通有历史 hidden id）· 通讯录 · A2 密友导入 · A3 密群/密群导入 · P21 Layer0b · P20 搜索（联系人/群聊密群/聊天记录关键词场景）· B2/B5/B6 触发
+**v1 已稳定**（有日志原文）：D1/D2/D3 朋友圈 · 会话 V→H · 会话 H→V fresh-warm（普通有历史 hidden id）· 通讯录 · A2 密友导入 · A3 密群/密群导入 · P21 Layer0b + P21B WithAll/bm · P20 搜索（联系人/群聊密群/聊天记录关键词场景）· B2/B5/B6 触发
 **v1 部分稳定**：零历史 wxid 的会话行创建仍受微信 DB 限制（见 `docs/CONV_REFRESH_PROBLEM.md`）
 **v1 待装机/🟡**：P22 普通消息通知 + 铃声功能 · P18 KPI 基线 · P20B KPI 发版前重测
 **下一个**：P22 普通消息通知 + 铃声功能 / P26C 搜索高亮 → 详见 [`TASK_BOARD.md`](./TASK_BOARD.md)
@@ -160,7 +160,7 @@
  + B 模块 6 个触发事件（摇一摇/切后台/Home/返回/锁屏/搜索）
  + 朋友圈 Proto 层（hookSnsObject 主线 + INIT 兜底）
  + 【代码已入 v1，未结案】PushFilter L1+NM ✅ 装机；L4b/L4c/CA 🟡 / AntiRecall 🟡 代码已写未装机
- + 【已下沉 v1】P21 朋友圈小红点 Layer0b ✅（LSPosed 装机实证；Layer2/v18 tab 备用层保留）
+ + 【已下沉 v1】P21 朋友圈小红点 Layer0b ✅ + P21B WithAll/bm ✅（LSPosed 装机实证；rm/Layer2/v18 tab 备用层保留）
 ```
 > **AI 注意**：本"v1 锁定范围"已与现状偏离（C 模块下沉、P21 朋友圈小红点接入等）。新会话以 [`HOOKMAP.md`](./HOOKMAP.md) §二 实体表为准；本节作为产品初心存档，待 v1 收口时统一重写。
 
@@ -200,7 +200,8 @@ P2 / 暂缓 / 禁止 / 系统层破绽点 → **全部不做**
 ### 6.6 朋友圈小红点（P21，两个视觉层）
 - **MomentsEntryBadge**（朋友圈行入口角标）：`FMF.g1("album_dyna_photo_ui_title", true)` 拦截
 - **DiscoverTabBadge**（发现 tab 底部角标）：`TabRedDotChangeEvent`/`WeChatTabRedDotEvent` ctor 清零
-- **Layer0b**（互动列表过滤）：`Activity.onResume` 过滤 `SnsMsgUI*`，密友条目不显示 + badge 归零
+- **Layer0b**（互动列表入口）：`Activity.onResume` 过滤 `SnsMsgUI*`，badge 归零
+- **P21B 互动列表条目过滤**：`bm/rm -> com.tencent.mm.ui.s9.f(Cursor)` live 游标按 `talker` 跳过隐藏 wxid；WithAll/bm ✅ 2026-06-09，rm 待补 L1
 
 ### 6.7 MMKV
 - namespace: `g_<seed4>`（每客户独立 seed）
@@ -273,7 +274,7 @@ v4  2 月     底层 C++ 蜜罐 + 加盐字幕混合加密
 | 窗口 | 主题 | 状态 |
 |:--:|------|:---:|
 | **W1** | B 模块触发器 + 搜索（P20B/P20） | ⬜ 代码已写，待装机 |
-| **W2** | 朋友圈小红点（P21） | ✅ Layer0b/Layer2 实证；DiscoverTabBadge 待触发 |
+| **W2** | 朋友圈小红点（P21） | ✅ Layer0b + P21B WithAll/bm；rm/DiscoverTabBadge 待触发 |
 | **W3** | 会话 LSPosed（P17） | ✅ 完成 |
 | **W4** | 离线资料库采集（P18） | ⬜ 未领 |
 

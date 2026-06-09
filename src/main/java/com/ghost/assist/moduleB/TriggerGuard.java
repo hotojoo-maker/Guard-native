@@ -13,9 +13,13 @@ import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
+import android.view.KeyEvent;
 
 import com.ghost.assist.core.AppConfig;
 import com.ghost.assist.core.StateMachine;
+
+import de.robv.android.xposed.XC_MethodHook;
+import de.robv.android.xposed.XposedHelpers;
 
 /**
  * 状态机自动触发器（P21 优先 #2）。
@@ -39,6 +43,7 @@ public class TriggerGuard {
     private static final long SHAKE_COOLDOWN_MS = 1500; // 摇一次的冷却时间，避免连续触发
 
     private static boolean sInstalled = false;
+    private static boolean sBackHooked = false;
     private static int sForegroundCount = 0;
     private static volatile long sLastShakeAt = 0L;
     private static SensorManager sSensorManager;
@@ -54,6 +59,7 @@ public class TriggerGuard {
     // 此时 sCurrentResumedActivity 已被 onActivityPaused 清空，冻结自动失效，enterHidden 正常 fire。
     private static final String MAIN_SETTINGS_CLASS =
             "com.tencent.mm.plugin.setting.ui.setting_new.MainSettingsUI";
+    private static final String LAUNCHER_UI_CLASS = "com.tencent.mm.ui.LauncherUI";
 
     private static boolean isOnSettingsPage() {
         return MAIN_SETTINGS_CLASS.equals(sCurrentResumedActivity);
@@ -65,7 +71,8 @@ public class TriggerGuard {
 
         installForegroundTracker(app);          // B2
         installScreenAndCloseDialogReceiver(app); // B5 + B2 兜底
-        installShakeListener(app);               // B1
+        syncShakeListener(app);                  // B1
+        installBackKeyHook();                    // B4
 
         Log.i(TAG, "[TG] install done b1=" + AppConfig.getInstance().isB1Enabled()
                 + " b2=" + AppConfig.getInstance().isB2Enabled()
@@ -123,6 +130,67 @@ public class TriggerGuard {
         Log.i(TAG, "[TG] " + reason + " → enterHidden");
         sm.enterHidden();
         SettingsEntry.onStateChanged();
+    }
+
+    // -------------------------------------------------------------------------
+    // B4 — 返回键（仅 LauncherUI 的会话/通讯录主页）
+    // -------------------------------------------------------------------------
+    private static void installBackKeyHook() {
+        if (sBackHooked) return;
+        sBackHooked = true;
+        try {
+            XposedHelpers.findAndHookMethod(
+                    Activity.class,
+                    "dispatchKeyEvent",
+                    KeyEvent.class,
+                    new XC_MethodHook() {
+                        @Override
+                        protected void beforeHookedMethod(MethodHookParam param) {
+                            KeyEvent event = (KeyEvent) param.args[0];
+                            if (event == null
+                                    || event.getKeyCode() != KeyEvent.KEYCODE_BACK
+                                    || event.getAction() != KeyEvent.ACTION_UP) {
+                                return;
+                            }
+
+                            Activity activity = (Activity) param.thisObject;
+                            if (!isB4HomeTab(activity)) return;
+                            if (AppConfig.getInstance().isDevMode()) return;
+
+                            StateMachine sm = StateMachine.getInstance();
+                            if (sm.isActive()) return;
+                            if (SettingsEntry.isOverlayActive()) {
+                                Log.i(TAG, "[TG] B4-back skipped (overlay active)");
+                                return;
+                            }
+
+                            Log.i(TAG, "[TG] B4-back title=" + safeTitle(activity)
+                                    + " → enterHidden");
+                            sm.enterHidden();
+                            SettingsEntry.onStateChanged();
+                            param.setResult(true);
+                        }
+                    });
+            Log.i(TAG, "[TG] B4 back key hook installed");
+        } catch (Throwable t) {
+            Log.w(TAG, "[TG] B4 back key hook failed: " + t);
+        }
+    }
+
+    private static boolean isB4HomeTab(Activity activity) {
+        if (activity == null) return false;
+        if (!LAUNCHER_UI_CLASS.equals(activity.getClass().getName())) return false;
+        String title = safeTitle(activity);
+        return title.startsWith("微信") || title.contains("通讯录");
+    }
+
+    private static String safeTitle(Activity activity) {
+        try {
+            CharSequence title = activity.getTitle();
+            return title != null ? title.toString() : "";
+        } catch (Throwable ignored) {
+            return "";
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -192,13 +260,29 @@ public class TriggerGuard {
     // -------------------------------------------------------------------------
     // B1 摇一摇（默认关，用户开关启用后才注册 Sensor）
     // -------------------------------------------------------------------------
-    private static void installShakeListener(Application app) {
+    public static void setShakeEnabled(Context context, boolean enabled) {
+        if (context == null) return;
+        AppConfig.getInstance().setB1Enabled(enabled);
+        if (enabled) {
+            ensureShakeListener(context.getApplicationContext());
+        } else {
+            unregisterShakeListener();
+        }
+    }
+
+    private static void syncShakeListener(Context context) {
         if (!AppConfig.getInstance().isB1Enabled()) {
             Log.i(TAG, "[TG] B1 shake disabled, skip");
+            unregisterShakeListener();
             return;
         }
+        ensureShakeListener(context);
+    }
+
+    private static void ensureShakeListener(Context context) {
+        if (sShakeListener != null) return;
         try {
-            sSensorManager = (SensorManager) app.getSystemService(Context.SENSOR_SERVICE);
+            sSensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
             if (sSensorManager == null) return;
             Sensor accel = sSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
             if (accel == null) {
@@ -208,6 +292,7 @@ public class TriggerGuard {
             sShakeListener = new SensorEventListener() {
                 @Override
                 public void onSensorChanged(SensorEvent event) {
+                    if (!AppConfig.getInstance().isB1Enabled()) return;
                     if (event.values.length < 3) return;
                     float x = event.values[0];
                     float y = event.values[1];
@@ -230,7 +315,20 @@ public class TriggerGuard {
         }
     }
 
+    private static void unregisterShakeListener() {
+        if (sSensorManager == null || sShakeListener == null) return;
+        try {
+            sSensorManager.unregisterListener(sShakeListener);
+            Log.i(TAG, "[TG] B1 shake listener unregistered");
+        } catch (Throwable t) {
+            Log.w(TAG, "[TG] B1 shake unregister failed: " + t);
+        } finally {
+            sShakeListener = null;
+        }
+    }
+
     private static void onShake() {
+        if (!AppConfig.getInstance().isB1Enabled()) return;
         if (AppConfig.getInstance().isDevMode()) return;
         StateMachine sm = StateMachine.getInstance();
         if (sm.isActive()) return;

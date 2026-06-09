@@ -2,54 +2,73 @@
 <html lang="zh">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>GUARD NATIVE · State Machine System</title>
 <style>
+:root{
+  --bg:#080808;
+  --panel:#0d0d0d;
+  --card:#111;
+  --card-soft:#0a0a0a;
+  --line:#222;
+  --line-soft:#1a1a1a;
+  --text:#ccc;
+  --muted:#666;
+  --muted-2:#444;
+  --accent:#00ff66;
+  --accent-soft:#051005;
+  --danger:#ff6666;
+  --danger-soft:#220000;
+  --warn:#ffff00;
+  --blue:#44aaff;
+  --orange:#ffaa44;
+  --violet:#8888ff;
+}
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;overflow:hidden;font-family:monospace;background:#080808;color:#ccc}
+html,body{height:100%;overflow:hidden;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:var(--bg);color:var(--text)}
 
 /* ── 三栏布局 ── */
 #app{display:flex;height:100vh;gap:0}
 
 /* 左侧功能面板 — 加宽（容纳昵称 + wxid 一行）*/
-#panel{width:440px;min-width:440px;background:#0d0d0d;border-right:1px solid #222;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:8px}
+#panel{width:440px;min-width:440px;background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:8px}
 
 /* 中央事件流（主角，占最大） + 右侧辅助面板（固定宽度） */
 #logs{flex:1;display:flex;gap:0;overflow:hidden}
-#log-left{flex:1;display:flex;flex-direction:column;overflow:hidden;border-left:1px solid #1a1a1a}
-#log-right{width:300px;min-width:300px;display:flex;flex-direction:column;overflow:hidden;border-left:1px solid #1a1a1a}
+#log-left{flex:1;display:flex;flex-direction:column;overflow:hidden;border-left:1px solid var(--line-soft)}
+#log-right{width:300px;min-width:300px;display:flex;flex-direction:column;overflow:hidden;border-left:1px solid var(--line-soft)}
 
 /* 各日志头 */
-.log-header{padding:6px 10px;background:#111;border-bottom:1px solid #222;display:flex;align-items:center;gap:8px;flex-shrink:0}
-.log-header h2{font-size:11px;color:#0f0;flex:1}
-.log-body{flex:1;overflow-y:auto;font-size:10px;font-family:monospace;padding:6px 8px;background:#050505}
+.log-header{padding:6px 10px;background:var(--card);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.log-header h2{font-size:11px;color:var(--accent);flex:1}
+.log-body{flex:1;overflow-y:auto;font-size:10px;font-family:inherit;padding:6px 8px;background:#050505}
 
 /* 卡片 */
-.card{background:#111;border:1px solid #222;border-radius:4px;padding:6px}
-.card h3{font-size:10px;color:#0f0;margin-bottom:4px}
-.label{color:#666;font-size:10px}
-.value{color:#0f0;font-size:16px;font-weight:bold}
+.card{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:6px}
+.card h3{font-size:10px;color:var(--accent);margin-bottom:4px}
+.label{color:var(--muted);font-size:10px}
+.value{color:var(--accent);font-size:16px;font-weight:bold}
 
 /* 按钮 */
-.btn{padding:5px 10px;border:1px solid #444;background:#1a1a1a;color:#aaa;cursor:pointer;font-family:monospace;font-size:11px;border-radius:3px}
-.btn:hover{border-color:#0f0;color:#0f0;background:#111}
-.btn.danger{border-color:#600;color:#f66}.btn.danger:hover{background:#200}
-.btn.active{border-color:#0f0;color:#0f0;background:#051005}
+.btn{padding:5px 10px;border:1px solid var(--muted-2);background:#1a1a1a;color:#aaa;cursor:pointer;font-family:inherit;font-size:11px;border-radius:3px}
+.btn:hover{border-color:var(--accent);color:var(--accent);background:var(--card)}
+.btn.danger{border-color:#600;color:var(--danger)}.btn.danger:hover{background:var(--danger-soft)}
+.btn.active{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
 .btn-row{display:flex;flex-wrap:wrap;gap:4px}
 
 /* 输入 */
-input[type=text]{width:100%;padding:5px 6px;background:#111;border:1px solid #444;color:#ccc;font-family:monospace;font-size:11px;border-radius:3px;margin-bottom:4px}
-input[type=text]:focus{outline:none;border-color:#0f0}
+input[type=text],select{width:100%;padding:5px 6px;background:var(--card);border:1px solid var(--muted-2);color:var(--text);font-family:inherit;font-size:11px;border-radius:3px;margin-bottom:4px}
+input[type=text]:focus,select:focus{outline:none;border-color:var(--accent)}
 
 /* 状态 */
-.state-hidden{color:#f44}.state-visible{color:#0f0}.state-unlocking{color:#ff0}
+.state-hidden{color:#f44}.state-visible{color:var(--accent)}.state-unlocking{color:var(--warn)}
 
 /* 日志行 */
 .log-line{padding:1px 0;line-height:1.5;white-space:pre-wrap;word-break:break-all}
-.log-line:nth-child(even){background:#0a0a0a}
+.log-line:nth-child(even){background:var(--card-soft)}
 
 /* 好友行 */
-.friend-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid #111}
+.friend-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid var(--card)}
 
 /* 滚动条 */
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
@@ -57,21 +76,52 @@ input[type=text]:focus{outline:none;border-color:#0f0}
 /* 详情弹窗 */
 #detail-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center}
 #detail-modal.show{display:flex}
-#detail-box{background:#111;border:1px solid #0f0;border-radius:6px;width:600px;max-width:95vw;max-height:80vh;display:flex;flex-direction:column}
-#detail-head{padding:8px 12px;border-bottom:1px solid #222;display:flex;align-items:center;gap:8px}
-#detail-title{flex:1;color:#0f0;font-size:12px}
+#detail-box{background:var(--card);border:1px solid var(--accent);border-radius:6px;width:600px;max-width:95vw;max-height:80vh;display:flex;flex-direction:column}
+#detail-head{padding:8px 12px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+#detail-title{flex:1;color:var(--accent);font-size:12px}
 #detail-body{flex:1;overflow-y:auto;padding:10px 12px;font-size:11px;white-space:pre-wrap;color:#8f8;line-height:1.6}
 
 /* 筛选栏 */
-.filter-bar{padding:4px 8px;background:#0d0d0d;border-bottom:1px solid #1a1a1a;display:flex;gap:6px;flex-shrink:0}
-.filter-bar input{flex:1;padding:3px 6px;background:#111;border:1px solid #333;color:#aaa;font-size:10px;font-family:monospace;border-radius:2px}
-.filter-bar input:focus{outline:none;border-color:#0f0}
+.filter-bar{padding:4px 8px;background:var(--panel);border-bottom:1px solid var(--line-soft);display:flex;gap:6px;flex-shrink:0}
+.filter-bar input{flex:1;padding:3px 6px;background:var(--card);border:1px solid #333;color:#aaa;font-size:10px;font-family:inherit;border-radius:2px}
+.filter-bar input:focus{outline:none;border-color:var(--accent)}
 
 /* 六面板 Tab */
-.tab-btn{padding:5px 10px;background:transparent;border:none;border-bottom:2px solid transparent;color:#555;cursor:pointer;font-family:monospace;font-size:10px;white-space:nowrap;flex-shrink:0}
-.tab-btn:hover{color:#aaa}.tab-btn.active{color:#0f0;border-bottom-color:#0f0;background:#050505}
+.tab-btn{padding:5px 10px;background:transparent;border:none;border-bottom:2px solid transparent;color:#555;cursor:pointer;font-family:inherit;font-size:10px;white-space:nowrap;flex-shrink:0}
+.tab-btn:hover{color:#aaa}.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);background:#050505}
 .tab-panel{display:flex;flex-direction:column;flex:1;overflow:hidden}
 .tab-panel.hidden{display:none}
+
+/* 主题变量覆盖旧 inline 色值。以后换主题优先改 :root 变量。 */
+[style*="color:#0f0"],[style*="color: #0f0"]{color:var(--accent)!important}
+[style*="color:#f44"],[style*="color: #f44"]{color:var(--danger)!important}
+[style*="color:#ff0"],[style*="color: #ff0"]{color:var(--warn)!important}
+[style*="color:#4af"],[style*="color: #4af"]{color:var(--blue)!important}
+[style*="color:#fa4"],[style*="color: #fa4"]{color:var(--orange)!important}
+[style*="color:#88f"],[style*="color: #88f"]{color:var(--violet)!important}
+[style*="border-color:#0f0"],[style*="border-color: #0f0"]{border-color:var(--accent)!important}
+
+@media (max-width: 820px) {
+  html,body{height:auto;min-height:100%;overflow:auto;font-size:14px}
+  body{padding:env(safe-area-inset-top) 8px calc(10px + env(safe-area-inset-bottom))}
+  #app{display:block;height:auto;min-height:100vh}
+  #panel{width:auto;min-width:0;border-right:0;border-bottom:1px solid var(--line);padding:8px;gap:10px;overflow:visible}
+  #logs{display:block;overflow:visible;margin-top:10px}
+  #log-left,#log-right{width:auto;min-width:0;height:72vh;border-left:0;border-top:1px solid var(--line);border-radius:10px;overflow:hidden}
+  #log-right{margin-top:10px}
+  .card{border-radius:10px;padding:10px}
+  .card h3{font-size:13px;margin-bottom:8px}
+  .label{font-size:12px}
+  .value{font-size:20px}
+  .btn{min-height:44px;padding:8px 12px;border-radius:10px;font-size:14px;touch-action:manipulation}
+  .btn-row .btn{flex:1 1 calc(50% - 4px)}
+  input[type=text],select{min-height:44px;font-size:15px;border-radius:10px}
+  .log-header{position:sticky;top:0;z-index:2;padding:8px}
+  .log-header h2{font-size:13px}
+  .log-body{font-size:12px;padding:8px}
+  .tab-btn{min-height:44px;font-size:12px;padding:8px 10px}
+  #detail-box{width:calc(100vw - 16px);max-height:86vh;border-radius:12px}
+}
 </style>
 </head>
 <body>
@@ -251,11 +301,15 @@ input[type=text]:focus{outline:none;border-color:#0f0}
 <div class="card">
     <h3>配置</h3>
     <div class="label" style="margin-bottom:3px">模式</div>
-    <select id="cfg-mode" onchange="setMode(this.value)" style="width:100%;padding:4px;background:#111;border:1px solid #444;color:#ccc;font-size:11px;border-radius:3px">
+    <select id="cfg-mode" onchange="setMode(this.value)">
         <option value="DEV">DEV</option>
         <option value="PROD">PROD</option>
         <option value="HONEY">HONEY</option>
       </select>
+    <div class="label" style="margin:8px 0 3px">远端/解锁密码</div>
+    <input type="text" id="remote-password" placeholder="新密码，4-32 位">
+    <button class="btn" style="width:100%;margin-bottom:4px" onclick="saveRemotePassword()">保存密码</button>
+    <div id="remote-password-status" class="label"></div>
     </div>
 </div>
 
@@ -790,6 +844,23 @@ async function apiTrigger(action) {
 }
 async function setMode(mode) {
   try { await fetch(BASE + '/api/mode', {method:'POST', body:JSON.stringify({mode})}); pollConfig(); } catch(e) {}
+}
+async function saveRemotePassword() {
+  var input = document.getElementById('remote-password');
+  var status = document.getElementById('remote-password-status');
+  var password = input ? input.value.trim() : '';
+  if (password.length < 4 || password.length > 32) {
+    if (status) status.textContent = '密码长度必须是 4-32 位';
+    return;
+  }
+  try {
+    var r = await fetch(BASE + '/api/password', {method:'POST', body:JSON.stringify({password})});
+    if (!r.ok) throw new Error(String(r.status));
+    if (input) input.value = '';
+    if (status) status.textContent = '已保存';
+  } catch(e) {
+    if (status) status.textContent = '保存失败';
+  }
 }
 async function addHidden(inputId) {
   let input = document.getElementById(inputId || 'hl-wxid-input');

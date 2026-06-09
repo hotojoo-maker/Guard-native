@@ -2,7 +2,7 @@ package com.ghost.assist.moduleC;
 
 import android.app.Notification;
 import android.media.AudioAttributes;
-import android.media.AudioManager;
+import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.VibrationEffect;
@@ -74,6 +74,7 @@ public final class NotifyRouter {
      * PushFilter MP hook skips our own MediaPlayer and only blocks WeChat's.
      */
     static volatile boolean sOurSound = false;
+    private static android.media.Ringtone sRingtone = null;
 
     public enum EventType { MSG, CALL, HANGUP }
 
@@ -84,8 +85,7 @@ public final class NotifyRouter {
         /** Pass the notification through after stripping original sound and applying
          *  our vibration pattern (no audible ring). */
         VIBRATE,
-        /** Pass through after replacing original sound with the custom ringtone URI
-         *  stored in Bridge.KEY_CUSTOM_SOUND (falls back to VIBRATE if unset). */
+        /** Play custom ringtone URI when configured; otherwise use system notification sound. */
         SOUND,
         /** Fully pass through — used only for non-hidden friends in SOUND mode. */
         PASS
@@ -172,29 +172,8 @@ public final class NotifyRouter {
         Bridge.NotifyPolicy policy = Bridge.getInstance().getNotifyPolicy();
         if (policy == Bridge.NotifyPolicy.OFF) return;
 
-        // Phase 2: play custom sound when policy == SOUND and URI is configured.
-        // For now falls back to vibration (Phase 1).
         if (policy == Bridge.NotifyPolicy.SOUND) {
-            String uriStr = Bridge.getInstance().getCustomSound();
-            if (uriStr != null && !uriStr.isEmpty()) {
-                try {
-                    android.media.MediaPlayer mp = new android.media.MediaPlayer();
-                    mp.setDataSource(ctx, Uri.parse(uriStr));
-                    mp.setAudioStreamType(AudioManager.STREAM_NOTIFICATION);
-                    mp.setOnCompletionListener(player -> {
-                        sOurSound = false;
-                        player.release();
-                    });
-                    mp.prepare();
-                    sOurSound = true;
-                    mp.start();
-                    Log.i(TAG, "[NR] fireAlert SOUND uri=" + uriStr);
-                    return;
-                } catch (Throwable t) {
-                    Log.w(TAG, "[NR] fireAlert SOUND err, fallback vib: " + t);
-                }
-            }
-            // No custom sound configured → fall through to vibration
+            if (doSound(ctx, type, Bridge.getInstance().getCustomSound())) return;
         }
 
         // VIBRATE (or SOUND fallback)
@@ -207,16 +186,66 @@ public final class NotifyRouter {
      * Bridge.getNotifyPolicy() read. The :push caller resolves the policy via
      * Bridge.readPolicyCrossProcess(ctx) and passes it here.
      *
-     * OFF → nothing. VIBRATE → vibrate. SOUND is treated as VIBRATE in :push v1
-     * (custom ringtone is a placeholder "功能更新中" and needs the main-process
-     * MediaPlayer path; :push never rings to avoid exposure).
+     * OFF → nothing. VIBRATE → vibrate. SOUND → default notification sound.
      */
     public static void fireAlertForPolicy(android.content.Context ctx, EventType type,
                                           Bridge.NotifyPolicy policy) {
         if (ctx == null || policy == Bridge.NotifyPolicy.OFF) return;
+        if (type == EventType.MSG && policy == Bridge.NotifyPolicy.SOUND) {
+            if (doSound(ctx, type, "")) return;
+        }
         long[] pattern = (type == EventType.CALL || type == EventType.HANGUP)
                 ? VIB_CALL : VIB_MSG;
         doVibrate(ctx, pattern, type, policy);
+    }
+
+    private static boolean doSound(android.content.Context ctx, EventType type, String customUri) {
+        Uri uri = null;
+        try {
+            String raw = customUri != null ? customUri.trim() : "";
+            uri = raw.isEmpty() ? RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION) : Uri.parse(raw);
+            if (uri == null) return false;
+
+            releaseSoundPlayer();
+            android.media.Ringtone ringtone = RingtoneManager.getRingtone(ctx.getApplicationContext(), uri);
+            if (ringtone == null) return false;
+            sRingtone = ringtone;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                ringtone.setAudioAttributes(new AudioAttributes.Builder()
+                        // Hidden-friend message sound must be audible even when WeChat is backgrounded.
+                        // USAGE_NOTIFICATION can be suppressed by OEM notification policy; ALARM matches
+                        // the vibration path's "owner alert" reliability.
+                        .setUsage(AudioAttributes.USAGE_ALARM)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build());
+            }
+            sOurSound = true;
+            ringtone.play();
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(
+                    () -> releaseSoundPlayer(ringtone), 1800);
+            Log.i(TAG, "[NR] fireAlert SOUND type=" + type + " uri=" + uri);
+            return true;
+        } catch (Throwable t) {
+            sOurSound = false;
+            releaseSoundPlayer();
+            Log.w(TAG, "[NR] fireAlert SOUND err uri=" + uri + ", fallback vib: " + t);
+            return false;
+        }
+    }
+
+    private static synchronized void releaseSoundPlayer() {
+        releaseSoundPlayer(sRingtone);
+    }
+
+    private static synchronized void releaseSoundPlayer(android.media.Ringtone player) {
+        if (player == null) return;
+        try {
+            player.stop();
+        } catch (Throwable ignored) {}
+        if (sRingtone == player) {
+            sRingtone = null;
+            sOurSound = false;
+        }
     }
 
     /**
