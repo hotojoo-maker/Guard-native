@@ -67,7 +67,7 @@ src/main/java/com/ghost/assist/moduleD/ConvFilter.java      会话过滤
 src/main/java/com/ghost/assist/moduleD/ContactFilter.java   通讯录过滤
 src/main/java/com/ghost/assist/moduleC/PushFilter.java      推送
 src/main/java/com/ghost/assist/ModuleMain.java              主入口
-src/main/cpp/**                                              所有 C++（含 libguardcore.so）
+native_core/**                                              所有 C++（含 libguardcore.so）
 build.gradle / settings.gradle / CMakeLists.txt              构建配置
 ```
 

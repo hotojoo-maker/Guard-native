@@ -1,5 +1,5 @@
 ---
-name: guard-execute_执行
+name: guard-execute-one_单任务执行
 description: Guard Native 执行——写代码/跑脚本/设备调试/单个 P 任务。从 TASK_BOARD 领到 P 任务后立即用这个 skill。调试时必须与用户交互，禁止盲猜。
 ---
 

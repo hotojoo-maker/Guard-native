@@ -42,7 +42,8 @@ W4  离线资料库采集 (P18)           本轮跳过（不阻塞当前 v1）
 ### P2 — native_core Batch 1 装机
 - **P_NC1** 🟡 编译/接入完成，**待 `[native] BATCH1_VERIFY PASS` 装机日志**
 
-### P3 — v1 收尾新增（2026-06-08 应用户要求拉入 v1，另行排队）
+### P3 — ~~v1 收尾新增~~ → **移出 v1，下一版再排**（2026-06-10 用户拍板）
+> 原 2026-06-08 拉入 v1；**2026-06-10 用户决定：§6a / C5 / E3 三项全部推迟到下一版（v1.1/v2）再排，v1 收口不含这三项。** 下方保留资料备查。
 - **§6a 朋友圈"仅可见分组"图标隐藏** ⬜
   - 竞品 8.0.66 锚点 `MainEntry.hookSnsGroup → UserControll.hookSnsGroup → isHideGroup`
   - 8.0.71 视图层 hook 点未查（boolean 返回类候选 / SnsObject item View 渲染层可见性候选）
@@ -57,6 +58,13 @@ W4  离线资料库采集 (P18)           本轮跳过（不阻塞当前 v1）
   - **金融敏感**：接入前必走 `/guard-auth-review` 合规预审，产出告知文案 + 截屏水印 + kill switch
   - 详见 `PROTECTION_MAP.md` §9b E3 行
   - 反 frida 风险：F-37 钱包页杀进程已实证，必须用 LSPosed + 静态 smali（禁 frida 进支付域）
+
+### P3.5 — 下一版隐私覆盖缺口（2026-06-10 用户报告）
+- **朋友圈发布「可见范围」选人列表密友未隐藏** ⬜（归下一版）
+  - 现象：发朋友圈 →「谁可以看」→ 部分可见 / 不给谁看 → 选标签 / 选好友 列表里，密友（hidden wxid）仍出现
+  - 新 hook 点待逆向：朋友圈发布可见范围的好友 / 标签选择列表（jadx + Frida 定位渲染层 / 数据层）→ 按 hidden wxid 过滤
+  - 性质：隐私一致性缺口（通讯录主列表 ContactFilter 已隐藏，此入口遗漏 → 密友在选人界面暴露）
+  - 存储：复用现有 hidden wxid 名单，无需新增字段
 
 ### P4 — 待复现 bug
 - **P_CF2** ⬜ 会话列表越界崩溃（与 P_PF2 来电拦截重构相关，详见 `docs/P22_PushFilter_VoIP.md`）

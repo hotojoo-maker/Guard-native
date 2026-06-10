@@ -156,10 +156,13 @@ W4 P18        ─→ 本轮跳过；正式发布门控再补 KPI
   P18  空白 LSPosed KPI 基线（本轮跳过；正式发布门控再补）
   P22  普通消息通知 + 铃声功能（主拦截/来电/未读已收口；完整提醒体验转 v1.1）
 
-⬜ v1 收尾新增（应用户要求拉入 v1，2026-06-08 派出）
+⏸️ v1 收尾新增 → 移出 v1，下一版再排（2026-06-10 用户拍板：§6a/C5/E3 推迟 v1.1/v2，v1 收口不含这三项）
   §6a  朋友圈"仅可见分组"图标隐藏（竞品 8.0.66 锚点已知；8.0.71 视图层 hook 点待重查；moments_visibility_crawler.js 已就绪）
   C5   语音转发（原 v2，现纳入 v1；竞品锚点 MainEntry.hookTransFlag → VipPreference.getTransVoiceMsg；np.protect 加固层 8.0.66 jadx 失败，8.0.71 需重攻；难度 ⭐⭐⭐⭐）
   E3   修改余额 UI 层（金融敏感；用户决定走 UI 层方向，b=用户自设假数字 UI 显示；接入前必走 /guard-auth-review 合规预审；发版门控见 PROTECTION_MAP §9b）
+
+🆕 下一版隐私覆盖缺口（2026-06-10 用户报告）
+  D-SNS-VIS  发朋友圈「谁可以看 → 部分可见/不给谁看」选标签/选好友 列表，密友未隐藏；新 hook 点待逆向 → 按 hidden wxid 过滤；性质=隐私一致性缺口（通讯录主列表已隐藏，此入口遗漏 → 密友在选人界面暴露）
 
 🟡 v1 收尾（阶段 ② 替换/加密预热）
   P24  docs/classmap/v8071.yaml + tools/check_classmap.ps1
