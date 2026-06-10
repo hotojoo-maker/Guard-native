@@ -9,7 +9,8 @@ import com.ghost.assist.core.AuthManager;
 import com.ghost.assist.core.Bridge;
 import com.ghost.assist.core.InterceptCounter;
 import com.ghost.assist.core.NativeBridge;
-import com.ghost.assist.core.PiracyNotice;
+import com.ghost.assist.core.RiskPromptController;
+import com.ghost.assist.core.RiskState;
 import com.ghost.assist.core.StateMachine;
 import com.ghost.assist.debug.DebugServer;
 import com.ghost.assist.debug.OverlayWindow;
@@ -142,15 +143,19 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         // 6. Restore state from persistence
         StateMachine.getInstance().restoreState();
 
-        // 6.5. P4-1: auth evaluate (wxid + device) — wires the previously-dead
-        //      AuthManager + PiracyNotice into the live path.
+        // 6.5. P4-1 + P1F: auth evaluate (wxid + device) → RiskState (唯一风险出口)
+        //      → RiskPromptController (唯一弹窗)。
         //      v1: RECORD ONLY, NO gating — NO_LICENSE / MISMATCH still pass
-        //      (GUARD_GATE_TRUTH §4). PiracyNotice only fires on AUTH_TAMPERED.
+        //      (GUARD_GATE_TRUTH §4)。RiskGate 是与 isActive() 三层【并联】的第四道门，
+        //      本段只「评估 + 记录 + 决定弹不弹」，绝不改 isActive、不关功能、不清数据。
+        //      弹窗只在 RiskState.shouldFunnel()（确认篡改超影子期）时由 RiskPromptController 决定。
         try {
             int authResult = AuthManager.evaluate(app);
             NativeBridge.setAuthState(authResult);
             Log.i(TAG, "[auth] evaluate=" + authResult + " (v1 record-only, not gating)");
-            PiracyNotice.showIfTampered(app, NativeBridge.getAuthState());
+            RiskState.Level riskLevel = RiskState.evaluate(app);
+            Log.i(TAG, "[risk] level=" + riskLevel.label + " (v1 record-only, not gating)");
+            RiskPromptController.maybeShow(app, "cold-start");
         } catch (Throwable t) {
             Log.e(TAG, "[auth] wire crash: " + t);
         }
