@@ -188,6 +188,7 @@
 | D1  | 密友帖整条隐藏 | ✅   | L0v2 `addAll(na4.b)` + `la4.p.field_userName` 直读（fallback；h1() null miss，F-31） |
 | D2  | 密友点赞不显示 | ✅   | L0v4 `LinkedList.add` → `z15.e56.d` 阻断 |
 | D3  | 密友评论不显示 | ✅   | 同 D2 + `getCommentList()` after 过滤 |
+| M6a | 自己「仅可见分组」图标隐藏 | ✅ | view 层 `ViewStub.inflate` + `OnGlobalLayout` 扫 id=`pt`(0x7f090304)→GONE；**时间线/详情页 ✅ L1**（`[MGI] pt GONE` 2026-06-10）。个人相册页=Flutter(`MMFlutterViewActivity` 整页 texture，无原生 pt)→view hook 不可达，v1 不做(D-决策 A)。详见权威 §6a |
 
 
 **铁律**：D 模块默认全部 ON，傻瓜式安全。

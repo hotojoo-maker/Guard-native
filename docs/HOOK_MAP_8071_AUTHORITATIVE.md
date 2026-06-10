@@ -128,13 +128,14 @@
 
 | 项 | 内容 |
 |------|------|
-| **8.0.71 状态** | ❌ 未实装 |
-| **竞品锚点（8.0.66）** | `MainEntry.hookSnsGroup()` → `UserControll.hookSnsGroup()` → `isHideGroup()` 检查 |
-| **目标** | 朋友圈条目右下角的"仅可见分组"图标隐藏 |
-| **存储** | MMKV: `hide_group`（boolean） |
-| **8.0.71 ⚠️ 缺** | 当前 hook 点（竞品是 boolean 返回，需重查 8.0.71 朋友圈视图层调用栈） |
-| **推荐下一步** | dynamic_crawler 跑朋友圈分组发布场景（需先写 `moments_crawler.js`） |
-| **来源** | `HOOK_IMPLEMENTATION_ANALYSIS.md` §2.4 hookSnsGroup |
+| **8.0.71 状态** | ✅ 时间线(ImproveSnsTimelineUI) + 详情页(SnsCommentDetailUI) L1 装机（2026-06-10）；个人相册页 = Flutter，v1 不做（见下「相册页边界」） |
+| **目标** | 自己看自己朋友圈时，受限帖（仅可见分组/部分可见）右下角那个图标隐藏（自己端视觉过滤，不影响别人看） |
+| **磁盘实证（dumpsys）** | `03_execute_执行任务/M6a_MomentsGroupIcon/logs/gi_dump.txt` L1775-1784（ImproveSnsTimelineUI）：item 根 `ha4.q3/k4/s2`(app:id/n9a) > 正文 `n95` > ConstraintLayout > 元信息行 `n93` > LinearLayout > [时间, ViewStub×2, **pt**, pi]；`pt`=#7f090304 app:id/pt = 可见分组图标(WeImageView) ← 藏；`pi`=#7f0902f8 app:id/pi = 删除 ← 不碰。普通帖该行只有折叠 ViewStub，受限帖才把 ViewStub inflate 成 pt/pi |
+| **实现（MomentsGroupIconFilter）** | ① `ViewStub.inflate()` afterHook：图标首次 inflate 即 GONE（低频、无闪烁）；② `Activity.onResume`(类名含 `plugin.sns`) 立即扫 decorView + 挂 `ViewTreeObserver.OnGlobalLayout` 监听、节流 60ms 重扫 → 滚动/异步渲染出新帖即藏。两层都只对 `getResourceEntryName==pt` 调 `setVisibility(GONE)`，pi 的 id 不同天然不命中 |
+| **开关** | `AppConfig.isMomentsGroupIconEnabled()`（MMKV `mgi`，默认开；纯开关驱动，**独立于 HIDDEN 状态**——外观偏好，不属密友隐私链）；SettingsEntry 行「隐藏朋友圈分组图标」 |
+| **绕过的雷** | 不走 `onBindViewHolder`（F-32x 实证 8.0.71 朋友圈 RV onBindViewHolder 0 命中）；不全局 hook `View.setVisibility`（铁律 H1） |
+| **L1 证据** | `[MGI] pt GONE (cls=...WeImageView)` + `[MGI] resolved pt id=0x7f090304`（2026-06-10 23:43:52） |
+| **相册页边界（L1 实证，`M6a/logs/gi_album.txt` 2026-06-10）** | 个人相册页置顶 Activity = `com.tencent.mm.plugin.flutter.ui.MMFlutterViewActivity`（mResumed=true），整页仅一个 `io.flutter.embedding.android.FlutterView → FlutterTextureView`(1080×2296)，**内部零原生子 View**（无 pt/pi/WeImageView）。图标由 Flutter 画在 texture 上 → 安卓 view hook 物理够不到。**v1 决策 A：相册页不做**（次要入口；走数据层或硬刚 Flutter 均触雷区/铁律 23，不划算） |
 
 ### 6b. 通讯录"标签"隐藏
 
@@ -286,7 +287,7 @@
 
 | # | 功能 | 缺什么 |
 |:-:|------|------|
-| 6a | 朋友圈"分组可见"图标 | 8.0.71 视图层 hook 点（需写 `moments_crawler.js` 跑朋友圈分组发布） |
+| 6a | 朋友圈"仅可见分组"图标 | ✅ 时间线+详情页 L1 装机（2026-06-10，view 层 ViewStub.inflate+OnGlobalLayout 扫 pt→GONE）；个人相册页=Flutter，v1 不做 → 详见 §6a |
 | 1 | 伪装订位 | ✅ pz0.h.c 注入点已验（2026-06-07，PoC 跳点成功）→ 详见 §一.1 |
 
 ### v1 不做（1 项）

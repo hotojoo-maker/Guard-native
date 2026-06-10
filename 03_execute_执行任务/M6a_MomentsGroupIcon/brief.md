@@ -3,7 +3,7 @@
 > 编号：M6a（对齐权威 §6a；M=Moments）
 > 阶段归属：v1 收尾（应用户要求 2026-06-08 拉入 v1）
 > 底座：微信 8.0.71，Android 11，LSPosed
-> 当前状态：⬜ 阶段 A 调研中
+> 当前状态：✅ 交付（2026-06-10）——时间线 + 详情页 L1 装机；个人相册页 = Flutter，v1 不做（决策 A）
 
 ---
 
@@ -25,10 +25,15 @@
 
 | # | 验收点 | 复测 | 结果 |
 |:-:|------|------|:--:|
-| 1 | 开关关 → 图标正常显示 | 关开关 → 朋友圈滑到自己发的"仅 X 可见"条目 | ⬜ |
-| 2 | 开关开 → 图标消失 | 开开关 → 同上 → 看右下角无图标 | ⬜ |
-| 3 | 关闭 → 立即复原 | 再关开关 → 滑回去看图标回来 | ⬜ |
-| 4 | 不影响别人头像/点赞/评论等其他元素 | 同条目其余 View 正常 | ⬜ |
+| 1 | 开关关 → 图标正常显示 | 关开关 → 朋友圈滑到自己发的"仅 X 可见"条目 | ✅ 时间线/详情页 |
+| 2 | 开关开 → 图标消失 | 开开关 → 同上 → 看右下角无图标 | ✅ 时间线/详情页（L1 `[MGI] pt GONE`） |
+| 3 | 关闭 → 立即复原 | 再关开关 → 滑回去看图标回来 | ✅ 开关驱动 |
+| 4 | 不影响别人头像/点赞/评论等其他元素 | 同条目其余 View 正常 | ✅ 只命中 id=pt，pi/其他不动 |
+| 5 | 个人相册页 | 进自己相册 → 看受限帖图标 | ⛔ **v1 不做**：页面是 Flutter（见下决策 A） |
+
+> **实装结论（2026-06-10）**：view 层方案 = `MomentsGroupIconFilter`（`ViewStub.inflate` + `Activity.onResume`/`OnGlobalLayout` 扫 `id=pt`→GONE，仅匹配 `plugin.sns` 页）。原 brief 的 `onBindViewHolder` 探针方案**已弃用**（F-32x：8.0.71 朋友圈 RV onBindViewHolder 0 命中）。
+
+> **决策 A — 个人相册页不做（2026-06-10，L1 实证 `logs/gi_album.txt`）**：相册页置顶 Activity = `com.tencent.mm.plugin.flutter.ui.MMFlutterViewActivity`，整页只有一个 `FlutterView → FlutterTextureView`(1080×2296)、内部零原生子 View（无 `pt`/`pi`/WeImageView），图标由 Flutter 画在 texture 上 → 安卓 view hook 物理够不到。走数据层(B)未知雷区大、硬刚 Flutter(C) 触铁律 23 高暴露 → v1 收口阶段次要入口，**接受现状不做**。
 
 ## 四、调研路径（D-015 阶段 ①）
 

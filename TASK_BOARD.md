@@ -7,7 +7,8 @@
 >
 > 接手前看：[`docs/README.md`](./docs/README.md) + [`CLAUDE.md`](./CLAUDE.md) + [`HOOKMAP.md`](./HOOKMAP.md)
 > 防破解/防盗版总账（含上线前门控）：[`PROTECTION_MAP.md`](./PROTECTION_MAP.md)
-> 更新时间：2026-06-09（v1 收口口径：P21 主线收尾；P18 基线本轮跳过；P22 普通消息通知/铃声转 v1.1）
+> **账实唯一权威（编号↔任务↔状态↔文件夹）：[`PROJECT_INDEX.md`](./PROJECT_INDEX.md) §零 功能总清单**。本看板若与之冲突，以 §零 为准。重复编号 **P25 / P26 / P26C**（同号两义）已在 §零 摊开，下方相应处已标注。
+> 更新时间：2026-06-10（账实对齐：补 PROJECT_INDEX §零 总清单指引；标注 P25/P26/P26C 重复编号；清理无文档临时目录 P20C_HVRecovery）
 > **当前底座：微信 8.0.71**（D-014）
 > 维护人：guard-dispatch_总调度
 
@@ -128,6 +129,8 @@ W4 P18        ─→ 本轮跳过；正式发布门控再补 KPI
 | **E2** | **伪装订位（全局伪造定位）** | ✅ | 2026-06-07 装机验证（提前于 v2/v3 应用户要求）：`moduleE/FakeLocation` hook `pz0.h.c` 注入伪经纬度 → 发位置/共享/朋友圈/附近的人全局生效；设置页「特色功能」复用原生选点页设置坐标（talker=filehelper 防误发）；关闭复原已验。详见权威 §一.1。|
 
 > 编号从 P15 起，是接续 apk2 项目 QE66 的 P14（保持跨项目可追溯）。`P_CV*` 系列与 `P_NC*` 同属语义号，不占 v2 路线图 P26–P30 / v3 P31–P33 编号位。
+>
+> **账实说明（2026-06-10 对齐）**：本表部分编号**无独立任务目录**，实体在别处——`P_NC1`→`07_archive_归档/P1A…P1F`；`P_NF1~4`/`P_PF2`→`03_execute_执行任务/P22_PushFilter`；`A2/A3`→`P_IMPORT` + 权威 §3/§4；`P24`→`docs/classmap/`。完整「编号↔文件夹」对照见 [`PROJECT_INDEX.md`](./PROJECT_INDEX.md) §零。
 
 ---
 
@@ -168,9 +171,14 @@ W4 P18        ─→ 本轮跳过；正式发布门控再补 KPI
   P24  docs/classmap/v8071.yaml + tools/check_classmap.ps1
        人看的混淆类名字典 + 一键校验代码硬编码 ↔ 字典是否同步
   P25  字符串/类名 seed 化流水线（自动出每客户独立 seed 包）
+       ⚠️ 编号撞车：P25 已被归档任务「B2 触发器误触发修复」占用（07_archive_归档/P25_B2触发键修复）。
+          本计划项以后请用名字「seed 化流水线」称呼，不要再用 P25 号。详见 PROJECT_INDEX §零 重复编号表。
 
 ⬜ v2（阶段 ②.5 + ③ + ④）
   P26  UI 优化：调试页 → 注入到微信「设置」顶部的用户设置页
+       ⚠️ 编号撞车：P26 已被归档任务「好友 V 态热切 fresh-item」占用（07_archive_归档/P26_会话场景freshwarm）；
+          且 P26C 在 03_execute 是「隐藏指定通讯录标签」、与旧写法「搜索高亮」也撞。本 v2 计划项以后请用名字
+          「v2 设置页 UI」称呼，不要再用 P26 号。详见 PROJECT_INDEX §零 重复编号表。
   P27  LicenseGate 离线授权（embedded_seed + AES-GCM + License Key）
   P28  ClassMap 加密化（classmap.enc，License Key 解密）
   P29  miyou-server 接入：cs_url kill_switch + danger_notice + heartbeat
