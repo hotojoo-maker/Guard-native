@@ -183,7 +183,11 @@ public class DebugServer {
             + "\"leaseValid\":null,"      // Phase 1: heartbeat lease
             + "\"graceRemainHours\":-1,"  // Phase 1: from GRACE_* ladder
             + "\"decryptOk\":null,"       // Phase 1: SO decrypt_config()
-            + "\"tampered\":false"        // Phase 2: honeypot tripwire flag
+            + "\"tampered\":false,"       // Phase 2: honeypot tripwire flag
+            // ── P1F Java 防护层（两闸 + 风险等级）：复用本端点，不新建（PROTECTION_MAP §10.1 不碎拆）──
+            + "\"jrisk\":\"" + com.ghost.assist.core.RiskState.currentLevel().label + "\","
+            + "\"funnel\":" + com.ghost.assist.core.RiskState.shouldFunnel() + ","
+            + "\"kill\":" + com.ghost.assist.core.AppConfig.getInstance().isKillSwitch()
             + "}";
         return jsonResponse(json);
     }

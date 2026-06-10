@@ -450,12 +450,12 @@ GuardRuntime.getActiveRegistry()
 5. ✅ Phase 1C Encrypted Registry：`registry_8071.json` 单一源 → `registry_cipher.inc`，SO 解密 registry，失败散沙；搜索收敛 `search.gateway`；另含 1D-local 派生 key（去明文 key 常量）+ A-step2 证书绑定。（PHASE1C/1D_VERIFY PASS）
 6. 🟡 **Phase 1C.5 Filter 读 registry（消明文双份，任务名 `P1E_Filter读Registry`）**：让 ContactFilter/MomentsFilter/ConvFilter 真从 registry 读类名（取件口 `GuardRuntime.getRecipe`+`nativeGetRecipe`），conv.list 漂移债已结案；现为 registry+fallback 双份，**删 fallback 未做**（每个 Filter 删前要先核账 registry 完整性）。SearchFilter 暂未迁。⚠️ 注意：这里的任务名 P1E ≠ 下面第 8 条的 Phase 1E。
 7. ⬜ Phase 1D-server 服务器心跳：miyou-server 下发 signed envelope + encrypted packs，key 派生折入服务器短命材料 + device/customer 绑定。（真锁核心，未做）
-8. ⬜ Phase 1E LeaseClock + RiskState：断网、时间异常、蜜罐影子期、打开即弹、冷却策略。（未做）
+8. 🟡 **Phase 1E LeaseClock + RiskState（P1F 本地一刀 + 两闸，2026-06-10 装机 PASS）**：已落地 `LeaseClock` 骨架（服务器授时外推 + 防回拨，v1 无心跳默认 CLEAN）+ `RiskState` 唯一 L0~L6 等级机（**record-only**，与 isActive 并联、放行不收紧）+ `RiskPromptController` 唯一弹窗（仅 FUNNEL 弹 + 冷却）+ kill↔funnel 拆两闸（kill 已从篡改链剥离）。**仍未做**：服务器授时真数据源、真正的散沙降级后果、蜜罐绊线真检测（随 Phase 1D-server）。
 
 ## 当前 SO 基线与工作量
 
 - 当前 `libguardcore.so`：在 Phase 0/Batch1 骨架（加载/JNI/进程角色/隐藏状态机/wxid 匹配/轻量包名/config_version）之上，**已加** `decrypt_config()` + AES-GCM + encrypted registry + 派生 key（去明文 key 常量）+ 证书绑定 + `registry_get_recipe`（取件口）。
-- **仍不是安全官标准真锁**：`nativeIsAuthorized()` / `nativeGetAuthState()` 仍是占位（`StateMachine.isVipAuthorized()` 也是 `return true` stub），**缺**：签名 envelope 验真、服务器短命材料折入 key、LeaseClock、完整 RiskLevel/RiskState。对外不得宣称真锁完成。
+- **仍不是安全官标准真锁**：`nativeIsAuthorized()` / `nativeGetAuthState()` 仍是占位（`StateMachine.isVipAuthorized()` 也是 `return true` stub），**缺**：签名 envelope 验真、服务器短命材料折入 key、服务器授时真数据源、真正散沙降级（`LeaseClock` 骨架 + `RiskState` record-only 已 P1F 落地，但服务器侧真锁后果未接）。对外不得宣称真锁完成。
 - 最低可用真锁：约 10 到 18 人天。范围：AES-GCM 测试向量、`decrypt_config()`、3 到 5 个核心 registry 抽取、`EncryptedConfigLoader`、基础 signed envelope、解不开散沙。
 - 上线标准：约 20 到 35 人天。范围：验签、防重放、device/customer/package/cert 绑定、LeaseClock、RiskState、蜜罐影子期、正版恢复闭环、release 混淆和装机回归。
 - 最小可用版：300 到 500 行 C++。
@@ -470,7 +470,8 @@ SO 只管“验真 + 解密 + 关键风险信号”；弹窗、影子期倒计�
 - 已有：`decrypt_config()` AES-GCM 原型、固定测试向量、JNI 包装、`NativeBridge` 自测入口、失败 scatter。
 - 不要重写 SO、不重写 AES-GCM、不换 crypto 依赖；除非有明确编译失败、验收失败或安全缺陷证据。
 - **加密主线已推进到 P1E（Filter 读 registry，2026-06-09）**：1B 抽取 → 1C 加密 registry + search.gateway 收敛 → 1D-local 派生 key（去明文 key 常量）→ A-step2 证书绑定 → P1E 让 ContactFilter/MomentsFilter/ConvFilter 真从 registry 读类名（取件口 `GuardRuntime.getRecipe` + `nativeGetRecipe`）+ conv.list 漂移债结案；均装机 PHASE1A-1E PASS。
-- **真锁仍未做（最大的洞）**：服务器短命钥匙（Phase 1D-server）、`LeaseClock`、完整 `RiskState`、Ed25519 验签全部未做；`StateMachine.isVipAuthorized()` 仍是 `return true` 死桩。对外不得宣称真锁完成。
+- **P1F 两闸 + 风险骨架已落地（2026-06-10，装机 PASS）**：`LeaseClock` 骨架 + `RiskState`（record-only L0~L6）+ `RiskPromptController`（唯一弹窗）+ kill↔funnel 拆两闸；web 驾驶舱同步显示 风险等级/停用闸/引流。详见 `03_execute_执行任务/P1F_十字防护整合设计/`（DESIGN + worklog）。
+- **真锁仍未做（最大的洞）**：服务器短命钥匙（Phase 1D-server）、服务器授时真数据源、真正散沙降级、Ed25519 验签**仍未做**；`RiskState` 仍 record-only 不收紧（防误伤正版）；`StateMachine.isVipAuthorized()` 仍是 `return true` 死桩。对外不得宣称真锁完成。
 - 不接服务器、不改已验证 hook 回调体、不改 `isVipAuthorized()` stub（仍归授权检查官）。
 - 业务本体是“密友/密群隐藏 + 通知/红点/搜索/朋友圈等过滤链”，不是通用 DRM demo；registry 抽取必须服务这些已验收链路。
 - 安全官只维护安全/加密/DRM/风控路线；授权/状态机/模块边界仍归 `guard-auth-review_授权检查官`。不要把同一策略复制到授权检查官 skill。
@@ -493,7 +494,7 @@ SO 只管“验真 + 解密 + 关键风险信号”；弹窗、影子期倒计�
 
 3. 发布前安全摘要
    - 必须写清：当前做到哪一阶段、哪些 PASS、哪些只是占位、哪些不能对外宣称已完成。
-   - 对当前加密主线的发布口径：P1E = AES-GCM encrypted registry + Filter 真读 registry（Contact/Moments/Conv）+ 派生 key + 证书绑定，可作为 v1 最小发布防护；**服务器真锁（Phase 1D-server）/ `LeaseClock` / 完整 `RiskState` / Ed25519 验签 未完成，`isVipAuthorized()` 仍是 stub，registry+fallback 双份明文未完全消除。**
+   - 对当前加密主线的发布口径：P1E = AES-GCM encrypted registry + Filter 真读 registry（Contact/Moments/Conv）+ 派生 key + 证书绑定；**P1F**（2026-06-10）= `LeaseClock` 骨架 + `RiskState` record-only L0~L6 + `RiskPromptController` 唯一弹窗 + kill↔funnel 拆两闸（装机 PASS）—— 一起作为 v1 最小发布防护；**服务器真锁（Phase 1D-server）/ 服务器授时真数据源 / 真正散沙降级 / Ed25519 验签 未完成，`isVipAuthorized()` 仍是 stub，`RiskState` 仍 record-only 不收紧，registry+fallback 双份明文未完全消除。**
 
 当前 P1E 收口口径（2026-06-09）：
 

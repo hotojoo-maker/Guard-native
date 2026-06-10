@@ -151,6 +151,9 @@ input[type=text]:focus,select:focus{outline:none;border-color:var(--accent)}
         <div style="display:flex;justify-content:space-between"><span class="label">授权</span><span id="cp-auth" style="font-size:11px;font-weight:bold">--</span></div>
         <div style="display:flex;justify-content:space-between"><span class="label">防篡改</span><span id="cp-risk" style="font-size:11px">--</span></div>
         <div style="display:flex;justify-content:space-between"><span class="label">配方</span><span id="cp-cfg" style="font-size:11px;color:#8f8">--</span></div>
+        <div style="display:flex;justify-content:space-between"><span class="label">风险等级</span><span id="cp-jrisk" style="font-size:11px">--</span></div>
+        <div style="display:flex;justify-content:space-between"><span class="label">停用闸</span><span id="cp-kill" style="font-size:11px">--</span></div>
+        <div style="display:flex;justify-content:space-between"><span class="label">引流</span><span id="cp-funnel" style="font-size:11px">--</span></div>
       </div>
     </div>
     <div style="margin-top:6px;display:flex;gap:10px;align-items:center;background:#0c0c0c;border:1px solid #222;border-radius:4px;padding:4px 6px">
@@ -1082,6 +1085,12 @@ async function pollCockpit() {
     if (rk) { rk.textContent = n.risk || '--'; rk.style.color = (n.risk && n.risk !== 'NONE') ? '#f44' : '#0f0'; }
     setText('cp-cfg', 'v' + (n.configVersion !== undefined ? n.configVersion : '?'));
     setText('cp-role', n.role || '--');
+    var jr = document.getElementById('cp-jrisk');
+    if (jr) { jr.textContent = n.jrisk || '--'; jr.style.color = (n.jrisk && n.jrisk !== '正常') ? '#fa4' : '#0f0'; }
+    var kl = document.getElementById('cp-kill');
+    if (kl) { kl.textContent = n.kill ? '停用 ⛔' : '关'; kl.style.color = n.kill ? '#f44' : '#666'; }
+    var fn = document.getElementById('cp-funnel');
+    if (fn) { fn.textContent = n.funnel ? '弹 ⚠' : '否'; fn.style.color = n.funnel ? '#f44' : '#666'; }
     var tp = document.getElementById('cp-tamper');
     if (tp) { tp.textContent = n.tampered ? '是 ⚠' : '否'; tp.style.color = n.tampered ? '#f44' : '#666'; }
     setText('cp-lease', (n.leaseValid === null || n.leaseValid === undefined) ? '待接入' : (n.leaseValid ? '有效' : '过期'));

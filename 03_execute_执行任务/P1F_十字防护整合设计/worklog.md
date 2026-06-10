@@ -187,3 +187,80 @@ RiskGate:  ✅（record-only，shouldFunnel 才弹，干净机不弹）  分层�
 - `configReady=true` + `[MF] v20 ready` + `state=隐藏` → registry 解密 + 原有 hook + 冷启动 HIDDEN（F-27）均正常，未受影响。
 - 未做：手机端 UI 滑动确认密友实际隐藏（结构上未碰任何 Filter，原功能不受影响）；funnel 弹窗真触发（需确认篡改，留 P1D-server）。
 
+---
+
+## B + C：钉文档 + kill↔funnel 拆两闸（接手 AI，2026-06-10）
+
+> 用户拍板：①「拆大动脉、不拆毛细血管」②「停用和引流」拆两个独立闸 ③ v1「够用就停」（A 删 fallback 缓做、真锁主体 Phase 1D-server 冻结）。落地顺序 B（钉文档）→ C（纯 Java 拆闸）。
+
+### B — 钉进 PROTECTION_MAP.md（防漂移，用户同意改 md）
+- 新增 `§10 P1F 防护收敛决定`：§10.1 大抽屉切分铁律（1 柜 / 5 包 / 3 出口 + 黑名单）·§10.2 kill↔funnel 拆两闸·§10.3 v1 够用就停节奏·§10.4 两种党两个蜜罐现状+待办。
+- §5 蜜罐节加一句指针 → §10.4。
+
+### C — 改前会签（安全官 + 授权检查官，自审）
+- 动 `RiskState.isConfirmedTamper()`（剥 kill）+ `ModuleMain §5/§6.5` 注释；**不动** isActive() 三层、isVipAuthorized() stub、任何 Filter/SO/已验证 hook。结论 PASS。
+
+### C — 改动（2 文件，纯 Java）
+- `RiskState.java`：`isConfirmedTamper()` 删除 `isKillSwitch()` 分支 → kill 不再是引流/篡改信号；篡改信号仅留 SO `RISK_*`（包名/配置/盗版）+ `AUTH_TAMPERED`。更新 docblock 注2。
+- `ModuleMain.java`：§5 注释标「停用闸（最高优先级，命中 return 跳过全部 hook）」；§6.5 注释标「引流闸（funnel，只看 shouldFunnel）」。**代码逻辑未动**——§5 停用、§6.5 引流本就是两根线，剥 kill 后语义自洽。
+
+### C — 两闸最终语义
+- 停用闸 `kill_switch`：`ModuleMain §5`，kill=true → Toast「已停用，等待更新」+ return，跳过全部 hook。最高优先级。
+- 引流闸 `funnel`：`ModuleMain §6.5`，`RiskState.shouldFunnel()`（确认篡改超影子期 / 重复篡改）→ `RiskPromptController` 弹窗 → SHOP_URL，点确定仍可用 + 30s 冷却。
+- 两者独立：kill 命中根本到不了 §6.5；funnel 不再依赖 kill。
+
+### C — 改后审查
+- `ReadLints`：RiskState / ModuleMain 无错。
+- isActive() 三层未动；isVipAuthorized() 仍 stub；未碰 Filter/SO；record-only 不关功能、不清数据。结论 **PASS**。
+
+### 待办（未做，诚实留痕）
+- ⬜ 编译 + 装机验收：抓 logcat 确认正常路径 `[init] killSwitch=false` 不停用 + `[risk] evaluate level=正常` 不弹 + 不崩；本地把 `kl` 置 true 时**只「停用」不再走引流**。日志直采后才标 L1（当前 L4）。
+- ⬜ A 删 Filter fallback（缓）；Phase 1D-server 真锁（冻结）。
+
+### web 脚手架驾驶舱同步（接手 AI，2026-06-10）
+- 现状发现：`/api/native` 旧只暴露 SO native 层（authState / native risk / 配方），**Java 两闸 + RiskState 等级未同步到 web**。
+- 复用同一端点（不新建，PROTECTION_MAP §10.1 不碎拆）：`DebugServer.apiNative()` 补 `jrisk`（`RiskState.currentLevel().label`）、`funnel`（`shouldFunnel()`）、`kill`（`isKillSwitch()`）。
+- `assets/debug/index.html` 驾驶舱加 3 行：风险等级 / 停用闸 / 引流（`pollCockpit` 渲染）。
+- 仅 DEV 面板（release DebugServer 关），STATUS-ONLY 不暴露 key/config/lease，纯展示零业务风险；ReadLints 无错。
+- ✅ 已装机（见下「装机验收 PASS」）；驾驶舱三行待用户肉眼确认。
+
+---
+
+## 装机验收 PASS（L1，2026-06-10 18:27，设备 609b4b18 / 微信 8.0.71）
+
+- 编译 `BUILD SUCCESSFUL`；`adb install -r` Success（固定签名，未卸载）。
+- 冷启动 logcat 原文（关键行，pid=17344 主进程）：
+  - `[init] pid=17344 proc=com.tencent.mm`
+  - `[native] configReady=true summary=schema=r8071_v1 ver=8.0.71 entries=4 [conv.list][moments.feed][contact.address][search.gateway]`
+  - `[init] killSwitch=false`
+  - `[auth] NO_LICENSE — not bound yet` / `[auth] evaluate=4 (v1 record-only, not gating)`
+  - `[risk] evaluate level=正常 (tamper=正常 offline=正常)` / `[risk] level=正常 (v1 record-only, not gating)`
+  - `[init] debug server started port=8080` / `[init] ready — state=隐藏`
+  - **无** `[risk] funnel prompt`（不弹）。
+- 判定（两闸 + record-only 坐实）：
+  - 停用闸 kill=false → 未停用；引流闸 shouldFunnel=false → 未弹；剥离 kill 后语义正确。
+  - RiskState/LeaseClock 活、CLEAN；registry 解密正常（entries=4）；冷启动 HIDDEN（F-27）。
+  - 过滤 hook（`CF:L4`/`PF:UNREADFIX`/`MF`）18:28 仍正常工作，主进程 17344 未崩 → 改动未伤已验证链路。
+- ⚠️ 同期 logcat 一条 `signal 6 (SIGABRT)`：完整 tombstone 核实为**系统进程 media.extractor（pid 6012, uid 1040）** 在 `libmmparser_lite.so` HEIFParser/Mpeg4File 解析媒体时崩溃，backtrace 全系统库，**与本模块零关系**（com.ghost.assist/guardcore 不在调用栈）；微信主进程未受影响。属系统库已知 bug，非本次改动引入。
+- 日志存档：`03_execute_执行任务/P1F_十字防护整合设计/logs/build.txt`（编译原文）。
+
+---
+
+## A（删 Filter fallback）探查核账 → 冻结（接手 AI，2026-06-10，用户拍板①）
+
+### A — 只读探查（L2，读码核实）
+- 读 `moduleD/{ConvFilter,MomentsFilter,ContactFilter}.java` 的 `recipe()`/`resolveRecipes()` + `core/GuardRuntime.java`/`EncryptedConfigLoader.java` + `native_core/registry_8071.json`。
+- 三 Filter 走 `getRecipe()` 的可覆盖字段 = 17 个：ConvFilter 3（mvvmlist_class/adapter_class/wxid_getters）+ MomentsFilter 8（item_friend/item_promo/adapter_class/wxid_field/inner_field/sns_getter/like_list/comment_list）+ ContactFilter 6（adapter_class/live_list/mvvmlist_class/item_class/contact_class/wxid_getter）。
+- 逐字对账：17 字段的代码 fallback 字面量与 `registry_8071.json` 对应项**完全一致**；`getRecipe()` 链 = `GuardRuntime → EncryptedConfigLoader → NativeBridge`，scatter/SO 缺失返回 `""`（fail-closed，注释明示 caller 须当「skip hook」）。
+- 装机实证（本 worklog「装机验收 PASS」）：`configReady=true`、`entries=4` 解密正常 → 正版机走 SO 值，不靠 fallback。
+
+### A — 三证核账结论
+- **能删但收益有限**：删 17 字面量后，每 Filter 仍余十几个 `final` 硬编码明文类名（registry 无项，删不掉），明文暴露面仅降约 20%。
+- **回归风险高**：删 fallback 后正版机 SO 解密一旦抖动（OTA/机型/binding）→ `configReady=false` → 17 锚点空 → 隐私 hook 静默失效、无兜底（铁律 29 / F-31 红线）。
+- **防护增益低**：`derive_registry_key()` 离线可推，删明文只挡静态 jadx、挡不住动态 dump；真锁＝服务器信封（Phase 1D-server，已冻结）。
+
+### A — 拍板：冻结（用户选①）
+- A 整体并入 v2「全字段 registry 化 + 服务器真锁」，v1 不动任何 Filter/SO（零代码改动）。
+- 钉文档：`PROTECTION_MAP §10.5` 记冻结决定 + 核账依据。
+- 本轮（B 钉文档 / C 拆两闸 / web 驾驶舱 / skill 更新 / 本核账）**未碰任何 Filter、SO、已验证 hook**。
+

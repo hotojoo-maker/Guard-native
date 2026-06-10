@@ -81,6 +81,7 @@
 
 - 诱饵让关键词党（搜 `is vip`）秒命中、上钩；真锁同一搜索**搜不到**。
 - **诚实边界**：蜜罐抓静态/关键词党（90%）；动态高手翻了诱饵发现没反应会去找真锁 —— 挡他靠服务器+SO+短命钥匙。绊线本身可被删，**最稳当「标记+溯源」用**。
+- **两种党两个蜜罐**（关键词党 vs 抓包党）的现状与待办 → 见 §10.4。
 
 ---
 
@@ -190,6 +191,64 @@
   - ❌ 不改后端余额（财付通/银行账户真实数据）
   - ❌ 不在转账/付款流程中注入假数据
   - ❌ 不做"自动按规则伪造"（必须用户每次手动设值）
+
+---
+
+## 10. P1F 防护收敛决定（2026-06-10，用户拍板）
+
+> 本节是 2026-06-10 与用户敲定的防护**切分铁律 + 节奏**，作为后续每一步改动的「当切分准绳」。设计全文见 `03_execute_执行任务/P1F_十字防护整合设计/DESIGN.md`；安全规则见安全官 skill。
+
+### 10.1 大抽屉切分铁律（粗粒度，禁碎拆）
+
+用户原话：「不要把配方拆太碎了，拆大动脉。」对齐安全官 skill「多层但不细碎，粗粒度能力包 + 少数关键出口」。
+
+- 全家 **1 个保险柜**：SO `libguardcore.so`（验真 + 解密 + 风险信号）；v1 不做多 SO 互校验。
+- **5 个能力包**（服务器下发，粗粒度）：`license_pack` / `registry_pack` / `risk_pack` / `watermark_pack` / `compat_pack`。
+- **3 个唯一出口**（业务全项目只准调这三句）：
+
+```text
+GuardRuntime.getRecipe(gateway, key)   // 取 hook 配方（解不开=""）
+RiskState.currentLevel()               // 取风险等级
+StateMachine.isActive()                // 取中央总闸
+```
+
+- **黑名单（碰到就停）**：每功能自造小配方/小网关/小授权；新功能 hook 类名另建 `xxx_pack`（只准往 `registry_pack` 补字段）；Java 侧散落 `decrypt_config`/schema/key/risk 分支；多份弹窗策略；遍地写 if 判风险。
+- registry 现就 **4 条大动脉**：`conv.list` / `moments.feed` / `contact.address` / `search.gateway`，不是每个小功能一条。删 fallback 时**整条核账整条删，不抠碎**。
+
+### 10.2 kill↔funnel 拆两个独立闸（拍板）
+
+旧实现把本地 `kill_switch` 当篡改信号塞进引流链，与「停用」语义打架。拍板拆成两根独立线：
+
+- **停用闸 `kill_switch`**：你主动停 / 服务器 kill=true → 跳过全部 hook + Toast「已停用，等待更新」（对齐 CLAUDE.md §十三）。**优先级最高**，`ModuleMain §5` 最先判，命中直接 return。
+- **引流闸 `funnel`**：确认篡改超影子期 / 断网超宽限 → `RiskPromptController` 弹窗引流 `zxmqq.shop`，点确定仍可用 + 短冷却。`ModuleMain §6.5` 独立线，只看 `RiskState.shouldFunnel()`，不再看 kill。
+- 落地动作（C 刀）：`RiskState.isConfirmedTamper()` 把 `isKillSwitch()` **剥离**（kill 归停用闸，不混进引流篡改链）。
+
+### 10.3 v1 节奏：够用就停（拍板）
+
+- 蓝图（十字防护全套）保留作路线图，别丢。
+- v1 只做轻的：**B 钉文档（本节）→ C 拆两闸（纯 Java）**。
+- **A 删 Filter fallback 缓做**：收益是兑现 registry 加密，但碰已验证 Filter，必须单独一刀 + 先 git 快照 + 逐条三证核账 + fail-closed + 装机回归。
+- **真锁主体 Phase 1D-server 冻结**：服务器短命钥匙 / Ed25519 验签 / LeaseClock 真数据源 / 远程 kill，等「真有客户 / 真有人来破」再启动（skill 估 20~35 人天，现在做属提前优化）。
+
+### 10.4 两种「党」两个蜜罐（现状 + 待办）
+
+| 攻击者 | 看什么 | 蜜罐 | 现状 |
+|---|---|---|---|
+| 关键词/静态党 | 反编译搜 `vip` 看代码 | 留亮假锁 `isVipAuthorized(){return true;}`（真锁 `decrypt_config` 无名搜不到） | ✅ 假锁在（`StateMachine.java:94`，proguard 留亮）；⬜ 绊线半截：改假锁 SO 察觉不到，`// [GUARD-TRAP]` 注释 +「isVip 被 hook」检测未接 |
+| 抓包党 | 装证书 MITM 看网络流量 | 服务器信封故意摆明牌假字段 `isVip/viptime/endtime` 当诱饵（真值锁在加密 registry + 短命租约） | ⬜ 没有——客户端现无任何自有网络流量（全代码无 HTTP/Socket），归 Phase 1D-server |
+
+两蜜罐的「接上 / 上线」均登记为 **Phase 1D-server 待办**（与真锁同期做）。
+
+### 10.5 A（删 Filter 明文 fallback）—— 探查核账后冻结到 v2（2026-06-10，用户拍板①）
+
+**结论：A 不在 v1 做，整体并入 v2「全字段 registry 化 + 服务器真锁」。** 只读探查（L2）核账依据：
+
+- **能删的仅 17 个字段**（走 `GuardRuntime.getRecipe()` 的可覆盖锚点）：ConvFilter 3 + MomentsFilter 8 + ContactFilter 6，已逐字对账与 `native_core/registry_8071.json` 完全一致；本轮装机实测 `configReady=true`、`entries=4` 解密正常 → 正版机能从 SO 取值，`getRecipe()` scatter 返回 `""` 已 fail-closed。
+- **收益有限**：每个 Filter 仍有十几个 `final` 硬编码明文类名（registry 无对应项，删不掉）——ConvFilter（`MvvmConvList`/`ConversationListView`/`MainUI`/`preference.h0`/`kc5.a`/inline `kc5.y`）、MomentsFilter（`SnsMsgUIWithRelevance`/`jw1.d`/`f435583d`）、ContactFilter（`{o,p,h}`/`d`/`e`）。删 17 个，明文暴露面仅降约 20%，hook 意图静态仍可见。
+- **回归风险高**：删 fallback 后正版机若 SO 解密抖动（微信 OTA/换机型/binding 材料变化）→ `configReady=false` → 17 锚点全空 → 隐私 hook 静默失效（自己机器密友暴露），且无兜底。当前 fallback = 安全垫（铁律 29 / F-31 红线）。
+- **更根本**：`derive_registry_key()` 全程离线可推（key 三段常量在 SO + cert SHA-256，无服务器材料）→ 动态 dump / 自跑 key 仍可全取，删明文只挡 jadx 静态、挡不住动态。真锁＝服务器信封（Phase 1D-server）。
+
+→ 与 §10.1「拆大动脉、不碎拆」/「够用就停」一致：**A close = 冻结**，待 v2 全字段 registry 化 + 真锁一并兑现；`registry_8071.json` 的 contact_fields/l1_methods/e56 等「债」同期补。
 
 ---
 

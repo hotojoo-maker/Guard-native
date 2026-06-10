@@ -134,8 +134,10 @@ public final class RiskState {
 
     /**
      * 确认篡改信号（不含「断网/时间」这种可恢复的良性异常）。
-     * v1 来源：SO 反篡改 RISK_*（包名/配置/盗版）、AUTH_TAMPERED、本地 kill_switch。
-     * 注：AUTH_NO_LICENSE / MISMATCH **不算**篡改（首装/换号正常用户，不引流）。
+     * v1 来源：SO 反篡改 RISK_*（包名/配置/盗版）、AUTH_TAMPERED。
+     * 注1：AUTH_NO_LICENSE / MISMATCH **不算**篡改（首装/换号正常用户，不引流）。
+     * 注2：kill_switch 已剥离为独立「停用闸」(ModuleMain §5)，不再是引流/篡改信号
+     *      —— 停用与引流是两根独立线（P1F C 拍板 2026-06-10，见 PROTECTION_MAP §10.2）。
      */
     private static boolean isConfirmedTamper() {
         try {
@@ -146,10 +148,6 @@ public final class RiskState {
                 return true;
             }
             if (NativeBridge.getAuthState() == NativeBridge.AUTH_TAMPERED) {
-                return true;
-            }
-            // 本地 kill_switch（v1 stub=false）：作为「我随时停用」走通引流链的开关。
-            if (AppConfig.getInstance().isKillSwitch()) {
                 return true;
             }
         } catch (Throwable t) {

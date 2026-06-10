@@ -132,7 +132,9 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         // 4. Init intercept counter
         InterceptCounter.getInstance().init();
 
-        // 5. Kill switch check (v1: placeholder, always false)
+        // 5. 停用闸 kill_switch（v1: 本地占位 stub=false；服务器 kill 留 Phase 1D-server）。
+        //    与 §6.5 引流闸【两根独立线】：停用=最高优先级、命中直接 return 跳过全部 hook；
+        //    引流=确认篡改超影子期才弹窗。kill 不再当引流信号（P1F C 拍板，见 PROTECTION_MAP §10.2）。
         boolean killed = AppConfig.getInstance().isKillSwitch();
         Log.i(TAG, "[init] killSwitch=" + killed);
         if (killed) {
@@ -143,7 +145,7 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         // 6. Restore state from persistence
         StateMachine.getInstance().restoreState();
 
-        // 6.5. P4-1 + P1F: auth evaluate (wxid + device) → RiskState (唯一风险出口)
+        // 6.5. 引流闸（funnel）= P4-1 + P1F: auth evaluate (wxid + device) → RiskState (唯一风险出口)
         //      → RiskPromptController (唯一弹窗)。
         //      v1: RECORD ONLY, NO gating — NO_LICENSE / MISMATCH still pass
         //      (GUARD_GATE_TRUTH §4)。RiskGate 是与 isActive() 三层【并联】的第四道门，
