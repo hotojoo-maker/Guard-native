@@ -1,0 +1,270 @@
+# ============================================================================
+# classmap v8071 — 微信 8.0.71 混淆类名/成员「人看的对照字典」
+# ============================================================================
+# 用途：把代码里硬编码的微信混淆符号（如 kc5.v0 / pz0.h）↔ 它到底是干嘛的
+#       记下来。8.0.72 升级时只改本文件 + 跑 tools/check_classmap.ps1 即可定位
+#       哪些硬编码还没同步。
+#
+# 这不是加密文件，是明文对照表。加密化是 P28（v2）的事，与本文件无关。
+#
+# 字段说明：
+#   name    : 代码里硬编码的字面量（混淆类名 / 方法名 / 字段名），校验脚本按此 grep
+#   kind    : class | member（member = 方法名/字段名字面量，挂在 owner 上）
+#   owner   : 仅 member 用，标明属于哪个类（混淆名）
+#   desc    : 这个符号是干嘛的（中文，人看的）
+#   feature : 关联功能 / 权威文档锚点（§ 指 docs/HOOK_MAP_8071_AUTHORITATIVE.md）
+#   refs    : 代码引用文件（相对 src/main/java/com/ghost/assist/），校验脚本核对
+#   status  : ok | deprecated（deprecated = 已证伪/废弃，仅留考古，脚本不报缺失）
+#
+# 维护铁律：
+#   - 只登记「代码里真的硬编码了」的符号，禁止凭空补 8.0.66/8.0.70 的名字。
+#   - 改本文件前后必跑 check_classmap.ps1，保证字典 ↔ 代码不漂。
+# ----------------------------------------------------------------------------
+
+version: "8.0.71"
+updated: "2026-06-10"
+source: "docs/HOOK_MAP_8071_AUTHORITATIVE.md + src 实际硬编码扫描"
+
+symbols:
+
+  # ---- 会话过滤 F04 / §8a（ConvFilter / ConvHotReload）----
+  - name: kc5.v0
+    kind: class
+    desc: 会话列表 Adapter（8.0.71 主路径，L1/L4 会话过滤 + notify 兜底挂这里）
+    feature: "F04 会话过滤 §8a"
+    refs: [moduleD/ConvFilter.java, moduleD/ConvHotReload.java, ModuleMain.java]
+    status: ok
+  - name: f45.s0
+    kind: class
+    desc: 会话列表 Adapter（8.0.66 历史名，仅作跨版本对照，8.0.71 不用）
+    feature: "F04 会话过滤 §8a（8066 legacy）"
+    refs: [moduleD/ConvFilter.java]
+    status: ok
+  - name: kc5.y
+    kind: class
+    desc: 会话 item / 会话主 UI 辅助类（extractWxid 入参对象类型之一）
+    feature: "F04 会话过滤 §8a"
+    refs: [moduleD/ConvFilter.java, moduleD/ConvHotReload.java]
+    status: ok
+  - name: kc5.a
+    kind: class
+    desc: 会话相关类（ConvFilter KC5A_CLASS）
+    feature: "F04 会话过滤 §8a"
+    refs: [moduleD/ConvFilter.java]
+    status: ok
+  - name: kc5.x
+    kind: class
+    desc: 会话 H→V fresh-warm 注回链（kc5.x.h(wxid)）
+    feature: "F04 会话 V↔H 热切 §8a"
+    refs: [moduleD/ConvFilter.java]
+    status: ok
+  - name: ik3.n
+    kind: class
+    desc: 会话刷新 ik3n install 用类
+    feature: "F04 会话过滤 §8a"
+    refs: [moduleD/ConvFilter.java]
+    status: ok
+  - name: C0
+    kind: member
+    owner: "l4（com.tencent.mm.plugin.sns.model.l4 / 会话 contact item）"
+    desc: 会话 item wxid getter（8.0.71 主路径 field_digestUser；fallback 链 h1/j1/i1/k1）
+    feature: "F04 会话过滤 §8a"
+    refs: [moduleD/ConvFilter.java]
+    status: ok
+
+  # ---- 通讯录过滤 F07 / §7（ContactFilter）----
+  - name: fc5.g
+    kind: class
+    desc: 通讯录列表 addAll 的 item 元素类（fc5.g.d = z3 实例）
+    feature: "F07 通讯录过滤 §7"
+    refs: [moduleD/ContactFilter.java, moduleD/ContactLabelHideGuard.java]
+    status: ok
+  - name: com.tencent.mm.storage.z3
+    kind: class
+    desc: 联系人存储类（contact），z3.c1() 返 wxid
+    feature: "F07 通讯录过滤 §7"
+    refs: [moduleD/ContactFilter.java, moduleD/ContactLabelHideGuard.java]
+    status: ok
+  - name: ik3.t0
+    kind: class
+    desc: 通讯录列表 Adapter
+    feature: "F07 通讯录过滤 §7"
+    refs: [moduleD/ContactFilter.java]
+    status: ok
+  - name: c1
+    kind: member
+    owner: "com.tencent.mm.storage.z3"
+    desc: 通讯录 contact wxid getter（z3.c1() → field_username）
+    feature: "F07 通讯录过滤 §7"
+    refs: [moduleD/ContactFilter.java]
+    status: ok
+
+  # ---- 通讯录标签隐藏 §6b（ContactLabelHideGuard / ContactLabelMemberFilter）----
+  - name: com.tencent.mm.storage.d4
+    kind: class
+    desc: 通讯录「标签」存储类
+    feature: "通讯录标签隐藏 §6b"
+    refs: [moduleD/ContactLabelHideGuard.java]
+    status: ok
+  - name: ye5.j
+    kind: class
+    desc: 标签内成员/标签搜索 item（ye5.j.d 形如 wxid_xxx-15-0，去后缀得 wxid）
+    feature: "通讯录标签成员过滤 §6b"
+    refs: [moduleD/ContactLabelMemberFilter.java]
+    status: ok
+
+  # ---- 联系人昵称/头像解析（debug 辅助）----
+  - name: com.tencent.mm.storage.e4
+    kind: class
+    desc: 联系人存储类（昵称/头像解析 stub；注释标 may vary by version）
+    feature: "添加密友 UI §3（辅助）"
+    refs: [debug/ContactResolver.java]
+    status: ok
+  - name: com.tencent.mm.kernel.h
+    kind: class
+    desc: 微信 kernel 入口（ContactResolver 反射取存储用）
+    feature: "添加密友 UI §3（辅助）"
+    refs: [debug/ContactResolver.java]
+    status: ok
+
+  # ---- 朋友圈痕迹隐藏 D1/D2/D3（MomentsFilter）----
+  - name: la4.p
+    kind: class
+    desc: 朋友圈单条动态对象（la4.p.field_userName = 发帖人 wxid）
+    feature: "D1 朋友圈密友帖隐藏 §5"
+    refs: [moduleD/MomentsFilter.java, debug/DebugTelemetry.java]
+    status: ok
+  - name: na4.b
+    kind: class
+    desc: 朋友圈好友动态 addAll 的 item 元素类（D1 主线拦截入口）
+    feature: "D1 朋友圈密友帖隐藏 §5"
+    refs: [moduleD/MomentsFilter.java, debug/DebugTelemetry.java]
+    status: ok
+  - name: jw1.d
+    kind: class
+    desc: 朋友圈通知 item 类
+    feature: "D 朋友圈痕迹隐藏"
+    refs: [moduleD/MomentsFilter.java, debug/DebugTelemetry.java]
+    status: ok
+  - name: ii5.b
+    kind: class
+    desc: 朋友圈 item 候选类（MomentsFilter 轮询候选）
+    feature: "D 朋友圈痕迹隐藏"
+    refs: [moduleD/MomentsFilter.java]
+    status: ok
+  - name: w45.a
+    kind: class
+    desc: 朋友圈 la4.p 内字段类型（findFieldByType 用）
+    feature: "D 朋友圈痕迹隐藏"
+    refs: [moduleD/MomentsFilter.java]
+    status: ok
+
+  # ---- 朋友圈小红点 P21 / §8e（MomentsRedDotGuard）----
+  - name: com.tencent.mm.plugin.sns.storage.w1
+    kind: class
+    desc: 朋友圈 badge 计数存储（Layer0b 归零目标）
+    feature: "朋友圈小红点 §8e"
+    refs: [moduleD/MomentsRedDotGuard.java]
+    status: ok
+  - name: com.tencent.mm.plugin.sns.ui.bm
+    kind: class
+    desc: 互动列表 Adapter（SnsMsgUIWithAll，P21B 主路径，继承 s9）
+    feature: "朋友圈互动条目过滤 §8e"
+    refs: [moduleD/MomentsRedDotGuard.java]
+    status: ok
+  - name: com.tencent.mm.plugin.sns.ui.rm
+    kind: class
+    desc: 互动列表 Adapter（SnsMsgUIWithRelevance，同路径覆盖，待补 L1）
+    feature: "朋友圈互动条目过滤 §8e"
+    refs: [moduleD/MomentsRedDotGuard.java]
+    status: ok
+  - name: com.tencent.mm.ui.s9
+    kind: class
+    desc: bm/rm 父类，屏幕数据源字段 s9.f = Cursor（talker 列含 wxid）
+    feature: "朋友圈互动条目过滤 §8e"
+    refs: [moduleD/MomentsRedDotGuard.java]
+    status: ok
+  - name: com.tencent.mm.plugin.sns.model.l4
+    kind: class
+    desc: 朋友圈 sns model 类
+    feature: "朋友圈小红点 §8e"
+    refs: [moduleD/MomentsRedDotGuard.java]
+    status: ok
+  - name: ww2.c
+    kind: class
+    desc: 朋友圈小红点相关类（MomentsRedDotGuard 加载）
+    feature: "朋友圈小红点 §8e"
+    refs: [moduleD/MomentsRedDotGuard.java]
+    status: ok
+
+  # ---- 全局搜索 P20 / §8b-8d（SearchFilter）----
+  - name: z15.ef6
+    kind: class
+    desc: 搜索聊天记录 FTS 结果 item（分源理解层，非主过滤路径）
+    feature: "全局搜索 §8b/§8d"
+    refs: [moduleB/SearchFilter.java]
+    status: ok
+  - name: fz2.e
+    kind: class
+    desc: 搜索联系人结果 item（wxid 直取路径已证伪，仅留探针）
+    feature: "全局搜索 §8c（wxid 路径已证伪）"
+    refs: [moduleB/SearchFilter.java]
+    status: deprecated
+
+  # ---- 防撤回 C1 / §2（AntiRecall）----
+  - name: jy0.t
+    kind: class
+    desc: 撤回消息处理类（jy0.t.f = doRevokeMsg，防撤回主拦截点）
+    feature: "C1 防撤回 §2"
+    refs: [moduleC/AntiRecall.java]
+    status: ok
+  - name: jy0.c9
+    kind: class
+    desc: 消息存储管理器（b() → jy0.e）
+    feature: "C1 防撤回 §2"
+    refs: [moduleC/AntiRecall.java]
+    status: ok
+  - name: com.tencent.mm.storage.f9
+    kind: class
+    desc: MsgInfo 消息实体类
+    feature: "C1 防撤回 §2"
+    refs: [moduleC/AntiRecall.java]
+    status: ok
+  - name: com.tencent.mm.modelbase.p0
+    kind: class
+    desc: revoke 命令通道参数类
+    feature: "C1 防撤回 §2"
+    refs: [moduleC/AntiRecall.java]
+    status: ok
+
+  # ---- 伪装定位 E2 / §1（FakeLocation）----
+  - name: pz0.h
+    kind: class
+    desc: 定位结果分发总源头（pz0.h.c 注入伪经纬度，全局生效）
+    feature: "E2 伪装定位 §1"
+    refs: [moduleE/FakeLocation.java]
+    status: ok
+
+  # ---- 群聊/chatroom UI（ContactDiscoveryHook / ContactGroupHide）----
+  - name: com.tencent.mm.ui.contact.s0
+    kind: class
+    desc: 群聊/chatroom 联系人 UI 类
+    feature: "通讯录/密群相关 UI"
+    refs: [moduleD/ContactDiscoveryHook.java, moduleD/ContactGroupHide.java]
+    status: ok
+
+  # ---- 升级守卫（UpdateGuard）----
+  - name: fl4.o
+    kind: class
+    desc: 微信升级提示相关类（UpdateGuard 拦截）
+    feature: "升级提示拦截"
+    refs: [moduleB/UpdateGuard.java]
+    status: ok
+
+  # ---- 推送/通知（PushFilter，已证伪路径）----
+  - name: com.tencent.mm.booter.notification.x
+    kind: class
+    desc: 通知 booter 类（x.a(f9) 8.0.71 零命中，已证伪废弃）
+    feature: "C 推送通知（§C 废弃路径）"
+    refs: [moduleC/PushFilter.java]
+    status: deprecated
