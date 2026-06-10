@@ -470,7 +470,7 @@ SO 只管“验真 + 解密 + 关键风险信号”；弹窗、影子期倒计�
 - 已有：`decrypt_config()` AES-GCM 原型、固定测试向量、JNI 包装、`NativeBridge` 自测入口、失败 scatter。
 - 不要重写 SO、不重写 AES-GCM、不换 crypto 依赖；除非有明确编译失败、验收失败或安全缺陷证据。
 - **加密主线已推进到 P1E（Filter 读 registry，2026-06-09）**：1B 抽取 → 1C 加密 registry + search.gateway 收敛 → 1D-local 派生 key（去明文 key 常量）→ A-step2 证书绑定 → P1E 让 ContactFilter/MomentsFilter/ConvFilter 真从 registry 读类名（取件口 `GuardRuntime.getRecipe` + `nativeGetRecipe`）+ conv.list 漂移债结案；均装机 PHASE1A-1E PASS。
-- **P1F 两闸 + 风险骨架已落地（2026-06-10，装机 PASS）**：`LeaseClock` 骨架 + `RiskState`（record-only L0~L6）+ `RiskPromptController`（唯一弹窗）+ kill↔funnel 拆两闸；web 驾驶舱同步显示 风险等级/停用闸/引流。详见 `03_execute_执行任务/P1F_十字防护整合设计/`（DESIGN + worklog）。
+- **P1F 两闸 + 风险骨架已落地（2026-06-10，装机 PASS）**：`LeaseClock` 骨架 + `RiskState`（record-only L0~L6）+ `RiskPromptController`（唯一弹窗）+ kill↔funnel 拆两闸；web 驾驶舱同步显示 风险等级/停用闸/引流。详见 `07_archive_归档/P1F_十字防护整合设计/`（DESIGN + worklog）。
 - **真锁仍未做（最大的洞）**：服务器短命钥匙（Phase 1D-server）、服务器授时真数据源、真正散沙降级、Ed25519 验签**仍未做**；`RiskState` 仍 record-only 不收紧（防误伤正版）；`StateMachine.isVipAuthorized()` 仍是 `return true` 死桩。对外不得宣称真锁完成。
 - 不接服务器、不改已验证 hook 回调体、不改 `isVipAuthorized()` stub（仍归授权检查官）。
 - 业务本体是“密友/密群隐藏 + 通知/红点/搜索/朋友圈等过滤链”，不是通用 DRM demo；registry 抽取必须服务这些已验收链路。
@@ -501,7 +501,7 @@ SO 只管“验真 + 解密 + 关键风险信号”；弹窗、影子期倒计�
 - 加密主线推进到 `P1E_Filter读Registry`：取件口（`GuardRuntime.getRecipe` + `nativeGetRecipe`）+ ContactFilter/MomentsFilter/ConvFilter 真从 registry 读类名 + conv.list 漂移债结案。
 - 现为 **registry + 旧常量 fallback 双份**：registry 拿不到/散沙时回退旧值，明文双份未完全消除（删 fallback 前每个 Filter 都要先核账 registry 完整性）。SearchFilter 暂未迁（粗粒度收益有限）。
 - 发布前必须补抓当前手机好包的 `NCL` 日志。
-- 必须看到 `BATCH1_VERIFY PASS`、`PHASE1A~1E_VERIFY PASS`、`registrySummary ... entries=4`、各 Filter `recipes ... fallbackSelfTest=ok` 后，才可把证据追加到 `03_execute_执行任务/P1E_Filter读Registry/worklog.md`。
+- 必须看到 `BATCH1_VERIFY PASS`、`PHASE1A~1E_VERIFY PASS`、`registrySummary ... entries=4`、各 Filter `recipes ... fallbackSelfTest=ok` 后，才可把证据追加到 `07_archive_归档/P1E_Filter读Registry/worklog.md`。
 - P1A~P1D 作为历史记录，不再重复写同一发布结论。
 
 ### ⚠️ ss4.p 教训（registry 必须跟真活跃锚点一致，迁前先对账）

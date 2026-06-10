@@ -147,7 +147,7 @@
 | **L4 Activity 拦截** | `ContactLabelManagerUI / MvvmContactListUI / LabelSearchUI` |
 | **项目代码** | ① 整标签入口/管理页隐藏（L1 `fc5.g` e=8 / L2 `d4` / L4 Activity，开关 hclb）= ✅ `moduleD/ContactLabelHideGuard.java`（2026-05-27 补 install）；② L3 标签内成员按 wxid 藏密友（门控 isActive+allHiddenIds）= ✅ `moduleD/ContactLabelMemberFilter.java`（2026-05-31 P_CV1 重构丢失后独立成模块，用户现场复验） |
 | **存储** | MMKV: `hcl`（`Bridge.isHideContactLabelEnabled`） |
-| **来源** | `03_execute_执行任务/P19B_ContactLabel/result.md` |
+| **来源** | `07_archive_归档/P19B_ContactLabel/result.md` |
 
 ---
 
@@ -162,7 +162,7 @@
 | **门控** | `StateMachine.isActive()` + `Bridge.allHiddenIds()`（含密群 union） |
 | **项目代码** | ✅ `moduleD/ContactFilter.java` · ModuleMain.install ✅ |
 | **失败路径（铁律）** | `MvvmList.n/u` 零触发（仅会话） · 通讯录是分段虚拟滚动，每段独立 addAll，**不能用 INIT clean** |
-| **来源** | `03_execute_执行任务/P19_通讯录隐藏/result.md` + `HOOKMAP.md` §F07 |
+| **来源** | `07_archive_归档/P19_通讯录隐藏/result.md` + `HOOKMAP.md` §F07 |
 
 ---
 
@@ -249,7 +249,7 @@
 | **覆盖状态** | ✅ `SnsMsgUIWithAll / bm` L1：10 行过滤为 1 行，AA熵不显示；`SnsMsgUIWithRelevance / rm` 代码同路径覆盖，后续有“与我的互动”入口/顶部气泡时补 L1，不阻塞当前 v1 |
 | **铁律** | 禁 `View.GONE`；禁反射自调 `notifyDataSetChanged`；禁 `notifyItemRange*`。游标层只做位置重映射，不写 DB、不改 UI、不碰状态机/授权链 |
 | **项目代码** | `src/main/java/com/ghost/assist/moduleD/MomentsRedDotGuard.java` — `installSnsMsgLiveCursorFilter` / `wrapSnsMsgCursorFields` / `TalkerFilterCursor` |
-| **证据** | 根因：`03_execute_执行任务/P21_MomentsRedDot/logs/probe_live_bm_cursor_20260609_logcat.txt`；验收：`03_execute_执行任务/P21_MomentsRedDot/logs/p21b_cursor_fix_verify_20260609.txt`；截图：`03_execute_执行任务/P21_MomentsRedDot/logs/p21_after_fix_pass_withall.png`；工作记录：`03_execute_执行任务/P21_MomentsRedDot/worklog.md` |
+| **证据** | 根因：`07_archive_归档/P21_MomentsRedDot/logs/probe_live_bm_cursor_20260609_logcat.txt`；验收：`07_archive_归档/P21_MomentsRedDot/logs/p21b_cursor_fix_verify_20260609.txt`；截图：`07_archive_归档/P21_MomentsRedDot/logs/p21_after_fix_pass_withall.png`；工作记录：`07_archive_归档/P21_MomentsRedDot/worklog.md` |
 
 ---
 

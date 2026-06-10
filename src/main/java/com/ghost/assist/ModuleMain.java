@@ -181,6 +181,8 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         // P21: moments red-dot guard. Main path is verified; keep installed without
         // changing the validated D1/D2/D3 moments filters.
         MomentsRedDotGuard.install(lpparam);
+        // M6a: 隐藏自己受限帖子的「可见分组」图标（app:id/pt），独立于密友过滤链
+        com.ghost.assist.moduleD.MomentsGroupIconFilter.install(lpparam);
         UpdateGuard.install(lpparam);
         TriggerGuard.install(app);  // B1/B2/B5，Android API，不吃 lpparam
         com.ghost.assist.moduleD.ContactDiscoveryHook.install(app); // P_CV1 V1：动态发现通讯录 LiveList/Adapter

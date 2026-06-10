@@ -17,8 +17,8 @@
 
 | 日期 | 授权人 | 范围 | 动作 | 目标文件 / 设备 | 状态 | 备注 |
 |------|--------|------|------|-----------------|------|------|
-| 2026-06-09 | 用户 | 文档 / Java 注释 | 清理 P21 旧口径注释 | `src/main/java/com/ghost/assist/ModuleMain.java`、`03_execute_执行任务/P21_MomentsRedDot/worklog.md` | 已执行 | 非二进制动作；不涉及 APK/SO/DEX/smali/MMKV 修改 |
-| 2026-06-09 | 用户 | APK / 装机 | 构建 Debug 包并覆盖安装验证 | `build/outputs/apk/debug/guard-native-debug.apk`；设备 `609b4b18` | 已执行 | 用户指令“切终端操作员skills，自己装机极检查log”；安装输出 `Success`；证据 `03_execute_执行任务/P1E_Filter读Registry/logs/psec1_search_registry_install_20260609.log` |
+| 2026-06-09 | 用户 | 文档 / Java 注释 | 清理 P21 旧口径注释 | `src/main/java/com/ghost/assist/ModuleMain.java`、`07_archive_归档/P21_MomentsRedDot/worklog.md` | 已执行 | 非二进制动作；不涉及 APK/SO/DEX/smali/MMKV 修改 |
+| 2026-06-09 | 用户 | APK / 装机 | 构建 Debug 包并覆盖安装验证 | `build/outputs/apk/debug/guard-native-debug.apk`；设备 `609b4b18` | 已执行 | 用户指令“切终端操作员skills，自己装机极检查log”；安装输出 `Success`；证据 `07_archive_归档/P1E_Filter读Registry/logs/psec1_search_registry_install_20260609.log` |
 | 2026-06-09 | 用户 | APK | 构建 Release 包验证 R8 / wrapper 退出码 | `build/outputs/apk/release/**` | 已执行 | 用户指令处理 `gradlew.bat` exit code 255；`assembleRelease` 已 `BUILD SUCCESSFUL` 且 exit code 0 |
 
 ---

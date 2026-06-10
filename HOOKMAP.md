@@ -50,8 +50,8 @@
 | **L0v2 朋友圈过滤 D1** | `ArrayList.addAll(na4.b)` → `la4.p` → **`la4.p.field_userName` 直读**（fallback 主路径） → remove post | ✅ 装机确认 2026-05-21 | ⭐⭐⭐ | `h1()` 路径 null miss（F-31）；fallback 命中 5 次实证；**禁止改回 h1() 主路径** |
 | **L0v4 赞评过滤 D2/D3** | `LinkedList.add(z15.e56/cs5.di0/i84.y)` → `entry.d`（或 `f435583d`）=wxid → block | ✅ 装机确认 2026-05-20 | ⭐⭐⭐ | 4 字段轮询：`d / f435583d / username / field_userName`；getCommentList/LikeUserList 走 JNI 不可用 |
 | **F07 通讯录 8.0.71** | `ArrayList.addAll` → `fc5.g` → `g.d`（z3 实例）→ `z3.c1()` → remove | ✅ P19 2026-05-20 | ⭐⭐⭐ | **仅通讯录**；类常量 `com.tencent.mm.storage.z3`；`MvvmList.n/u` 零触发 |
-| **F07B 标签成员 8.0.71** | `ArrayList.addAll(ye5.j)` → 去后缀 wxid → `allHiddenIds()` | ✅ 2026-06-01 复跑实证 | ⭐⭐⭐ | 详情：`03_execute_执行任务/P19B_ContactLabel/result.md` |
-| **朋友圈小红点 P21** | Layer0b `Activity.onResume` 入口归零；P21B `bm/rm -> s9.f(Cursor)` live 游标按 `talker` 过滤互动条目；Layer2/v18 备用 | ✅ 主线收尾：Layer0b 2026-05-21；P21B WithAll/bm 2026-06-09 | ⭐⭐⭐ | 证据：`03_execute_执行任务/P21_MomentsRedDot/logs/p21b_cursor_fix_verify_20260609.txt`；`rm` 同路径覆盖，后续有场景再复验；详情：`03_execute_执行任务/P21_MomentsRedDot/worklog.md` |
+| **F07B 标签成员 8.0.71** | `ArrayList.addAll(ye5.j)` → 去后缀 wxid → `allHiddenIds()` | ✅ 2026-06-01 复跑实证 | ⭐⭐⭐ | 详情：`07_archive_归档/P19B_ContactLabel/result.md` |
+| **朋友圈小红点 P21** | Layer0b `Activity.onResume` 入口归零；P21B `bm/rm -> s9.f(Cursor)` live 游标按 `talker` 过滤互动条目；Layer2/v18 备用 | ✅ 主线收尾：Layer0b 2026-05-21；P21B WithAll/bm 2026-06-09 | ⭐⭐⭐ | 证据：`07_archive_归档/P21_MomentsRedDot/logs/p21b_cursor_fix_verify_20260609.txt`；`rm` 同路径覆盖，后续有场景再复验；详情：`07_archive_归档/P21_MomentsRedDot/worklog.md` |
 | **L1 MvvmList.n/m** | `MvvmList.n(List,bool)` 8.0.71 / `.m`（8066）→ `kc5.v0` / `kc5.y` → `y.d`（l4）→ **`l4.C0()`** wxid（8071 主路径） | ✅ **装机确认 2026-05-20** | ⭐⭐⭐ | 8066 曾用 h1() 轮询；8071 以 C0 实证（P20B） |
 | **L2 MvvmList.s** | `MvvmList.s(List)`                         | ✅ Frida 验证 | ⭐⭐⭐    | 会话备用      |
 | **L4 notify**     | `kc5.v0.notifyDataSetChanged` clean-before → L4-NoDiff（setResult null + Handler.post 全量刷）| ✅ **装机实证 2026-05-23**（F-32 DiffUtil 卡帧修复） | ⭐⭐⭐ | 渲染前兜底；L4 beforeHook 同步更新 `sConvAdapterRef`（仅 kc5.v0）+ `sMvvmListRef`；**禁止把 h0 加入 sConvAdapterRef 更新条件** |

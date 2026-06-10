@@ -41,7 +41,7 @@ guard_native/
 ├── 04_review_审稿复核/   每个 P 任务的审稿报告 + T_TASKS 调研池 + CONFLICTS
 ├── 05_reports_报告/      阶段报告 / TECH_SYNC_SUMMARY
 ├── 06_refs_参考资料/     wechat / catfish / frida / 离线采集快照
-├── 07_archive_归档/      关闭 30 天的 P 任务搬这里
+├── 07_archive_归档/      已收口 P 任务归档（2026-06-10 首次归档 21 个，见 `07_archive_归档/INDEX.md`）
 ├── 08_release_发布/      蜜罐 seed / 签名 / APK 输出
 ├── docs/                 8071 主车道 README + GUARD_GATE_TRUTH + HOOK_MAP_8071_AUTHORITATIVE
 │   │                     + CONV_REFRESH_PROBLEM + PRODUCT_GATE + P22_PushFilter_VoIP …

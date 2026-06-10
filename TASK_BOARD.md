@@ -38,7 +38,7 @@
 1. P22 普通消息通知 + 铃声功能转 v1.1，不阻塞当前 v1。
 2. P26C 搜索高亮归 UI 优化，不阻塞 P20。
 
-**详情**：`03_execute_执行任务/P20_搜索拦截/result.md`、`03_execute_执行任务/P20B_BTriggers_SearchUnlock/worklog.md`、`docs/HOOK_MAP_8071_AUTHORITATIVE.md` §8b。
+**详情**：`07_archive_归档/P20_搜索拦截/result.md`、`03_execute_执行任务/P20B_BTriggers_SearchUnlock/worklog.md`、`docs/HOOK_MAP_8071_AUTHORITATIVE.md` §8b。
 
 ---
 
@@ -48,7 +48,7 @@
 
 **下一步**：仅做证据归档/备用复验；不改 D1/D2/D3 已验 hook。
 
-**详情**：`03_execute_执行任务/P21_MomentsRedDot/worklog.md`、`HOOKMAP.md` §二。
+**详情**：`07_archive_归档/P21_MomentsRedDot/worklog.md`、`HOOKMAP.md` §二。
 
 ---
 
@@ -56,7 +56,7 @@
 
 **状态**：✅ 2026-05-20 装机验收通过，不动已验 hook。
 
-**详情**：`03_execute_执行任务/P17_会话LSPosed/result.md`、`docs/HOOK_MAP_8071_AUTHORITATIVE.md` §8a。
+**详情**：`07_archive_归档/P17_会话LSPosed/result.md`、`docs/HOOK_MAP_8071_AUTHORITATIVE.md` §8a。
 
 ---
 
@@ -91,7 +91,7 @@ W4 P18        ─→ 本轮跳过；正式发布门控再补 KPI
 | # | 规则 |
 |---|------|
 | 1 | 每窗口开工先改 §一 表"占用至"列 |
-| 2 | 只动自己 P 任务目录（`03_execute_执行任务/P15/` 等）|
+| 2 | 只动自己 P 任务目录（`03_execute_执行任务/<你的P任务>/` 等；已归档任务见 `07_archive_归档/`）|
 | 3 | 改根目录看板（HOOKMAP / TASK_BOARD / FAILURE_LOG）前先 git pull |
 | 4 | 关任务前必跑 `frida_stats.js` 对比基线 |
 | 5 | 关任务前更新 [`HOOKMAP.md`](./HOOKMAP.md) 对应行 ⬜→🟡 或 🟡→✅ |
@@ -108,7 +108,7 @@ W4 P18        ─→ 本轮跳过；正式发布门控再补 KPI
 | P17 | 会话 LSPosed | ✅ | 2026-05-20 会话隐藏验收；8071 主路径见权威 §8a。|
 | P18 | 离线采集 | ⬜ | 本轮跳过，不阻塞当前 v1；正式发布门控再补 KPI。 |
 | P19 | 通讯录隐藏 F07 | ✅ | 2026-05-20 装机验证；详见权威 §6。|
-| P19B | 通讯录【标签】成员隐藏 F07B | ✅ | 2026-06-01 复跑实证；详见 `03_execute_执行任务/P19B_ContactLabel/result.md`。|
+| P19B | 通讯录【标签】成员隐藏 F07B | ✅ | 2026-06-01 复跑实证；详见 `07_archive_归档/P19B_ContactLabel/result.md`。|
 | P20 | 搜索 + 密码入口 | ✅ | 搜索全场景 + B6 收口；证据 `tools/p20_search_logcat_runner_20260606_180946.log`。|
 | A2  | 密友列表（数据层 + 导入 UI） | ✅ | 原生 `SelectContactUI` 导入；详见权威 §3。|
 | A3  | 密群（数据层 + Filter union + 导入 UI）| ✅ | 过滤链 + 原生 `GroupCardSelectUI` 导入；详见权威 §4。|

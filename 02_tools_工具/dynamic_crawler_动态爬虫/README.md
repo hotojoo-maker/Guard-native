@@ -48,7 +48,7 @@ frida -U -n "com.tencent.mm" -l 02_tools_工具/dynamic_crawler_动态爬虫/sea
 报告打印在 frida 控制台，手动复制到对应 P 任务的 `result.md`：
 
 ```
-03_execute_执行任务/P22_SearchCrawler/result.md   ← 搜索链路爬虫输出
+07_archive_归档/P22_SearchCrawler/result.md   ← 搜索链路爬虫输出
 03_execute_执行任务/Pxx_.../result.md             ← 其他链路对应 P 任务
 ```
 
@@ -125,4 +125,4 @@ const MAX_HOOKS = 300;       // 最大 hook 数量（防爆）
 | `fz2.e` | LinkedList.add | **ArrayList.addAll** ✅ |
 | `z15.ef6` | LinkedList.add | LinkedList.add ✅ |
 
-详细见 → `03_execute_执行任务/P22_SearchCrawler/result.md` · `docs/HOOK_MAP_8071_AUTHORITATIVE.md` §8b/8c/8d
+详细见 → `07_archive_归档/P22_SearchCrawler/result.md` · `docs/HOOK_MAP_8071_AUTHORITATIVE.md` §8b/8c/8d

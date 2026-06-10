@@ -28,6 +28,7 @@ public class AppConfig {
     private static final String KEY_B5_SCREEN= "b5";
     private static final String KEY_MRD      = "mrd";  // moments red dot
     private static final String KEY_URD      = "urd";  // update red dot
+    private static final String KEY_MGI      = "mgi";  // moments group-visible icon (M6a)
 
     // One-time migration marker: "mv2" = migrated from old DEV-default to PROD-default.
     private static final String KEY_MIG_V2 = "mv2";
@@ -117,4 +118,8 @@ public class AppConfig {
 
     public boolean isUpdateRedDotEnabled() { return mPrefs.getBoolean(KEY_URD, true); }  // 默认开
     public void setUpdateRedDotEnabled(boolean v) { mPrefs.edit().putBoolean(KEY_URD, v).apply(); }
+
+    // M6a 朋友圈「可见分组」图标隐藏（默认开；纯开关驱动，独立于 HIDDEN 状态）
+    public boolean isMomentsGroupIconEnabled() { return mPrefs.getBoolean(KEY_MGI, true); }
+    public void setMomentsGroupIconEnabled(boolean v) { mPrefs.edit().putBoolean(KEY_MGI, v).apply(); }
 }

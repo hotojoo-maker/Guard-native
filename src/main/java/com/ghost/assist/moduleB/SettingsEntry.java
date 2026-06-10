@@ -1481,6 +1481,16 @@ public class SettingsEntry {
                     }
                 }, fakeLocOut));
         sFakeLocLabelRef = new WeakReference<>(fakeLocOut[0]);
+        // M6a 朋友圈「可见分组」图标隐藏（默认开；只藏自己受限帖右下角分组图标，不碰删除键）
+        content.addView(buildSwitchRow(activity, "隐藏朋友圈分组图标",
+                "藏掉自己「仅可见分组」帖子右下角的小图标",
+                AppConfig.getInstance().isMomentsGroupIconEnabled(),
+                new CompoundButton.OnCheckedChangeListener() {
+                    @Override public void onCheckedChanged(CompoundButton b, boolean checked) {
+                        AppConfig.getInstance().setMomentsGroupIconEnabled(checked);
+                        Log.i(TAG, "[SET] momentsGroupIcon=" + checked);
+                    }
+                }));
         content.addView(buildSwitchRow(activity, "余额装X",
                 "功能更新中", false, null));
         content.addView(buildNote(activity, "独家功能 · 请低调使用"));

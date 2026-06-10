@@ -131,7 +131,7 @@
 
 ### Phase 1（地基:真锁+心跳）
 
-> **Phase 1 本地预制进度（2026-06-08，详见 `03_execute_执行任务/P1C_Registry加密/worklog.md`）**：
+> **Phase 1 本地预制进度（2026-06-08，详见 `07_archive_归档/P1C_Registry加密/worklog.md`）**：
 > - [x] **P1A** SO `decrypt_config()` AES-GCM + 自测向量（装机 `PHASE1A_VERIFY PASS`）
 > - [x] **P1B/1C** 核心 4 条 hook registry 抽取 + AES-GCM 加密（单一源 `registry_8071.json` → `registry_cipher.inc`；装机 `PHASE1B/1C_VERIFY PASS`）
 > - [x] **A-step1** 派生 key（去明文 key 常量，SO 内多段散装 + nonce 随机）
@@ -196,7 +196,7 @@
 
 ## 10. P1F 防护收敛决定（2026-06-10，用户拍板）
 
-> 本节是 2026-06-10 与用户敲定的防护**切分铁律 + 节奏**，作为后续每一步改动的「当切分准绳」。设计全文见 `03_execute_执行任务/P1F_十字防护整合设计/DESIGN.md`；安全规则见安全官 skill。
+> 本节是 2026-06-10 与用户敲定的防护**切分铁律 + 节奏**，作为后续每一步改动的「当切分准绳」。设计全文见 `07_archive_归档/P1F_十字防护整合设计/DESIGN.md`；安全规则见安全官 skill。
 
 ### 10.1 大抽屉切分铁律（粗粒度，禁碎拆）
 

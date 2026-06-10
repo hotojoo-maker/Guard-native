@@ -2,7 +2,7 @@
 
 > 执行窗口直接读这个，不用翻 TASK_BOARD 全文
 > 接手人：W1 主开发 / 2026-05-21 开 / 半天工时
-> 历史说明：早期把 P21 朋友圈小红点和 B 触发器写在同一 brief；当前 P21/P21B 已迁到 `03_execute_执行任务/P21_MomentsRedDot/worklog.md`。
+> 历史说明：早期把 P21 朋友圈小红点和 B 触发器写在同一 brief；当前 P21/P21B 已迁到 `07_archive_归档/P21_MomentsRedDot/worklog.md`。
 
 ---
 
