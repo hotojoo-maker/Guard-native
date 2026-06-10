@@ -1,0 +1,33 @@
+[drv] device = 609b4b18 (MI 9)
+[drv] target pid = 20170
+[drv] attached to 20170
+[GI] Activity.onResume hook ok
+[GI] READY — 微信冷启动后进朋友圈，滑到自己"仅X可见"那条停屏，脚本每4s自动dump
+[drv] script loaded, window=125s —— 现在请进朋友圈滑到目标那条
+[GI] tick=1 还没捕获 Activity
+[GI] tick=2 还没捕获 Activity
+[GI] tick=3 还没捕获 Activity
+[GI] tick=4 还没捕获 Activity
+[GI] tick=5 还没捕获 Activity
+[GI] tick=6 还没捕获 Activity
+[GI] tick=7 还没捕获 Activity
+[GI] tick=8 还没捕获 Activity
+[GI] tick=9 还没捕获 Activity
+[GI] tick=10 还没捕获 Activity
+[GI] tick=11 还没捕获 Activity
+[GI] tick=12 还没捕获 Activity
+[GI] tick=13 还没捕获 Activity
+[GI] tick=14 还没捕获 Activity
+[GI] tick=15 还没捕获 Activity
+[GI] tick=16 还没捕获 Activity
+[GI] tick=17 还没捕获 Activity
+[GI] tick=18 还没捕获 Activity
+[GI] tick=19 还没捕获 Activity
+[GI] tick=20 还没捕获 Activity
+[GI] tick=21 还没捕获 Activity
+[GI] tick=22 还没捕获 Activity
+[GI] tick=23 还没捕获 Activity
+[GI] tick=24 还没捕获 Activity
+[GI] tick=25 还没捕获 Activity
+[GI] onResume front=com.tencent.mm.plugin.sns.ui.improve.ImproveSnsTimelineUI
+[drv] window done, detaching

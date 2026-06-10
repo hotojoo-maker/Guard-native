@@ -67,3 +67,19 @@ Thumbs.db
 02_tools_工具/lspatch_out/
 *-lspatched.apk
 bug排查/
+
+# V3 改包名工具链（二进制，体积大，各机器自行下载，不入库）
+02_tools_工具/apktool.jar
+02_tools_工具/uber-apk-signer.jar
+
+# 根目录一次性 logcat / 探针抓取 scratch（不入库）
+/mgi_*.txt
+/gi_dump.txt
+/_stage_paths.txt
+/_archive_run.ps1
+
+# M6a 朋友圈图标探针的大体积原始 dump / 截图（留本地，不入库；可重生成）
+**/dumpsys_*.txt
+**/gi_dump.txt
+**/gi_album.txt
+**/m6a_shot.png
