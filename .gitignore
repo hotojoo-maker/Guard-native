@@ -45,6 +45,8 @@ tools/wallet_uidump.xml
 
 # Cursor MCP 配置备份
 .cursor/mcp.json.bak-*
+# Cursor MCP 配置（含本机绝对路径，按机器各异，不入库）
+.cursor/mcp.json
 
 # Local config
 local.properties
