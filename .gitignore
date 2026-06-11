@@ -73,6 +73,14 @@ Thumbs.db
 *-lspatched.apk
 bug排查/
 
+# LSPatch 反编译/打包工作目录（上千反编译微信文件，可重生成，绝不入 git）
+# 历史教训：被 git stash -u 卷入导致 gc 极慢 + 误 apply 风险。
+lsp_work/
+# 共存版改包工作目录（打包产物，可重生成）
+02_tools_工具/coexist_work/
+# 一次性测试 scratch
+.edtest/
+
 # V3 改包名工具链（二进制，体积大，各机器自行下载，不入库）
 02_tools_工具/apktool.jar
 02_tools_工具/uber-apk-signer.jar
