@@ -16,6 +16,7 @@ import android.util.Log;
 import android.view.View;
 
 import com.ghost.assist.core.NativeBridge;
+import com.ghost.assist.core.RiskState;
 import com.ghost.assist.core.StateMachine;
 
 import java.lang.reflect.Field;
@@ -63,6 +64,17 @@ public final class CallGuard {
     private static final String TAG = "NCL";
 
     private CallGuard() {}
+
+    /**
+     * 来电拦截总闸（主进程）。= 原 StateMachine.isActive()，外加【tamper 散沙】：
+     * 确认篡改过影子期(10天) → RiskState.isTamperDegraded()=true → active()=false →
+     * 所有来电拦截钩短路 → 来电恢复正常响铃/弹屏 = 破解版「来电拦截」失效（用户要求）。
+     * 正版包签名对、诱饵未改 → 永远不 degrade → 行为与原来完全一致（不误伤、铁律29）。
+     * 注：:push 进程子集仍走 NativeBridge.isHidden()（铁律30，:push 无 Bridge/RiskState）。
+     */
+    private static boolean active() {
+        return StateMachine.getInstance().isActive() && !RiskState.isTamperDegraded();
+    }
 
     // -------------------------------------------------------------------------
     // VoIP lifecycle state (shared across SF / NM / VC / AT / MP / FB / PiP / VW)
@@ -238,7 +250,7 @@ public final class CallGuard {
                                               boolean pushProcess, String tag) {
         boolean hidden = pushProcess
                 ? NativeBridge.isHidden()
-                : StateMachine.getInstance().isActive();
+                : active();
         if (!hidden) return;
 
         Notification n = (Notification) param.args[1];
@@ -275,7 +287,7 @@ public final class CallGuard {
                 XposedBridge.hookMethod(m, new XC_MethodHook() {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) {
-                        if (!StateMachine.getInstance().isActive()) return;
+                        if (!active()) return;
                         if (!VOIP_ACTIVITY_CLASS.equals(param.thisObject.getClass().getName())) return;
                         try {
                             ((Activity) param.thisObject).moveTaskToBack(true);
@@ -307,7 +319,7 @@ public final class CallGuard {
             XposedBridge.hookMethod(onAttach, new XC_MethodHook() {
                 @Override
                 protected void afterHookedMethod(MethodHookParam param) {
-                    if (!StateMachine.getInstance().isActive()) return;
+                    if (!active()) return;
                     View view = (View) param.thisObject;
                     String cn = view.getClass().getName();
                     // FB float-ball blocked at WindowManagerImpl.addView (no render frame);
@@ -378,7 +390,7 @@ public final class CallGuard {
                     new XC_MethodHook() {
                         @Override
                         protected void beforeHookedMethod(MethodHookParam param) {
-                            if (!StateMachine.getInstance().isActive()) return;
+                            if (!active()) return;
                             if (!sVoIPCallPending) return;
                             Object v = param.args[0];
                             if (!(v instanceof View)) return;
@@ -418,7 +430,7 @@ public final class CallGuard {
                     new XC_MethodHook() {
                         @Override
                         protected void beforeHookedMethod(MethodHookParam param) {
-                            if (!StateMachine.getInstance().isActive()) return;
+                            if (!active()) return;
                             if (!sVoIPCallPending) return;
                             param.setResult(null);
                             Log.i(TAG, "[PF:AM] blocked setMode(" + param.args[0] + ")");
@@ -442,7 +454,7 @@ public final class CallGuard {
                         @Override
                         protected void beforeHookedMethod(MethodHookParam param) {
                             if (!sVoIPCallPending) return;
-                            if (!StateMachine.getInstance().isActive()) return;
+                            if (!active()) return;
                             param.setResult(null);
                             Log.i(TAG, "[PF:AT] blocked AudioTrack.play()");
                         }
@@ -465,7 +477,7 @@ public final class CallGuard {
                         @Override
                         protected void beforeHookedMethod(MethodHookParam param) {
                             if (NotifyRouter.sOurSound) return;
-                            if (!StateMachine.getInstance().isActive()) return;
+                            if (!active()) return;
                             if (!sVoIPCallPending) return;
                             param.setResult(null);
                             Log.i(TAG, "[PF:MP] blocked MediaPlayer.start");
@@ -490,7 +502,7 @@ public final class CallGuard {
                             @Override
                             protected void beforeHookedMethod(MethodHookParam param) {
                                 if (NotifyRouter.sOurVibration) return;
-                                if (!StateMachine.getInstance().isActive()) return;
+                                if (!active()) return;
                                 param.setResult(null);
                                 Log.i(TAG, "[PF:VV] blocked vibrate(VibrationEffect)");
                             }
@@ -503,7 +515,7 @@ public final class CallGuard {
                         @Override
                         protected void beforeHookedMethod(MethodHookParam param) {
                             if (NotifyRouter.sOurVibration) return;
-                            if (!StateMachine.getInstance().isActive()) return;
+                            if (!active()) return;
                             param.setResult(null);
                             Log.i(TAG, "[PF:VV] blocked vibrate(long[])");
                         }
@@ -566,7 +578,7 @@ public final class CallGuard {
         // Iron rule 30: :push has no Java Bridge/MMKV — must read NativeBridge only.
         boolean hidden = pushProcess
                 ? NativeBridge.isHidden()
-                : StateMachine.getInstance().isActive();
+                : active();
         if (!hidden) return;
         Object lock = param.thisObject;
         int flags;
@@ -594,7 +606,7 @@ public final class CallGuard {
                     new XC_MethodHook() {
                         @Override
                         protected void beforeHookedMethod(MethodHookParam param) {
-                            if (!StateMachine.getInstance().isActive()) return;
+                            if (!active()) return;
                             if (!sVoIPCallPending) return;
                             param.setResult(false);
                             Log.i(TAG, "[PF:PiP] blocked enterPiP()");
@@ -610,7 +622,7 @@ public final class CallGuard {
                     new XC_MethodHook() {
                         @Override
                         protected void beforeHookedMethod(MethodHookParam param) {
-                            if (!StateMachine.getInstance().isActive()) return;
+                            if (!active()) return;
                             if (!sVoIPCallPending) return;
                             param.setResult(false);
                             Log.i(TAG, "[PF:PiP] blocked enterPiP(params)");
@@ -628,7 +640,7 @@ public final class CallGuard {
                     new XC_MethodHook() {
                         @Override
                         protected void beforeHookedMethod(MethodHookParam param) {
-                            if (!StateMachine.getInstance().isActive()) return;
+                            if (!active()) return;
                             if (!sVoIPCallPending) return;
                             param.setResult(null);
                             Log.i(TAG, "[PF:PiP] stripped setPictureInPictureParams");
@@ -645,7 +657,7 @@ public final class CallGuard {
             XposedBridge.hookMethod(ulh, new XC_MethodHook() {
                 @Override
                 protected void afterHookedMethod(MethodHookParam param) {
-                    if (!StateMachine.getInstance().isActive()) return;
+                    if (!active()) return;
                     if (!sVoIPCallPending) return;
                     if (!VOIP_ACTIVITY_CLASS.equals(param.thisObject.getClass().getName())) return;
                     try {

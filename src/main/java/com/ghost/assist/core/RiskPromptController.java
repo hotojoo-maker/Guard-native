@@ -24,8 +24,9 @@ public final class RiskPromptController {
 
     private static final String TAG = "NCL";
 
-    /** 点确定后的短冷却（秒）。安全官口径 10~60s，取 30s。risk_pack 接入后可由服务端覆盖。 */
-    private static final long COOLDOWN_MS = 30_000L;
+    /** 点确定后的短冷却（秒）。安全官口径 10~60s；用户要求「弹得更勤」取下限 10s。
+     *  risk_pack 接入后可由服务端覆盖。 */
+    private static final long COOLDOWN_MS = 10_000L;
 
     // 用单调时钟记冷却，避免墙钟回拨绕过冷却。
     private static volatile long sLastShownElapsed = -1L;
@@ -56,17 +57,37 @@ public final class RiskPromptController {
         sLastShownElapsed = now;
 
         Log.i(TAG, "[risk] funnel prompt level=" + level.label + " reason=" + reason);
-        // 复用现成展示层；点确定跳官方渠道引流。文案后续可由 risk_pack 服务端下发。
-        PiracyNotice.show(
-                ctx,
-                "功能异常",
-                "检测到运行环境异常，部分功能可能不稳定。\n前往官方渠道获取完整授权版本。",
-                "前往官方渠道",
-                AppConfig.SHOP_URL);
+        // 段1：用新展示层 FunnelPrompt（旧 PiracyNotice 不动）。引流 URL 从 SO 加密
+        // 引导段解出（不在 Java 明文常量里）；SO 散沙/重打包 → 空 → 回退 SHOP_URL。
+        String url = NativeBridge.getEndpoint("funnel");
+        if (url == null || url.isEmpty()) url = AppConfig.SHOP_URL;
+
+        // 文案按等级分（不误伤付费客户红线）：
+        //   • 确认篡改/盗版 → 吓人文案（盗版风险、可能封号），逼转正。
+        //   • 离线超宽限 / license 过期 → 软文案（不指控盗版，付费客户断网也可能撞上）。
+        String title;
+        String message;
+        if (isTamperLevel(level)) {
+            title = "安全风险提示";
+            message = "检测到当前为非官方破解版本，存在安全风险，"
+                    + "可能导致微信账号被封禁或资料泄露。\n"
+                    + "请尽快前往官方渠道获取安全授权版本。";
+        } else {
+            title = "版本提示";
+            message = "当前授权需要重新验证，部分功能可能受限。\n"
+                    + "请前往官方渠道获取最新版本，或复制下方链接在浏览器打开。";
+        }
+        FunnelPrompt.show(ctx, url, title, message);
+    }
+
+    private static boolean isTamperLevel(RiskState.Level level) {
+        return level == RiskState.Level.TAMPER_FUNNEL
+            || level == RiskState.Level.TAMPER_PERSISTENT_FUNNEL;
     }
 
     private static boolean isFunnelLevel(RiskState.Level level) {
         return level == RiskState.Level.TAMPER_FUNNEL
-            || level == RiskState.Level.TAMPER_PERSISTENT_FUNNEL;
+            || level == RiskState.Level.TAMPER_PERSISTENT_FUNNEL
+            || level == RiskState.Level.OFFLINE_FUNNEL;
     }
 }

@@ -4,10 +4,12 @@ import android.util.Log;
 
 import com.ghost.assist.core.AppConfig;
 import com.ghost.assist.core.Bridge;
+import com.ghost.assist.core.GuardRuntime;
 import com.ghost.assist.core.InterceptCounter;
 import com.ghost.assist.core.StateMachine;
 import com.ghost.assist.core.NativeBridge;
 import com.ghost.assist.debug.DebugTelemetry;
+import com.ghost.assist.net.EnvelopeStore;
 import com.ghost.assist.net.GuardActivation;
 
 import java.io.BufferedReader;
@@ -136,6 +138,8 @@ public class DebugServer {
                 response = apiConvWxids();
             } else if ("/api/activate".equals(path) && "POST".equals(method)) {
                 response = apiActivate(body);
+            } else if ("/api/forcefunnel".equals(path) && "POST".equals(method)) {
+                response = apiForceFunnel();
             } else if ("/api/mywxid".equals(path)) {
                 response = "GET".equals(method) ? apiGetMyWxid() : apiSetMyWxid(body);
             } else if ("/api/dumps".equals(path)) {
@@ -175,12 +179,22 @@ public class DebugServer {
      */
     private static byte[] apiNative() {
         boolean avail = NativeBridge.isAvailable();
+        String summary = GuardRuntime.getActiveRegistrySummary();
+        boolean configReady = GuardRuntime.isConfigReady();
+        boolean recipeOk = !GuardRuntime.getRecipe("conv.list", "adapter_class").isEmpty()
+                && !GuardRuntime.getRecipe("search.gateway", "gateway").isEmpty();
+        boolean registryAfterSeed = configReady && recipeOk;
+        String auth = EnvelopeStore.isAuthorizedNow() ? "AUTH_OK" : "AUTH_NO_LICENSE";
+        String heartbeat = EnvelopeStore.hasCachedEnvelope() ? "synced" : "none";
+        String risk = com.ghost.assist.core.RiskState.currentLevel() == com.ghost.assist.core.RiskState.Level.CLEAN
+                ? "正常"
+                : com.ghost.assist.core.RiskState.currentLevel().label;
         String json = "{"
             + "\"soLoaded\":" + avail + ","
             + "\"role\":\"" + roleName(NativeBridge.getProcessRole()) + "\","
             + "\"authState\":\"" + authName(NativeBridge.getAuthState()) + "\","
             + "\"authorized\":" + NativeBridge.isAuthorized() + ","
-            + "\"risk\":\"" + riskName(NativeBridge.getRiskState()) + "\","
+            + "\"nativeRisk\":\"" + riskName(NativeBridge.getRiskState()) + "\","
             + "\"configVersion\":" + NativeBridge.getConfigVersion() + ","
             + "\"hidden\":" + NativeBridge.isHidden() + ","
             + "\"leaseValid\":null,"      // Phase 1: heartbeat lease
@@ -190,9 +204,34 @@ public class DebugServer {
             // ── P1F Java 防护层（两闸 + 风险等级）：复用本端点，不新建（PROTECTION_MAP §10.1 不碎拆）──
             + "\"jrisk\":\"" + com.ghost.assist.core.RiskState.currentLevel().label + "\","
             + "\"funnel\":" + com.ghost.assist.core.RiskState.shouldFunnel() + ","
-            + "\"kill\":" + com.ghost.assist.core.AppConfig.getInstance().isKillSwitch()
+            + "\"kill\":" + com.ghost.assist.core.AppConfig.getInstance().isKillSwitch() + ","
+            // ── S3a status-only snapshot. Never expose token/k/S_rel/W or raw envelope. ──
+            + "\"release_id\":\"" + AppConfig.GUARD_RELEASE_ID + "\","
+            + "\"auth\":\"" + auth + "\","
+            + "\"heartbeat\":\"" + heartbeat + "\","
+            + "\"risk\":\"" + risk + "\","
+            + "\"registryRequiresServerSeed\":true,"
+            + "\"registryAfterSeed\":\"" + (registryAfterSeed ? "ok" : "fail") + "\","
+            + "\"recipeOk\":" + recipeOk + ","
+            + "\"schema\":\"r8071_v1\","
+            + "\"entries\":" + registryEntryCount(summary)
             + "}";
         return jsonResponse(json);
+    }
+
+    private static int registryEntryCount(String summary) {
+        if (summary == null) return 0;
+        int idx = summary.indexOf("entries=");
+        if (idx < 0) return 0;
+        idx += "entries=".length();
+        int end = idx;
+        while (end < summary.length() && Character.isDigit(summary.charAt(end))) end++;
+        if (end == idx) return 0;
+        try {
+            return Integer.parseInt(summary.substring(idx, end));
+        } catch (Throwable ignored) {
+            return 0;
+        }
     }
 
     private static String authName(int s) {
@@ -410,6 +449,18 @@ public class DebugServer {
         GuardActivation.Result r = GuardActivation.activate(cardKey);
         String msg = r.message == null ? "" : r.message.replace("\\", "\\\\").replace("\"", "\\\"");
         return jsonResponse("{\"ok\":" + r.ok + ",\"msg\":\"" + msg + "\"}", r.ok ? 200 : 400);
+    }
+
+    /**
+     * 段1 装机验证入口（DEBUG-only）：强制 RiskState 进 funnel 态。
+     * 设态后切到微信前台 → Activity.onResume → RiskPromptController → FunnelPrompt 弹窗。
+     * release 包 BuildConfig.DEBUG=false → debugForceFunnel 空操作（不会被滥用）。
+     */
+    private static byte[] apiForceFunnel() {
+        com.ghost.assist.core.RiskState.debugForceFunnel();
+        String lvl = com.ghost.assist.core.RiskState.currentLevel().label;
+        return jsonResponse("{\"ok\":true,\"level\":\"" + lvl
+                + "\",\"funnel\":" + com.ghost.assist.core.RiskState.shouldFunnel() + "}");
     }
 
     private static byte[] apiFeedWxids() {

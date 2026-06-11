@@ -1674,8 +1674,9 @@ public class SettingsEntry {
                     }
                 }, fakeLocOut));
         sFakeLocLabelRef = new WeakReference<>(fakeLocOut[0]);
-        content.addView(buildSwitchRow(activity, "余额装X",
-                "功能更新中", false, null));
+        // E3 修改零钱 / 余额装X暂不在设置页展示。
+        // content.addView(buildSwitchRow(activity, "余额装X",
+        //         "功能更新中", false, null));
         content.addView(buildNote(activity, "独家功能 · 请低调使用"));
 
         // ===== 通知（密友消息 + 来电 合并为一个小分组）=====

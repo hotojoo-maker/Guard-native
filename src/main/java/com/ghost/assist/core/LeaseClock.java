@@ -38,6 +38,9 @@ public final class LeaseClock {
     // 断网阶梯（小时）。对齐 NativeBridge.GRACE_* 与安全官口径 24h/72h。
     private static final long WARN_MS    = NativeBridge.GRACE_WARN_HOURS    * 3600_000L; // 24h
     private static final long DEGRADE_MS = NativeBridge.GRACE_DEGRADE_HOURS * 3600_000L; // 72h
+    // 引流阶梯：断网超 72h×2=144h（6天）→ OFFLINE_FUNNEL 引流（可恢复：联网即降回）。
+    // 用户拍板 2026-06-12。数字段1走明文常量（轻迷彩），以后随 risk_pack 服务端下发。
+    private static final long FUNNEL_MS  = DEGRADE_MS * 2;                                // 144h
 
     private LeaseClock() {}
 
@@ -131,6 +134,8 @@ public final class LeaseClock {
             // 从未心跳：仅在时钟明显回绕时标 TIME_SUSPICIOUS，否则 CLEAN。
             return suspicious ? RiskState.Level.TIME_SUSPICIOUS : RiskState.Level.CLEAN;
         }
+        // 断网超 144h（6天）→ 引流（可恢复：联网心跳成功 → offline 归零 → 降回 CLEAN）。
+        if (offline > FUNNEL_MS) return RiskState.Level.OFFLINE_FUNNEL;
         if (isLeaseExpired()) return RiskState.Level.DEGRADED;
         if (offline > DEGRADE_MS) return RiskState.Level.DEGRADED;
         if (offline > WARN_MS && suspicious) return RiskState.Level.TIME_SUSPICIOUS;

@@ -88,6 +88,7 @@ public class StateMachine {
      */
     public boolean isActive() {
         return isVipAuthorized()
+            && GuardRuntime.isSensitiveConfigReady()
             && Bridge.getInstance().isFeatureEnabled()
             && mActive;
     }

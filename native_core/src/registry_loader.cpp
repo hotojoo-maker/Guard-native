@@ -265,11 +265,21 @@ ConfigRegistry bootstrap_load_embedded() {
 std::string bootstrap_get_endpoint(const std::string& key) {
     ConfigRegistry r = bootstrap_load_embedded();
     if (!r.ok) return std::string();
+    // AUTH servers first (net.endpoint: primary/backup1/...). Keeping this lookup
+    // first preserves the exact behaviour AppConfig.guardServerList() relies on.
     const RegistryEntry* e = find_entry(r, "net.endpoint");
-    if (e == nullptr) return std::string();
-    const std::string* v = find_field(*e, key);
-    if (v == nullptr) return std::string();
-    return *v;
+    if (e != nullptr) {
+        const std::string* v = find_field(*e, key);
+        if (v != nullptr) return *v;
+    }
+    // role-B / other entries (e.g. cs.endpoint -> funnel landing): match by field
+    // key across the remaining entries. Field keys are unique so this never
+    // pollutes the auth list (guardServerList only ever asks for primary/backup*).
+    for (const auto& entry : r.entries) {
+        const std::string* v = find_field(entry, key);
+        if (v != nullptr) return *v;
+    }
+    return std::string();
 }
 
 std::string registry_dump_summary() {

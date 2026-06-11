@@ -4,7 +4,9 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
+import com.ghost.assist.BuildConfig;
 import com.ghost.assist.core.Bridge;
+import com.ghost.assist.core.GuardRuntime;
 import com.ghost.assist.core.RefreshBus;
 import com.ghost.assist.core.StateMachine;
 
@@ -46,25 +48,27 @@ public class ContactFilter {
     // keeps the literal → behaviour unchanged. NON-FINAL on purpose so the
     // resolved value can replace the fallback. ADDR_ITEM_CLS stays package-visible
     // because ContactHotReload / ContactDiscoveryHook read it.
-    private static String ADDR_ADAPTER    = "ik3.t0";
-    private static String ADDR_LIVE_LIST  = "com.tencent.mm.ui.contact.address.AddressLiveList";
-    private static String MVVMLIST_CLASS  = "com.tencent.mm.plugin.mvvmlist.MvvmList";
+    private static String ADDR_ADAPTER    = BuildConfig.DEBUG ? "ik3.t0" : "";
+    private static String ADDR_LIVE_LIST  =
+            BuildConfig.DEBUG ? "com.tencent.mm.ui.contact.address.AddressLiveList" : "";
+    private static String MVVMLIST_CLASS  =
+            BuildConfig.DEBUG ? "com.tencent.mm.plugin.mvvmlist.MvvmList" : "";
     static final String MVVMLIST_DATA   = "f135087o"; // 旧字段名（8.0.71 AddressLiveList 实测不存在，见 worklog 2026-05-29）
     // P_CV1（2026-05-29 L1 实证）：AddressLiveList 的 MvvmList 基类真实 backing 字段 = o/p/h（与会话 tab MvvmConvList 同），
     // 元素 fc5.g。injected=0 根因 = 之前硬找 f135087o 不存在。对标 ConvFilter.MVVMLIST_ARRAY_FIELDS。
     // 注：o/p/h 不在 registry，本轮保持硬编码（P1E Step2 范围外）。
     static final String[] MVVMLIST_FIELDS = {"o", "p", "h"};
-    static String ADDR_ITEM_CLS   = "fc5.g";
-    private static String ADDR_Z3_CLS     = "com.tencent.mm.storage.z3";
+    static String ADDR_ITEM_CLS   = BuildConfig.DEBUG ? "fc5.g" : "";
+    private static String ADDR_Z3_CLS     =
+            BuildConfig.DEBUG ? "com.tencent.mm.storage.z3" : "";
     // z3 wxid getter method name (was inline "c1"); now registry-sourced w/ fallback.
-    private static String WXID_GETTER     = "c1";
+    private static String WXID_GETTER     = BuildConfig.DEBUG ? "c1" : "";
 
     private static volatile boolean sRecipesResolved = false;
 
-    /** Resolve one recipe field from registry contact.address; "" → keep fallback. */
+    /** Resolve one recipe field from registry contact.address; release+PROD has no fallback. */
     private static String recipe(String key, String fallback) {
-        String v = com.ghost.assist.core.GuardRuntime.getRecipe("contact.address", key);
-        return (v == null || v.isEmpty()) ? fallback : v;
+        return GuardRuntime.getRecipeOrFallback("contact.address", key, fallback);
     }
 
     /**
@@ -72,8 +76,8 @@ public class ContactFilter {
      * falling back to the embedded literals when the registry is unavailable /
      * scattered. Idempotent; called once at install() before any hook fires.
      */
-    private static void resolveRecipes() {
-        if (sRecipesResolved) return;
+    private static boolean resolveRecipes() {
+        if (sRecipesResolved) return true;
         ADDR_ADAPTER   = recipe("adapter_class", ADDR_ADAPTER);
         ADDR_LIVE_LIST = recipe("live_list", ADDR_LIVE_LIST);
         MVVMLIST_CLASS = recipe("mvvmlist_class", MVVMLIST_CLASS);
@@ -83,10 +87,18 @@ public class ContactFilter {
         sRecipesResolved = true;
         // fallback self-proof: an unknown key must return the supplied fallback
         // (proves the registry-miss path keeps old behaviour, no regression).
-        boolean fbOk = "ik3.t0".equals(recipe("__no_such_key__", "ik3.t0"));
+        boolean ready = !ADDR_ADAPTER.isEmpty()
+                && !ADDR_LIVE_LIST.isEmpty()
+                && !MVVMLIST_CLASS.isEmpty()
+                && !ADDR_ITEM_CLS.isEmpty()
+                && !ADDR_Z3_CLS.isEmpty()
+                && !WXID_GETTER.isEmpty();
+        boolean fbOk = BuildConfig.DEBUG && "ik3.t0".equals(recipe("__no_such_key__", "ik3.t0"));
         Log.i(TAG, "[CTF] recipes adapter=" + ADDR_ADAPTER + " item=" + ADDR_ITEM_CLS
                 + " contact=" + ADDR_Z3_CLS + " getter=" + WXID_GETTER
-                + " live=" + ADDR_LIVE_LIST + " fallbackSelfTest=" + (fbOk ? "ok" : "FAIL"));
+                + " live=" + ADDR_LIVE_LIST + " fallbackSelfTest=" + (fbOk ? "ok" : "FAIL")
+                + " ready=" + ready);
+        return ready;
     }
 
     // DEX field names (JADX prefix stripped):  f238409d → "d",  f238410e → "e"
@@ -105,7 +117,10 @@ public class ContactFilter {
         // P1E Step2: resolve class-name anchors from registry (fallback = literals)
         // BEFORE any hook installs, so ContactHotReload / ContactDiscoveryHook see
         // the resolved ADDR_ITEM_CLS too.
-        resolveRecipes();
+        if (!resolveRecipes()) {
+            Log.w(TAG, "[CTF] skip install: registry not ready");
+            return;
+        }
         // 密友（主通讯录）热切的真正驱动 = installAddAllHook（H 态过滤 + cache）
         //   + ContactDiscoveryHook（扫 live AddressLiveList/ik3.t0 → 写 sLiveListRef/sAdapterRef）
         //   + RefreshBus → ContactHotReload（H 清 / V 注 o/p/h）。

@@ -167,6 +167,20 @@ input[type=text]:focus,select:focus{outline:none;border-color:var(--accent)}
       <span style="font-size:10px">租约 <span id="cp-lease" style="color:#555">待接入</span></span>
       <span style="font-size:10px">解密 <span id="cp-decrypt" style="color:#555">待接入</span></span>
     </div>
+    <div style="margin-top:4px;background:#0c0c0c;border:1px solid #224422;border-radius:4px;padding:4px 6px">
+      <div style="color:#888;font-size:9px;margin-bottom:2px">S3a 真锁状态（不显示密钥）</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:10px">
+        <span>release <span id="s3a-release" style="color:#8af">--</span></span>
+        <span>auth <span id="s3a-auth" style="color:#0f0">--</span></span>
+        <span>heartbeat <span id="s3a-heartbeat" style="color:#0f0">--</span></span>
+        <span>risk <span id="s3a-risk" style="color:#0f0">--</span></span>
+        <span>seedRequired <span id="s3a-seed-required" style="color:#ff0">--</span></span>
+        <span>afterSeed <span id="s3a-after-seed" style="color:#0f0">--</span></span>
+        <span>recipeOk <span id="s3a-recipe" style="color:#0f0">--</span></span>
+        <span>schema <span id="s3a-schema" style="color:#8af">--</span></span>
+        <span>entries <span id="s3a-entries" style="color:#8f8">--</span></span>
+      </div>
+    </div>
     <div style="margin-top:6px">
       <div class="label" style="margin-bottom:3px">防破解阶段</div>
       <div style="font-size:10px;padding:1px 0"><span style="color:#0f0">✓ Phase 0</span> 止血+诱饵 <span style="color:#777">完成（gate / proguard / 接死代码 均验过）</span></div>
@@ -1056,7 +1070,7 @@ async function pollNative() {
     if (ae) { ae.textContent = j.authState || '--';
       ae.style.color = j.authState === 'OK' ? '#0f0' : (j.authState === 'TAMPERED' || j.authState === 'EXPIRED') ? '#f44' : '#ff0'; }
     var re = document.getElementById('so-risk');
-    if (re) { re.textContent = j.risk || '--'; re.style.color = (j.risk && j.risk !== 'NONE') ? '#f44' : '#0f0'; }
+    if (re) { re.textContent = j.nativeRisk || '--'; re.style.color = (j.nativeRisk && j.nativeRisk !== 'NONE') ? '#f44' : '#0f0'; }
     setText('so-cfgver', 'v' + (j.configVersion !== undefined ? j.configVersion : '?'));
     setText('so-lease', (j.leaseValid === null || j.leaseValid === undefined) ? '待接入'
         : (j.leaseValid ? ('有效' + (j.graceRemainHours >= 0 ? ' ' + j.graceRemainHours + 'h' : '')) : '过期'));
@@ -1082,7 +1096,7 @@ async function pollCockpit() {
     var au = document.getElementById('cp-auth');
     if (au) { au.textContent = n.authState || '--'; au.style.color = n.authState === 'OK' ? '#0f0' : (n.authState === 'TAMPERED' || n.authState === 'EXPIRED') ? '#f44' : '#ff0'; }
     var rk = document.getElementById('cp-risk');
-    if (rk) { rk.textContent = n.risk || '--'; rk.style.color = (n.risk && n.risk !== 'NONE') ? '#f44' : '#0f0'; }
+    if (rk) { rk.textContent = n.nativeRisk || '--'; rk.style.color = (n.nativeRisk && n.nativeRisk !== 'NONE') ? '#f44' : '#0f0'; }
     setText('cp-cfg', 'v' + (n.configVersion !== undefined ? n.configVersion : '?'));
     setText('cp-role', n.role || '--');
     var jr = document.getElementById('cp-jrisk');
@@ -1095,6 +1109,15 @@ async function pollCockpit() {
     if (tp) { tp.textContent = n.tampered ? '是 ⚠' : '否'; tp.style.color = n.tampered ? '#f44' : '#666'; }
     setText('cp-lease', (n.leaseValid === null || n.leaseValid === undefined) ? '待接入' : (n.leaseValid ? '有效' : '过期'));
     setText('cp-decrypt', (n.decryptOk === null || n.decryptOk === undefined) ? '待接入' : (n.decryptOk ? 'OK' : '失败'));
+    setText('s3a-release', n.release_id || '--');
+    setText('s3a-auth', n.auth || '--');
+    setText('s3a-heartbeat', n.heartbeat || '--');
+    setText('s3a-risk', n.risk || '--');
+    setText('s3a-seed-required', String(!!n.registryRequiresServerSeed));
+    setText('s3a-after-seed', n.registryAfterSeed || '--');
+    setText('s3a-recipe', String(!!n.recipeOk));
+    setText('s3a-schema', n.schema || '--');
+    setText('s3a-entries', n.entries !== undefined ? n.entries : '--');
   } catch(e) {}
 }
 

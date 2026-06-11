@@ -1,5 +1,7 @@
 package com.ghost.assist.core;
 
+import com.ghost.assist.BuildConfig;
+
 /**
  * GuardRuntime — single entry point for hook recipes (class/field names).
  *
@@ -37,6 +39,22 @@ public final class GuardRuntime {
         return EncryptedConfigLoader.isConfigReady();
     }
 
+    /**
+     * Customer release builds must not fall back to embedded hook recipes. The
+     * switch is build-time only so R8 can strip debug fallback literals.
+     */
+    public static boolean isStrictRecipeMode() {
+        return !BuildConfig.DEBUG;
+    }
+
+    /**
+     * Sensitive hooks are allowed only when the registry is ready in strict
+     * release mode. Debug/dev keeps the old behavior for diagnostics.
+     */
+    public static boolean isSensitiveConfigReady() {
+        return !isStrictRecipeMode() || isConfigReady();
+    }
+
     /** Backward-compatible alias used by early P1E notes. */
     public static boolean isRegistryActive() {
         return isConfigReady();
@@ -62,5 +80,30 @@ public final class GuardRuntime {
      */
     public static String getRecipe(String gateway, String key) {
         return EncryptedConfigLoader.getRecipe(gateway, key);
+    }
+
+    /**
+     * Transitional helper for Filter install-time anchors. Release+PROD returns
+     * empty on registry miss so callers can skip installing that sensitive hook;
+     * debug/dev returns the known literal fallback.
+     */
+    public static String getRecipeOrFallback(String gateway, String key, String fallback) {
+        String v = getRecipe(gateway, key);
+        if (v != null && !v.isEmpty()) return v;
+        return isStrictRecipeMode() ? "" : fallback;
+    }
+
+    public static String[] getRecipeListOrFallback(String gateway, String key, String[] fallback) {
+        String v = getRecipe(gateway, key);
+        if (v == null || v.isEmpty()) {
+            return isStrictRecipeMode() ? new String[0] : fallback;
+        }
+        String[] parts = v.split(",");
+        return parts.length > 0 ? parts : (isStrictRecipeMode() ? new String[0] : fallback);
+    }
+
+    public static boolean hasRecipe(String gateway, String key) {
+        String v = getRecipe(gateway, key);
+        return v != null && !v.isEmpty();
     }
 }

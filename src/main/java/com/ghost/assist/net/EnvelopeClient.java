@@ -120,6 +120,57 @@ public final class EnvelopeClient {
         return null;
     }
 
+    /**
+     * Best-effort health telemetry. This must never grant, revoke, or poison
+     * auth state; failures are intentionally ignored by callers.
+     */
+    public static boolean reportHealth(String token, String deviceId,
+                                       String certHex, String appVersion,
+                                       JSONObject health) {
+        JSONObject body = new JSONObject();
+        try {
+            body.put("token", token == null ? "" : token);
+            body.put("device_id", deviceId == null ? "" : deviceId);
+            body.put("product_id", AppConfig.GUARD_PRODUCT_ID);
+            body.put("release_id", AppConfig.GUARD_RELEASE_ID);
+
+            JSONObject client = new JSONObject();
+            client.put("install_id", deviceId == null ? "" : deviceId);
+            client.put("app_version", appVersion == null ? "" : appVersion);
+            client.put("schema", AuthEnvelopeVerifier.EXPECTED_SCHEMA);
+            client.put("wx_version", AuthEnvelopeVerifier.EXPECTED_WX_VERSION);
+            client.put("release_id", AppConfig.GUARD_RELEASE_ID);
+            client.put("cert", certHex == null ? "" : certHex);
+            try {
+                android.content.Context ctx = AppConfig.getInstance().getAppContext();
+                client.put("package_name", ctx == null ? "" : ctx.getPackageName());
+            } catch (Throwable ignored) {
+                client.put("package_name", "");
+            }
+            body.put("client", client);
+            body.put("health", health == null ? new JSONObject() : health);
+        } catch (Throwable t) {
+            return false;
+        }
+
+        String prevError = sLastErrorCode;
+        try {
+            for (String base : AppConfig.guardServerList()) {
+                String resp = post(base + "/api/v1/guard/health", body.toString());
+                if (resp == null) continue;
+                try {
+                    JSONObject j = new JSONObject(resp);
+                    if ("ok".equals(j.optString("status"))) return true;
+                } catch (Throwable ignore) {
+                    // malformed body -> try next server
+                }
+            }
+            return false;
+        } finally {
+            sLastErrorCode = prevError;
+        }
+    }
+
     /** 在后台线程跑整套激活/取信封流程，避免主线程网络。 */
     public static void runAsync(Runnable r) {
         new Thread(r, "guard-env").start();

@@ -4,6 +4,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
+import com.ghost.assist.BuildConfig;
 import com.ghost.assist.core.Bridge;
 import com.ghost.assist.core.InterceptCounter;
 import com.ghost.assist.core.RefreshBus;
@@ -61,11 +62,12 @@ public class ConvFilter {
     // so resolved value replaces fallback. Only these 3 — inline literals ("kc5.y",
     // "notifyDataSetChanged") inside hook callbacks are NOT touched (iron rules
     // 13-22). registry contact_fields(subset)/l1_methods drift left as a debt.
-    private static String MVVMLIST_CLASS      = "com.tencent.mm.plugin.mvvmlist.MvvmList";
+    private static String MVVMLIST_CLASS      =
+            BuildConfig.DEBUG ? "com.tencent.mm.plugin.mvvmlist.MvvmList" : "";
     // 8.0.71: MvvmList subclass for conversation list (static analysis confirmed)
     static final String MVVMCONV_CLASS      = "com.tencent.mm.ui.conversation.adapter.MvvmConvList";
     private static final String CONV_LIST_VIEW      = "com.tencent.mm.ui.conversation.ConversationListView";
-    static String ADAPTER_CLASS_71    = "kc5.v0";   // confirmed 8.0.71 (ConvHotReload reads it)
+    static String ADAPTER_CLASS_71    = BuildConfig.DEBUG ? "kc5.v0" : "";   // confirmed 8.0.71 (ConvHotReload reads it)
     static final String ADAPTER_CLASS_66    = "f45.s0";
 
     // MvvmList internal ArrayList field names
@@ -81,7 +83,9 @@ public class ConvFilter {
     // Methods on contact obj that return wxid
     // C0() = 8.0.71 l4.C0() → field_digestUser = wxid  (confirmed by live broad-scan 2026-05-22)
     // h1() = returns "officialaccounts" for public account items — NOT wxid for regular contacts
-    private static String[] WXID_GETTER_NAMES = {"C0", "h1", "j1", "i1", "k1", "getUsername", "getUserName"};
+    private static String[] WXID_GETTER_NAMES = BuildConfig.DEBUG
+            ? new String[]{"C0", "h1", "j1", "i1", "k1", "getUsername", "getUserName"}
+            : new String[0];
     // Fields on contact obj that hold wxid directly
     private static final String[] WXID_FIELD_NAMES = {"field_userName", "username", "d", "e"};
     private static final String UNREAD_FIELD = "field_unReadCount";
@@ -90,18 +94,14 @@ public class ConvFilter {
 
     private static volatile boolean sRecipesResolved = false;
 
-    /** Resolve one recipe field from registry conv.list; "" → keep fallback. */
+    /** Resolve one recipe field from registry conv.list; release+PROD has no fallback. */
     private static String recipe(String key, String fallback) {
-        String v = com.ghost.assist.core.GuardRuntime.getRecipe("conv.list", key);
-        return (v == null || v.isEmpty()) ? fallback : v;
+        return com.ghost.assist.core.GuardRuntime.getRecipeOrFallback("conv.list", key, fallback);
     }
 
-    /** Resolve a comma-separated recipe field into an array; "" → keep fallback. */
+    /** Resolve a comma-separated recipe field into an array; release+PROD has no fallback. */
     private static String[] recipeArr(String key, String[] fallback) {
-        String v = com.ghost.assist.core.GuardRuntime.getRecipe("conv.list", key);
-        if (v == null || v.isEmpty()) return fallback;
-        String[] parts = v.split(",");
-        return parts.length > 0 ? parts : fallback;
+        return com.ghost.assist.core.GuardRuntime.getRecipeListOrFallback("conv.list", key, fallback);
     }
 
     /**
@@ -111,16 +111,21 @@ public class ConvFilter {
      * does NOT touch L1/L2/L4 callbacks, clean-before, notify, or H↔V refresh
      * (iron rules 13-22). Inline literals stay hard-coded this round.
      */
-    private static void resolveRecipes() {
-        if (sRecipesResolved) return;
+    private static boolean resolveRecipes() {
+        if (sRecipesResolved) return true;
         MVVMLIST_CLASS    = recipe("mvvmlist_class", MVVMLIST_CLASS);
         ADAPTER_CLASS_71  = recipe("adapter_class", ADAPTER_CLASS_71);
         WXID_GETTER_NAMES = recipeArr("wxid_getters", WXID_GETTER_NAMES);
         sRecipesResolved = true;
-        boolean fbOk = "kc5.v0".equals(recipe("__no_such_key__", "kc5.v0"));
+        boolean fbOk = BuildConfig.DEBUG && "kc5.v0".equals(recipe("__no_such_key__", "kc5.v0"));
+        boolean ready = !MVVMLIST_CLASS.isEmpty()
+                && !ADAPTER_CLASS_71.isEmpty()
+                && WXID_GETTER_NAMES.length > 0;
         Log.i(TAG, "[CF] recipes mvvm=" + MVVMLIST_CLASS + " adapter=" + ADAPTER_CLASS_71
                 + " getters=" + java.util.Arrays.toString(WXID_GETTER_NAMES)
-                + " fallbackSelfTest=" + (fbOk ? "ok" : "FAIL"));
+                + " fallbackSelfTest=" + (fbOk ? "ok" : "FAIL")
+                + " ready=" + ready);
+        return ready;
     }
 
     private static volatile boolean sInstalled = false;
@@ -197,7 +202,10 @@ public class ConvFilter {
 
         // P1E Step4: resolve conv.list anchors from registry (fallback=literals)
         // BEFORE any hook installs (ConvHotReload also reads ADAPTER_CLASS_71).
-        resolveRecipes();
+        if (!resolveRecipes()) {
+            Log.w(TAG, "[CF] skip install: registry not ready");
+            return;
+        }
 
         installH0DataHook(lpparam);
         installKc5AHook(lpparam);

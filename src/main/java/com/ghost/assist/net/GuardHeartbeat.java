@@ -4,9 +4,12 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
+import com.ghost.assist.core.GuardRuntime;
 import com.ghost.assist.core.LeaseClock;
 import com.ghost.assist.core.NativeBridge;
 import com.ghost.assist.core.RiskState;
+
+import org.json.JSONObject;
 
 import java.util.Random;
 
@@ -75,8 +78,9 @@ public final class GuardHeartbeat {
      * @return 成功返回新信封的 tier（用于排下次间隔）；失败返回 -1
      */
     public static int syncOnce(String deviceId, String certHex, String appVersion) {
+        String token = "";
         try {
-            String token = EnvelopeStore.getToken();
+            token = EnvelopeStore.getToken();
             if (token == null || token.isEmpty()) {
                 Log.i(TAG, "[hb] no token yet — awaiting activation");
                 return -1;
@@ -91,12 +95,22 @@ public final class GuardHeartbeat {
                     Log.w(TAG, "[hb] hard auth error — token cleared");
                 }
                 Log.w(TAG, "[hb] envelope invalid — fail-closed");
+                reportHealth(token, deviceId, certHex, appVersion,
+                        nonEmpty(EnvelopeClient.getLastErrorCode(), "ENVELOPE_INVALID"),
+                        "unknown", null);
                 return -1;
             }
             if (!NativeBridge.applyServerSeedAndReset(e.keyMaterial, e.keyNonce)) {
                 Log.w(TAG, "[hb] server seed unwrap failed — keep cached, fail-closed");
+                reportHealth(token, deviceId, certHex, appVersion,
+                        "SERVER_SEED_UNWRAP_FAILED", "failed", null);
                 return -1;
             }
+            String convAdapter = GuardRuntime.getRecipe("conv.list", "adapter_class");
+            String searchGateway = GuardRuntime.getRecipe("search.gateway", "gateway");
+            boolean recipeOk = !convAdapter.isEmpty() && !searchGateway.isEmpty();
+            Log.i(TAG, "[hb] registry after seed summary="
+                    + GuardRuntime.getActiveRegistrySummary() + " recipeOk=" + recipeOk);
             EnvelopeStore.saveEnvelope(e);
 
             // S3b：把已验签的服务器时间 + 租约喂给 LeaseClock（信封是 unix 秒 → 毫秒）。
@@ -105,9 +119,12 @@ public final class GuardHeartbeat {
             RiskState.Level lvl = RiskState.evaluate();
             Log.i(TAG, "[hb] synced tier=" + e.tier + " lease=" + e.leaseExpire
                     + " risk=" + lvl.label);
+            reportHealth(token, deviceId, certHex, appVersion, "OK", "ok", lvl);
             return e.tier;
         } catch (Throwable t) {
             Log.w(TAG, "[hb] sync err: " + t.getClass().getSimpleName());
+            reportHealth(token, deviceId, certHex, appVersion,
+                    "SYNC_" + t.getClass().getSimpleName(), "unknown", null);
             return -1;
         }
     }
@@ -155,6 +172,59 @@ public final class GuardHeartbeat {
         if ("DEVICE_BANNED".equals(code)) return "设备已封停，请联系售后";
         if ("TOKEN_INVALID".equals(code)) return "授权已失效，请重新激活";
         return "授权异常，请联系售后";
+    }
+
+    private static void reportHealth(String token, String deviceId, String certHex,
+                                     String appVersion, String resultCode,
+                                     String seedUnwrap, RiskState.Level level) {
+        try {
+            if (token == null || token.isEmpty()) return;
+            RiskState.Level risk = level == null ? RiskState.currentLevel() : level;
+            JSONObject health = new JSONObject();
+            health.put("v", 1);
+            health.put("env_result", nonEmpty(resultCode, "UNKNOWN"));
+            health.put("lease_state", leaseState());
+            health.put("risk_level", risk.name());
+            health.put("last_error_code", "OK".equals(resultCode) ? "" : nonEmpty(resultCode, "UNKNOWN"));
+            health.put("server_seed_unwrap", nonEmpty(seedUnwrap, "unknown"));
+            health.put("registry_summary_state", registryState());
+            health.put("app_version", appVersion == null ? "" : appVersion);
+            health.put("schema", AuthEnvelopeVerifier.EXPECTED_SCHEMA);
+            health.put("wx_version", AuthEnvelopeVerifier.EXPECTED_WX_VERSION);
+            if (certHex != null && !certHex.isEmpty()) {
+                health.put("cert_digest_prefix",
+                        certHex.substring(0, Math.min(16, certHex.length())).toLowerCase());
+            }
+            boolean sent = EnvelopeClient.reportHealth(token, deviceId, certHex, appVersion, health);
+            Log.i(TAG, "[hb] health report sent=" + sent
+                    + " result=" + health.optString("env_result")
+                    + " lease=" + health.optString("lease_state")
+                    + " risk=" + health.optString("risk_level")
+                    + " registry=" + health.optString("registry_summary_state"));
+        } catch (Throwable t) {
+            Log.w(TAG, "[hb] health report skipped: " + t.getClass().getSimpleName());
+        }
+    }
+
+    private static String leaseState() {
+        RiskState.Level level = LeaseClock.currentLevel();
+        switch (level) {
+            case CLEAN: return "正常";
+            case OFFLINE_WARN: return "离线提醒";
+            case TIME_SUSPICIOUS: return "时间异常";
+            case DEGRADED: return "降级";
+            default: return level.name();
+        }
+    }
+
+    private static String registryState() {
+        String summary = GuardRuntime.getActiveRegistrySummary();
+        if (summary == null || summary.isEmpty()) return "unknown";
+        return summary.startsWith("scatter") || "scatter".equals(summary) ? "scatter" : "ready";
+    }
+
+    private static String nonEmpty(String value, String fallback) {
+        return value == null || value.isEmpty() ? fallback : value;
     }
 
     /**

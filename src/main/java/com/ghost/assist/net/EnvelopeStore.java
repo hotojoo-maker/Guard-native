@@ -5,7 +5,9 @@ import android.content.SharedPreferences;
 import android.os.SystemClock;
 import android.util.Log;
 
+import com.ghost.assist.core.AuthManager;
 import com.ghost.assist.core.LeaseClock;
+import com.ghost.assist.core.NativeBridge;
 
 /**
  * EnvelopeStore — S2 信封 / token 本地缓存（离线冷启动复用）。
@@ -43,6 +45,10 @@ public final class EnvelopeStore {
     private static final String K_UP_U    = "uu";    // 更新链接
 
     private static volatile SharedPreferences sPrefs;
+    private static volatile Context sAppCtx;
+    private static volatile String sVerifiedBlob = "";
+    private static volatile String sVerifiedDevice = "";
+    private static volatile AuthEnvelopeVerifier.Envelope sVerifiedEnvelope;
 
     private EnvelopeStore() {}
 
@@ -50,7 +56,8 @@ public final class EnvelopeStore {
     public static void init(Context ctx) {
         try {
             if (ctx != null && sPrefs == null) {
-                sPrefs = ctx.getApplicationContext().getSharedPreferences(PREFS, 0);
+                sAppCtx = ctx.getApplicationContext();
+                sPrefs = sAppCtx.getSharedPreferences(PREFS, 0);
             }
         } catch (Throwable t) {
             Log.w(TAG, "[env] store init err: " + t.getClass().getSimpleName());
@@ -93,6 +100,7 @@ public final class EnvelopeStore {
                 .putString(K_UP_U, e.updateUrl == null ? "" : e.updateUrl)
                 .remove(K_ERR)
                 .apply();
+        resetVerifiedCache();
     }
 
     public static String getCachedBlob() {
@@ -121,14 +129,50 @@ public final class EnvelopeStore {
      * 断网不在此处掉授权（只看真到期）；离线宽限/提醒由 LeaseClock 等级承担（record-only）。
      */
     public static boolean isLicenseExpired() {
-        long exp = getLicenseExpireSec();
+        return isLicenseExpired(getLicenseExpireSec());
+    }
+
+    private static boolean isLicenseExpired(long exp) {
         if (exp <= 0) return false;
         long trustedNowSec = LeaseClock.trustedNow() / 1000L;
         return exp <= trustedNowSec;
     }
 
     public static boolean isAuthorizedNow() {
-        return hasToken() && hasCachedEnvelope() && !isLicenseExpired();
+        if (!hasToken()) return false;
+        AuthEnvelopeVerifier.Envelope e = getVerifiedCachedEnvelope();
+        return e != null && !isLicenseExpired(e.licenseExpire);
+    }
+
+    /**
+     * P0 hardening: local cache is not an auth source. Every authorization check
+     * reuses only a cached result for the exact signed blob + device id; any
+     * manual tk/bl/le edit must still pass Ed25519 + device/schema sanity.
+     */
+    public static AuthEnvelopeVerifier.Envelope getVerifiedCachedEnvelope() {
+        String blob = getCachedBlob();
+        if (blob.isEmpty() || sAppCtx == null) return null;
+        String deviceId = AuthManager.computeDeviceHash(sAppCtx);
+        AuthEnvelopeVerifier.Envelope cached = sVerifiedEnvelope;
+        if (cached != null && blob.equals(sVerifiedBlob) && deviceId.equals(sVerifiedDevice)) {
+            return cached;
+        }
+        AuthEnvelopeVerifier.Envelope e = AuthEnvelopeVerifier.verifyAndParse(blob, deviceId);
+        if (e == null) {
+            resetVerifiedCache();
+            return null;
+        }
+        sVerifiedBlob = blob;
+        sVerifiedDevice = deviceId;
+        sVerifiedEnvelope = e;
+        return e;
+    }
+
+    /** Apply a verified cached envelope's server seed before Filter hooks install. */
+    public static boolean applyCachedEnvelopeSeed() {
+        AuthEnvelopeVerifier.Envelope e = getVerifiedCachedEnvelope();
+        if (e == null || isLicenseExpired(e.licenseExpire)) return false;
+        return NativeBridge.applyServerSeedAndReset(e.keyMaterial, e.keyNonce);
     }
 
     public static void saveAuthError(String message) {
@@ -154,6 +198,7 @@ public final class EnvelopeStore {
     public static void clear() {
         if (sPrefs == null) return;
         sPrefs.edit().clear().apply();
+        resetVerifiedCache();
     }
 
     /**
@@ -169,5 +214,12 @@ public final class EnvelopeStore {
                 .remove(K_LICENSE)
                 .remove(K_SRV_NOW)
                 .apply();
+        resetVerifiedCache();
+    }
+
+    private static void resetVerifiedCache() {
+        sVerifiedBlob = "";
+        sVerifiedDevice = "";
+        sVerifiedEnvelope = null;
     }
 }

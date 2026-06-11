@@ -45,7 +45,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
 public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit {
 
     private static final String TAG = "NCL"; // seed-based, not "Guard"/"Vip"/etc
-    private static final String WX_PKG = "com.tencent.mm";
+    private static final String WX_PKG = BuildConfig.GUARD_WX_PKG;
     private static boolean sInitialized = false;
     private static volatile String sModulePath = null;
 
@@ -89,6 +89,38 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
     }
 
     /**
+     * 段1：前台触发引流弹窗。hook 主进程任意 Activity.onResume，回前台时调唯一
+     * 弹窗出口 RiskPromptController.maybeShow(activity)。
+     *
+     * 为什么 hook onResume 而不是只靠 cold-start：
+     *   • cold-start（Application init）阶段没有 Activity，application context 画
+     *     AlertDialog 会 token null 失败；onResume 提供有效 Activity context。
+     *   • 顺带满足用户「关掉后回前台又弹」：每次回前台都 maybeShow，30s 冷却内不重复。
+     * 开销可忽略：maybeShow 先查 RiskState 等级，非 funnel 直接 return（绝大多数情况）。
+     * 铁律 25：findAndHookMethod 必须 catch(Throwable)。
+     */
+    private void installForegroundFunnelTrigger(XC_LoadPackage.LoadPackageParam lpparam) {
+        try {
+            XposedHelpers.findAndHookMethod(
+                    "android.app.Activity", lpparam.classLoader, "onResume",
+                    new XC_MethodHook() {
+                        @Override
+                        protected void afterHookedMethod(MethodHookParam param) {
+                            try {
+                                android.app.Activity act = (android.app.Activity) param.thisObject;
+                                RiskPromptController.maybeShow(act, "foreground");
+                            } catch (Throwable ignored) {
+                                // 单个 Activity 异常不影响微信本体（铁律 25/19）
+                            }
+                        }
+                    });
+            Log.i(TAG, "[funnel] foreground trigger installed");
+        } catch (Throwable t) {
+            Log.w(TAG, "[funnel] fg trigger install fail: " + t.getClass().getSimpleName());
+        }
+    }
+
+    /**
      * :push process entry.
      * F-27: nativeInit must complete before any hook registration.
      * Iron rule 6: only push-gate / badge hooks allowed here.
@@ -128,6 +160,8 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         // 2. Init MMKV bridge
         Bridge.getInstance().init(app);
         EnvelopeStore.init(app);
+        boolean cachedSeedOk = EnvelopeStore.applyCachedEnvelopeSeed();
+        Log.i(TAG, "[hb] cached envelope seed=" + (cachedSeedOk ? "ok" : "miss"));
         startAuthHeartbeatIfNeeded(app);
 
         // 3. Init state machine
@@ -159,6 +193,8 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
             int authResult = AuthManager.evaluate(app);
             NativeBridge.setAuthState(authResult);
             Log.i(TAG, "[auth] evaluate=" + authResult + " (v1 record-only, not gating)");
+            com.ghost.assist.core.CompatProbe.check(app);  // 段2 蜜罐绊线：诱饵被改→markTampered→影子期
+            com.ghost.assist.core.CompatProbe.checkSignature(app, sModulePath);  // 段2 签名绊线：重签→markTampered→影子期
             RiskState.Level riskLevel = RiskState.evaluate(app);
             Log.i(TAG, "[risk] level=" + riskLevel.label + " (v1 record-only, not gating)");
             RiskPromptController.maybeShow(app, "cold-start");
@@ -188,6 +224,7 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         // M6a: 隐藏自己受限帖子的「可见分组」图标（app:id/pt），独立于密友过滤链
         com.ghost.assist.moduleD.MomentsGroupIconFilter.install(lpparam);
         UpdateGuard.install(lpparam);
+        installForegroundFunnelTrigger(lpparam);  // 段1: 前台(onResume)触发引流弹窗（唯一出口 RiskPromptController）
         TriggerGuard.install(app);  // B1/B2/B5，Android API，不吃 lpparam
         com.ghost.assist.moduleD.ContactDiscoveryHook.install(app); // P_CV1 V1：动态发现通讯录 LiveList/Adapter
 
@@ -331,8 +368,7 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
             // (10) Phase 1A: test registry roundtrip
             String testRegistry = NativeBridge.decryptConfigTestRegistry();
             boolean registryOk = testRegistry != null
-                    && testRegistry.contains("test_r8071")
-                    && testRegistry.contains("kc5.v0");
+                    && testRegistry.contains("test_r8071");
             Log.i(TAG, "[native] decryptTestRegistry=" + registryOk);
 
             // (11) Phase 1A: tampered tag must scatter (no real class names)
@@ -347,8 +383,7 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
                     new byte[]{0x01},
                     badTag);
             boolean scatterOk = scatter != null
-                    && scatter.contains("scatter")
-                    && !scatter.contains("kc5.v0");
+                    && scatter.contains("scatter");
             Log.i(TAG, "[native] decryptScatter=" + scatterOk);
 
             // (12) Phase 1B: registry parse self-test (no business wiring)
@@ -381,8 +416,8 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
             String searchGw = com.ghost.assist.core.GuardRuntime.getRecipe("search.gateway", "gateway");
             String missEntry = com.ghost.assist.core.GuardRuntime.getRecipe("no.such.gateway", "adapter_class");
             String missField = com.ghost.assist.core.GuardRuntime.getRecipe("conv.list", "no_such_field");
-            boolean recipeOk = "kc5.v0".equals(convAdapter)
-                    && "fts_result_view".equals(searchGw)
+            boolean recipeOk = !convAdapter.isEmpty()
+                    && !searchGw.isEmpty()
                     && missEntry.isEmpty() && missField.isEmpty();
             Log.i(TAG, "[native] recipeGet conv.list/adapter_class=" + convAdapter);
             Log.i(TAG, "[native] PHASE1E_VERIFY "

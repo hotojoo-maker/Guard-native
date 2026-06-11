@@ -28,6 +28,9 @@ public final class RiskState {
         OFFLINE_WARN(1, "离线提醒"),
         TIME_SUSPICIOUS(2, "时间异常"),
         DEGRADED(3, "降级"),
+        // 离线超宽限(>144h) / license 真过期 → 引流，但【可恢复】：联网验证授权
+        // 正常即自动降回 CLEAN（不像篡改链要服务器 risk_reset）。
+        OFFLINE_FUNNEL(53, "离线引流"),
         TAMPER_SHADOW(4, "蜜罐影子期"),
         TAMPER_FUNNEL(5, "篡改引流"),
         PROBATION(55, "试用观察"),
@@ -38,8 +41,12 @@ public final class RiskState {
         Level(int code, String label) { this.code = code; this.label = label; }
     }
 
-    /** 影子期默认时长（小时）。risk_pack 接入后由服务端覆盖；默认不超过 48h。 */
-    private static final long SHADOW_HOURS_DEFAULT = 24L;
+    /**
+     * 影子期默认时长（小时）。用户拍板 2026-06-12：盗版包发布后【至少 10 天】才弹，
+     * 越长越难让破解者把「改动」和「弹窗」对上因果（改完当场看一切正常，10 天后才发作）。
+     * risk_pack 接入后可由服务端覆盖。
+     */
+    private static final long SHADOW_HOURS_DEFAULT = 240L;   // 10 天
 
     // 蜜罐首次命中时间（可信时间，毫秒）。0 = 未命中。持久化以跨进程/重启保留。
     private static final String KEY_TAMPER_FIRST_SEEN = "rtfs";
@@ -58,11 +65,25 @@ public final class RiskState {
     }
 
     /**
+     * 是否应【功能散沙降级】（破解后真功能失效，安全官「功能失效策略」）。
+     * 只在【确认篡改 + 过了影子期】(TAMPER_FUNNEL/PERSISTENT) 为 true：
+     *   • 影子期内(TAMPER_SHADOW) = false → 破解者当场测一切正常，绊线藏住。
+     *   • 离线/过期(OFFLINE_FUNNEL) = false → 不散沙正版客户功能（只弹软提醒）。
+     *   • 正版包签名对、诱饵未改 → 永远 CLEAN → 永远 false（不误伤）。
+     * 消费者：CallGuard 等敏感功能拿它当「失效闸」。
+     */
+    public static boolean isTamperDegraded() {
+        return sLevel == Level.TAMPER_FUNNEL || sLevel == Level.TAMPER_PERSISTENT_FUNNEL;
+    }
+
+    /**
      * 是否到了「该弹引流窗」的等级。只有确认篡改超过影子期、或重复篡改才为 true。
      * RiskPromptController 是唯一消费者（唯一弹窗出口）。
      */
     public static boolean shouldFunnel() {
-        return sLevel == Level.TAMPER_FUNNEL || sLevel == Level.TAMPER_PERSISTENT_FUNNEL;
+        return sLevel == Level.TAMPER_FUNNEL
+            || sLevel == Level.TAMPER_PERSISTENT_FUNNEL
+            || sLevel == Level.OFFLINE_FUNNEL;
     }
 
     /**
@@ -87,10 +108,28 @@ public final class RiskState {
         Level offlineLevel = LeaseClock.currentLevel();
 
         Level result = maxSeverity(tamperLevel, offlineLevel);
+        // license 真过期（购买授权到期，非单纯断网）→ 引流（可恢复：续费/重激活
+        // 后 isLicenseExpired=false → 下次 evaluate 自动降回）。不误伤断网正版：
+        // 断网但未过期时 isLicenseExpired=false，不会进这条。
+        boolean licenseExpired = com.ghost.assist.net.EnvelopeStore.isLicenseExpired();
+        if (licenseExpired && severity(result) < severity(Level.OFFLINE_FUNNEL)) {
+            result = Level.OFFLINE_FUNNEL;
+        }
         sLevel = result;
         Log.i(TAG, "[risk] evaluate level=" + result.label
-                + " (tamper=" + tamperLevel.label + " offline=" + offlineLevel.label + ")");
+                + " (tamper=" + tamperLevel.label + " offline=" + offlineLevel.label
+                + " licExpired=" + licenseExpired + ")");
         return result;
+    }
+
+    /**
+     * DEBUG-only：装机验证强制进引流态（release 包 BuildConfig.DEBUG=false → 空操作）。
+     * 真检测链（蜜罐绊线 / 离线>144h）属段2/段3；段1 先用它验「funnel→弹窗→跳转」闭环。
+     */
+    public static synchronized void debugForceFunnel() {
+        if (!com.ghost.assist.BuildConfig.DEBUG) return;
+        sLevel = Level.TAMPER_FUNNEL;
+        Log.i(TAG, "[risk] DEBUG force funnel (debug-only)");
     }
 
     /**
@@ -175,10 +214,11 @@ public final class RiskState {
             case OFFLINE_WARN:              return 1;
             case TIME_SUSPICIOUS:           return 2;
             case DEGRADED:                  return 3;
-            case PROBATION:                 return 4;
-            case TAMPER_SHADOW:             return 5;
-            case TAMPER_FUNNEL:             return 6;
-            case TAMPER_PERSISTENT_FUNNEL:  return 7;
+            case OFFLINE_FUNNEL:            return 4;  // 引流但比篡改轻、可联网自恢复
+            case PROBATION:                 return 5;
+            case TAMPER_SHADOW:             return 6;
+            case TAMPER_FUNNEL:             return 7;
+            case TAMPER_PERSISTENT_FUNNEL:  return 8;
             default:                        return 0;
         }
     }

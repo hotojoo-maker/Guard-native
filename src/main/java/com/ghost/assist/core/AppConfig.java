@@ -3,6 +3,8 @@ package com.ghost.assist.core;
 import android.app.Application;
 import android.content.SharedPreferences;
 
+import com.ghost.assist.BuildConfig;
+
 /**
  * DEV / PROD / HONEY tri-state configuration.
  * DEV  = debug tools on, local dev mode on (no real hooking)
@@ -44,7 +46,7 @@ public class AppConfig {
     // ── S2 真锁信封 — 服务器接入（Phase 1D-server）────────────────
     // 传输强制 HTTPS（信封里的短命 key 材料 k 不得走明文）。
     public static final String GUARD_PRODUCT_ID      = "quantum_wechat";
-    public static final String GUARD_PRODUCT_VERSION = "v1.1";
+    public static final String GUARD_PRODUCT_VERSION = BuildConfig.GUARD_PRODUCT_VERSION;
     public static final String GUARD_RELEASE_ID      = "android_8071";
 
     // C2：授权服务器域名不再以明文常量留在这里（grep/strings 一搜就出）。

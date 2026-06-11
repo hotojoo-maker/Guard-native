@@ -144,7 +144,7 @@
 > - V3 形态：cert 绑定证书源需从模块 APK 改为读宿主自身签名（见 DECISION_LOG D-016）。
 
 - [x] SO `decrypt_config()`（AES-GCM）实现 + 自测向量 —— P1A 装机 PASS（见上）
-- [~] miyou-server 心跳端点：发短命钥匙 + 加密配置；字段伪装 `K2i_m` —— **2026-06-11 出站/信封/心跳骨架已建（dormant，未接入主流程），见 §10.6**；短命钥匙折入 SO key（S3a）/ Ed25519 验签（S4）/ 服务器端在线 仍未做
+- [x] miyou-server 心跳端点：授权码 → token → Ed25519 signed envelope；字段伪装 `K2i_m` / `k,n` 下发；**当前 `android_8071` 已用 `prod_server_lock` 把服务器 `S_rel` 折进 `registry_cipher`，线上 unwrap 后 `recipeOk=true`，见 §10.6**
 - [ ] `isActive()` 依赖「配方解开成功」；解不开 = 散沙（不崩、不全开）
 - [ ] **离线宽限实测**：拔网后正版在宽限期内正常；超期才降级；重连自愈
 - [ ] **付费客户不误伤实测**：飞行模式 24/72h 内不出现关不掉弹窗
@@ -277,34 +277,156 @@ StateMachine.isActive()                // 取中央总闸
 - 验收必须分两条：正常授权卡密收到 `pv/up` 并显示运营提示；封停/风险设备进入 funnel 时才弹引流。
 
 ### 仍未做（真锁的「牙」，与诚实口径一致）
-1. S3a runtime seed apply 原型已接，但 **PROD server-lock / 真实 S_rel 与 registry_cipher 发布流水线尚未切硬失败**；仍不能宣称服务器真锁完成。
+1. 当前 `android_8071` 已切 `prod_server_lock`：`registry_cipher.inc` 为 `GUARD_REGISTRY_REQUIRES_SERVER_SEED=1`，真实 `S_rel` 与服务器 envelope `k/n` 同源，线上 unwrap 后 `recipeOk=true`。**仍不能宣称服务器真锁终局完成**：删 Filter 明文 fallback、V3 官替/共存证书源与包名注入、每发行线独立回归、RiskState 真散沙降级仍未收口。
 2. ~~无 Ed25519 验签~~ → **S4 已落地（2026-06-11 装机 PASS）**：服务器 Ed25519 私钥签信封，客户端只放公钥验签，HS256 仅留 legacy `/api/v1/config` 公告路径。⚠️ 注意：Ed25519 防的是「伪造/篡改信封」，**不等于真锁**——真锁的「牙」仍是下面第 1 条 S3a 服务器短命 key 折进 SO。
 3. `LeaseClock` 已接信封授时（S3b-A，2026-06-11 装机 PASS）：`GuardHeartbeat.syncOnce` 验签后喂 `onServerHeartbeat(sn×1000, exp×1000)` + `RiskState.evaluate()` record-only 重算记日志。**S3b-B 也已落地（2026-06-11 装机 PASS）**：① `EnvelopeStore.isLicenseExpired` 改用 `LeaseClock.trustedNow()`（服务器授时，防回拨/前跳，不信手机墙钟）；② 设置页 `showGuardOverlay` 加"算账检查点"——断网 >72h 进设置页 → `GuardHeartbeat.reverifyIfStale` 强制重验，失败 → `revokeKeepToken`（撤销但留 token 自愈）+ 样式化弹窗"当前时间错误，授权验证失败，请检查时间"。⚠️ 边界：**正常使用（非设置页）断网不掉授权、密友照常隐藏（不误伤/不暴露）**；重连自愈实测通过。72h 阈值当前客户端写死，未走服务器下发。
 4. 备节点 HTTPS (`miyou.lol`) 反代未完成；Android 当前只启用主节点。
 5. 更新通知 `up` 已下发并被客户端消费，但属于运营提示，不是强制升级/真锁。
 
 ### 口径
-当前 = 「**v1.1 商业授权最小闭环 + S3a runtime seed apply 原型 + S4 Ed25519 信封验签 + S3b-A/B LeaseClock 授时与设置页 72h 离线强验（均 2026-06-11 装机 PASS）**」。可对内称“授权码→token→envelope→客户端 AuthGate 已通；信封已 Ed25519 防伪造/防篡改；到期判定不信手机时间（trustedNow）；断网>72h 进设置页强制重验、失败撤销且可自愈”；**不得**对外或在文档里宣称「服务器真锁完成」（真锁的牙 = S3a 短命 key 折进 SO + S3a-PROD 硬失败，仍未完成）。
+当前 = 「**v1.1 商业授权最小闭环 + 当前 `android_8071` 发行线 prod_server_lock（server seed 解 registry）+ S4 Ed25519 信封验签 + S3b-A/B LeaseClock 授时与设置页 72h 离线强验（均 2026-06-11 装机 PASS）**」。可对内称“授权码→token→envelope→客户端 AuthGate 已通；信封已 Ed25519 防伪造/防篡改；当前发行线无有效 server seed 时 registry scatter；到期判定不信手机时间（trustedNow）；断网>72h 进设置页强制重验、失败撤销且可自愈”；**不得**对外或在文档里宣称「服务器真锁终局完成」（删 Filter fallback / V3 发行线发版流程 / RiskState 真降级仍未完成）。
 
 ### 发包分发边界（避免误读）
 - **服务器真锁 ≠ 服务器打包 / 服务器分发 APK**。
 - APK 始终由本地 AI 按包档案构建签名，最终只产出 **官替版 APK** 和 **共存版 APK**。
-- 网盘只放 APK；用户想放哪个网盘、哪个目录都可以，路径不属于本项目流水线状态。
+- 网盘只放 APK；用户想放哪个网盘、哪个目录都可以，路径不属于本项目发版状态。
 - 服务器只负责授权 / 公告 / envelope / 真锁材料登记，不托管 APK，不参与打包，不决定下载路径。
 
 ### 下一受控步骤（按序；每步前过授权检查官 + 安全官「改前审查」，并先 git 快照）
-1. **S3a-PROD**：把 `prod_server_lock` 发行流水线、S_rel 发版档案、registry_cipher 生成和服务器 envelope 同源打通后，再切无 seed scatter 硬失败。
+1. **S3a-PROD 收尾**：当前 `android_8071` 已打通 `prod_server_lock` + server seed 解 registry；下一步是把同源流程固化到官替版/共存版发版档案、V3 证书源/包名注入和每发行线装机回归。
 2. ~~**S3b**：`LeaseClock` / `RiskState` 接信封驱动~~ ✅ **A+B 已完成（2026-06-11 装机 PASS）**：A=心跳喂服务器授时 + record-only 重算；B=到期判定换 `trustedNow`（不信手机墙钟）+ 设置页 72h 离线强制重验/失败撤销（断网正常使用不掉、重连自愈，三段实测通过）。后续可选：72h 阈值改服务器下发、离线散沙更细策略。
 3. ~~**S4**：Ed25519 验签（客户端只放公钥）~~ ✅ **已完成（2026-06-11 装机 PASS）**：服务器 `crypto_utils.sign_guard_envelope` 切 Ed25519；客户端 `AuthEnvelopeVerifier` 内置公钥验签 fail-closed；主/备节点已部署。证据：本地 `JAVA_EDDSA_VERIFY=PASS`/`TAMPER_REJECT=PASS`、线上直连 `alg=Ed25519` 公钥验签 PASS、真机 `[hb] synced`+`AUTH_OK` 无 `signature verify failed`。
 4. **备机**：完成 `miyou.lol` HTTPS 反代后，客户端再打开 `GUARD_SERVER_BACKUP`。
 5. **运营**：更新通知弹窗已通，后续补“强制升级 / 版本灰度 / 下载包托管”再单独审。
+
+### 10.7 DeepSeek 压测复盘 + S3b-C 优先级（2026-06-12）
+
+> 背景：用户用外部 AI 对 V1.2 LSPatch 包做反编译压力测试。约 10 分钟内定位到
+> `resources/assets/lspatch/modules/com.ghost.assist.apk`、`libguardcore.so`、
+> `NativeBridge`、`GuardRuntime`、`server_seed` / recipe 关键词，并给出
+> `SharedPreferences tk/bl/le`、`GuardRuntime.getRecipe()` fallback map、JNI 边界 hook
+> 三条绕过思路。该测试证明：**能反编译 / 能抽模块是既定威胁；当前最薄弱处不是 Ed25519，
+> 而是业务门仍信本地缓存 + release 仍保留明文 fallback。**
+
+#### 压测结论（证据等级）
+
+| 结论 | 等级 | 判断 |
+|---|:--:|---|
+| LSPatch 包可抽出 `com.ghost.assist.apk`，Java 可被 jadx 还原 | L1 | 预期威胁，不算破防 |
+| `long.weixin.qq.com` / `short.weixin.qq.com` 被误判为 Guard 授权服务器 | L2 | 错误；那是微信本体域名 |
+| `guard_p1a_key!` 被误判为 Ed25519 公钥 | L2 | 错误；它是 AES-GCM 自测 key |
+| Ed25519 验签被直接破 | L4 | 未证实；当前只看到客户端公钥，私钥仍在服务器 |
+| 只 hook `nativeIsAuthorized()` 就能全开 | L2 | 不完整；不能让 `GuardRuntime.getRecipe()` 产出真实 recipe |
+| 写 `tk/bl/le` 可骗过 `EnvelopeStore.isAuthorizedNow()` | L2 | 成立；当前本地缓存门过薄 |
+| Java fallback 可被抄成本地 recipe map，绕开 SO 解密链 | L2 | 成立；这是当前 P0 薄弱点 |
+| 捕获一次合法 `k/n` 后尝试重放给 SO | L3 | 有风险；SO 只 unwrap，签名/过期在 Java 层 |
+
+#### P0（立即做，V1.2 正式发版前）
+
+1. **Release/PROD 删明文 fallback。**
+   - 涉及：`ConvFilter`、`SearchFilter`、`ContactFilter`、`MomentsFilter`。
+   - 规则：`GuardRuntime.getRecipe()` 返回空 ⇒ 不安装该敏感 hook / 该功能不可用。
+   - 禁止：release 包继续用 Java 字面量类名、方法名、字段名保持功能可用。
+2. **授权门不再信裸 `tk/bl/le`。**
+   - `EnvelopeStore.isAuthorizedNow()` 不能只看 token / blob / lease 本地缓存。
+   - 必须把 cached envelope 重新验签、校验 device / wxid / release / version / expire 后才算授权。
+   - `le` 只能是缓存结果，不是授权事实源；手写 `9999999999` 不得生效。
+3. **业务总闸绑定 registry ready。**
+   - `StateMachine.isActive()` / 敏感功能门必须同时满足授权有效 + `GuardRuntime.isConfigReady()` + 必需 gateway recipeOk。
+   - 没有 server seed / S_rel 时，即使 UI 显示授权，也不得安装敏感 hook。
+4. **删路线图式 release 暴露。**
+   - release 包清理或伪装 `record-only`、`Phase 1/2/3`、`cp-auth/cp-recipe`、真实 gateway 名、`recipeOk` 明文比较日志。
+   - Debug 面板资源不进客户 release，或改成诱饵 / 空壳。
+5. **负向验收必须补。**
+   - 人为写 `tk/bl/le` 后：`isAuthorizedNow=false` 或 `isActive=false`。
+   - 无合法 envelope / S_rel 后：`registrySummary=scatter`、`isConfigReady=false`、敏感 hook 不安装。
+   - jadx 搜核心 recipe：不得直接拿到可用 fallback map。
+
+#### P1（下一轮安全加固）
+
+1. **把 envelope 摘要折进 SO 侧能力。**
+   - Java 验签后，把 signed payload digest、`expire_at`、device / wxid / release / cert 摘要传给 SO。
+   - SO 派生 registry key 时折入这些已验签摘要，降低合法 `k/n` 离线重放价值。
+2. **`EncryptedConfigLoader` 接入 LeaseClock / RiskState。**
+   - 过期、篡改、包名 / 证书不符、风险态确认后 scatter。
+   - 不再只靠 UI、日志或设置页检查点。
+3. **JNI 边界降噪。**
+   - `NativeBridge.getRecipe()` / `registrySummary()` / `unwrapServerSeed()` 的可读名字只留开发期。
+   - release 通过 R8 / JNI 名称策略 / 日志裁剪减少定位速度。
+4. **SO 发布加固。**
+   - strip 符号；确认无 debug section；核心字符串哈希化 / 拆段；保留崩溃可诊断最小信息。
+
+#### P2（可延后，等 P0/P1 完成后）
+
+1. 每客户 / 每发行线 registry 水印，泄漏样本可反查客户。
+2. 服务器侧一码多机、同 token 多 device / 多 wxid 异常检测。
+3. V3 官替 / 共存发行线独立 registry / cert / package 绑定自动化。
+
+#### 新口径
+
+当前可称：**S3a 线上 envelope → server seed → registry 解密链已装机通过**。
+但在 P0 完成前，不得称：**服务器真锁终局完成**。
+
+原因：`tk/bl/le` 本地缓存门 + Java fallback map 仍可让攻击者绕过核心链的一部分。
+
+### 10.8 蜜罐弹窗模式 + 引流链接兜底混淆（2026-06-12）
+
+> 用户拍板：信任 / 风险模式不要裸露给用户或逆向者，统一藏进弹窗、更新和客服引流表现里。
+> 蜜罐负责吸引、标记、延迟后果；弹窗负责外显；引流链接允许做客户端兜底，但必须混淆 / 加密 / 白名单，不得明文裸奔或任意跳转。
+
+#### 总原则
+
+- **策略源唯一**：`LeaseClock` + `RiskState` + `EnvelopeStore/AuthSnapshot` → `RiskPromptController`。
+- **表现可多样**：网络异常、时间异常、版本异常、授权到期、设备停用、请更新、联系客服。
+- **内部态不外露**：不得展示 `PIRATE` / `TAMPER` / `recipeOk` / `server_seed` / `risk tier` / `cp-*`。
+- **不误伤付费客户**：断网、服务器抖动、时间异常先走可恢复提示；确认篡改或宽限耗尽后才进入强引流。
+
+#### 内部状态 → 外显文案
+
+| 内部态 | 条件 | 外显文案方向 | 行为 |
+|---|---|---|---|
+| `TRUST_FRESH` | 新授权 / 新设备 / 短期观察 | 验证中 / 正常 | 静默；短租约；多心跳观察 |
+| `TRUST_STABLE` | 多次心跳正常 | 正常 | 少打扰；长租约 |
+| `TRUST_STALE` | 离线过久 / 需重验 | 网络异常 / 时间异常 / 请稍后重试 | 设置页触发重验；失败撤销但保留 token 自愈 |
+| `TRUST_SUSPECT` | 缓存异常 / registry scatter / 包名证书疑点 | 版本异常 / 请更新最新版 | 可降级 / scatter；延迟提示 |
+| `TRUST_PIRATE` | 重签 / hook 证据 / 确认盗版 | 当前版本异常，请前往官方渠道 | 强引流；客服 / 更新入口 |
+
+#### 引流链接规则
+
+1. **不接受任意 URL。**
+   - 服务器不得下发任意完整 URL 后客户端直接打开。
+   - 只允许 `https` + 预设官方域名白名单（如客服 / 更新页）。
+2. **服务器优先下发模式，不下发裸链接。**
+   - 推荐字段：`prompt_mode`、`notice_id`、`support_path`、`update_required`。
+   - 客户端用本地白名单 baseUrl 拼 path。
+3. **客户端允许兜底引流链接，但必须混淆 / 加密。**
+   - fallback 链接不得以 Java 明文常量裸放。
+   - 可放入 SO bootstrap 加密段或 seed 化短段拼接，运行时只在确认风险后解出。
+   - 兜底只用于服务器不可达且风险已确认的场景，不能覆盖正常授权 / 正常更新路径。
+4. **统一出口。**
+   - 所有打开链接动作必须经过 `RiskPromptController` / `SafeUrlPolicy`。
+   - 设置页推广、授权失效、更新通知、盗版引流都不能各自绕过白名单。
+
+#### 蜜罐闭环顺序
+
+1. **先堵真锁口子**：P0 三刀（缓存重验、总闸绑定 registry、release 去 fallback）。
+2. **再接蜜罐标记**：假锁 / 本地缓存伪造 / hook 痕迹 → `RiskState` 记录，不立刻炸。
+3. **延迟后果**：影子期后 scatter / 降级 / 弹窗，降低“改哪炸哪”的定位速度。
+4. **最后引流**：确认盗版或宽限耗尽才给客服 / 更新入口。
+
+#### 禁止项
+
+- 禁止多个模块各自弹窗、各自决定引流。
+- 禁止弹窗文案出现真实风控字段、recipe、seed、Phase、gateway。
+- 禁止把普通未授权 / 服务器故障直接当盗版砸强弹窗。
+- 禁止为了引流破坏微信本体、清用户数据或误伤正版密友名单。
 
 ### future AI 接手自检（验证「现状是否仍如本节」）
 全部命中 = 现状未变；任一项变化 = 已推进，**必须回来更新本节**：
 - [ ] `StateMachine.isVipAuthorized()` 是否仍读 `EnvelopeStore.isAuthorizedNow()`？
 - [ ] `ModuleMain` 是否仅在本地已有 token 时启动冷启动 heartbeat？
 - [ ] `EncryptedConfigLoader` 仍只读本地 SO registry（无服务器 lease）？
-- [ ] `derive_registry_key` 仍只折证书指纹（未折信封 `k`）？
+- [ ] `registry_cipher.inc` 是否仍为 `GUARD_REGISTRY_REQUIRES_SERVER_SEED=1`，且 `GuardHeartbeat` 成功 unwrap envelope `k/n` 后 `recipeOk=true`？
 - [ ] `RiskState` 仍 record-only（不 gating）？（S3b-A+B 已做：`LeaseClock` 已被 `GuardHeartbeat` 喂服务器授时；`EnvelopeStore.isLicenseExpired` 已换 `trustedNow`；设置页有 72h 离线强验→撤销。若这些被回退/再推进，必须回来更新本节）
 - [ ] `AuthEnvelopeVerifier` 是否仍只接受 `alg==Ed25519`（S4 已做）、客户端只内置公钥？
 
@@ -313,10 +435,59 @@ StateMachine.isActive()                // 取中央总闸
 真锁机制「把签名证书折进 registry key」（`bindSigningCert → NativeBridge.setBindingMaterial → derive_registry_key`）与 V3「改包 + 我们的证书重签」（`DECISION_LOG.md` D-016 / D-015）**天生相反**，落地前必须碰头：
 
 - **① 证书源切换（D-016 已记）**：cert-bind 现读 v1 模块 APK 签名；V3 落地要改 `tools/gen_registry_cipher.py` 的 `_CERT_SHA256` + 运行时证书源从 `sModulePath` 改读宿主自身签名。详见 `DECISION_LOG.md` D-016 §影响（**机制不变，只换证书源**）。
-- **② 删 fallback = 重签即死（D-016 未串）**：真锁终局（S3a 服务器钥匙 + §10.5「A」删明文 fallback）一旦落地，任何「证书变了却没为它重生成 `registry_cipher`」的重签 / 改包 → 钥匙错 → registry 散沙 → **没有 fallback 兜底 → 隐私 hook 静默全挂**。⇒ 铁律：**「删 fallback」必须与「V3 发版」绑同一条发布流水线**（每个发行证书都重生成 `registry_cipher` 并装机回归），否则 V3 重签包上线即裸奔。
+- **② 删 fallback = 重签即死（D-016 未串）**：真锁终局（S3a 服务器钥匙 + §10.5「A」删明文 fallback）一旦落地，任何「证书变了却没为它重生成 `registry_cipher`」的重签 / 改包 → 钥匙错 → registry 散沙 → **没有 fallback 兜底 → 隐私 hook 静默全挂**。⇒ 铁律：**「删 fallback」必须与「V3 发版」绑同一套本地 AI 发版流程**（每个发行证书都重生成 `registry_cipher` 并装机回归），否则 V3 重签包上线即裸奔。
 - **③ 共存版改包名 → 误判篡改 → 砸自己客户（D-016 未串）**：`anti_tamper.cpp` 现「`package_name != com.tencent.mm` 即 `PACKAGE_MISMATCH`」→ `RiskState.isConfirmedTamper()` → funnel 弹窗。V3 **共存版**（改了包名）会**整片命中** → 把正版共存客户当盗版引流。⇒ 上共存版前，`tamper_check` 的期望包名必须随打包注入的 `WX_PKG`（D-015）走，不能硬编码 `com.tencent.mm`。
 
-**结论**：S3a / 删 fallback / 真锁终局 在 **V3 改包形态对齐之前不要推进到「硬失败」**；先把上面 ②③ 的发布流水线 + 包名注入接通，再谈删 fallback。否则「防破解」会把「主攻方向 V3」拆台。
+**结论**：当前 `android_8071` 可保持 `prod_server_lock`；但 **删 fallback / 真锁终局 / V3 官替共存发行线** 在 V3 改包形态对齐之前不要继续推进到“无兜底全硬失败”。先把上面 ②③ 的本地 AI 发版流程 + 包名注入接通，再谈删 fallback。否则「防破解」会把「主攻方向 V3」拆台。
+
+---
+
+## 10.9 引流弹窗 + 蜜罐绊线 + 签名校验 + 来电散沙（2026-06-12 落地，装机 PASS）
+
+> 本节是 2026-06-12 实装的「反盗版主动层」记录。设计源：§10.8（弹窗/引流）+ §5/§10.4（蜜罐）+ 安全官 skill（RiskLevel/影子期/功能失效）。**装机均在小米9 设备 609b4b18，official debug。**
+
+### 做了什么（三段，全部装机验证）
+
+**① 引流弹窗（funnel）**
+- `core/FunnelPrompt.java`（新建展示层，旧 `PiracyNotice` 一点没动）：圆角卡片 + 「复制链接」/「前往」双按钮 + 显示落地页链接。
+- `core/RiskPromptController.java`（唯一弹窗策略源）：funnel 态 → 调 `FunnelPrompt`；文案**按等级分**——`isTamperLevel`（确认盗版）→ 吓人文案「非官方破解版…可能导致账号被封禁」；否则（离线/过期）→ 软文案（不指控付费客户是盗版，红线）。冷却 10s（用户要「弹得更勤」）。
+- 落地页 URL = `https://miyou.pro/api/invite/quick`，**藏在 SO 加密引导段**（见下「维护」），运行时经 `NativeBridge.getEndpoint("funnel")` 解出；jadx/strings 搜不到明文。
+- 前台触发：`ModuleMain.installForegroundFunnelTrigger` hook `Activity.onResume` → `maybeShow`（解决冷启动无 Activity 画不出 Dialog；并满足「关掉回前台又弹」）。
+
+**② 触发条件（`RiskState` + `LeaseClock`，单策略源）**
+- 确认篡改（蜜罐/签名绊线）过影子期 → `TAMPER_FUNNEL`。
+- 离线 > 144h（`LeaseClock.FUNNEL_MS` = 72h×2）→ `OFFLINE_FUNNEL`（**可恢复**：联网心跳成功 → offline 归零 → 降回 CLEAN）。
+- license 真过期 → `OFFLINE_FUNNEL`（可恢复：续费/重激活）。
+- 单纯断网（<144h、未过期）→ 只软提醒，不引流（不误伤付费）。
+
+**③ 蜜罐绊线 + 功能散沙（用户 2026-06-12 拍板：破解后真功能失效才是重点）**
+- 诱饵 `core/PromoConfig.java`：明文 `PROMO_URL` + base64 `PROMO_TOKEN` + `PROMO_ENABLED` 开关，伪装成真引流配置（真功能不读它，真 URL 在 SO）。
+- 绊线 `core/CompatProbe.java`（**与诱饵分开放、名字无关联**，防一锅端）：
+  - `check()`：比对诱饵指纹与编译期 canary `BASELINE`；不符 = 诱饵被改 → `RiskState.markTampered`。
+  - `checkSignature()`：读**模块自身 APK** 证书 SHA-256 比 `EXPECTED_CERT`；不符 = 被重签（改代码必重签）→ `markTampered`。
+- 影子期 **10 天**（`RiskState.SHADOW_HOURS_DEFAULT=240h`）：改完当场一切正常，10 天后才发作，破解者定位不到绊线；发布后真实用户（有网）时间准 → 10 天到 → 全弹+散沙。
+- **功能散沙**：`RiskState.isTamperDegraded()`（仅 `TAMPER_FUNNEL/PERSISTENT`，即确认篡改过影子期）→ `CallGuard.active()` = `isActive() && !isTamperDegraded()`。盗版包过影子期 → **来电拦截整条失效**（来电恢复响铃/弹屏）。正版签名对/诱饵未改 → 永远 CLEAN → 永不散沙（不误伤、铁律29 只加门不改拦截逻辑）。
+
+### 装机验证（L1，609b4b18，2026-06-12）
+- 正向回归：`level=正常`、`recipeOk=true`、`[CTF:addAll] removed`（密友照常隐藏）、CallGuard 正常装载 → P0 三刀 + 本节改动**不误伤正版**。
+- funnel 闭环：debug `/api/forcefunnel` 强制 → `[risk] funnel prompt reason=foreground` → `[funnel] shown` → 跳 SO 解出的落地页。
+- 蜜罐绊线：改诱饵重编 → `[cp] baseline mismatch` → `tamper first seen` → `level=蜜罐影子期`（表面正常）。改回 → `level=正常`。
+- 签名/诱饵对自家包**不误报**：`无 [cp] cert mismatch / baseline mismatch`。apksigner 实测包证书 = `ca421ec3...` = `EXPECTED_CERT`。
+- 仅「真等 10 天」未现场验（组件逻辑均单独验过）。
+
+### ⚠️ 维护要点（方便后续 AI / 发版）
+1. **改诱饵 `PromoConfig` 任一字面量 → 必须重算 `CompatProbe.BASELINE`**（canary）：`BASELINE = fp(PROMO_URL) ^ fp(PROMO_TOKEN) ^ (PROMO_ENABLED?0x9E3779B9:0)`，`fp` 为 `h=h*131+c`（Java int）。不重算 = 正版自我误报。
+2. **改落地页 URL → 改 `native_core/bootstrap_endpoints.json` 的 `cs.endpoint.funnel` → 重跑 `python tools/gen_bootstrap_cipher.py`**（生成 `bootstrap_cipher.inc`）。绝不在 Java 写明文 URL。`net.endpoint`（授权服务器）与 `cs.endpoint`（引流）分开；`guardServerList()` 只读 net.endpoint。
+3. **`CompatProbe.EXPECTED_CERT` 随发行线 keystore 改**：当前 = 固定 debug keystore 证书 `ca421ec3...`（与 `registry_cipher` 的 `_CERT_SHA256` 同源）。官替/共存若用不同 keystore，发版时按包档案同步改（同 registry 一套机制）。
+4. **阈值数字（影子期 240h / 冷却 10s / 离线 144h）= 段1 明文常量（轻迷彩）**，以后随服务器 `risk_pack` 下发。位置：`RiskState.SHADOW_HOURS_DEFAULT`、`RiskPromptController.COOLDOWN_MS`、`LeaseClock.FUNNEL_MS`。
+5. **单策略源红线**：弹窗只走 `RiskPromptController.maybeShow()`；`FunnelPrompt`/`PiracyNotice` 只是展示层，不得各自判风险/各自弹。
+6. **debug 专用 `/api/forcefunnel` + `RiskState.debugForceFunnel()`**：仅 `BuildConfig.DEBUG` 生效（release 空操作），装机验证用，勿当真链路。
+
+### 仍未做 / 诚实边界
+- 「真等 10 天 → TAMPER_FUNNEL → 散沙+弹」未现场跑（需等时间/改钟）。
+- Frida 运行时仍能 dump 解出的 URL（静态藏好≠防动态）；真深靠服务器 `risk_pack` URL 轮换（后续）。
+- 「一码多 wxid/多设备」转卖检测 = 服务器侧（HONEYPOT §5b，后续）。
+- release R8 对 `FunnelPrompt/CompatProbe/PromoConfig` 类名/日志的混淆收口（当前 debug 明文）。
 
 ---
 

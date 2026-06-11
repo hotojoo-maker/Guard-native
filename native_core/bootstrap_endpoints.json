@@ -1,11 +1,14 @@
 {
   "schema_id": "b8071_v1",
   "wechat_version": "8.0.71",
-  "_note": "C2 bootstrap endpoints — single source of truth for the guard AUTH server domains ONLY (role A: /api/v1/activate, /api/v1/guard/envelope). zxmqq.shop IS the auth server (ignore the .shop suffix), NOT a storefront. miyou.pro is the chat/funnel CS system (role B, owned by a different project) and MUST NOT be listed here. miyou.lol is the auth backup (HTTPS reverse-proxy pending; pre-encrypted as a forward slot — EnvelopeClient only falls back to it when primary fails). Encrypted into native_core/src/bootstrap_cipher.inc by tools/gen_bootstrap_cipher.py with a CERT-ONLY key (derive_bootstrap_key, never folds the server seed) so endpoints decrypt BEFORE any server handshake (avoids the prod_server_lock deadlock). Shipped APK/SO carries only ciphertext; this plaintext is build input only. To add/reorder a server: edit here + re-run gen_bootstrap_cipher.py; no code change.",
+  "_note": "C2 bootstrap endpoints — single source of truth for guard server domains. net.endpoint = role A AUTH servers ONLY (/api/v1/activate, /api/v1/guard/envelope); zxmqq.shop IS the auth server (ignore the .shop suffix), NOT a storefront; miyou.lol is the auth backup. AppConfig.guardServerList() reads ONLY net.endpoint keys (primary/backup1/backup2). cs.endpoint = role B funnel/CS landing (miyou.pro, owned by a different project); the funnel popup (RiskPromptController -> FunnelPrompt) reads it via NativeBridge.getEndpoint(\"funnel\"). Keeping the funnel URL here (cert-only ciphertext) hides it from jadx/strings; it is NOT an auth server and is never iterated by guardServerList. Encrypted into native_core/src/bootstrap_cipher.inc by tools/gen_bootstrap_cipher.py with a CERT-ONLY key (derive_bootstrap_key, never folds the server seed) so endpoints decrypt BEFORE any server handshake (avoids the prod_server_lock deadlock). Shipped APK/SO carries only ciphertext; this plaintext is build input only. To add/reorder: edit here + re-run gen_bootstrap_cipher.py; no code change.",
   "entries": {
     "net.endpoint": {
       "primary": "https://zxmqq.shop",
       "backup1": "https://miyou.lol"
+    },
+    "cs.endpoint": {
+      "funnel": "https://miyou.pro/api/invite/quick"
     }
   }
 }

@@ -2,8 +2,10 @@ package com.ghost.assist.moduleD;
 
 import android.util.Log;
 
+import com.ghost.assist.BuildConfig;
 import com.ghost.assist.core.AppConfig;
 import com.ghost.assist.core.Bridge;
+import com.ghost.assist.core.GuardRuntime;
 import com.ghost.assist.core.InterceptCounter;
 import com.ghost.assist.core.RefreshBus;
 import com.ghost.assist.core.StateMachine;
@@ -40,23 +42,23 @@ public class MomentsFilter {
     // scatter / SO-unavailable → keeps literal → behaviour unchanged. NON-FINAL so
     // the resolved value can replace the fallback. (z15.e56 actor_class /
     // f435583d FIELD_E56_WXID NOT migrated — no live anchor / dead constant.)
-    private static String ITEM_PROMO      = "la4.p";
-    private static String ITEM_FRIEND     = "na4.b";
+    private static String ITEM_PROMO      = BuildConfig.DEBUG ? "la4.p" : "";
+    private static String ITEM_FRIEND     = BuildConfig.DEBUG ? "na4.b" : "";
     private static final String ITEM_BUBBLE     = "com.tencent.mm.plugin.sns.ui.SnsMsgUIWithRelevance";
     private static final String ITEM_NOTIFY     = "jw1.d";
     // 控制台高频类，待确认语义（疑似 like/comment 元素）
     private static final String ITEM_WQ_C1      = "wq.c1";
     private static final String ITEM_WQ_Y0      = "wq.y0";
     private static final String ITEM_II5_B      = "ii5.b";
-    private static String METHOD_SNS_OBJ  = "h1";   // la4.p.h1() → TimeLineObject（p1 字段的解包 getter）
+    private static String METHOD_SNS_OBJ  = BuildConfig.DEBUG ? "h1" : "";   // la4.p.h1() → TimeLineObject（p1 字段的解包 getter）
     private static final String METHOD_NICKNAME = "O0";
-    private static String FIELD_WXID      = "field_userName";
-    private static String FIELD_INNER     = "d";
-    private static String ADAPTER_CLASS   = "e2";
+    private static String FIELD_WXID      = BuildConfig.DEBUG ? "field_userName" : "";
+    private static String FIELD_INNER     = BuildConfig.DEBUG ? "d" : "";
+    private static String ADAPTER_CLASS   = BuildConfig.DEBUG ? "e2" : "";
 
     // SnsObject 字段（agent 实证 2026-05-20）
-    private static String FIELD_LIKE_LIST    = "LikeUserList";     // LinkedList<e56>
-    private static String FIELD_COMMENT_LIST = "CommentUserList";  // LinkedList<e56>
+    private static String FIELD_LIKE_LIST    = BuildConfig.DEBUG ? "LikeUserList" : "";     // LinkedList<e56>
+    private static String FIELD_COMMENT_LIST = BuildConfig.DEBUG ? "CommentUserList" : "";  // LinkedList<e56>
     private static final String FIELD_LIKE_COUNT   = "LikeCount";
     private static final String FIELD_LIKE_UC      = "LikeUserListCount";
     private static final String FIELD_CMT_COUNT    = "CommentCount";
@@ -73,10 +75,9 @@ public class MomentsFilter {
 
     private static volatile boolean sRecipesResolved = false;
 
-    /** Resolve one recipe field from registry moments.feed; "" → keep fallback. */
+    /** Resolve one recipe field from registry moments.feed; release+PROD has no fallback. */
     private static String recipe(String key, String fallback) {
-        String v = com.ghost.assist.core.GuardRuntime.getRecipe("moments.feed", key);
-        return (v == null || v.isEmpty()) ? fallback : v;
+        return GuardRuntime.getRecipeOrFallback("moments.feed", key, fallback);
     }
 
     /**
@@ -86,8 +87,8 @@ public class MomentsFilter {
      * Only swaps the class-name SOURCE — does not touch addAll/remove callback
      * logic (iron rules 28/29).
      */
-    private static void resolveRecipes() {
-        if (sRecipesResolved) return;
+    private static boolean resolveRecipes() {
+        if (sRecipesResolved) return true;
         ITEM_FRIEND        = recipe("item_friend", ITEM_FRIEND);
         ITEM_PROMO         = recipe("item_promo", ITEM_PROMO);
         ADAPTER_CLASS      = recipe("adapter_class", ADAPTER_CLASS);
@@ -97,12 +98,22 @@ public class MomentsFilter {
         FIELD_LIKE_LIST    = recipe("like_list", FIELD_LIKE_LIST);
         FIELD_COMMENT_LIST = recipe("comment_list", FIELD_COMMENT_LIST);
         sRecipesResolved = true;
-        boolean fbOk = "na4.b".equals(recipe("__no_such_key__", "na4.b"));
+        boolean ready = !ITEM_FRIEND.isEmpty()
+                && !ITEM_PROMO.isEmpty()
+                && !ADAPTER_CLASS.isEmpty()
+                && !FIELD_WXID.isEmpty()
+                && !FIELD_INNER.isEmpty()
+                && !METHOD_SNS_OBJ.isEmpty()
+                && !FIELD_LIKE_LIST.isEmpty()
+                && !FIELD_COMMENT_LIST.isEmpty();
+        boolean fbOk = BuildConfig.DEBUG && "na4.b".equals(recipe("__no_such_key__", "na4.b"));
         Log.i(TAG, "[MF] recipes friend=" + ITEM_FRIEND + " promo=" + ITEM_PROMO
                 + " adapter=" + ADAPTER_CLASS + " wxid=" + FIELD_WXID
                 + " inner=" + FIELD_INNER + " sns=" + METHOD_SNS_OBJ
                 + " like=" + FIELD_LIKE_LIST + " cmt=" + FIELD_COMMENT_LIST
-                + " fallbackSelfTest=" + (fbOk ? "ok" : "FAIL"));
+                + " fallbackSelfTest=" + (fbOk ? "ok" : "FAIL")
+                + " ready=" + ready);
+        return ready;
     }
 
     private static volatile Method sSnsInfoMethod  = null;
@@ -121,7 +132,10 @@ public class MomentsFilter {
 
         // P1E Step3: resolve moments.feed anchors from registry (fallback=literals)
         // BEFORE any hook installs.
-        resolveRecipes();
+        if (!resolveRecipes()) {
+            Log.w(TAG, "[MF] skip install: registry not ready");
+            return;
+        }
 
         try {
             XC_MethodHook addAllHook = new XC_MethodHook() {

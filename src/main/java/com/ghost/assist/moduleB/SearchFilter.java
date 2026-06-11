@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.ghost.assist.BuildConfig;
 import com.ghost.assist.core.Bridge;
 import com.ghost.assist.core.GuardRuntime;
 import com.ghost.assist.core.RefreshBus;
@@ -77,33 +78,39 @@ public class SearchFilter {
     // adapter family and render hook only; it does NOT decide hide/show and it
     // explicitly excludes SearchUnlock / 111111 entry logic.
     private static final String REGISTRY_ENTRY = "search.gateway";
-    private static String sGateway = "fts_result_view";
-    private static String sAdapterFamily = "q2,f0";
-    private static String sRenderHook = "getView";
-    private static String sExtractorProfile = "wechat8071_fts_mixed";
-    private static String sScope = "result_render_only";
+    private static String sGateway = BuildConfig.DEBUG ? "fts_result_view" : "";
+    private static String sAdapterFamily = BuildConfig.DEBUG ? "q2,f0" : "";
+    private static String sRenderHook = BuildConfig.DEBUG ? "getView" : "";
+    private static String sExtractorProfile = BuildConfig.DEBUG ? "wechat8071_fts_mixed" : "";
+    private static String sScope = BuildConfig.DEBUG ? "result_render_only" : "";
     private static volatile boolean sRecipesResolved = false;
 
     private static String recipe(String key, String fallback) {
-        String v = GuardRuntime.getRecipe(REGISTRY_ENTRY, key);
-        return (v == null || v.isEmpty()) ? fallback : v;
+        return GuardRuntime.getRecipeOrFallback(REGISTRY_ENTRY, key, fallback);
     }
 
-    private static void resolveRecipes() {
-        if (sRecipesResolved) return;
+    private static boolean resolveRecipes() {
+        if (sRecipesResolved) return true;
         sGateway = recipe("gateway", sGateway);
         sAdapterFamily = recipe("adapter_family", sAdapterFamily);
         sRenderHook = recipe("render_hook", sRenderHook);
         sExtractorProfile = recipe("extractor_profile", sExtractorProfile);
         sScope = recipe("scope", sScope);
         sRecipesResolved = true;
-        boolean fbOk = "getView".equals(recipe("__no_such_key__", "getView"));
+        boolean ready = !sGateway.isEmpty()
+                && !sAdapterFamily.isEmpty()
+                && !sRenderHook.isEmpty()
+                && !sExtractorProfile.isEmpty()
+                && !sScope.isEmpty();
+        boolean fbOk = BuildConfig.DEBUG && "getView".equals(recipe("__no_such_key__", "getView"));
         Log.i(TAG, "[SF] recipes gateway=" + sGateway
                 + " adapterFamily=" + sAdapterFamily
                 + " renderHook=" + sRenderHook
                 + " profile=" + sExtractorProfile
                 + " scope=" + sScope
-                + " fallbackSelfTest=" + (fbOk ? "ok" : "FAIL"));
+                + " fallbackSelfTest=" + (fbOk ? "ok" : "FAIL")
+                + " ready=" + ready);
+        return ready;
     }
 
     private static boolean adapterFamilyContains(String simpleName) {
@@ -184,7 +191,10 @@ public class SearchFilter {
             java.util.Collections.synchronizedSet(new HashSet<String>());
 
     public static void install(XC_LoadPackage.LoadPackageParam lpparam) {
-        resolveRecipes();
+        if (!resolveRecipes()) {
+            Log.w(TAG, "[SF] skip install: registry not ready");
+            return;
+        }
         sCl = lpparam.classLoader;
 
         // ── DISABLED 2026-05-27 v13: fts-tree view-tree dump (UI ANR root cause) ──
