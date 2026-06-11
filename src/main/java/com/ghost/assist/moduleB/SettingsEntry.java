@@ -129,8 +129,6 @@ public class SettingsEntry {
     // 用户在密友设置面板里配置密友时不应被误触发拉回 H。
     // TriggerGuard 各 enterHidden 路径检查这个 flag、true 时跳过。
     private static volatile boolean sOverlayActive    = false;
-    private static volatile boolean sStartupAuthPromptShown  = false;
-    private static volatile boolean sSettingsAuthPromptShown = false;
     private static volatile boolean sAuthDialogShowing       = false;
 
     /** TriggerGuard 用：overlay 显示中？显示时所有 enterHidden 触发都跳过。 */
@@ -152,34 +150,6 @@ public class SettingsEntry {
             return true;
         }
         return !Bridge.getInstance().isHideEntryInHidden();
-    }
-
-    /**
-     * AuthGate 入口提示：只收授权码并交给 GuardActivation，不切状态、不碰 Filter。
-     * 启动页只弹一次；量子密友设置面板首次进入未授权也弹一次。
-     */
-    private static void maybePromptActivation(final Activity activity, final String source,
-                                              boolean startup) {
-        if (activity == null || isActivationReady(activity)) return;
-        if (sAuthDialogShowing) return;
-        if (startup) {
-            if (sStartupAuthPromptShown) return;
-            sStartupAuthPromptShown = true;
-        } else {
-            if (sSettingsAuthPromptShown) return;
-            sSettingsAuthPromptShown = true;
-        }
-        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-            @Override public void run() {
-                try {
-                    if (!activity.isFinishing() && !isActivationReady(activity)) {
-                        showActivationDialog(activity, null, source);
-                    }
-                } catch (Throwable t) {
-                    Log.w(TAG, "[SET:auth] prompt failed: " + t);
-                }
-            }
-        }, startup ? 900L : 500L);
     }
 
     private static boolean isActivationReady(Context ctx) {
@@ -312,7 +282,6 @@ public class SettingsEntry {
                                     syncEntry(activity);
                                 } else if (LAUNCHER_UI_CLASS.equals(cls)) {
                                     scheduleMoreTabProfileProbe(activity);
-                                    maybePromptActivation(activity, "startup", true);
                                 }
                             } catch (Throwable t) {
                                 Log.w(TAG, "[SET] syncEntry error: " + t);
@@ -1355,7 +1324,9 @@ public class SettingsEntry {
                     ViewGroup.LayoutParams.MATCH_PARENT));
             panel.requestFocus();
             sOverlayActive = true;  // P_SE5: 让 TriggerGuard 各 enterHidden 跳过
-            maybePromptActivation(activity, "settings-overlay", false);
+            if (!isActivationReady(activity)) {
+                showActivationDialog(activity, null, "settings-overlay");
+            }
             Log.i(TAG, "[SET:overlay] shown state="
                     + StateMachine.getInstance().getStateName());
         } catch (Throwable t) {
@@ -1824,9 +1795,9 @@ public class SettingsEntry {
             if (EnvelopeStore.hasToken()) return "\u5df2\u6fc0\u6d3b"; // 已激活
             String wxid = Bridge.getInstance().getLicensedWxid();
             if (wxid != null && !wxid.isEmpty()) return "\u5df2\u7ed1\u5b9a"; // 已绑定
-            return "\u672a\u6388\u6743"; // 未授权
+            return "\u672a\u6388\u6743 / \u8f93\u5165\u6388\u6743\u7801"; // 未授权 / 输入授权码
         } catch (Throwable ignored) {
-            return "\u672a\u6388\u6743";
+            return "\u672a\u6388\u6743 / \u8f93\u5165\u6388\u6743\u7801";
         }
     }
 
@@ -1857,6 +1828,21 @@ public class SettingsEntry {
         cardBg.setCornerRadius(dp(activity, 22));
         box.setBackground(cardBg);
 
+        FrameLayout topBar = new FrameLayout(activity);
+        box.addView(topBar, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(activity, 26)));
+
+        final TextView authBack = new TextView(activity);
+        authBack.setText("\u2190");
+        authBack.setTextColor(Color.parseColor("#1C1C1E"));
+        authBack.setTextSize(21f);
+        authBack.setGravity(Gravity.CENTER);
+        authBack.setClickable(true);
+        FrameLayout.LayoutParams backLp = new FrameLayout.LayoutParams(
+                dp(activity, 38), dp(activity, 26));
+        backLp.gravity = Gravity.START | Gravity.CENTER_VERTICAL;
+        topBar.addView(authBack, backLp);
+
         TextView badge = new TextView(activity);
         badge.setText("\u672a\u6388\u6743"); // 未授权
         badge.setTextColor(Color.parseColor("#07A85C"));
@@ -1867,10 +1853,10 @@ public class SettingsEntry {
         badgeBg.setColor(Color.parseColor("#E8F7EE"));
         badgeBg.setCornerRadius(dp(activity, 10));
         badge.setBackground(badgeBg);
-        LinearLayout.LayoutParams badgeLp = new LinearLayout.LayoutParams(
+        FrameLayout.LayoutParams badgeLp = new FrameLayout.LayoutParams(
                 dp(activity, 58), dp(activity, 22));
-        badgeLp.gravity = Gravity.CENTER_HORIZONTAL;
-        box.addView(badge, badgeLp);
+        badgeLp.gravity = Gravity.CENTER;
+        topBar.addView(badge, badgeLp);
 
         TextView title = new TextView(activity);
         title.setText("\u91cf\u5b50\u5bc6\u53cb\u6388\u6743"); // 量子密友授权
@@ -1948,6 +1934,14 @@ public class SettingsEntry {
                 .create();
         dialog.setCancelable(false);
         dialog.setCanceledOnTouchOutside(false);
+        authBack.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                dialog.dismiss();
+                try {
+                    dismissOverlay((ViewGroup) activity.getWindow().getDecorView());
+                } catch (Throwable ignored) {}
+            }
+        });
         activate.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 final String code = input.getText() != null

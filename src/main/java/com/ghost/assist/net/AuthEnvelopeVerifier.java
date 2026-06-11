@@ -21,8 +21,9 @@ import java.security.MessageDigest;
  * │ 所以：谁都不要"顺手补一个 HMAC 校验"把共享密钥塞进来 —— 那是降级不是加固。     │
  * └──────────────────────────────────────────────────────────────────────────┘
  *
- * 本类只做确定性 sanity（不依赖密钥）：拿错包/重打包/版本不符直接判废，
- * 交上层 fail-closed（registry 维持 cert-only 派生，不开全功能）。
+ * 本类只做确定性 sanity（不依赖密钥）：拿错包/重打包/版本不符直接判废。
+ * 上层负责 fail-closed：DEV 可保留 cert-only 兼容，PROD server-lock
+ * 无有效 seed 必须 registry scatter，不开全功能。
  */
 public final class AuthEnvelopeVerifier {
 

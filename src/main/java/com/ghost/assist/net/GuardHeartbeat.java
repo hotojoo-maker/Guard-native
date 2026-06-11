@@ -20,7 +20,7 @@ import java.util.Random;
  *
  * 反检测：稳定态 1~6h 对 CONN 密度无压力；只在「冷启动 / 租约将过期」拉，不轮询。
  *
- * 边界：本类只调 EnvelopeClient + AuthEnvelopeVerifier + EnvelopeStore，
+ * 边界：本类只调出站 / 信封 sanity / 缓存 / NativeBridge seed 出口，
  * 不做隐藏/显示决策，不碰 StateMachine / Filter。
  *
  * ⚠️ 未接入 ModuleMain（冷启动触发点 = 保护区，单独走授权检查官审）；

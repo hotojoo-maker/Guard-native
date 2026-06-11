@@ -1,0 +1,46 @@
+S3a-1 runtime seed apply evidence excerpt (2026-06-11)
+
+Raw log path:
+03_execute_执行任务/S3a0_ServerSeed设计/logs/s3a1_runtime_seed_apply_20260611.log
+
+Raw log git hash-object:
+17d91572fbd67094d0312ce717f366acdf0dcc09
+
+Install / launch:
+adb install -r build\outputs\apk\debug\guard-native-debug.apk
+Result: Success
+adb shell monkey -p com.tencent.mm -c android.intent.category.LAUNCHER 1
+Result: Events injected: 1
+
+Native install evidence:
+06-11 18:47:10.178 11963 11963 I NCL : [native] BATCH1_VERIFY PASS
+06-11 18:47:10.178 11963 11963 I NCL : [native] PHASE1A_VERIFY PASS
+06-11 18:47:10.178 11963 11963 I NCL : [native] PHASE1B_VERIFY PASS
+06-11 18:47:10.179 11963 11963 I NCL : [native] PHASE1C_VERIFY PASS
+06-11 18:47:10.179 11963 11963 I NCL : [native] PHASE1D_VERIFY PASS
+06-11 18:47:10.188 11963 11963 I NCL : [native] PHASE1E_VERIFY PASS
+
+DEV dry-run:
+python .\tools\gen_registry_cipher.py --mode dev_cert_only --dry-run
+registry_mode: dev_cert_only
+server_seed_required: False
+server_seed_folded: False
+dry_run: true
+schema entries: ['conv.list', 'moments.feed', 'contact.address', 'search.gateway']
+
+PROD missing seed dry-run:
+python .\tools\gen_registry_cipher.py --mode prod_server_lock --dry-run
+ERROR: prod_server_lock requires GUARD_S_REL_B64 / --server-seed-b64
+
+PROD with 32-byte seed dry-run:
+python .\tools\gen_registry_cipher.py --mode prod_server_lock --server-seed-b64 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= --dry-run
+registry_mode: prod_server_lock
+server_seed_required: True
+server_seed_folded: True
+dry_run: true
+schema entries: ['conv.list', 'moments.feed', 'contact.address', 'search.gateway']
+
+Scope note:
+This proves S3a-1 did not break existing native Phase 1A-1E install checks.
+It does not prove successful server unwrap because no real server envelope/token
+was used in this run.
