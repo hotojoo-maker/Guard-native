@@ -31,6 +31,9 @@ android {
         externalNativeBuild {
             cmake {
                 abiFilters "arm64-v8a", "armeabi-v7a"
+                // 期望宿主包名打包注入（D-015 / V3 共存版）。
+                // 官替版默认 com.tencent.mm；共存版构建传 -PguardWxPkg=新包名。
+                arguments "-DGUARD_WX_PKG=" + (project.findProperty('guardWxPkg') ?: 'com.tencent.mm')
                 // Enable debug logging in debug builds only.
                 // Release builds: GUARD_DEBUG not set → LogLimiter is a no-op.
                 buildTypes {

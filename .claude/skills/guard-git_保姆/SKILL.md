@@ -12,6 +12,8 @@ description: Guard Native git 保姆——用户不懂 git，本角色代他跑�
 - `build.gradle` 的 debug/release 必须都指向该文件；禁止依赖或重建 `~/.android/debug.keystore`。
 - `INSTALL_FAILED_UPDATE_INCOMPATIBLE` 必须先停、比对已装 APK 与固定 key 指纹，未经用户确认禁止卸载。
 - 缺少固定 key 时停止 build/装机；日志只能写当前 P 任务 `logs/`，禁止写进 docs/skill 目录。
+- 官替版和共存版是两条独立发行线：各自固定 `packageName` + keystore + `versionCode`；官替只覆盖官替，共存只覆盖同包名共存。
+- 发版 / 签名 / 共存版任务先读 `docs/RELEASE_RULES.md`；禁止为旧客户旧版本线重新生成 keystore。
 
 > **用户不懂 git，你是他的 git 代言人。**
 > 你的工作 = 在关键时刻弹问，**用户只回 是/否**，命令你跑、用户看不到。

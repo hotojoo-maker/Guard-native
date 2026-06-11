@@ -8,6 +8,7 @@ import com.ghost.assist.core.InterceptCounter;
 import com.ghost.assist.core.StateMachine;
 import com.ghost.assist.core.NativeBridge;
 import com.ghost.assist.debug.DebugTelemetry;
+import com.ghost.assist.net.GuardActivation;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -133,6 +134,8 @@ public class DebugServer {
                 response = apiFeedWxids();
             } else if ("/api/conv-wxids".equals(path)) {
                 response = apiConvWxids();
+            } else if ("/api/activate".equals(path) && "POST".equals(method)) {
+                response = apiActivate(body);
             } else if ("/api/mywxid".equals(path)) {
                 response = "GET".equals(method) ? apiGetMyWxid() : apiSetMyWxid(body);
             } else if ("/api/dumps".equals(path)) {
@@ -391,6 +394,22 @@ public class DebugServer {
         if (wxid == null) wxid = "";
         Bridge.getInstance().setMyWxid(wxid);
         return apiGetMyWxid();
+    }
+
+    /**
+     * S2 真锁激活入口（DEV 联调用）。卡密 → token → 起心跳。
+     * ungated：激活是建立授权的入口（同 bind_account），不能要授权。
+     * 注意：DebugServer 仅 DEV/HONEY 起；release 激活入口走 SettingsEntry（另排）。
+     * 在 debug-http 后台线程同步跑（含网络），回 ok/fail 给调试页。
+     */
+    private static byte[] apiActivate(String body) {
+        String cardKey = extractJsonField(body, "card_key");
+        if (cardKey == null || cardKey.trim().isEmpty()) {
+            return jsonResponse("{\"error\":\"no card_key\"}", 400);
+        }
+        GuardActivation.Result r = GuardActivation.activate(cardKey);
+        String msg = r.message == null ? "" : r.message.replace("\\", "\\\\").replace("\"", "\\\"");
+        return jsonResponse("{\"ok\":" + r.ok + ",\"msg\":\"" + msg + "\"}", r.ok ? 200 : 400);
     }
 
     private static byte[] apiFeedWxids() {

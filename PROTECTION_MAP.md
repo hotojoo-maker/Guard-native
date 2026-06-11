@@ -5,6 +5,7 @@
 > **证据基线**：2026-06-02 代码实测（只读核查，见 §附录 A），标 L2 = 静态已证实。
 > **关联**：`CLAUDE.md`（29 条铁律）· `docs/GUARD_GATE_TRUTH.md`（门控权威）· `docs/PRODUCT_GATE.md`（四层模型）· `DECISION_LOG.md` D-013（危险通告/kill switch）· `RISK_REGISTER.md` · `docs/DEBUG_CONSOLE_V2.md`（防护驾驶舱）
 > **当前进度（2026-06-02）**：**Phase 0 完成 ✅** —— 仪表盘（防护驾驶舱 + `/api/native` + `tools/guard_status`）+ ① DebugServer DEV-gate + ② proguard 收窄（release `BATCH1_VERIFY PASS` + mapping 实锤：NativeBridge 保留、过滤器混淆、诱饵留亮）+ ③ 接 `AuthManager.evaluate()`+`PiracyNotice`（装机 `evaluate=NO_LICENSE`，v1 放行不变）。**下一步 Phase 1**（真锁+心跳，接 miyou-server）。
+> **2026-06-11 更新**：Phase 1D-server（S2 服务器真锁）已解冻，建出**出站/信封/心跳骨架（dormant，未接入主流程）**；现状 + 下一受控步骤见 **§10.6**。
 
 ---
 
@@ -32,6 +33,8 @@
 | 漏斗零件 | **已有，未接线** | `NativeBridge.java:78` `GRACE_WARN=24h/DEGRADE=72h/LOCKOUT=10天`；`PiracyNotice`（无人调用）；`OverlayWindow`；`SHOP_URL=zxmqq.shop` |
 
 **一句话**：地基（真授权 + 服务器）还没有，城墙（混淆）开着大门，但漏斗零件大多现成。
+
+> ⚠️ **2026-06-11 更新**：本表「服务器/心跳 = 完全没有」一行已过时——`net/` 下 S2 出站/信封/心跳骨架已建（**dormant，未接入主流程**）。本表保留 2026-06-02 基线快照不改；服务器侧现状以 **§10.6** 为准。
 
 ---
 
@@ -140,7 +143,7 @@
 > - V3 形态：cert 绑定证书源需从模块 APK 改为读宿主自身签名（见 DECISION_LOG D-016）。
 
 - [x] SO `decrypt_config()`（AES-GCM）实现 + 自测向量 —— P1A 装机 PASS（见上）
-- [ ] miyou-server 心跳端点：发短命钥匙 + 加密配置；字段伪装 `K2i_m`
+- [~] miyou-server 心跳端点：发短命钥匙 + 加密配置；字段伪装 `K2i_m` —— **2026-06-11 出站/信封/心跳骨架已建（dormant，未接入主流程），见 §10.6**；短命钥匙折入 SO key（S3a）/ Ed25519 验签（S4）/ 服务器端在线 仍未做
 - [ ] `isActive()` 依赖「配方解开成功」；解不开 = 散沙（不崩、不全开）
 - [ ] **离线宽限实测**：拔网后正版在宽限期内正常；超期才降级；重连自愈
 - [ ] **付费客户不误伤实测**：飞行模式 24/72h 内不出现关不掉弹窗
@@ -229,6 +232,7 @@ StateMachine.isActive()                // 取中央总闸
 - v1 只做轻的：**B 钉文档（本节）→ C 拆两闸（纯 Java）**。
 - **A 删 Filter fallback 缓做**：收益是兑现 registry 加密，但碰已验证 Filter，必须单独一刀 + 先 git 快照 + 逐条三证核账 + fail-closed + 装机回归。
 - **真锁主体 Phase 1D-server 冻结**：服务器短命钥匙 / Ed25519 验签 / LeaseClock 真数据源 / 远程 kill，等「真有客户 / 真有人来破」再启动（skill 估 20~35 人天，现在做属提前优化）。
+  - → ⚠️ **2026-06-11 此冻结已解除**（用户拍板②）：重启 Phase 1D-server（S2），先建 **dormant 出站/信封/心跳骨架**，真锁接入仍逐步受控。现状以 **§10.6** 为唯一权威。
 
 ### 10.4 两种「党」两个蜜罐（现状 + 待办）
 
@@ -249,6 +253,57 @@ StateMachine.isActive()                // 取中央总闸
 - **更根本**：`derive_registry_key()` 全程离线可推（key 三段常量在 SO + cert SHA-256，无服务器材料）→ 动态 dump / 自跑 key 仍可全取，删明文只挡 jadx 静态、挡不住动态。真锁＝服务器信封（Phase 1D-server）。
 
 → 与 §10.1「拆大动脉、不碎拆」/「够用就停」一致：**A close = 冻结**，待 v2 全字段 registry 化 + 真锁一并兑现；`registry_8071.json` 的 contact_fields/l1_methods/e56 等「债」同期补。
+
+---
+
+## 10.6 Phase 1D-server（S2 服务器真锁）解冻 + 现状盘点（2026-06-11，用户拍板②）
+
+> §10.3 的「Phase 1D-server 冻结」已在 2026-06-11 由用户解除：先把**出站 / 信封 / 心跳骨架**建出来（**dormant，不接入主流程**），真锁接入仍是逐步受控步骤。本节为 S2 的**唯一权威现状**；证据等级 **L2 静态**（只读核查代码，未跑装机日志、未连服务器）。
+
+### 已建（`net/` 包，L2 代码核查）
+- `net/EnvelopeClient`：HTTPS 出站。`activate(卡密)→token`、`fetchEnvelope(token)→签名信封`；按 `AppConfig.guardServerList()` 主备 fallback；强制 https、连不上 / 证书错 = fail-closed。
+- `net/AuthEnvelopeVerifier`：**确定性 sanity**（设备绑定 `sha256(deviceId)`、schema / 微信版本、key 材料存在、预过期租约）。**故意不做 HMAC**（不放可伪造 secret 进客户端）；Ed25519 验签留 S4。
+- `net/EnvelopeStore`：token / 信封本地缓存（离线冷启动复用）。
+- `net/GuardHeartbeat`：低频心跳骨架（新装 10~30min / 稳定 1~2h / 嫌疑 10min，**6h 硬封顶 + ±15% 抖动**）。**dormant：未接入 `ModuleMain`**（代码自标「保护区，待审接入」）。
+- `net/GuardActivation`：卡密激活入口；**当前唯一触发点 = `DebugServer`（DEV-gate 后）**，正常冷启动不跑。
+- `core/AppConfig`：`GUARD_SERVER_PRIMARY=https://zxmqq.shop`、`GUARD_SERVER_BACKUP=""`（备机槽留 `miyou.lol`）、`GUARD_PRODUCT_ID/RELEASE_ID`。
+
+### 仍未做（真锁的「牙」，与诚实口径一致）
+1. 服务器短命 key 材料 `k` **未折进 SO registry key**（`derive_registry_key` 现只折证书 SHA-256 → 动态 dump / 自跑 key 仍可取 registry）。
+2. **无 Ed25519 验签**（只有 sanity）。
+3. `LeaseClock` **未被心跳喂数据** → 默认 `CLEAN`，不凭空降级（守「不因单纯断网误杀」红线）。
+4. `RiskState` 仍 **record-only**，不收紧、不关功能。
+5. `StateMachine.isVipAuthorized()` 仍是诱饵 `return true`。
+6. `GuardHeartbeat.start()` **未接 `ModuleMain` 冷启动**（保护区）。
+7. 服务器端（`zxmqq.shop`）`/api/v1/activate`、`/api/v1/guard/envelope` **是否在线未验证**（miyou-server 侧，不在本仓库）。
+
+### 口径
+当前 = 「**本地加密 + 服务器管道骨架（dormant）**」。**不得**对外或在文档里宣称「服务器真锁完成」。
+
+### 下一受控步骤（按序；每步前过授权检查官 + 安全官「改前审查」，并先 git 快照）
+1. **S3a** 把信封 `k` 折进 SO key（现 `set_binding_material` 只折了证书 SHA-256）。
+2. **S3b** `LeaseClock` / `RiskState` 接信封驱动（`onServerHeartbeat` 真喂数据 + 离线宽限 / 不误伤实测）。
+3. **S4** Ed25519 验签（客户端只放公钥）。
+4. **最后**才把 `GuardHeartbeat.start()` 接进 `ModuleMain` 冷启动（保护区，单独一刀 + 装机回归）。
+5. 服务器端：miyou-server 落 `/api/v1/activate` + `/api/v1/guard/envelope`，验证在线。
+
+### future AI 接手自检（验证「现状是否仍如本节」）
+全部命中 = 现状未变；任一项变化 = 已推进，**必须回来更新本节**：
+- [ ] `StateMachine.isVipAuthorized()` 仍 `return true`？
+- [ ] `net/` 仍只被 `DebugServer → GuardActivation` 触发、`ModuleMain` 不调 `GuardHeartbeat`？
+- [ ] `EncryptedConfigLoader` 仍只读本地 SO registry（无服务器 lease）？
+- [ ] `derive_registry_key` 仍只折证书指纹（未折信封 `k`）？
+- [ ] `RiskState` 仍 record-only、`LeaseClock` 默认 `CLEAN`？
+
+### ⚠️ 与 V3 改包路线（D-016 主攻方向）的冲突 —— 真锁落地前必须先对齐（2026-06-11）
+
+真锁机制「把签名证书折进 registry key」（`bindSigningCert → NativeBridge.setBindingMaterial → derive_registry_key`）与 V3「改包 + 我们的证书重签」（`DECISION_LOG.md` D-016 / D-015）**天生相反**，落地前必须碰头：
+
+- **① 证书源切换（D-016 已记）**：cert-bind 现读 v1 模块 APK 签名；V3 落地要改 `tools/gen_registry_cipher.py` 的 `_CERT_SHA256` + 运行时证书源从 `sModulePath` 改读宿主自身签名。详见 `DECISION_LOG.md` D-016 §影响（**机制不变，只换证书源**）。
+- **② 删 fallback = 重签即死（D-016 未串）**：真锁终局（S3a 服务器钥匙 + §10.5「A」删明文 fallback）一旦落地，任何「证书变了却没为它重生成 `registry_cipher`」的重签 / 改包 → 钥匙错 → registry 散沙 → **没有 fallback 兜底 → 隐私 hook 静默全挂**。⇒ 铁律：**「删 fallback」必须与「V3 发版」绑同一条发布流水线**（每个发行证书都重生成 `registry_cipher` 并装机回归），否则 V3 重签包上线即裸奔。
+- **③ 共存版改包名 → 误判篡改 → 砸自己客户（D-016 未串）**：`anti_tamper.cpp` 现「`package_name != com.tencent.mm` 即 `PACKAGE_MISMATCH`」→ `RiskState.isConfirmedTamper()` → funnel 弹窗。V3 **共存版**（改了包名）会**整片命中** → 把正版共存客户当盗版引流。⇒ 上共存版前，`tamper_check` 的期望包名必须随打包注入的 `WX_PKG`（D-015）走，不能硬编码 `com.tencent.mm`。
+
+**结论**：S3a / 删 fallback / 真锁终局 在 **V3 改包形态对齐之前不要推进到「硬失败」**；先把上面 ②③ 的发布流水线 + 包名注入接通，再谈删 fallback。否则「防破解」会把「主攻方向 V3」拆台。
 
 ---
 

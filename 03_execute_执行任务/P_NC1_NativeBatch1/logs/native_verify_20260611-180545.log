@@ -1,0 +1,23 @@
+06-11 18:05:45.324 26829 26829 I NCL     : [init] pid=26829 proc=com.tencent.mm
+06-11 18:05:45.347 26829 26829 I NCL     : [native] certBind set sha256[0..3]=ca421ec3
+06-11 18:05:45.347 26829 26829 I NCL     : [native] available=true
+06-11 18:05:45.349 26829 26829 I NCL     : [native] init=true
+06-11 18:05:45.349 26829 26829 I NCL     : [native] role=1 (expect 1=MAIN)
+06-11 18:05:45.349 26829 26829 I NCL     : [native] isHidden=true (expect true)
+06-11 18:05:45.349 26829 26829 I NCL     : [native] isHidden after setHidden(false)=false (expect false)
+06-11 18:05:45.360 26829 26829 I NCL     : [native] isHiddenWxid(wxid_lzd2va16jd1622)=true (expect true)
+06-11 18:05:45.360 26829 26829 I NCL     : [native] isHiddenWxid(wxid_other)=false (expect false)
+06-11 18:05:45.360 26829 26829 I NCL     : [native] configVersion=1 (expect 1)
+06-11 18:05:45.360 26829 26829 I NCL     : [native] decryptSelfTest=true (expect true)
+06-11 18:05:45.361 26829 26829 I NCL     : [native] decryptTestRegistry=true
+06-11 18:05:45.361 26829 26829 I NCL     : [native] decryptScatter=true
+06-11 18:05:45.370 26829 26829 I NCL     : [native] registrySelfTest=true (expect true)
+06-11 18:05:45.399 26829 26829 I NCL     : [native] registrySummary=schema=r8071_v1 ver=8.0.71 entries=4 [conv.list adapter=kc5.v0 l4=notifyDataSetChanged] [moments.feed adapter=e2] [contact.address adapter=ik3.t0] [search.gateway]
+06-11 18:05:45.399 26829 26829 I NCL     : [native] BATCH1_VERIFY PASS
+06-11 18:05:45.399 26829 26829 I NCL     : [native] PHASE1A_VERIFY PASS
+06-11 18:05:45.399 26829 26829 I NCL     : [native] PHASE1B_VERIFY PASS
+06-11 18:05:45.401 26829 26829 I NCL     : [native] PHASE1C_VERIFY PASS
+06-11 18:05:45.401 26829 26829 I NCL     : [native] PHASE1D_VERIFY PASS
+06-11 18:05:45.403 26829 26829 I NCL     : [native] configReady=true summary=schema=r8071_v1 ver=8.0.71 entries=4 [conv.list adapter=kc5.v0 l4=notifyDataSetChanged] [moments.feed adapter=e2] [contact.address adapter=ik3.t0] [search.gateway]
+06-11 18:05:45.409 26829 26829 I NCL     : [native] recipeGet conv.list/adapter_class=kc5.v0
+06-11 18:05:45.409 26829 26829 I NCL     : [native] PHASE1E_VERIFY PASS

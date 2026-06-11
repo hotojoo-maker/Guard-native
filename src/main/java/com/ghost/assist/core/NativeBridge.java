@@ -292,6 +292,20 @@ public final class NativeBridge {
         nativeSetBindingMaterial(certSha256);
     }
 
+    // ── Phase 1D-server (S3a): server seed (S_rel) from envelope k ─
+
+    /**
+     * Unwrap the envelope's {@code k} (server seed material) into the SO so
+     * {@code derive_registry_key} folds it. {@code k} = ct(32)‖tag(16) from
+     * AES-128-GCM(S_rel, W[:16], n[:12]); {@code nonce} = envelope {@code n}
+     * (16 bytes, first 12 used). Returns false on any failure — the SO then
+     * scatters the registry (fail-closed). Call BEFORE registry decrypt.
+     */
+    public static boolean unwrapServerSeed(byte[] k, byte[] nonce) {
+        if (!sAvailable || k == null || nonce == null) return false;
+        return nativeUnwrapServerSeed(k, nonce);
+    }
+
     // TODO Batch 2: nativeGetNotifyMode()
     // TODO Batch 2: nativeShouldShowSecretUnreadCount()
     // TODO Batch 2: nativeShouldNotifySecret(String wxid)
@@ -322,5 +336,6 @@ public final class NativeBridge {
     private static native boolean nativeRegistrySelfTest();
     private static native String  nativeRegistrySummary();
     private static native void    nativeSetBindingMaterial(byte[] certSha256);
+    private static native boolean nativeUnwrapServerSeed(byte[] k, byte[] nonce);
     private static native String  nativeGetRecipe(String gateway, String key);
 }

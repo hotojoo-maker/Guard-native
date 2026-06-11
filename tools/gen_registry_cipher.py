@@ -24,6 +24,7 @@ Phase 1D-server (later) folds server-derived key material into the derivation
 (skill: server material must participate in final key derivation; no server
 material → no real registry). Local material only raises the static-analysis bar.
 """
+import base64
 import json
 import os
 
@@ -72,9 +73,10 @@ def _rotl8(x, r):
     return ((x << r) | (x >> (8 - r))) & 0xff
 
 
-def derive_registry_key():
+def derive_registry_key(server_seed=b""):
     out = bytearray(16)
     blen = len(_CERT_SHA256)
+    slen = len(server_seed)
     for i in range(16):
         t = _SEG_A[i] ^ _SEG_B[(i * 5 + 3) & 15]
         t = _rotl8(t, (i % 7) + 1)
@@ -84,11 +86,22 @@ def derive_registry_key():
             t ^= _CERT_SHA256[(i * 2) % blen]
             t = _rotl8(t, _CERT_SHA256[(i * 2 + 1) % blen] & 7)
             t ^= _CERT_SHA256[(i + 7) % blen]
+        # Phase 1D-server (S3a): fold server seed S_rel. MUST mirror
+        # guard::derive_registry_key() in config_crypto.cpp byte-for-byte.
+        if slen > 0:
+            t ^= server_seed[(i * 3) % slen]
+            t = _rotl8(t, server_seed[(i * 3 + 1) % slen] & 7)
+            t ^= server_seed[(i + 11) % slen]
         out[i] = t
     return bytes(out)
 
 
-key = derive_registry_key()
+# Phase 1D-server (S3a): S_rel comes from the env (NEVER hard-coded / committed).
+#   real lock:  GUARD_S_REL_B64=<base64> python tools/gen_registry_cipher.py
+#   no env (default) → empty seed → cert-only key = current behavior (backward-compat).
+_S_REL = base64.b64decode(os.environ["GUARD_S_REL_B64"]) if os.environ.get("GUARD_S_REL_B64") else b""
+key = derive_registry_key(_S_REL)
+print("server_seed_folded:", len(_S_REL) > 0)
 nonce = os.urandom(12)  # random per build → no GCM nonce reuse across builds
 
 with open(SRC, "r", encoding="utf-8") as f:

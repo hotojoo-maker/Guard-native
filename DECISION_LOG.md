@@ -130,6 +130,7 @@
 - **不撤回 D-015**：五阶段顺序与「功能先稳」原则仍在；本条不是允许跳过功能/加密直接打包，而是要求**并行启动 V3 可行性调研**（LSPatch 能否劫持 8.0.71 / np.protect 加固 / 签名自校验 / Tinker 热补丁冲突），调研清楚才报工期。
 - **影响**：
   - 防破解证书绑定（A-step2，2026-06-08 装机✅）**形态边界**：当前读 v1 LSPosed 独立模块 APK 签名；V3 落地时必须改两处——① `tools/gen_registry_cipher.py` 的 `_CERT_SHA256` 换成 V3 发行签名证书；② 运行时证书源从 `sModulePath` 改为读「正在运行的宿主包自身签名」(`getPackageInfo(getPackageName(), GET_SIGNING_CERTIFICATES)`，查自己不被包可见性挡)。机制不变，只换证书源。
+    - ⚠️ **2026-06-11 补**：此证书绑定除了「换证书源」，还有两个连带冲突常被漏掉——**删 fallback 后重签即 registry 散沙（隐私全挂）** + **共存版改包名被 `anti_tamper` 误判篡改引流**。详见 `PROTECTION_MAP.md` §10.6 末节「与 V3 改包路线的冲突」。
   - V3 调研任务（V3-T1/T2/T3）入 `01_dispatch_总调度/CURRENT_PLAN.md`，调研产出后再排 P31–P33 工期。
   - 进程白名单 `WX_PKG` 打包时注入、`SignatureGuard` 绕签名校验（D-015 已列）仍是 V3 必做项。
 

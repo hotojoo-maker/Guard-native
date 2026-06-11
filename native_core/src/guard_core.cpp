@@ -275,6 +275,17 @@ Java_com_ghost_assist_core_NativeBridge_nativeSetBindingMaterial(
     guard::set_binding_material(material.data(), material.size());
 }
 
+// ── Phase 1D-server (S3a): unwrap envelope k → server seed ────
+
+JNIEXPORT jboolean JNICALL
+Java_com_ghost_assist_core_NativeBridge_nativeUnwrapServerSeed(
+        JNIEnv* env, jclass, jbyteArray jK, jbyteArray jNonce) {
+    const std::vector<uint8_t> k = jbytes(env, jK);
+    const std::vector<uint8_t> n = jbytes(env, jNonce);
+    return guard::unwrap_server_seed(k.data(), k.size(), n.data(), n.size())
+            ? JNI_TRUE : JNI_FALSE;
+}
+
 // ── Batch 2 / 3 stubs (compile-only, not connected) ──────────
 //
 // TODO Batch 2: nativeGetNotifyMode()

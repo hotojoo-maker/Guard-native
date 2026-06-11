@@ -219,3 +219,33 @@
 - ✅ conv.list 漂移债已核准结案（contact_fields 补全为 d,e,f,a,b,c；l1_methods n,m 确认正确）。
 - ⬜ 待迁：ConvFilter 剩余内联锚点（kc5.y/notify，在回调体内，撞雷区暂缓）；SearchFilter 目前只做粗粒度 profile 壳，不删 fallback。
 - ⬜ 真锁（服务器短命钥匙）= Phase 1D-server，仍未做，对外不得宣称真锁完成。
+
+---
+
+## 2026-06-11 加密链路维护护栏（host/CI parity 测试，非新功能）
+
+> 背景：体检加密「是否方便维护」时发现——`derive_registry_key()` 在 Python(`gen_registry_cipher.py`) 与 C++(`config_crypto.cpp`) 双实现、必须 byte-for-byte 一致；漂移会静默散沙（隐私 hook 无声失效）。原本只有装机 logcat `PHASE1C/1D_VERIFY` 才暴露，太晚。
+
+### 改了什么（范围严格限定）
+- 只动 `tools/test_config_crypto.cpp`：跑 `decrypt_config_self_test()` 之外，新增
+  - `set_binding_material(证书 SHA-256 32 字节)`，与 `gen_registry_cipher.py::_CERT_SHA256` 逐字一致（cert-only 构建，`clear_server_seed` 不折服务器种子）；
+  - `registry_self_test()` + `registry_dump_summary()`；退出码同时看两个 self_test。
+- 新增 `tools/run_native_tests.ps1`：一键编译+跑（host clang/g++ 优先=CI 友好；无 host 编译器则 NDK clang 交叉编译→adb push→设备跑，非装 APK、非 logcat）。
+- **未动** SO 主逻辑 / hook / registry 内容 / `gen_registry_cipher.py` 配方。
+
+### 价值
+- 把「Python 生成密文 ↔ C++ `derive_registry_key` 解密」的跨语言 key 一致性，从「装机才知道」提前到「编译/CI 就知道」。任一端改漂移 → `registry_self_test` 当场 FAIL。
+
+### L1 证据（真机跑，设备 609b4b18 / arm64-v8a，NDK→adb 模式）
+```text
+[run_native_tests] device abi=arm64-v8a target=aarch64-linux-android21
+decrypt_config_self_test=PASS
+registry_self_test=PASS
+registry_summary=schema=r8071_v1 ver=8.0.71 entries=4 [conv.list adapter=kc5.v0 l4=notifyDataSetChanged] [moments.feed adapter=e2] [contact.address adapter=ik3.t0] [search.gateway]
+ALL=PASS
+[run_native_tests] RESULT: PASS
+```
+
+### 诚实边界
+- 这是**维护护栏**（防漂移 + 可离线/CI 自测），不改变安全等级：仍是本地加密 + cert 绑定，**不宣称服务器真锁完成**（Phase 1D-server 仍 dormant）。
+- 临时产物（`.tmp_native_test.elf` / 设备 `/data/local/tmp` 二进制）由脚本自清。

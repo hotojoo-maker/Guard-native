@@ -86,8 +86,8 @@
 ```
 guard_native/
 ├── 根目录 (12 份核心 md + 同步脚本)
-├── .cursor/skills/       6 个角色 skill（主目录，日常编辑这里）
-├── .claude/skills/       6 个角色 skill（镜像，sync_skills.ps1 同步）
+├── .cursor/skills/       8 个角色 skill（核心4：总调度/执行/质检/终端 + 专项4：授权检查官/授权门控别名/网络安全官/git保姆；主目录，日常编辑这里）
+├── .claude/skills/       8 个角色 skill（镜像，sync_skills.ps1 同步；以主目录大写 SKILL.md 为准）
 ├── 00_start_入口/        新会话第一站（PROMPT_TEMPLATES）
 ├── 01_dispatch_总调度/   CURRENT_PLAN / NEXT_STEP
 ├── 02_tools_工具/        dynamic_crawler 等

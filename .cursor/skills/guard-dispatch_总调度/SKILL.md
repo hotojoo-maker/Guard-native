@@ -12,6 +12,7 @@ description: Guard Native 总调度——制定 P 任务计划/分配 4 窗口/�
 - `build.gradle` 的 debug/release 必须都指向该文件；禁止依赖或重建 `~/.android/debug.keystore`。
 - `INSTALL_FAILED_UPDATE_INCOMPATIBLE` 必须先停、比对已装 APK 与固定 key 指纹，未经用户确认禁止卸载。
 - 缺少固定 key 时停止 build/装机；日志只能写当前 P 任务 `logs/`，禁止写进 docs/skill 目录。
+- 官替版和共存版是两条独立发行线；派发“发布/共存/签名/打包”任务前，先让执行窗口读 `docs/RELEASE_RULES.md`，不得临时猜包名或签名。
 
 ---
 

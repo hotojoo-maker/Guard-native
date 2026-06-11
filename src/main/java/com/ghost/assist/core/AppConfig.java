@@ -36,15 +36,37 @@ public class AppConfig {
     /** Official purchase URL shown in PiracyNotice and DebugServer dashboard. */
     public static final String SHOP_URL = "https://zxmqq.shop";
 
+    // ── S2 真锁信封 — 服务器接入（Phase 1D-server）────────────────
+    // 传输强制 HTTPS（信封里的短命 key 材料 k 不得走明文）。
+    // 备机本轮不部署：BACKUP 留空，EnvelopeClient 写成「列表 + fallback」结构，
+    // 以后开备机只需把 BACKUP 填上 https://miyou.lol，不改客户端代码。
+    public static final String GUARD_SERVER_PRIMARY = "https://zxmqq.shop";
+    public static final String GUARD_SERVER_BACKUP  = "";   // 备机槽（留空 = 仅主机）
+    public static final String GUARD_PRODUCT_ID      = "quantum_wechat";
+    public static final String GUARD_RELEASE_ID      = "android_8071";
+
+    /** 真锁服务器候选列表（按序 fallback；空串自动跳过）。 */
+    public static String[] guardServerList() {
+        if (GUARD_SERVER_BACKUP == null || GUARD_SERVER_BACKUP.isEmpty()) {
+            return new String[]{ GUARD_SERVER_PRIMARY };
+        }
+        return new String[]{ GUARD_SERVER_PRIMARY, GUARD_SERVER_BACKUP };
+    }
+
     private static final AppConfig sInstance = new AppConfig();
     private SharedPreferences mPrefs;
     private Mode mMode = Mode.PROD;   // safe in-memory default before init()
     private boolean mLocalDevMode = false;
     private int mServerPort = 8080;
+    private android.content.Context mAppCtx;   // S2: 真锁激活/设备号取值用
 
     public static AppConfig getInstance() { return sInstance; }
 
+    /** 应用上下文（取设备号 / 初始化 EnvelopeStore 用）；init 后非空。 */
+    public android.content.Context getAppContext() { return mAppCtx; }
+
     public void init(Application app) {
+        mAppCtx = app.getApplicationContext();
         mPrefs = app.getSharedPreferences(PREFS_NAME, 0);
 
         // Migration mv2: old installs persisted "DEV" as default; upgrade to "PROD" once.

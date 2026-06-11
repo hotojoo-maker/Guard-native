@@ -346,6 +346,20 @@ static uint8_t rotl8(uint8_t x, int r) {
 uint8_t g_binding[32];
 size_t  g_binding_len = 0;
 
+// Phase 1D-server (S3a): runtime server seed S_rel, unwrapped from the envelope's
+// k field and folded into derive_registry_key. No server seed → registry scatters
+// (= real lock: registry only decrypts after a valid server envelope unwraps k).
+uint8_t g_server_seed[32];
+size_t  g_server_seed_len = 0;
+
+// Per-release wrapping key W[:16] — the AES-128 key that decrypts k → S_rel.
+// Scattered into two halves (miyou-server config holds the same 16 bytes),
+// reassembled only at use.
+// [GUARD-TRAP] This is W, NOT S_rel and NOT the envelope HMAC secret — three
+// different per-release materials. Do not merge or replace with a literal key.
+const uint8_t g_wk_lo[8] = {0x58, 0x18, 0x26, 0xdd, 0xa4, 0xed, 0x49, 0x0d};
+const uint8_t g_wk_hi[8] = {0xf5, 0x5b, 0xdb, 0x4d, 0x0c, 0x03, 0x88, 0xe3};
+
 static ConfigDecryptResult make_scatter() {
     return ConfigDecryptResult{false, kScatterRegistry};
 }
@@ -391,6 +405,30 @@ void set_binding_material(const uint8_t* data, size_t len) {
     g_binding_len = len;
 }
 
+void clear_server_seed() {
+    g_server_seed_len = 0;
+}
+
+bool unwrap_server_seed(const uint8_t* k, size_t k_len,
+                        const uint8_t* nonce, size_t nonce_len) {
+    // k = ct(32) || tag(16). Decrypt AES-128-GCM(key=W[:16], nonce=n[:12]) → S_rel(32).
+    // Any failure → clear seed (registry scatters = fail-closed, real lock).
+    g_server_seed_len = 0;
+    if (k == nullptr || nonce == nullptr) return false;
+    if (k_len != 48 || nonce_len < 12) return false;
+
+    uint8_t wk[16];
+    std::memcpy(wk, g_wk_lo, 8);
+    std::memcpy(wk + 8, g_wk_hi, 8);
+
+    std::vector<uint8_t> seed;
+    bool ok = gcm_decrypt(wk, nonce, 12, k, 32, k + 32, 16, seed);
+    if (!ok || seed.size() != 32) return false;
+    std::memcpy(g_server_seed, seed.data(), 32);
+    g_server_seed_len = 32;
+    return true;
+}
+
 void derive_registry_key(uint8_t out[16]) {
     // [GUARD-TRAP] Registry key is DERIVED, never a single visible constant.
     // Mirror tools/gen_registry_cipher.py::derive_registry_key() exactly.
@@ -417,6 +455,14 @@ void derive_registry_key(uint8_t out[16]) {
             t = static_cast<uint8_t>(t ^ g_binding[(i * 2) % g_binding_len]);
             t = rotl8(t, g_binding[(i * 2 + 1) % g_binding_len] & 7);
             t = static_cast<uint8_t>(t ^ g_binding[(i + 7) % g_binding_len]);
+        }
+        // Phase 1D-server (S3a): fold the server seed S_rel. MUST mirror
+        // gen_registry_cipher.py::derive_registry_key() byte-for-byte. Guarded:
+        // no server seed → skipped → identical to the cert-only A-step2 key.
+        if (g_server_seed_len > 0) {
+            t = static_cast<uint8_t>(t ^ g_server_seed[(i * 3) % g_server_seed_len]);
+            t = rotl8(t, g_server_seed[(i * 3 + 1) % g_server_seed_len] & 7);
+            t = static_cast<uint8_t>(t ^ g_server_seed[(i + 11) % g_server_seed_len]);
         }
         out[i] = t;
     }

@@ -60,7 +60,14 @@ constexpr int     CONFIG_VERSION        = 1;
 constexpr int     GRACE_WARN_HOURS      = 24;   // silent sync window
 constexpr int     GRACE_DEGRADE_HOURS   = 72;   // start degrading
 constexpr int     GRACE_LOCKOUT_DAYS    = 10;   // full lockout
-constexpr char    EXPECTED_PACKAGE[]    = "com.tencent.mm";
+
+// 期望宿主包名 — 打包时注入（D-015 / V3 共存版）。
+// 官替版（劫持 com.tencent.mm）默认即此值；共存版改包名时由构建链注入新包名，
+// 让共存版不被 anti_tamper 误判为重打包盗版。来源 = 构建注入，不硬编码。
+#ifndef GUARD_EXPECTED_PACKAGE
+#define GUARD_EXPECTED_PACKAGE "com.tencent.mm"
+#endif
+constexpr char    EXPECTED_PACKAGE[]    = GUARD_EXPECTED_PACKAGE;
 constexpr char    PROCESS_MAIN[]        = "com.tencent.mm";
 constexpr char    PROCESS_PUSH[]        = "com.tencent.mm:push";
 
@@ -162,6 +169,17 @@ bool decrypt_config_self_test();
 /// re-signed / repackaged APK derives a wrong key → scatter. Passing null/0
 /// clears it (key reverts to the unbound A-step1 derivation → also wrong key).
 void set_binding_material(const uint8_t* data, size_t len);
+
+/// Phase 1D-server (S3a): unwrap the envelope's k field into the runtime server
+/// seed S_rel. k = ct(32)||tag(16) of AES-128-GCM(S_rel, key=W[:16], nonce=n[:12]).
+/// Must be called BEFORE the embedded registry is decrypted. Returns false and
+/// clears the seed (→ scatter) on any failure. No valid envelope → no server seed
+/// → registry scatters = real lock (registry only opens after a real server reply).
+bool unwrap_server_seed(const uint8_t* k, size_t k_len,
+                        const uint8_t* nonce, size_t nonce_len);
+
+/// Clear the runtime server seed (logout / lease expired → registry scatters).
+void clear_server_seed();
 
 /// Phase 1D-local: derive the registry AES key from scattered in-SO segments +
 /// a light non-linear transform + the binding material (A-step2), so no single
