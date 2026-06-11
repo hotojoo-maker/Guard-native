@@ -278,7 +278,7 @@ StateMachine.isActive()                // 取中央总闸
 ### 仍未做（真锁的「牙」，与诚实口径一致）
 1. S3a runtime seed apply 原型已接，但 **PROD server-lock / 真实 S_rel 与 registry_cipher 发布流水线尚未切硬失败**；仍不能宣称服务器真锁完成。
 2. ~~无 Ed25519 验签~~ → **S4 已落地（2026-06-11 装机 PASS）**：服务器 Ed25519 私钥签信封，客户端只放公钥验签，HS256 仅留 legacy `/api/v1/config` 公告路径。⚠️ 注意：Ed25519 防的是「伪造/篡改信封」，**不等于真锁**——真锁的「牙」仍是下面第 1 条 S3a 服务器短命 key 折进 SO。
-3. `LeaseClock` 已接信封授时（S3b-A，2026-06-11 装机 PASS）：`GuardHeartbeat.syncOnce` 验签后喂 `onServerHeartbeat(sn×1000, exp×1000)` + `RiskState.evaluate()` record-only 重算记日志。⚠️ **仍未作为硬门控**：过期判定仍走手机墙钟（`EnvelopeStore.isLicenseExpired`），未换 `trustedNow`；离线宽限正式策略（B：换 trustedNow + 拨时间不误伤实测）未做。
+3. `LeaseClock` 已接信封授时（S3b-A，2026-06-11 装机 PASS）：`GuardHeartbeat.syncOnce` 验签后喂 `onServerHeartbeat(sn×1000, exp×1000)` + `RiskState.evaluate()` record-only 重算记日志。**S3b-B 也已落地（2026-06-11 装机 PASS）**：① `EnvelopeStore.isLicenseExpired` 改用 `LeaseClock.trustedNow()`（服务器授时，防回拨/前跳，不信手机墙钟）；② 设置页 `showGuardOverlay` 加"算账检查点"——断网 >72h 进设置页 → `GuardHeartbeat.reverifyIfStale` 强制重验，失败 → `revokeKeepToken`（撤销但留 token 自愈）+ 样式化弹窗"当前时间错误，授权验证失败，请检查时间"。⚠️ 边界：**正常使用（非设置页）断网不掉授权、密友照常隐藏（不误伤/不暴露）**；重连自愈实测通过。72h 阈值当前客户端写死，未走服务器下发。
 4. 备节点 HTTPS (`miyou.lol`) 反代未完成；Android 当前只启用主节点。
 5. 更新通知 `up` 已下发并被客户端消费，但属于运营提示，不是强制升级/真锁。
 
@@ -293,7 +293,7 @@ StateMachine.isActive()                // 取中央总闸
 
 ### 下一受控步骤（按序；每步前过授权检查官 + 安全官「改前审查」，并先 git 快照）
 1. **S3a-PROD**：把 `prod_server_lock` 发行流水线、S_rel 发版档案、registry_cipher 生成和服务器 envelope 同源打通后，再切无 seed scatter 硬失败。
-2. **S3b**：`LeaseClock` / `RiskState` 接信封驱动。**A 已完成**（2026-06-11 装机 PASS：心跳喂服务器授时 + record-only 重算）；**B 待做**：过期判定换 `trustedNow`（不信手机墙钟）+ 拨时间/拔网不误伤实测后才转硬门控。
+2. ~~**S3b**：`LeaseClock` / `RiskState` 接信封驱动~~ ✅ **A+B 已完成（2026-06-11 装机 PASS）**：A=心跳喂服务器授时 + record-only 重算；B=到期判定换 `trustedNow`（不信手机墙钟）+ 设置页 72h 离线强制重验/失败撤销（断网正常使用不掉、重连自愈，三段实测通过）。后续可选：72h 阈值改服务器下发、离线散沙更细策略。
 3. ~~**S4**：Ed25519 验签（客户端只放公钥）~~ ✅ **已完成（2026-06-11 装机 PASS）**：服务器 `crypto_utils.sign_guard_envelope` 切 Ed25519；客户端 `AuthEnvelopeVerifier` 内置公钥验签 fail-closed；主/备节点已部署。证据：本地 `JAVA_EDDSA_VERIFY=PASS`/`TAMPER_REJECT=PASS`、线上直连 `alg=Ed25519` 公钥验签 PASS、真机 `[hb] synced`+`AUTH_OK` 无 `signature verify failed`。
 4. **备机**：完成 `miyou.lol` HTTPS 反代后，客户端再打开 `GUARD_SERVER_BACKUP`。
 5. **运营**：更新通知弹窗已通，后续补“强制升级 / 版本灰度 / 下载包托管”再单独审。

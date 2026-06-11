@@ -38,6 +38,8 @@ public final class GuardHeartbeat {
     private static final long HOUR_2 = 2L * 60 * 60 * 1000;
     /** 硬封顶 6h：任何档位都不得超过。 */
     private static final long CAP_6H = 6L * 60 * 60 * 1000;
+    /** S3b-B：进设置页时，断网超过此时长则强制重验（失败=撤销授权）。 */
+    private static final long STALE_REVERIFY_MS = 72L * 60 * 60 * 1000; // 72h
 
     private static final Random RND = new Random();
 
@@ -107,6 +109,35 @@ public final class GuardHeartbeat {
         } catch (Throwable t) {
             Log.w(TAG, "[hb] sync err: " + t.getClass().getSimpleName());
             return -1;
+        }
+    }
+
+    /**
+     * S3b-B 设置页"算账检查点"：断网 > 72h 才强制联网重验。
+     *   • 72h 内 / 无离线基准 / 本就未授权 → 不动，返回当前授权态。
+     *   • 重验成功 → 保持授权。
+     *   • 重验失败（断网/无效）→ 撤销授权（保留 token 自愈）+ 记时间错误文案，返回 false。
+     * 内部异常按 fail-open 处理（不因 bug 误杀正版）。必须后台线程调用（含网络）。
+     *
+     * @return 检查后是否仍授权（false = 已撤销）
+     */
+    public static boolean reverifyIfStale(String deviceId, String certHex, String appVersion) {
+        try {
+            if (!EnvelopeStore.isAuthorizedNow()) return false; // 本就未授权，无需算账
+            long offline = LeaseClock.offlineMillis();
+            if (offline < 0 || offline <= STALE_REVERIFY_MS) return true; // 72h 内或无基准 → 放行
+            int tier = syncOnce(deviceId, certHex, appVersion);
+            if (tier >= 0) {
+                Log.i(TAG, "[hb] stale re-verify ok (offline was " + (offline / 3600000) + "h)");
+                return true;
+            }
+            EnvelopeStore.revokeKeepToken();
+            EnvelopeStore.saveAuthError("当前时间错误，授权验证失败，请检查时间");
+            Log.w(TAG, "[hb] stale re-verify FAILED — auth revoked (offline " + (offline / 3600000) + "h)");
+            return false;
+        } catch (Throwable t) {
+            Log.w(TAG, "[hb] reverify err (fail-open): " + t.getClass().getSimpleName());
+            return true; // 内部错误不误杀
         }
     }
 

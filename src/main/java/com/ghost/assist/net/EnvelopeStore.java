@@ -5,6 +5,8 @@ import android.content.SharedPreferences;
 import android.os.SystemClock;
 import android.util.Log;
 
+import com.ghost.assist.core.LeaseClock;
+
 /**
  * EnvelopeStore — S2 信封 / token 本地缓存（离线冷启动复用）。
  *
@@ -111,9 +113,18 @@ public final class EnvelopeStore {
     public static int  getTier()           { return sPrefs == null ? 1 : sPrefs.getInt(K_TIER, 1); }
     public static int  getRisk()           { return sPrefs == null ? 0 : sPrefs.getInt(K_RISK, 0); }
 
+    /**
+     * 授权是否真到期。S3b-B：用 `LeaseClock.trustedNow()`（服务器授时 + 单调时钟外推 +
+     * 历史水位防回拨）而非手机墙钟——手机前跳不会误杀、回拨不能续命。
+     * 注：trustedNow 在「从未心跳」时回落墙钟，但本判定的前置 hasCachedEnvelope 已保证
+     * 至少成功心跳过一次（onServerHeartbeat 已喂服务器时间），所以真正 gating 时是服务器基准。
+     * 断网不在此处掉授权（只看真到期）；离线宽限/提醒由 LeaseClock 等级承担（record-only）。
+     */
     public static boolean isLicenseExpired() {
         long exp = getLicenseExpireSec();
-        return exp > 0 && exp <= System.currentTimeMillis() / 1000L;
+        if (exp <= 0) return false;
+        long trustedNowSec = LeaseClock.trustedNow() / 1000L;
+        return exp <= trustedNowSec;
     }
 
     public static boolean isAuthorizedNow() {
@@ -143,5 +154,20 @@ public final class EnvelopeStore {
     public static void clear() {
         if (sPrefs == null) return;
         sPrefs.edit().clear().apply();
+    }
+
+    /**
+     * S3b-B：撤销本地授权但**保留 token**（重连自愈）。清信封 blob + 租约/到期元数据，
+     * 使 `isAuthorizedNow()` 立刻为 false；保留 token 让下次联网用同一 token 自动重拉
+     * envelope 恢复，不必重新输卡密。不清用户密友名单/密码（安全官红线）。
+     */
+    public static void revokeKeepToken() {
+        if (sPrefs == null) return;
+        sPrefs.edit()
+                .remove(K_BLOB)
+                .remove(K_LEASE)
+                .remove(K_LICENSE)
+                .remove(K_SRV_NOW)
+                .apply();
     }
 }

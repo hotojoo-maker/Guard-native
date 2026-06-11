@@ -40,8 +40,10 @@ import com.ghost.assist.core.AppConfig;
 import com.ghost.assist.core.AuthManager;
 import com.ghost.assist.core.NativeBridge;
 import com.ghost.assist.core.StateMachine;
+import com.ghost.assist.net.EnvelopeClient;
 import com.ghost.assist.net.EnvelopeStore;
 import com.ghost.assist.net.GuardActivation;
+import com.ghost.assist.net.GuardHeartbeat;
 
 import java.lang.ref.WeakReference;
 
@@ -1399,11 +1401,95 @@ public class SettingsEntry {
                 showActivationDialog(activity, null, "settings-overlay");
             } else {
                 showUpdateNoticeIfNeeded(activity);
+                // S3b-B：进设置页 = 算账检查点。断网 >72h 强制重验，失败→撤销+提示。
+                maybeStaleReverify(activity, decor);
             }
             Log.i(TAG, "[SET:overlay] shown state="
                     + StateMachine.getInstance().getStateName());
         } catch (Throwable t) {
             Log.w(TAG, "[SET:overlay] show failed: " + t);
+        }
+    }
+
+    /**
+     * S3b-B：设置页"算账检查点"。后台调 GuardHeartbeat.reverifyIfStale（断网 >72h 才真跑），
+     * 若被撤销 → 主线程关设置页 + 弹时间错误提示。授权决策在 net 层，这里只触发 + 展示。
+     */
+    private static void maybeStaleReverify(final Activity activity, final ViewGroup decor) {
+        try {
+            if (!EnvelopeStore.isAuthorizedNow()) return;
+            final String deviceId = AuthManager.computeDeviceHash(activity);
+            EnvelopeClient.runAsync(new Runnable() {
+                @Override public void run() {
+                    final boolean stillAuth = GuardHeartbeat.reverifyIfStale(
+                            deviceId, "", AppConfig.GUARD_PRODUCT_VERSION);
+                    if (stillAuth) return;
+                    activity.runOnUiThread(new Runnable() {
+                        @Override public void run() {
+                            dismissOverlay(decor);
+                            showTimeErrorDialog(activity);
+                        }
+                    });
+                }
+            });
+        } catch (Throwable t) {
+            Log.w(TAG, "[SET:overlay] stale reverify trigger failed: " + t);
+        }
+    }
+
+    /** S3b-B：授权重验失败（断网 >72h）时的提示弹窗。白色圆角卡片，与更新提示同款。 */
+    private static void showTimeErrorDialog(final Activity activity) {
+        try {
+            LinearLayout box = new LinearLayout(activity);
+            box.setOrientation(LinearLayout.VERTICAL);
+            box.setPadding(dp(activity, 22), dp(activity, 20), dp(activity, 22), dp(activity, 16));
+            GradientDrawable bg = new GradientDrawable();
+            bg.setColor(Color.WHITE);
+            bg.setCornerRadius(dp(activity, 20));
+            box.setBackground(bg);
+
+            TextView tvTitle = new TextView(activity);
+            tvTitle.setText("授权验证失败");
+            tvTitle.setTextColor(Color.parseColor("#1C1C1E"));
+            tvTitle.setTextSize(18f);
+            tvTitle.getPaint().setFakeBoldText(true);
+            tvTitle.setGravity(Gravity.CENTER);
+            box.addView(tvTitle);
+
+            TextView tvMsg = new TextView(activity);
+            tvMsg.setText("当前时间错误，授权验证失败，请检查时间");
+            tvMsg.setTextColor(Color.parseColor("#555555"));
+            tvMsg.setTextSize(14f);
+            tvMsg.setGravity(Gravity.CENTER);
+            tvMsg.setLineSpacing(dp(activity, 3), 1.0f);
+            LinearLayout.LayoutParams msgLp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            msgLp.topMargin = dp(activity, 12);
+            box.addView(tvMsg, msgLp);
+
+            final AlertDialog dialog = new AlertDialog.Builder(activity).setView(box).create();
+            dialog.setCancelable(false);
+
+            Button ok = new Button(activity);
+            ok.setText("我知道了");
+            ok.setTextColor(Color.WHITE);
+            ok.setTextSize(14f);
+            ok.getPaint().setFakeBoldText(true);
+            GradientDrawable okBg = new GradientDrawable();
+            okBg.setColor(Color.parseColor("#07A85C"));
+            okBg.setCornerRadius(dp(activity, 18));
+            ok.setBackground(okBg);
+            LinearLayout.LayoutParams okLp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, dp(activity, 38));
+            okLp.topMargin = dp(activity, 18);
+            box.addView(ok, okLp);
+            ok.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) { dialog.dismiss(); }
+            });
+
+            dialog.show();
+        } catch (Throwable t) {
+            Log.w(TAG, "[SET:overlay] time-error dialog failed: " + t);
         }
     }
 
