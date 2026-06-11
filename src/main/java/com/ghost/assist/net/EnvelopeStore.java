@@ -30,6 +30,7 @@ public final class EnvelopeStore {
     private static final String K_SYNC_E  = "se";    // 上次同步 elapsedRealtime (ms)
     private static final String K_SRV_NOW = "sn";    // 信封内服务器时间 (s)
     private static final String K_LEASE   = "ex";    // 租约到期 (s)
+    private static final String K_LICENSE = "le";    // 授权到期 (s)
     private static final String K_TIER    = "tr";    // 风险层 q
     private static final String K_RISK    = "rk";    // 风险分 r
 
@@ -74,6 +75,7 @@ public final class EnvelopeStore {
                 .putLong(K_SYNC_E, SystemClock.elapsedRealtime())
                 .putLong(K_SRV_NOW, e.serverNow)
                 .putLong(K_LEASE, e.leaseExpire)
+                .putLong(K_LICENSE, e.licenseExpire)
                 .putInt(K_TIER, e.tier)
                 .putInt(K_RISK, e.risk)
                 .apply();
@@ -90,6 +92,7 @@ public final class EnvelopeStore {
     // ── 租约元数据（S3b LeaseClock 会接管严格判定，这里只给粗略读取）──
 
     public static long getLeaseExpireSec() { return sPrefs == null ? 0 : sPrefs.getLong(K_LEASE, 0); }
+    public static long getLicenseExpireSec() { return sPrefs == null ? 0 : sPrefs.getLong(K_LICENSE, 0); }
     public static long getServerNowSec()   { return sPrefs == null ? 0 : sPrefs.getLong(K_SRV_NOW, 0); }
     public static long getSyncWallMs()     { return sPrefs == null ? 0 : sPrefs.getLong(K_SYNC_W, 0); }
     public static long getSyncElapsedMs()  { return sPrefs == null ? 0 : sPrefs.getLong(K_SYNC_E, 0); }

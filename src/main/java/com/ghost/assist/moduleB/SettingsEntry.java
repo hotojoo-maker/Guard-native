@@ -38,6 +38,7 @@ import com.ghost.assist.core.AppConfig;
 import com.ghost.assist.core.AuthManager;
 import com.ghost.assist.core.NativeBridge;
 import com.ghost.assist.core.StateMachine;
+import com.ghost.assist.net.AuthEnvelopeVerifier;
 import com.ghost.assist.net.EnvelopeStore;
 import com.ghost.assist.net.GuardActivation;
 
@@ -1792,10 +1793,11 @@ public class SettingsEntry {
     private static String activationStatusText(Context ctx) {
         try {
             if (ctx != null) EnvelopeStore.init(ctx.getApplicationContext());
-            if (EnvelopeStore.hasToken()) return "\u5df2\u6fc0\u6d3b"; // 已激活
+            String prefix = "\u5fae\u4fe1 " + AuthEnvelopeVerifier.EXPECTED_WX_VERSION + " \u00b7 "; // 微信 x ·
+            if (EnvelopeStore.hasToken()) return prefix + "\u5df2\u6fc0\u6d3b"; // 已激活
             String wxid = Bridge.getInstance().getLicensedWxid();
-            if (wxid != null && !wxid.isEmpty()) return "\u5df2\u7ed1\u5b9a"; // 已绑定
-            return "\u672a\u6388\u6743 / \u8f93\u5165\u6388\u6743\u7801"; // 未授权 / 输入授权码
+            if (wxid != null && !wxid.isEmpty()) return prefix + "\u5df2\u7ed1\u5b9a"; // 已绑定
+            return prefix + "\u672a\u6388\u6743"; // 未授权
         } catch (Throwable ignored) {
             return "\u672a\u6388\u6743 / \u8f93\u5165\u6388\u6743\u7801";
         }
@@ -1804,11 +1806,13 @@ public class SettingsEntry {
     private static String activationExpireText(Context ctx) {
         try {
             if (ctx != null) EnvelopeStore.init(ctx.getApplicationContext());
-            long exp = EnvelopeStore.getLeaseExpireSec();
+            long exp = EnvelopeStore.getLicenseExpireSec();
+            if (exp <= 0) exp = EnvelopeStore.getLeaseExpireSec();
             if (exp <= 0) return "\u672a\u540c\u6b65"; // 未同步
             long now = System.currentTimeMillis() / 1000L;
-            long hours = Math.max(0L, (exp - now) / 3600L);
-            return hours > 0 ? ("\u7ea6 " + hours + " \u5c0f\u65f6") : "\u5df2\u5230\u671f"; // 约 N 小时 / 已到期
+            if (exp <= now) return "\u5df2\u5230\u671f"; // 已到期
+            return new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+                    .format(new java.util.Date(exp * 1000L));
         } catch (Throwable ignored) {
             return "\u672a\u540c\u6b65";
         }
