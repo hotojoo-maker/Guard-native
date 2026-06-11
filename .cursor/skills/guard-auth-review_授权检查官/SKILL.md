@@ -619,13 +619,13 @@ BLOCK 原因: [如有，必填]
 
 | 简化项 | 当前 v1 状态 | v2 计划 |
 |-------|------------|--------|
-| `isVipAuthorized()` | stub，永远返回 true | 替换为 `LicenseGate.check()` |
+| `isVipAuthorized()` | ✅ 已接 `EnvelopeStore.isAuthorizedNow()`（v1.1 授权闭环；**不再是 stub**，详见 `PROTECTION_MAP §10.6`） | — |
 | ACCOUNT_MISMATCH / DEVICE_MISMATCH | 放行（hook 仍注册）| v2 真正拦截 |
 | killSwitch | stub，永远 false | 接入 miyou-server 真实接口 |
 | 蜜罐 | 未实现 | v2+ 引入假入口 |
-| Ed25519 验签 | 未实现 | v2 接入 LicenseBox |
+| Ed25519 验签 | ✅ 已落地 S4（2026-06-11 装机 PASS；详见 `PROTECTION_MAP §10.6`） | — |
 
-**以上简化是设计决策，不是 bug，不得在 v1 期间"修复"。**
+> ⚠️ 本表部分行已被 v1.1 推进超越（isVipAuthorized 已接信封授权、Ed25519 已落地、LeaseClock 已接服务器授时 + 设置页 72h 离线强验）。**授权/真锁的唯一权威现状以 `PROTECTION_MAP.md §10.6` 为准**；其余仍是 stub 的（killSwitch / 蜜罐 / MISMATCH 拦截）不得在 v1 期间自行"修复"。
 
 ---
 
