@@ -81,11 +81,14 @@ public class StateMachine {
 
     /** true when hidden mode is active */
     /**
-     * 三层门控（顺序不可颠倒）：
-     *   1. isVipAuthorized()      — 真授权门 = EnvelopeStore.isAuthorizedNow()
-     *                                （token + Ed25519 验签信封 + license 未过期；不再是 stub）
-     *   2. isFeatureEnabled()     — 密友功能总开关（Bridge MMKV key="f1"）
-     *   3. mActive                — 状态机 HIDDEN 态
+     * 四层门控（顺序不可颠倒，全 AND）：
+     *   1. isVipAuthorized()                      — 真授权门 = EnvelopeStore.isAuthorizedNow()
+     *                                               （token + Ed25519 验签信封 + license 未过期）
+     *   2. GuardRuntime.isSensitiveConfigReady()  — registry 闸（release: 必须 server seed 解开
+     *                                               registry 才放行敏感 hook）。**这层是「光 hook
+     *                                               isVipAuthorized 也没用」的根因**，别漏看。
+     *   3. isFeatureEnabled()                     — 密友功能总开关（Bridge MMKV key="f1"）
+     *   4. mActive                                — 状态机 HIDDEN 态
      */
     public boolean isActive() {
         return isVipAuthorized()
