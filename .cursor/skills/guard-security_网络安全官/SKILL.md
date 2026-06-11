@@ -18,6 +18,8 @@ description: Guard Native 安全与加密官。负责客户端安全、DRM、防
 - `RiskLevel`、`RiskState`、`RiskPromptController`
 - 当前 SO 的安全重构边界
 
+> 蜜罐诱饵清单（K1-K5/B1-B3）+ 触发逻辑 + 域名加密引导段 C2 设计 → 汇总见 `docs/HONEYPOT_蜜罐设计.md`（权威仍是 `PROTECTION_MAP.md` §5/§10.4/§10.6）。
+
 一句话原则：
 
 **服务器只发短命加密配方；客户端只有在签名验真、租约有效、SO 解密成功、风险等级允许时，才拿得到真正 hook 配方。失败时散沙，不崩、不全开、不清用户数据。**

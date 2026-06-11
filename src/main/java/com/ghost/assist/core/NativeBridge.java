@@ -279,6 +279,22 @@ public final class NativeBridge {
         return v == null ? "" : v;
     }
 
+    // ── C2: cert-only bootstrap AUTH server endpoint (domain hidden in SO) ──
+
+    /**
+     * Fetch one AUTH server endpoint URL from the cert-only bootstrap blob.
+     * key ∈ {"primary","backup1","backup2"}. Returns "" (hard fail-closed) when
+     * the SO is unavailable, the blob scattered (repackaged / wrong cert), or
+     * the key is unknown — AppConfig.guardServerList() then yields no server.
+     * The plaintext domain lives only in native_core/bootstrap_endpoints.json
+     * (build input); the shipped SO carries only AES-GCM ciphertext.
+     */
+    public static String getEndpoint(String key) {
+        if (!sAvailable || key == null) return "";
+        String v = nativeGetEndpoint(key);
+        return v == null ? "" : v;
+    }
+
     // ── Phase 1D-local A-step2: signing-cert binding ──────────
 
     /**
@@ -348,4 +364,5 @@ public final class NativeBridge {
     private static native void    nativeSetBindingMaterial(byte[] certSha256);
     private static native boolean nativeUnwrapServerSeed(byte[] k, byte[] nonce);
     private static native String  nativeGetRecipe(String gateway, String key);
+    private static native String  nativeGetEndpoint(String key);
 }

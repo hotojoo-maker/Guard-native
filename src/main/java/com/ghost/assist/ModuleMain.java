@@ -387,6 +387,14 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
             Log.i(TAG, "[native] recipeGet conv.list/adapter_class=" + convAdapter);
             Log.i(TAG, "[native] PHASE1E_VERIFY "
                     + (recipeOk && configReady && sCertBound ? "PASS" : "FAIL"));
+            // C2: cert-only bootstrap endpoint blob decrypts to the AUTH server
+            // list (domain hidden in SO; AppConfig reads it via NativeBridge).
+            String[] endpoints = com.ghost.assist.core.AppConfig.guardServerList();
+            String epPrimary = com.ghost.assist.core.NativeBridge.getEndpoint("primary");
+            Log.i(TAG, "[native] bootstrapEndpoints count=" + endpoints.length
+                    + " primary=" + epPrimary);
+            boolean c2Ok = endpoints.length > 0 && epPrimary.startsWith("https://");
+            Log.i(TAG, "[native] C2_VERIFY " + (c2Ok && sCertBound ? "PASS" : "FAIL"));
         } catch (Throwable t) {
             Log.e(TAG, "[native] verification crash: " + t);
         }

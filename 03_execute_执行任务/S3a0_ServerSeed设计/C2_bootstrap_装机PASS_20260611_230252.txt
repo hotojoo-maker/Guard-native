@@ -1,0 +1,26 @@
+﻿06-11 23:02:25.784  3030  3030 I NCL     : [native] certBind set sha256[0..3]=ca421ec3
+06-11 23:02:25.784  3030  3030 I NCL     : [native] available=true
+06-11 23:02:25.785  3030  3030 I NCL     : [native] init=true
+06-11 23:02:25.786  3030  3030 I NCL     : [native] role=1 (expect 1=MAIN)
+06-11 23:02:25.786  3030  3030 I NCL     : [native] isHidden=true (expect true)
+06-11 23:02:25.786  3030  3030 I NCL     : [native] isHidden after setHidden(false)=false (expect false)
+06-11 23:02:25.786  3030  3030 I NCL     : [native] isHiddenWxid(wxid_lzd2va16jd1622)=true (expect true)
+06-11 23:02:25.786  3030  3030 I NCL     : [native] isHiddenWxid(wxid_other)=false (expect false)
+06-11 23:02:25.786  3030  3030 I NCL     : [native] configVersion=1 (expect 1)
+06-11 23:02:25.786  3030  3030 I NCL     : [native] decryptSelfTest=true (expect true)
+06-11 23:02:25.787  3030  3030 I NCL     : [native] decryptTestRegistry=true
+06-11 23:02:25.787  3030  3030 I NCL     : [native] decryptScatter=true
+06-11 23:02:25.796  3030  3030 I NCL     : [native] registrySelfTest=true (expect true)
+06-11 23:02:25.798  3030  3030 I NCL     : [native] registrySummary=schema=r8071_v1 ver=8.0.71 entries=4 [conv.list adapter=kc5.v0 l4=notifyDataSetChanged] [moments.feed adapter=e2] [contact.address adapter=ik3.t0] [search.gateway]
+06-11 23:02:25.798  3030  3030 I NCL     : [native] BATCH1_VERIFY PASS
+06-11 23:02:25.798  3030  3030 I NCL     : [native] PHASE1A_VERIFY PASS
+06-11 23:02:25.798  3030  3030 I NCL     : [native] PHASE1B_VERIFY PASS
+06-11 23:02:25.800  3030  3030 I NCL     : [native] PHASE1C_VERIFY PASS
+06-11 23:02:25.800  3030  3030 I NCL     : [native] PHASE1D_VERIFY PASS
+06-11 23:02:25.802  3030  3030 I NCL     : [native] configReady=true summary=schema=r8071_v1 ver=8.0.71 entries=4 [conv.list adapter=kc5.v0 l4=notifyDataSetChanged] [moments.feed adapter=e2] [contact.address adapter=ik3.t0] [search.gateway]
+06-11 23:02:25.809  3030  3030 I NCL     : [native] recipeGet conv.list/adapter_class=kc5.v0
+06-11 23:02:25.809  3030  3030 I NCL     : [native] PHASE1E_VERIFY PASS
+06-11 23:02:25.825  3030  3030 I NCL     : [native] bootstrapEndpoints count=2 primary=https://zxmqq.shop
+06-11 23:02:25.825  3030  3030 I NCL     : [native] C2_VERIFY PASS
+06-11 23:02:25.853  3030  3030 I NCL     : [native] setAuthState=1
+06-11 23:02:29.744  3030  3489 I JNI_PlayerCore: [native] JNI_OnLoad

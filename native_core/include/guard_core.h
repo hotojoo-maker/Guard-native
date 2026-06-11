@@ -193,6 +193,13 @@ bool server_seed_ready();
 /// [GUARD-TRAP] Do not replace with a literal key array. See PROTECTION_MAP §4.
 void derive_registry_key(uint8_t out[16]);
 
+/// C2 cert-only bootstrap key: same scattered segments + cert binding as
+/// derive_registry_key(), but NEVER folds the server seed (the AUTH endpoint
+/// list must decrypt before any handshake) and folds a fixed domain tag so it
+/// differs from the registry key. tools/gen_bootstrap_cipher.py MUST mirror it.
+/// [GUARD-TRAP] See docs/HONEYPOT_蜜罐设计.md §4.
+void derive_bootstrap_key(uint8_t out[16]);
+
 /// Java smoke-test helper: returns a test registry after an in-native AES-GCM roundtrip.
 std::string decrypt_config_test_registry();
 
@@ -234,6 +241,12 @@ bool registry_self_test();
 /// unknown gateway / unknown field. Pure read — does NOT drive any Filter.
 std::string registry_get_recipe(const std::string& gateway,
                                 const std::string& key);
+
+/// C2: look up one AUTH server endpoint from the cert-only bootstrap blob.
+/// key ∈ {"primary","backup1","backup2"}; returns the https URL, or "" on
+/// scatter / unknown key (hard fail-closed → AppConfig yields no server →
+/// repackaged build can't phone home). Decrypts cert-only (no server seed).
+std::string bootstrap_get_endpoint(const std::string& key);
 
 // ── Module: LogLimiter ────────────────────────────────────────
 

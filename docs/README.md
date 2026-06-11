@@ -15,6 +15,7 @@
 | 3 | 根目录 [`HOOKMAP.md`](../HOOKMAP.md) + [`TASK_BOARD.md`](../TASK_BOARD.md) | 模块进度总图（注意文件头日期） |
 | 4 | `03_execute_执行任务/P*/result.md` | 单任务装机实证 |
 | 5 | [`CONV_REFRESH_PROBLEM.md`](./CONV_REFRESH_PROBLEM.md) | 会话 H↔V 热切问题单（H→V 仍 🟡） |
+| 6 | [`HONEYPOT_蜜罐设计.md`](./HONEYPOT_蜜罐设计.md) | 蜜罐诱饵 + 触发逻辑 + 域名加密引导段 C2（汇总，权威在 `../PROTECTION_MAP.md`） |
 
 ---
 

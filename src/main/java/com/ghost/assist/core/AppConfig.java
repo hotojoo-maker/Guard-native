@@ -38,20 +38,31 @@ public class AppConfig {
 
     // ── S2 真锁信封 — 服务器接入（Phase 1D-server）────────────────
     // 传输强制 HTTPS（信封里的短命 key 材料 k 不得走明文）。
-    // 备机本轮不部署：BACKUP 留空，EnvelopeClient 写成「列表 + fallback」结构，
-    // 以后开备机只需把 BACKUP 填上 https://miyou.lol，不改客户端代码。
-    public static final String GUARD_SERVER_PRIMARY = "https://zxmqq.shop";
-    public static final String GUARD_SERVER_BACKUP  = "";   // 备机槽（留空 = 仅主机）
     public static final String GUARD_PRODUCT_ID      = "quantum_wechat";
     public static final String GUARD_PRODUCT_VERSION = "v1.1";
     public static final String GUARD_RELEASE_ID      = "android_8071";
 
-    /** 真锁服务器候选列表（按序 fallback；空串自动跳过）。 */
+    // C2：授权服务器域名不再以明文常量留在这里（grep/strings 一搜就出）。
+    // 域名加密在 SO 的 cert-only 引导段（native_core/bootstrap_endpoints.json →
+    // bootstrap_cipher.inc），运行时经 NativeBridge.getEndpoint 解出。
+    // 顺序：primary → backup1 → backup2，EnvelopeClient 逐台 fallback。
+    private static final String[] GUARD_ENDPOINT_KEYS = { "primary", "backup1", "backup2" };
+
+    /**
+     * 真锁授权服务器候选列表（从 SO 引导段解密读取，按序 fallback）。
+     * 硬 fail-closed：SO 缺失 / 引导段散沙（重打包 / 证书不符）→ 返回空数组 →
+     * 无服务器可连（重打包的盗版包连不上服务器，正是反盗版要的效果）。
+     * 只接受 https:// 开头的条目（与 EnvelopeClient 强制 HTTPS 对齐）。
+     */
     public static String[] guardServerList() {
-        if (GUARD_SERVER_BACKUP == null || GUARD_SERVER_BACKUP.isEmpty()) {
-            return new String[]{ GUARD_SERVER_PRIMARY };
+        java.util.ArrayList<String> list = new java.util.ArrayList<>(GUARD_ENDPOINT_KEYS.length);
+        for (String k : GUARD_ENDPOINT_KEYS) {
+            String url = NativeBridge.getEndpoint(k);
+            if (url != null && url.startsWith("https://") && !list.contains(url)) {
+                list.add(url);
+            }
         }
-        return new String[]{ GUARD_SERVER_PRIMARY, GUARD_SERVER_BACKUP };
+        return list.toArray(new String[0]);
     }
 
     private static final AppConfig sInstance = new AppConfig();

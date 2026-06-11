@@ -29,6 +29,12 @@ namespace {
 // it back into the registry JSON; tag mismatch / wrong key → scatter.
 #include "registry_cipher.inc"
 
+// C2: cert-only bootstrap endpoint blob (AUTH server domains). Generated from
+// native_core/bootstrap_endpoints.json by tools/gen_bootstrap_cipher.py.
+// Decrypted with derive_bootstrap_key() (no server seed) so endpoints are
+// available before any server handshake. See docs/HONEYPOT_蜜罐设计.md §4.
+#include "bootstrap_cipher.inc"
+
 #ifndef GUARD_REGISTRY_REQUIRES_SERVER_SEED
 #define GUARD_REGISTRY_REQUIRES_SERVER_SEED 0
 #endif
@@ -233,6 +239,33 @@ std::string registry_get_recipe(const std::string& gateway,
     ConfigRegistry r = registry_load_embedded();
     if (!r.ok) return std::string();
     const RegistryEntry* e = find_entry(r, gateway);
+    if (e == nullptr) return std::string();
+    const std::string* v = find_field(*e, key);
+    if (v == nullptr) return std::string();
+    return *v;
+}
+
+namespace {
+// C2: decrypt the cert-only bootstrap blob into a registry struct. Reuses the
+// same shallow JSON parser as the main registry; key is derive_bootstrap_key()
+// (no server seed). Any tag/key mismatch → scatter (hard fail-closed).
+ConfigRegistry bootstrap_load_embedded() {
+    uint8_t key[16];
+    derive_bootstrap_key(key);
+    ConfigDecryptResult dec = decrypt_config(
+        key, sizeof(key),
+        kBootstrapNonce, sizeof(kBootstrapNonce),
+        kBootstrapCipher, sizeof(kBootstrapCipher),
+        kBootstrapTag, sizeof(kBootstrapTag));
+    if (!dec.ok) return make_scatter();
+    return registry_parse(dec.plaintext);
+}
+}  // namespace
+
+std::string bootstrap_get_endpoint(const std::string& key) {
+    ConfigRegistry r = bootstrap_load_embedded();
+    if (!r.ok) return std::string();
+    const RegistryEntry* e = find_entry(r, "net.endpoint");
     if (e == nullptr) return std::string();
     const std::string* v = find_field(*e, key);
     if (v == nullptr) return std::string();

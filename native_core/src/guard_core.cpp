@@ -266,6 +266,20 @@ Java_com_ghost_assist_core_NativeBridge_nativeGetRecipe(
     return env->NewStringUTF(recipe.c_str());
 }
 
+// ── C2: cert-only bootstrap endpoint getter (AUTH server domains) ──
+//
+// Returns the https URL for key ∈ {"primary","backup1","backup2"} from the
+// decrypted bootstrap blob, or "" on scatter / unknown key (hard fail-closed →
+// AppConfig.guardServerList() yields no server → repackaged build can't connect).
+// Decrypts cert-only (no server seed); see docs/HONEYPOT_蜜罐设计.md §4.
+
+JNIEXPORT jstring JNICALL
+Java_com_ghost_assist_core_NativeBridge_nativeGetEndpoint(
+        JNIEnv* env, jclass, jstring jKey) {
+    const std::string ep = guard::bootstrap_get_endpoint(jstr(env, jKey));
+    return env->NewStringUTF(ep.c_str());
+}
+
 // ── Phase 1D-local A-step2: signing-cert binding for the registry key ─
 
 JNIEXPORT void JNICALL

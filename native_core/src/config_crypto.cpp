@@ -474,6 +474,45 @@ void derive_registry_key(uint8_t out[16]) {
     }
 }
 
+void derive_bootstrap_key(uint8_t out[16]) {
+    // [GUARD-TRAP] C2 cert-only bootstrap key. Mirror
+    // tools/gen_bootstrap_cipher.py::derive_bootstrap_key() byte-for-byte.
+    // Same scattered segments + cert binding as derive_registry_key(), but:
+    //   - NEVER folds the server seed: the AUTH server endpoint list must
+    //     decrypt before any server handshake, otherwise prod_server_lock would
+    //     deadlock (need server for the seed, need the endpoint to reach the
+    //     server). So this blob stays cert-only forever.
+    //   - folds a fixed domain-separation tag so the bootstrap key differs from
+    //     the registry cert-only key. See docs/HONEYPOT_蜜罐设计.md §4 / PROTECTION_MAP.
+    static const uint8_t seg_a[16] = {
+        0x3f, 0xa1, 0x08, 0xd4, 0x77, 0x1c, 0xe9, 0x52,
+        0x8b, 0x60, 0xbd, 0x14, 0xc6, 0x2a, 0x9f, 0x73};
+    static const uint8_t seg_b[16] = {
+        0x5e, 0x02, 0xab, 0x6d, 0xf1, 0x37, 0x80, 0xc4,
+        0x19, 0xae, 0x4b, 0xd2, 0x66, 0x8f, 0x33, 0xe7};
+    static const uint8_t seg_c[16] = {
+        0x11, 0x9c, 0x4d, 0x70, 0x23, 0xba, 0x5f, 0x06,
+        0xe1, 0x38, 0x7a, 0xcd, 0x90, 0x42, 0xfb, 0x85};
+    static const uint8_t dom[16] = {
+        0x9a, 0x47, 0xe1, 0x05, 0x3c, 0xb8, 0x6f, 0xd2,
+        0x14, 0x8e, 0x7b, 0xa3, 0x50, 0xc9, 0x2d, 0xf6};
+    for (int i = 0; i < 16; ++i) {
+        uint8_t t = static_cast<uint8_t>(seg_a[i] ^ seg_b[(i * 5 + 3) & 15]);
+        t = rotl8(t, (i % 7) + 1);
+        t = static_cast<uint8_t>(t ^ seg_c[i]);
+        t = static_cast<uint8_t>(t + i * 37);
+        if (g_binding_len > 0) {
+            t = static_cast<uint8_t>(t ^ g_binding[(i * 2) % g_binding_len]);
+            t = rotl8(t, g_binding[(i * 2 + 1) % g_binding_len] & 7);
+            t = static_cast<uint8_t>(t ^ g_binding[(i + 7) % g_binding_len]);
+        }
+        // Domain separation (replaces the server-seed fold of the registry key).
+        t = static_cast<uint8_t>(t ^ dom[i]);
+        t = rotl8(t, dom[(i * 7 + 1) & 15] & 7);
+        out[i] = t;
+    }
+}
+
 bool decrypt_config_self_test() {
     // AES-128 block sanity: E(0,0) reference vector
     uint8_t zero_key[16] = {};
