@@ -278,7 +278,7 @@ StateMachine.isActive()                // 取中央总闸
 ### 仍未做（真锁的「牙」，与诚实口径一致）
 1. S3a runtime seed apply 原型已接，但 **PROD server-lock / 真实 S_rel 与 registry_cipher 发布流水线尚未切硬失败**；仍不能宣称服务器真锁完成。
 2. ~~无 Ed25519 验签~~ → **S4 已落地（2026-06-11 装机 PASS）**：服务器 Ed25519 私钥签信封，客户端只放公钥验签，HS256 仅留 legacy `/api/v1/config` 公告路径。⚠️ 注意：Ed25519 防的是「伪造/篡改信封」，**不等于真锁**——真锁的「牙」仍是下面第 1 条 S3a 服务器短命 key 折进 SO。
-3. `LeaseClock` / `RiskState` 仍未作为硬门控；离线宽限正式策略未完成。
+3. `LeaseClock` 已接信封授时（S3b-A，2026-06-11 装机 PASS）：`GuardHeartbeat.syncOnce` 验签后喂 `onServerHeartbeat(sn×1000, exp×1000)` + `RiskState.evaluate()` record-only 重算记日志。⚠️ **仍未作为硬门控**：过期判定仍走手机墙钟（`EnvelopeStore.isLicenseExpired`），未换 `trustedNow`；离线宽限正式策略（B：换 trustedNow + 拨时间不误伤实测）未做。
 4. 备节点 HTTPS (`miyou.lol`) 反代未完成；Android 当前只启用主节点。
 5. 更新通知 `up` 已下发并被客户端消费，但属于运营提示，不是强制升级/真锁。
 
@@ -293,7 +293,7 @@ StateMachine.isActive()                // 取中央总闸
 
 ### 下一受控步骤（按序；每步前过授权检查官 + 安全官「改前审查」，并先 git 快照）
 1. **S3a-PROD**：把 `prod_server_lock` 发行流水线、S_rel 发版档案、registry_cipher 生成和服务器 envelope 同源打通后，再切无 seed scatter 硬失败。
-2. **S3b**：`LeaseClock` / `RiskState` 接信封驱动（离线宽限 / 不误伤实测）。
+2. **S3b**：`LeaseClock` / `RiskState` 接信封驱动。**A 已完成**（2026-06-11 装机 PASS：心跳喂服务器授时 + record-only 重算）；**B 待做**：过期判定换 `trustedNow`（不信手机墙钟）+ 拨时间/拔网不误伤实测后才转硬门控。
 3. ~~**S4**：Ed25519 验签（客户端只放公钥）~~ ✅ **已完成（2026-06-11 装机 PASS）**：服务器 `crypto_utils.sign_guard_envelope` 切 Ed25519；客户端 `AuthEnvelopeVerifier` 内置公钥验签 fail-closed；主/备节点已部署。证据：本地 `JAVA_EDDSA_VERIFY=PASS`/`TAMPER_REJECT=PASS`、线上直连 `alg=Ed25519` 公钥验签 PASS、真机 `[hb] synced`+`AUTH_OK` 无 `signature verify failed`。
 4. **备机**：完成 `miyou.lol` HTTPS 反代后，客户端再打开 `GUARD_SERVER_BACKUP`。
 5. **运营**：更新通知弹窗已通，后续补“强制升级 / 版本灰度 / 下载包托管”再单独审。
@@ -304,7 +304,7 @@ StateMachine.isActive()                // 取中央总闸
 - [ ] `ModuleMain` 是否仅在本地已有 token 时启动冷启动 heartbeat？
 - [ ] `EncryptedConfigLoader` 仍只读本地 SO registry（无服务器 lease）？
 - [ ] `derive_registry_key` 仍只折证书指纹（未折信封 `k`）？
-- [ ] `RiskState` 仍 record-only、`LeaseClock` 默认 `CLEAN`？
+- [ ] `RiskState` 仍 record-only（不 gating）？`LeaseClock` 是否仍**只**被 `GuardHeartbeat` 喂、过期判定未换 `trustedNow`（即 S3b-B 未做）？
 
 ### ⚠️ 与 V3 改包路线（D-016 主攻方向）的冲突 —— 真锁落地前必须先对齐（2026-06-11）
 

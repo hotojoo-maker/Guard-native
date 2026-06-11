@@ -4,7 +4,9 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
+import com.ghost.assist.core.LeaseClock;
 import com.ghost.assist.core.NativeBridge;
+import com.ghost.assist.core.RiskState;
 
 import java.util.Random;
 
@@ -94,7 +96,13 @@ public final class GuardHeartbeat {
                 return -1;
             }
             EnvelopeStore.saveEnvelope(e);
-            Log.i(TAG, "[hb] synced tier=" + e.tier + " lease=" + e.leaseExpire);
+
+            // S3b：把已验签的服务器时间 + 租约喂给 LeaseClock（信封是 unix 秒 → 毫秒）。
+            // record-only：只建立可信时间基准 + 重算风险等级记日志，不改任何门控（不误伤）。
+            LeaseClock.onServerHeartbeat(e.serverNow * 1000L, e.leaseExpire * 1000L);
+            RiskState.Level lvl = RiskState.evaluate();
+            Log.i(TAG, "[hb] synced tier=" + e.tier + " lease=" + e.leaseExpire
+                    + " risk=" + lvl.label);
             return e.tier;
         } catch (Throwable t) {
             Log.w(TAG, "[hb] sync err: " + t.getClass().getSimpleName());

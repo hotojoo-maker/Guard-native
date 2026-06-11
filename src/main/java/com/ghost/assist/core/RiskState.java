@@ -74,6 +74,14 @@ public final class RiskState {
      *
      * v1 record-only：只算 + 记 + 决定弹不弹，不动 isActive、不关功能。
      */
+    /**
+     * 无 Context 重算（S3b：心跳成功喂 LeaseClock 后 record-only 刷新等级 + 记日志）。
+     * 评估路径不使用 ctx（篡改链走 NativeBridge/Bridge），故可空传，安全。
+     */
+    public static synchronized Level evaluate() {
+        return evaluate((Context) null);
+    }
+
     public static synchronized Level evaluate(Context ctx) {
         Level tamperLevel = evaluateTamper(ctx);
         Level offlineLevel = LeaseClock.currentLevel();
