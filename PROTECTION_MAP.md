@@ -240,7 +240,7 @@ StateMachine.isActive()                // 取中央总闸
 
 | 攻击者 | 看什么 | 蜜罐 | 现状 |
 |---|---|---|---|
-| 关键词/静态党 | 反编译搜 `vip`/`url`/`promo` 看代码 | 诱饵 `PromoConfig`（明文+base64，§10.9）；真锁 `decrypt_config` / 真授权门 `EnvelopeStore.isAuthorizedNow` 不当诱饵 | ✅ 诱饵 + 绊线已接（`PromoConfig`+`CompatProbe` canary/签名校验 → `markTampered` → 10天影子期，§10.9）。⚠️ 旧文「留亮假锁 isVipAuthorized return true」已过时：它现是**真授权门**，改它=砸真授权，不是诱饵 |
+| 关键词/静态党 | 反编译搜 `vip`/`url`/`promo` 看代码 | 诱饵 `PromoConfig`（明文+base64，§10.9）；真锁 `decrypt_config` / 真授权门 `EnvelopeStore.isAuthorizedNow` 不当诱饵 | ✅ 诱饵 + 绊线已接（`PromoConfig`+`CompatProbe` canary/签名校验 → `markTampered` → 7天影子期，§10.9）。⚠️ 旧文「留亮假锁 isVipAuthorized return true」已过时：它现是**真授权门**，改它=砸真授权，不是诱饵 |
 | 抓包党 | 装证书 MITM 看网络流量 | 服务器信封故意摆明牌假字段 `isVip/viptime/endtime` 当诱饵（真值锁在加密 registry + 短命租约） | ⬜ 没有——客户端现无任何自有网络流量（全代码无 HTTP/Socket），归 Phase 1D-server |
 
 两蜜罐的「接上 / 上线」均登记为 **Phase 1D-server 待办**（与真锁同期做）。
@@ -466,7 +466,8 @@ StateMachine.isActive()                // 取中央总闸
 - 绊线 `core/CompatProbe.java`（**与诱饵分开放、名字无关联**，防一锅端）：
   - `check()`：比对诱饵指纹与编译期 canary `BASELINE`；不符 = 诱饵被改 → `RiskState.markTampered`。
   - `checkSignature()`：读**模块自身 APK** 证书 SHA-256 比 `EXPECTED_CERT`；不符 = 被重签（改代码必重签）→ `markTampered`。
-- 影子期 **10 天**（`RiskState.SHADOW_HOURS_DEFAULT=240h`）：改完当场一切正常，10 天后才发作，破解者定位不到绊线；发布后真实用户（有网）时间准 → 10 天到 → 全弹+散沙。
+- 影子期 **7 天**（`RiskState.SHADOW_HOURS_DEFAULT=168h`，2026-06-12 用户拍板从 10 天调为 7 天）：改完当场一切正常，7 天后才发作，破解者定位不到绊线；发布后真实用户（有网）时间准 → 7 天到 → 全弹+散沙。
+  - ⚠️ **override 备注**：安全官 skill 默认影子期上限 48h（§"蜜罐影子期引流策略"），且要求「更长须服务端 risk_pack 下发 + 审查报告说明风险」。此处 7 天为**用户拍板 override**（理由 = 盗版多为转卖，不能让破解者当场发现因果），当前是**客户端硬编码**、未走服务端下发。TODO：接服务端 risk_pack 后改为「默认 ≤48h + 长影子期服务器签发」。
 - **功能散沙**：`RiskState.isTamperDegraded()`（仅 `TAMPER_FUNNEL/PERSISTENT`，即确认篡改过影子期）→ `CallGuard.active()` = `isActive() && !isTamperDegraded()`。盗版包过影子期 → **来电拦截整条失效**（来电恢复响铃/弹屏）。正版签名对/诱饵未改 → 永远 CLEAN → 永不散沙（不误伤、铁律29 只加门不改拦截逻辑）。
 
 ### 装机验证（L1，609b4b18，2026-06-12）
@@ -474,18 +475,18 @@ StateMachine.isActive()                // 取中央总闸
 - funnel 闭环：debug `/api/forcefunnel` 强制 → `[risk] funnel prompt reason=foreground` → `[funnel] shown` → 跳 SO 解出的落地页。
 - 蜜罐绊线：改诱饵重编 → `[cp] baseline mismatch` → `tamper first seen` → `level=蜜罐影子期`（表面正常）。改回 → `level=正常`。
 - 签名/诱饵对自家包**不误报**：`无 [cp] cert mismatch / baseline mismatch`。apksigner 实测包证书 = `ca421ec3...` = `EXPECTED_CERT`。
-- 仅「真等 10 天」未现场验（组件逻辑均单独验过）。
+- 仅「真等 7 天」未现场验（组件逻辑均单独验过）。
 
 ### ⚠️ 维护要点（方便后续 AI / 发版）
 1. **改诱饵 `PromoConfig` 任一字面量 → 必须重算 `CompatProbe.BASELINE`**（canary）：`BASELINE = fp(PROMO_URL) ^ fp(PROMO_TOKEN) ^ (PROMO_ENABLED?0x9E3779B9:0)`，`fp` 为 `h=h*131+c`（Java int）。不重算 = 正版自我误报。
 2. **改落地页 URL → 改 `native_core/bootstrap_endpoints.json` 的 `cs.endpoint.funnel` → 重跑 `python tools/gen_bootstrap_cipher.py`**（生成 `bootstrap_cipher.inc`）。绝不在 Java 写明文 URL。`net.endpoint`（授权服务器）与 `cs.endpoint`（引流）分开；`guardServerList()` 只读 net.endpoint。
 3. **`CompatProbe.EXPECTED_CERT` 随发行线 keystore 改**：当前 = 固定 debug keystore 证书 `ca421ec3...`（与 `registry_cipher` 的 `_CERT_SHA256` 同源）。官替/共存若用不同 keystore，发版时按包档案同步改（同 registry 一套机制）。
-4. **阈值数字（影子期 240h / 冷却 10s / 离线 144h）= 段1 明文常量（轻迷彩）**，以后随服务器 `risk_pack` 下发。位置：`RiskState.SHADOW_HOURS_DEFAULT`、`RiskPromptController.COOLDOWN_MS`、`LeaseClock.FUNNEL_MS`。
+4. **阈值数字（影子期 168h / 冷却 10s / 离线 144h）= 段1 明文常量（轻迷彩）**，以后随服务器 `risk_pack` 下发。位置：`RiskState.SHADOW_HOURS_DEFAULT`、`RiskPromptController.COOLDOWN_MS`、`LeaseClock.FUNNEL_MS`。
 5. **单策略源红线**：弹窗只走 `RiskPromptController.maybeShow()`；`FunnelPrompt`/`PiracyNotice` 只是展示层，不得各自判风险/各自弹。
 6. **debug 专用 `/api/forcefunnel` + `RiskState.debugForceFunnel()`**：仅 `BuildConfig.DEBUG` 生效（release 空操作），装机验证用，勿当真链路。
 
 ### 仍未做 / 诚实边界
-- 「真等 10 天 → TAMPER_FUNNEL → 散沙+弹」未现场跑（需等时间/改钟）。
+- 「真等 7 天 → TAMPER_FUNNEL → 散沙+弹」未现场跑（需等时间/改钟）。
 - Frida 运行时仍能 dump 解出的 URL（静态藏好≠防动态）；真深靠服务器 `risk_pack` URL 轮换（后续）。
 - 「一码多 wxid/多设备」转卖检测 = 服务器侧（HONEYPOT §5b，后续）。
 - release R8 对 `FunnelPrompt/CompatProbe/PromoConfig` 类名/日志的混淆收口（当前 debug 明文）。

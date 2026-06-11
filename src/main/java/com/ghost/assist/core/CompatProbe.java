@@ -13,7 +13,7 @@ import java.security.MessageDigest;
  * ⚠️ 内部说明（注释不进编译产物）：
  *   段2 蜜罐「绊线检测」。比对诱饵 PromoConfig 当前值与【编译期 canary 基线】：
  *     • 一致 → 没人动过诱饵 → 安静返回。
- *     • 不一致 → 有人改/NOP 了诱饵 → RiskState.markTampered() → 进影子期(10天)
+ *     • 不一致 → 有人改/NOP 了诱饵 → RiskState.markTampered() → 进影子期(7天)
  *       → 之后才由 RiskPromptController 引流弹窗。
  *   设计要点（安全官 §10.8 / 蜜罐三原则）：
  *     • 与诱饵【分开放、名字无关联】，破解者改了诱饵不会顺藤摸到本检测器。

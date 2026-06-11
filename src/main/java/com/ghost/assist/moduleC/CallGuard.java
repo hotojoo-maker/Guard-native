@@ -67,7 +67,7 @@ public final class CallGuard {
 
     /**
      * 来电拦截总闸（主进程）。= 原 StateMachine.isActive()，外加【tamper 散沙】：
-     * 确认篡改过影子期(10天) → RiskState.isTamperDegraded()=true → active()=false →
+     * 确认篡改过影子期(7天) → RiskState.isTamperDegraded()=true → active()=false →
      * 所有来电拦截钩短路 → 来电恢复正常响铃/弹屏 = 破解版「来电拦截」失效（用户要求）。
      * 正版包签名对、诱饵未改 → 永远不 degrade → 行为与原来完全一致（不误伤、铁律29）。
      * 注：:push 进程子集仍走 NativeBridge.isHidden()（铁律30，:push 无 Bridge/RiskState）。

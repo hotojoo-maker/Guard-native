@@ -41,7 +41,7 @@
 > 现状（2026-06-12 更新）：**首批绊线真检测已落地装机 ✅**（见 PROTECTION_MAP **§10.9**，唯一权威）：
 > - 诱饵 `PromoConfig`（明文 URL + base64 token + 开关）+ 绊线 `CompatProbe.check()`（canary 比对，改诱饵→`markTampered`）。
 > - 签名绊线 `CompatProbe.checkSignature()`（重签→证书 SHA-256 不符→`markTampered`）。
-> - 命中 → 10 天影子期 → `TAMPER_FUNNEL` → 引流弹窗 `FunnelPrompt` + **来电拦截散沙**（`CallGuard.active()` 受 `RiskState.isTamperDegraded()` 闸控）。
+> - 命中 → 7 天影子期 → `TAMPER_FUNNEL` → 引流弹窗 `FunnelPrompt` + **来电拦截散沙**（`CallGuard.active()` 受 `RiskState.isTamperDegraded()` 闸控）。
 > 仍 🟡：K1-K5/B1-B3 其余诱饵的绊线、服务器侧「一码多设备」上报（随 Phase 1D-server / Phase 2）。诱饵骨架 `isVipAuthorized` 留亮等仍在（PROTECTION_MAP §1）。
 
 ---

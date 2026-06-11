@@ -12,9 +12,13 @@ import android.util.Log;
  * 边界铁律（授权检查官会签 WARN 约束①②）：
  *   • RiskGate 是【第四道独立门】，与 StateMachine.isActive() 的三层结构
  *     （授权 + 密友总开关 + HIDDEN 态）**并联**，绝不并进 isActive()。
- *   • v1 = RECORD ONLY：本类只评估并记录等级、只驱动「唯一弹窗」，
- *     **不静默关闭任何功能**（GUARD_GATE_TRUTH §4：v1 放行不收紧，防误伤正版）。
- *     真正的「散沙降级」落点在服务器真锁阶段（Phase 1D-server）接入。
+ *   • 主体仍 record-only：评估 + 记录等级 + 驱动「唯一弹窗」，不收紧 isActive()
+ *     主链（密友隐藏 ConvFilter/MomentsFilter/ContactFilter 不受本类散沙影响，
+ *     GUARD_GATE_TRUTH §4 防误伤正版）。
+ *   • ⚠️ 例外（2026-06-12 已落地）：`isTamperDegraded()` 已是真闸——确认篡改过影子期
+ *     （TAMPER_FUNNEL/PERSISTENT）后 `CallGuard.active()=isActive()&&!isTamperDegraded()`
+ *     会让来电拦截**单点散沙**。故「不关闭任何功能」已不再成立；其余功能仍 record-only。
+ *     更全面的散沙降级仍待服务器真锁阶段（Phase 1D-server）扩点。
  *   • 全项目只准本类写风险等级；业务层只读 currentLevel()。
  * ═══════════════════════════════════════════════════════════════
  */
@@ -42,11 +46,14 @@ public final class RiskState {
     }
 
     /**
-     * 影子期默认时长（小时）。用户拍板 2026-06-12：盗版包发布后【至少 10 天】才弹，
-     * 越长越难让破解者把「改动」和「弹窗」对上因果（改完当场看一切正常，10 天后才发作）。
+     * 影子期默认时长（小时）。用户拍板 2026-06-12：盗版包发布后【7 天】才弹，
+     * 越长越难让破解者把「改动」和「弹窗」对上因果（改完当场看一切正常，7 天后才发作）。
+     * ⚠️ 安全官 skill 默认上限 48h（§"蜜罐影子期引流策略"）；此处 7 天为用户拍板 override，
+     *    理由 = 盗版多为转卖、不能让破解者当场发现；属客户端硬编码。
+     *    TODO：后续改服务端 risk_pack 下发（默认仍 ≤48h，长影子期由服务器签发）。
      * risk_pack 接入后可由服务端覆盖。
      */
-    private static final long SHADOW_HOURS_DEFAULT = 240L;   // 10 天
+    private static final long SHADOW_HOURS_DEFAULT = 168L;   // 7 天（用户 override；skill 默认 48h）
 
     // 蜜罐首次命中时间（可信时间，毫秒）。0 = 未命中。持久化以跨进程/重启保留。
     private static final String KEY_TAMPER_FIRST_SEEN = "rtfs";
