@@ -82,7 +82,8 @@ public class StateMachine {
     /** true when hidden mode is active */
     /**
      * 三层门控（顺序不可颠倒）：
-     *   1. isVipAuthorized()      — 授权门（v1 stub=true，v2 接 LicenseGate）
+     *   1. isVipAuthorized()      — 真授权门 = EnvelopeStore.isAuthorizedNow()
+     *                                （token + Ed25519 验签信封 + license 未过期；不再是 stub）
      *   2. isFeatureEnabled()     — 密友功能总开关（Bridge MMKV key="f1"）
      *   3. mActive                — 状态机 HIDDEN 态
      */

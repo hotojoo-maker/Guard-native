@@ -35,13 +35,14 @@
 **一句话**：地基（真授权 + 服务器）还没有，城墙（混淆）开着大门，但漏斗零件大多现成。
 
 > ⚠️ **2026-06-11 更新**：本表「服务器/心跳 = 完全没有」一行已过时——`net/` 下 S2 出站/信封/心跳骨架已建（**dormant，未接入主流程**）。本表保留 2026-06-02 基线快照不改；服务器侧现状以 **§10.6** 为准。
+> ⚠️ **2026-06-12 更新（漂移修正）**：本表「真授权」行的 `isVipAuthorized(){return true;}` 也已过时——**现 `StateMachine.java:97 isVipAuthorized()` = `EnvelopeStore.isAuthorizedNow()`（真授权门：token+Ed25519验签信封+license未过期）**，见 §10.6。因此本文 §2/§4/§5/§10.4/§附录A 中把 `isVipAuthorized` 当「return true 假锁诱饵」的描述均为旧态；**当前关键词党诱饵是 `PromoConfig` + `CompatProbe` 绊线（§10.9），不再是 isVipAuthorized**。下方相关节已就地更正。
 
 ---
 
 ## 2. 组合拳总览（一假一真 + 服务器为锚）
 
 - **门卫 → 翻译官**：SO 别只回答「放行/不放行」（假门卫一换就破）；要当「唯一能把服务器密信解成真配方的翻译官」（假翻译官没密码本，解出来是乱码）。
-- **真锁 = 能否解开配方**（无名的 `decrypt_config`）；**假锁 = 诱饵**（留亮的 `isVipAuthorized`）。
+- **真锁 = 能否解开配方**（无名的 `decrypt_config`）；**假锁 = 诱饵**（`PromoConfig` 明文/base64 诱饵 + 留亮命名，§10.9）。⚠️ 注：`isVipAuthorized` 现为**真授权门**（`EnvelopeStore.isAuthorizedNow()`），**不再是 return true 诱饵**（漂移修正 2026-06-12，见 §1 注 / §10.6）。
 - **服务器是唯一改不了的锚**：客户端整个在对方手里（连运行时 hook SO 都做得到），所有硬防线最终锚在服务器。
 
 ---
@@ -64,7 +65,7 @@
 
 | # | 关节（位置） | 现状 | 埋哪一招 | 加密? | 维护备注 |
 |---|---|---|---|:--:|---|
-| 1 | 中央网关 `StateMachine.isVipAuthorized()` `:92` | `return true` + `AuthManager.evaluate()` 死代码 | ① 真授权：接 evaluate() 进 `ModuleMain`，判断下沉 SO | 逻辑进SO | 所有过滤器都走这里，改一处全生效 |
+| 1 | 中央网关 `StateMachine.isVipAuthorized()` `:97` | ✅ 已是真授权门 `EnvelopeStore.isAuthorizedNow()`（token+验签信封+license）；不再是 `return true` | ① 已接（§10.6）；后续把判断下沉 SO | 逻辑进SO | 所有过滤器都走这里，改一处全生效 |
 | 2 | 服务器心跳（现无） | 全代码无 server 调用 | ② 心跳续租 + 下发短命钥匙 | 通道加密 | 全新独立模块，不碰现有 hook |
 | 3 | 配方存储 SharedPreferences `g_a7f2` | hook 类名明文；`hlst`/`glst` 明文 | ③ 核心 3~5 个类名抽成 registry，服务器下发 | 是 | 只抽核心几个，**验证过的别全搬** |
 | 4 | SO 翻译官 `auth_engine.cpp` / 新 `decrypt_config()` | SO 零 crypto | ④ AES-GCM 解密，唯一能产出真配方 | 是（核心） | 新函数，不动现有 native 逻辑 |
@@ -78,7 +79,7 @@
 
 | 角色 | 落点 | 处理 |
 |---|---|---|
-| **假锁 / 诱饵** | 现有 `isVipAuthorized()`（明文 true，名字像锁） | 留明文、留亮名（**故意不混淆**）；加绊线 → 设 `tampered` 旗标 |
+| **假锁 / 诱饵** | `PromoConfig`（明文 `PROMO_URL` + base64 `PROMO_TOKEN` + 开关，名字像真引流配置）（§10.9）。⚠️ 旧文写的 `isVipAuthorized()` return true 已过时——它现是真授权门，不是诱饵 | 留明文/留亮名（**故意不混淆**）；`CompatProbe` 绊线比对 → `markTampered` |
 | **真锁** | 新增 SO `decrypt_config()`（无 vip/auth/license 关键词） | 重混淆 / 干脆无名；解不开 = 散沙 |
 | **后果** | `PiracyNotice` + 水印 + (v2)上报 | 咬钩后**延迟**触发，不是当场 |
 
@@ -128,7 +129,7 @@
 ### Phase 0（止血+摆诱饵）✅ 2026-06-02 完成
 - [x] DebugServer 门控：`ModuleMain` 改 `if (BuildConfig.DEBUG || AppConfig.isDebugEnabled())`（debug 包/HONEY 才开；release+PROD 不开）—— debug 装机验证面板正常；release+PROD 关闭为逻辑保证（未单独切 PROD 实测）
 - [x] `proguard-rules.pro` 收窄：mapping 实锤 `NativeBridge→NativeBridge`（保留，JNI 安全）、`StateMachine→b.j`/`ConvFilter→f.m`/`MomentsFilter→f.r`（混淆）、`isVipAuthorized` 保留可读
-- [~] 诱饵：`isVipAuthorized` 经 proguard `-keepclassmembernames` 留亮 ✅；代码内 `// [GUARD-TRAP]` 注释标记 ⬜ 待补
+- [~] 诱饵：~~`isVipAuthorized` 留亮~~（已过时：它现是真授权门，非诱饵）。**当前诱饵 = `PromoConfig` + `CompatProbe` 绊线（§10.9）已接 ✅**；代码内 `// [GUARD-TRAP]` 注释标记 ⬜ 待补
 - [x] 接死代码：`AuthManager.evaluate()` 接入 `ModuleMain` 第 6.5 步（record-only）；`PiracyNotice` 已挂（仅 AUTH_TAMPERED 触发）—— 装机日志 `[auth] evaluate=4 NO_LICENSE`
 - [x] 回归：release 装机 `BATCH1_VERIFY PASS` + 密友隐藏正常；debug 接死代码后密友隐藏正常（用户确认）
 - ⬜ 遗留（发版前）：release 签名链路（当前用 debug keystore 临时签）；release+PROD 关面板的设备实测
@@ -239,7 +240,7 @@ StateMachine.isActive()                // 取中央总闸
 
 | 攻击者 | 看什么 | 蜜罐 | 现状 |
 |---|---|---|---|
-| 关键词/静态党 | 反编译搜 `vip` 看代码 | 留亮假锁 `isVipAuthorized(){return true;}`（真锁 `decrypt_config` 无名搜不到） | ✅ 假锁在（`StateMachine.java:94`，proguard 留亮）；⬜ 绊线半截：改假锁 SO 察觉不到，`// [GUARD-TRAP]` 注释 +「isVip 被 hook」检测未接 |
+| 关键词/静态党 | 反编译搜 `vip`/`url`/`promo` 看代码 | 诱饵 `PromoConfig`（明文+base64，§10.9）；真锁 `decrypt_config` / 真授权门 `EnvelopeStore.isAuthorizedNow` 不当诱饵 | ✅ 诱饵 + 绊线已接（`PromoConfig`+`CompatProbe` canary/签名校验 → `markTampered` → 10天影子期，§10.9）。⚠️ 旧文「留亮假锁 isVipAuthorized return true」已过时：它现是**真授权门**，改它=砸真授权，不是诱饵 |
 | 抓包党 | 装证书 MITM 看网络流量 | 服务器信封故意摆明牌假字段 `isVip/viptime/endtime` 当诱饵（真值锁在加密 registry + 短命租约） | ⬜ 没有——客户端现无任何自有网络流量（全代码无 HTTP/Socket），归 Phase 1D-server |
 
 两蜜罐的「接上 / 上线」均登记为 **Phase 1D-server 待办**（与真锁同期做）。
@@ -493,7 +494,7 @@ StateMachine.isActive()                // 取中央总闸
 
 ## 附录 A. 证据明细（2026-06-02 只读核查）
 
-- `StateMachine.java:86-92` —— `isActive()` 链 + `isVipAuthorized(){return true;}`（假锁）
+- `StateMachine.java:86-92` —— `isActive()` 链 + `isVipAuthorized(){return true;}`（假锁）⚠️ 此为 2026-06-02 旧态；现 `:97 isVipAuthorized()=EnvelopeStore.isAuthorizedNow()` 真授权门（见 §1 注 / §10.6）
 - `core/AuthManager.java` —— `evaluate()`（wxid+设备绑定）/`bindAccount()` 已写，**初始化流程未调用**（死代码）
 - `native_core/src/guard_core.cpp:90` —— JNI `nativeIsAuthorized` `return JNI_TRUE`（占位）
 - `native_core/src/auth_engine.cpp:25` —— `auth_is_authorized()` 有逻辑但状态默认 UNKNOWN 且 JNI 不调它
