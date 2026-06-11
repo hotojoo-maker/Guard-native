@@ -258,7 +258,7 @@ StateMachine.isActive()                // 取中央总闸
 
 ## 10.6 Phase 1D-server（S2 服务器真锁）解冻 + 现状盘点（2026-06-11，用户拍板②）
 
-> §10.3 的「Phase 1D-server 冻结」已在 2026-06-11 由用户解除。当前已从 dormant 骨架推进到 **v1.1 商业授权最小闭环**：授权码 → token → envelope → 客户端 AuthGate；但仍不是服务器真锁全部完成。本节为 S2/S3a-1 的**唯一权威现状**。
+> §10.3 的「Phase 1D-server 冻结」已在 2026-06-11 由用户解除。当前已从 dormant 骨架推进到 **v1.1 商业授权最小闭环 + S4 Ed25519 验签 + S3b-A/B LeaseClock 授时/设置页 72h 离线强验**（均 2026-06-11 装机 PASS）：授权码 → token → envelope → 客户端 AuthGate；但仍不是服务器真锁全部完成。本节为 S2/S3a/S3b/S4 的**唯一权威现状**。
 
 ### 已建（`net/` 包，L2 代码核查）
 - `net/EnvelopeClient`：HTTPS 出站。`activate(卡密)→token`、`fetchEnvelope(token)→签名信封`；按 `AppConfig.guardServerList()` 主备 fallback；强制 https、连不上 / 证书错 = fail-closed。
@@ -283,7 +283,7 @@ StateMachine.isActive()                // 取中央总闸
 5. 更新通知 `up` 已下发并被客户端消费，但属于运营提示，不是强制升级/真锁。
 
 ### 口径
-当前 = 「**v1.1 商业授权最小闭环 + S3a runtime seed apply 原型 + S4 Ed25519 信封验签（2026-06-11 装机 PASS）**」。可对内称“授权码→token→envelope→客户端 AuthGate 已通，且信封已 Ed25519 防伪造/防篡改”；**不得**对外或在文档里宣称「服务器真锁完成」（真锁的牙 = S3a 短命 key 折进 SO + S3a-PROD 硬失败，仍未完成）。
+当前 = 「**v1.1 商业授权最小闭环 + S3a runtime seed apply 原型 + S4 Ed25519 信封验签 + S3b-A/B LeaseClock 授时与设置页 72h 离线强验（均 2026-06-11 装机 PASS）**」。可对内称“授权码→token→envelope→客户端 AuthGate 已通；信封已 Ed25519 防伪造/防篡改；到期判定不信手机时间（trustedNow）；断网>72h 进设置页强制重验、失败撤销且可自愈”；**不得**对外或在文档里宣称「服务器真锁完成」（真锁的牙 = S3a 短命 key 折进 SO + S3a-PROD 硬失败，仍未完成）。
 
 ### 发包分发边界（避免误读）
 - **服务器真锁 ≠ 服务器打包 / 服务器分发 APK**。
@@ -304,7 +304,8 @@ StateMachine.isActive()                // 取中央总闸
 - [ ] `ModuleMain` 是否仅在本地已有 token 时启动冷启动 heartbeat？
 - [ ] `EncryptedConfigLoader` 仍只读本地 SO registry（无服务器 lease）？
 - [ ] `derive_registry_key` 仍只折证书指纹（未折信封 `k`）？
-- [ ] `RiskState` 仍 record-only（不 gating）？`LeaseClock` 是否仍**只**被 `GuardHeartbeat` 喂、过期判定未换 `trustedNow`（即 S3b-B 未做）？
+- [ ] `RiskState` 仍 record-only（不 gating）？（S3b-A+B 已做：`LeaseClock` 已被 `GuardHeartbeat` 喂服务器授时；`EnvelopeStore.isLicenseExpired` 已换 `trustedNow`；设置页有 72h 离线强验→撤销。若这些被回退/再推进，必须回来更新本节）
+- [ ] `AuthEnvelopeVerifier` 是否仍只接受 `alg==Ed25519`（S4 已做）、客户端只内置公钥？
 
 ### ⚠️ 与 V3 改包路线（D-016 主攻方向）的冲突 —— 真锁落地前必须先对齐（2026-06-11）
 
