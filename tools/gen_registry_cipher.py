@@ -119,11 +119,46 @@ def parse_args():
         help="Base64-encoded 32-byte S_rel. Required in prod_server_lock mode.",
     )
     parser.add_argument(
+        "--recipe",
+        default=os.environ.get("GUARD_RELEASE_RECIPE", ""),
+        help=(
+            "Path to a per-release recipe JSON (release/secrets/<release_id>.json). "
+            "When set, registry_mode and s_rel_b64 are read from it (single source of "
+            "truth shared with miyou-server). See docs/RELEASE_RECIPE契约.md."
+        ),
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Validate mode/seed inputs and encrypt in memory without writing registry_cipher.inc.",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.recipe:
+        _apply_recipe(args)
+    return args
+
+
+def _apply_recipe(args):
+    """Load registry_mode + s_rel_b64 from the per-release recipe JSON. The recipe
+    is the single source of truth shared with miyou-server (docs/RELEASE_RECIPE契约.md);
+    explicit --mode / --server-seed-b64 must not contradict it."""
+    try:
+        with open(args.recipe, "r", encoding="utf-8") as f:
+            recipe = json.load(f)
+    except Exception as exc:
+        raise SystemExit("ERROR: cannot read --recipe %s: %s" % (args.recipe, exc))
+    mode = recipe.get("registry_mode", "")
+    if mode not in (MODE_DEV_CERT_ONLY, MODE_PROD_SERVER_LOCK):
+        raise SystemExit("ERROR: recipe registry_mode must be dev_cert_only/prod_server_lock, got %r" % mode)
+    s_rel = recipe.get("s_rel_b64", "")
+    # Recipe wins; warn-by-erroring if CLI explicitly set a conflicting mode.
+    if args.mode != MODE_DEV_CERT_ONLY and args.mode != mode:
+        raise SystemExit("ERROR: --mode %s conflicts with recipe registry_mode %s" % (args.mode, mode))
+    args.mode = mode
+    if mode == MODE_PROD_SERVER_LOCK and not s_rel:
+        raise SystemExit("ERROR: recipe %s is prod_server_lock but has no s_rel_b64" % args.recipe)
+    args.server_seed_b64 = s_rel
+    print("recipe_loaded:", recipe.get("release_id", "?"), "mode:", mode)
 
 
 def load_server_seed(args):

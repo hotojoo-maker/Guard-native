@@ -58,6 +58,11 @@ local.properties
 # Local secrets (never commit)
 DEV_SECRETS.md
 
+# 真锁发版配方（含 s_rel / wrap_key 机密，两个 AI 间安全传递，绝不入 git）
+# 模板 release/release_recipe.example.json 仍入库（无真密钥）。见 docs/RELEASE_RECIPE契约.md
+release/secrets/
+release_recipe.*.secret.json
+
 # OS
 Thumbs.db
 .DS_Store

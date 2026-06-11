@@ -1,0 +1,29 @@
+{
+  "_comment": "真锁发版配方模板（一个版本 = 一份配方）。客户端构建 + miyou-server（另一个 AI）两边读同一份，版本号对上就不会错配。这是【模板】，不含真密钥；真配方放 release/secrets/<release_id>.json（已 gitignore），两个 AI 之间安全传递，绝不进 git。字段语义见 docs/RELEASE_RECIPE契约.md。",
+  "release_id": "android_8071_v1.1_r1",
+  "schema_id": "r8071_v1",
+  "wechat_version": "8.0.71",
+  "kid": "e1",
+  "registry_mode": "prod_server_lock",
+
+  "_secret_comment": "以下两项是机密（s_rel/wrap_key）。模板里是占位的全零 base64，发版时换成真随机值（s_rel=32 字节、wrap_key=16 字节）。",
+  "s_rel_b64": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+  "wrap_key_b64": "AAAAAAAAAAAAAAAAAAAAAA==",
+
+  "ed25519_public_b64": "DZM7IkVLeBXJfq7343lmPSTmN3eOJ57YPq9oq/yFpXU=",
+
+  "endpoints": {
+    "primary": "https://zxmqq.shop",
+    "backup1": "https://miyou.lol"
+  },
+
+  "funnel_url": "https://miyou.pro/miyou-n5afqrli",
+
+  "_notes": [
+    "客户端构建: python tools/gen_registry_cipher.py --recipe release/secrets/<release_id>.json  (从 s_rel_b64 折进 registry 密文; mode=prod_server_lock 时强制要 s_rel)",
+    "客户端 SO: config_crypto.cpp 的 W(g_wk_lo/g_wk_hi) 必须等于 wrap_key_b64 解出的 16 字节",
+    "服务器(miyou-server, 另一个 AI): 加载同一份 release/secrets/<release_id>.json, 用 s_rel + wrap_key 生成信封 k = AES-128-GCM(s_rel, key=wrap_key, nonce=n[:12]); 用对应 Ed25519 私钥签信封",
+    "ed25519: 客户端只内置 public; 私钥仅服务器持有, 不进本配方",
+    "换版本 = 换 release_id + 换 s_rel(+可选换 wrap_key/密钥对), 两边同步换"
+  ]
+}

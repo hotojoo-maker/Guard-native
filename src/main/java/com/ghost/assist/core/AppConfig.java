@@ -33,8 +33,13 @@ public class AppConfig {
     // One-time migration marker: "mv2" = migrated from old DEV-default to PROD-default.
     private static final String KEY_MIG_V2 = "mv2";
 
-    /** Official purchase URL shown in PiracyNotice and DebugServer dashboard. */
-    public static final String SHOP_URL = "https://zxmqq.shop";
+    /**
+     * 盗版引流 / 联系客服落地页（PiracyNotice 弹窗 + DebugServer 面板）。
+     * 指向 miyou.pro 客服接待系统的邀请落地页（role B，另一个 AI 维护）：
+     * 进页 → 手动输验证码 → 接客服，爬虫爬不了。授权服务器域名（zxmqq.shop）
+     * 不在这里——那条走 SO 加密引导段（见 docs/HONEYPOT_蜜罐设计.md §4.5）。
+     */
+    public static final String SHOP_URL = "https://miyou.pro/miyou-n5afqrli";
 
     // ── S2 真锁信封 — 服务器接入（Phase 1D-server）────────────────
     // 传输强制 HTTPS（信封里的短命 key 材料 k 不得走明文）。
