@@ -279,8 +279,7 @@ class ConvHotReload {
                             String cn = act.getClass().getName()
                                     .toLowerCase(java.util.Locale.ROOT);
                             if (!cn.contains("launcherui") && !cn.contains("mainui")) return;
-                            if (StateMachine.getInstance().getState()
-                                    != StateMachine.State.HIDDEN) return;
+                            if (!StateMachine.getInstance().isActive()) return;
                             // 首次进 LauncherUI：注册熄屏监听（只注册一次）
                             if (!ConvFilter.sScreenReceiverInstalled) {
                                 ConvFilter.sScreenReceiverInstalled = true;
@@ -303,7 +302,7 @@ class ConvHotReload {
                                     Log.w(ConvFilter.TAG, "[CF:screen] register fail: " + t);
                                 }
                             }
-                            Log.i(ConvFilter.TAG, "[CF:start] LauncherUI onStart HIDDEN → clean+notify");
+                            Log.i(ConvFilter.TAG, "[CF:start] LauncherUI onStart active → clean+notify");
                             ConvFilter.showColdStartOverlay(act);
                             ConvFilter.cleanConvData("start-H");
                             notifyConvAdapter("start-H");

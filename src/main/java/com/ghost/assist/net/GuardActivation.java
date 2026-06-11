@@ -47,17 +47,34 @@ public final class GuardActivation {
         String deviceId = AuthManager.computeDeviceHash(ctx);
         String token = EnvelopeClient.activate(cardKey.trim(), deviceId);
         if (token == null || token.isEmpty()) {
+            String msg = authErrorText(EnvelopeClient.getLastErrorCode());
+            EnvelopeStore.saveAuthError(msg);
             Log.w(TAG, "[act] activate rejected (bad card / network)");
-            return new Result(false, "activate failed");
+            return new Result(false, msg);
         }
         EnvelopeStore.saveToken(token);
         Log.i(TAG, "[act] token acquired, kicking heartbeat");
 
         // 立刻取一次信封；失败不致命（心跳后续会再拉）
         String certHex = ""; // TODO S3a: 传模块签名 cert SHA-256（与 setBindingMaterial 同源）
-        String appVersion = "";
-        GuardHeartbeat.syncOnce(deviceId, certHex, appVersion);
+        String appVersion = AppConfig.GUARD_PRODUCT_VERSION;
+        int tier = GuardHeartbeat.syncOnce(deviceId, certHex, appVersion);
+        if (tier < 0) {
+            EnvelopeStore.clear();
+            EnvelopeStore.saveAuthError("授权异常，请联系售后");
+            Log.w(TAG, "[act] envelope sync failed after token");
+            return new Result(false, "envelope failed");
+        }
         GuardHeartbeat.start(deviceId, certHex, appVersion);
         return new Result(true, "activated");
+    }
+
+    private static String authErrorText(String code) {
+        if ("CARD_EXPIRED".equals(code)) return "授权已到期，请联系售后";
+        if ("CARD_BANNED".equals(code) || "CARD_DISABLED".equals(code)) return "授权码已停用，请联系售后";
+        if ("DEVICE_BANNED".equals(code)) return "设备已封停，请联系售后";
+        if ("DEVICE_LIMIT".equals(code)) return "设备数量已达上限，请联系售后";
+        if ("TOKEN_INVALID".equals(code)) return "授权已失效，请重新激活";
+        return "授权异常，请联系售后";
     }
 }

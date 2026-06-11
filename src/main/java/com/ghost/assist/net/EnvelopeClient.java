@@ -36,8 +36,11 @@ public final class EnvelopeClient {
     private static final int CONNECT_TIMEOUT_MS = 8000;
     private static final int READ_TIMEOUT_MS = 8000;
     private static final String SCHEMA_ID = "r8071_v1";
+    private static volatile String sLastErrorCode = "";
 
     private EnvelopeClient() {}
+
+    public static String getLastErrorCode() { return sLastErrorCode; }
 
     /**
      * 卡密激活 → 拿 token。
@@ -56,6 +59,7 @@ public final class EnvelopeClient {
         } catch (Throwable t) {
             return null;
         }
+        sLastErrorCode = "";
         for (String base : AppConfig.guardServerList()) {
             String resp = post(base + "/api/v1/activate", body.toString());
             if (resp == null) continue;
@@ -64,6 +68,8 @@ public final class EnvelopeClient {
                 if ("ok".equals(j.optString("status"))) {
                     String token = j.optString("token", "");
                     if (!token.isEmpty()) return token;
+                } else {
+                    sLastErrorCode = j.optString("code", j.optString("status", ""));
                 }
             } catch (Throwable ignore) {
                 // malformed body → try next server
@@ -96,6 +102,7 @@ public final class EnvelopeClient {
         } catch (Throwable t) {
             return null;
         }
+        sLastErrorCode = "";
         for (String base : AppConfig.guardServerList()) {
             String resp = post(base + "/api/v1/guard/envelope", body.toString());
             if (resp == null) continue;
@@ -103,6 +110,8 @@ public final class EnvelopeClient {
                 JSONObject j = new JSONObject(resp);
                 if ("ok".equals(j.optString("status")) && j.has("envelope")) {
                     return j.getJSONObject("envelope").toString();
+                } else {
+                    sLastErrorCode = j.optString("code", j.optString("status", ""));
                 }
             } catch (Throwable ignore) {
                 // malformed body → try next server
@@ -122,6 +131,7 @@ public final class EnvelopeClient {
         if (urlStr == null || !urlStr.startsWith("https://")) {
             // 强制 https：明文会泄露信封里的短命 key 材料 k
             Log.w(TAG, "[env] refuse non-https endpoint");
+            sLastErrorCode = "BAD_SCHEME";
             return null;
         }
         HttpsURLConnection conn = null;
@@ -146,10 +156,11 @@ public final class EnvelopeClient {
             String resp = readAll(is);
             if (code >= 200 && code < 300) return resp;
             Log.w(TAG, "[env] http " + code);
-            return null;
+            return resp;
         } catch (Throwable t) {
             // 连接失败 / TLS 证书无效 / 超时 → fail-closed，交上层 fallback
             Log.w(TAG, "[env] post err: " + t.getClass().getSimpleName());
+            sLastErrorCode = t.getClass().getSimpleName();
             return null;
         } finally {
             if (conn != null) {

@@ -81,7 +81,12 @@ public final class GuardHeartbeat {
             String env = EnvelopeClient.fetchEnvelope(token, deviceId, certHex, appVersion, installId);
             AuthEnvelopeVerifier.Envelope e = AuthEnvelopeVerifier.verifyAndParse(env, deviceId);
             if (e == null) {
-                Log.w(TAG, "[hb] envelope invalid — keep cached, fail-closed");
+                if (isHardAuthError(EnvelopeClient.getLastErrorCode())) {
+                    EnvelopeStore.clear();
+                    EnvelopeStore.saveAuthError(authErrorText(EnvelopeClient.getLastErrorCode()));
+                    Log.w(TAG, "[hb] hard auth error — token cleared");
+                }
+                Log.w(TAG, "[hb] envelope invalid — fail-closed");
                 return -1;
             }
             if (!NativeBridge.applyServerSeedAndReset(e.keyMaterial, e.keyNonce)) {
@@ -95,6 +100,22 @@ public final class GuardHeartbeat {
             Log.w(TAG, "[hb] sync err: " + t.getClass().getSimpleName());
             return -1;
         }
+    }
+
+    private static boolean isHardAuthError(String code) {
+        return "CARD_BANNED".equals(code)
+                || "CARD_DISABLED".equals(code)
+                || "CARD_EXPIRED".equals(code)
+                || "DEVICE_BANNED".equals(code)
+                || "TOKEN_INVALID".equals(code);
+    }
+
+    private static String authErrorText(String code) {
+        if ("CARD_EXPIRED".equals(code)) return "授权已到期，请联系售后";
+        if ("CARD_BANNED".equals(code) || "CARD_DISABLED".equals(code)) return "授权码已停用，请联系售后";
+        if ("DEVICE_BANNED".equals(code)) return "设备已封停，请联系售后";
+        if ("TOKEN_INVALID".equals(code)) return "授权已失效，请重新激活";
+        return "授权异常，请联系售后";
     }
 
     /**

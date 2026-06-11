@@ -43,6 +43,7 @@ public class AppConfig {
     public static final String GUARD_SERVER_PRIMARY = "https://zxmqq.shop";
     public static final String GUARD_SERVER_BACKUP  = "";   // 备机槽（留空 = 仅主机）
     public static final String GUARD_PRODUCT_ID      = "quantum_wechat";
+    public static final String GUARD_PRODUCT_VERSION = "v1.1";
     public static final String GUARD_RELEASE_ID      = "android_8071";
 
     /** 真锁服务器候选列表（按序 fallback；空串自动跳过）。 */

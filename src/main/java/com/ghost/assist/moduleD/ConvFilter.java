@@ -167,6 +167,7 @@ public class ConvFilter {
     // 锁屏场景（sColdCleanDone=true）：数据已干净，500ms 后自动移除。
     // 冷启动场景（sColdCleanDone=false）：等 L4 信号或 5s 安全移除。
     private static java.lang.ref.WeakReference<android.view.View> sColdStartOverlay = null;
+    private static volatile boolean sColdStartOverlayShown = false;
     /** 熄屏后置 true；showColdStartOverlay 消费后重置，区分锁屏解锁与普通 Activity 切换。 */
     static volatile boolean sScreenWasLocked = false;
     static volatile boolean sScreenReceiverInstalled = false;
@@ -1504,9 +1505,11 @@ public class ConvFilter {
      */
     static void showColdStartOverlay(android.app.Activity act) {
         if (sColdStartOverlay != null && sColdStartOverlay.get() != null) return;
-        // 只在冷启动（进程刚起，sColdCleanDone=false）或锁屏解锁（sScreenWasLocked=true）时显示
-        // 普通 Activity 切换（从聊天/设置页返回）两个条件都不满足，直接跳过
-        boolean isColdStart  = !sColdCleanDone;
+        // 只在真正冷启动窗口内显示一次，或锁屏解锁时显示。
+        // 普通 Activity 切换（从设置页返回微信）不再触发白色遮罩。
+        boolean inColdWindow = android.os.SystemClock.elapsedRealtime()
+                - sColdStartMs < COLD_WINDOW_MS;
+        boolean isColdStart  = !sColdCleanDone && !sColdStartOverlayShown && inColdWindow;
         boolean isLockScreen = sScreenWasLocked;
         if (!isColdStart && !isLockScreen) {
             Log.i(TAG, "[CF:overlay] skip (normal resume)");
@@ -1528,6 +1531,7 @@ public class ConvFilter {
                     android.view.ViewGroup.LayoutParams.MATCH_PARENT);
             root.addView(overlay, lp);
             sColdStartOverlay = new java.lang.ref.WeakReference<>(overlay);
+            if (isColdStart) sColdStartOverlayShown = true;
             Log.i(TAG, "[CF:overlay] shown coldCleanDone=" + sColdCleanDone);
             // Safety removal: lock screen (data already clean) 500ms; cold start 5s
             long safetyMs = sColdCleanDone ? 500L : 5000L;

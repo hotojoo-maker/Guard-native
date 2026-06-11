@@ -5,10 +5,12 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.GradientDrawable;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.InputType;
@@ -38,7 +40,6 @@ import com.ghost.assist.core.AppConfig;
 import com.ghost.assist.core.AuthManager;
 import com.ghost.assist.core.NativeBridge;
 import com.ghost.assist.core.StateMachine;
-import com.ghost.assist.net.AuthEnvelopeVerifier;
 import com.ghost.assist.net.EnvelopeStore;
 import com.ghost.assist.net.GuardActivation;
 
@@ -131,6 +132,7 @@ public class SettingsEntry {
     // TriggerGuard 各 enterHidden 路径检查这个 flag、true 时跳过。
     private static volatile boolean sOverlayActive    = false;
     private static volatile boolean sAuthDialogShowing       = false;
+    private static volatile boolean sUpdateNoticeShown       = false;
 
     /** TriggerGuard 用：overlay 显示中？显示时所有 enterHidden 触发都跳过。 */
     public static boolean isOverlayActive() {
@@ -156,9 +158,7 @@ public class SettingsEntry {
     private static boolean isActivationReady(Context ctx) {
         try {
             if (ctx != null) EnvelopeStore.init(ctx.getApplicationContext());
-            if (EnvelopeStore.hasToken()) return true;
-            String wxid = Bridge.getInstance().getLicensedWxid();
-            return wxid != null && !wxid.isEmpty();
+            return EnvelopeStore.isAuthorizedNow();
         } catch (Throwable ignored) {
             return false;
         }
@@ -279,8 +279,10 @@ public class SettingsEntry {
                             String cls = activity.getClass().getName();
                             try {
                                 if (MAIN_SETTINGS_CLASS.equals(cls)
-                                        || COMMON_SETTINGS_CLASS.equals(cls)) {
+                                        || (COMMON_SETTINGS_CLASS.equals(cls) && isMainSettingsScreen(activity))) {
                                     syncEntry(activity);
+                                } else if (COMMON_SETTINGS_CLASS.equals(cls)) {
+                                    removeLlHeader();
                                 } else if (LAUNCHER_UI_CLASS.equals(cls)) {
                                     scheduleMoreTabProfileProbe(activity);
                                 }
@@ -392,6 +394,74 @@ public class SettingsEntry {
         }
 
         Log.w(TAG, "[SET] no ListView/RecyclerView found — check [SET:tree] log");
+    }
+
+    private static boolean isMainSettingsScreen(Activity activity) {
+        try {
+            ViewGroup root = getContentRoot(activity);
+            if (root == null) return false;
+            // CommonSettingsUI hosts both the top settings page and many child
+            // pages. Background fragments can remain in the root, so first check
+            // the visible toolbar title instead of scanning the whole tree.
+            String title = findVisibleToolbarTitle(root, activity);
+            return "\u8bbe\u7f6e".equals(title)
+                    && (hasExactText(root, "\u8d26\u53f7\u4e0e\u5b89\u5168")
+                    || hasExactText(root, "\u901a\u7528")
+                    || hasExactText(root, "\u9690\u79c1"));
+        } catch (Throwable ignored) {
+            return false;
+        }
+    }
+
+    private static boolean hasExactText(View v, String expected) {
+        if (v instanceof TextView) {
+            CharSequence text = ((TextView) v).getText();
+            if (text != null && expected.contentEquals(text)) return true;
+        }
+        if (v instanceof ViewGroup) {
+            ViewGroup g = (ViewGroup) v;
+            for (int i = 0; i < g.getChildCount(); i++) {
+                if (hasExactText(g.getChildAt(i), expected)) return true;
+            }
+        }
+        return false;
+    }
+
+    private static String findVisibleToolbarTitle(View v, Context context) {
+        TextView title = findVisibleToolbarTitleView(v, context, null);
+        CharSequence text = title != null ? title.getText() : null;
+        return text != null ? text.toString() : null;
+    }
+
+    private static TextView findVisibleToolbarTitleView(View v, Context context, TextView best) {
+        if (v == null || !v.isShown()) return best;
+        if (v instanceof TextView) {
+            TextView tv = (TextView) v;
+            CharSequence text = tv.getText();
+            if (text != null && text.length() > 0 && text.length() <= 8) {
+                int[] loc = new int[2];
+                tv.getLocationOnScreen(loc);
+                int y = loc[1];
+                if (y >= 0 && y < dp(context, 120) && tv.getTextSize() >= dp(context, 15)) {
+                    int bestY = Integer.MAX_VALUE;
+                    if (best != null) {
+                        int[] bestLoc = new int[2];
+                        best.getLocationOnScreen(bestLoc);
+                        bestY = bestLoc[1];
+                    }
+                    if (best == null || y < bestY) {
+                        best = tv;
+                    }
+                }
+            }
+        }
+        if (v instanceof ViewGroup) {
+            ViewGroup g = (ViewGroup) v;
+            for (int i = 0; i < g.getChildCount(); i++) {
+                best = findVisibleToolbarTitleView(g.getChildAt(i), context, best);
+            }
+        }
+        return best;
     }
 
     // -----------------------------------------------------------------------
@@ -1327,6 +1397,8 @@ public class SettingsEntry {
             sOverlayActive = true;  // P_SE5: 让 TriggerGuard 各 enterHidden 跳过
             if (!isActivationReady(activity)) {
                 showActivationDialog(activity, null, "settings-overlay");
+            } else {
+                showUpdateNoticeIfNeeded(activity);
             }
             Log.i(TAG, "[SET:overlay] shown state="
                     + StateMachine.getInstance().getStateName());
@@ -1369,16 +1441,18 @@ public class SettingsEntry {
 
         // ===== 密友 =====
         content.addView(buildSectionHeader(activity, "密友"));
+        final boolean authorizedNow = StateMachine.getInstance().isVipAuthorized();
 
         // 1. 开启密友（总开关）
         content.addView(buildSwitchRow(activity, "开启密友",
-                "密友功能总开关", br.isFeatureEnabled(),
-                new CompoundButton.OnCheckedChangeListener() {
+                authorizedNow ? "密友功能总开关" : "请先完成授权",
+                authorizedNow && br.isFeatureEnabled(),
+                authorizedNow ? new CompoundButton.OnCheckedChangeListener() {
                     @Override public void onCheckedChanged(CompoundButton b, boolean checked) {
                         br.setFeatureEnabled(checked);
                         Log.i(TAG, "[SET:overlay] feature=" + checked);
                     }
-                }));
+                } : null));
 
         // 2. 消息防撤回（接通 AntiRecall）
         content.addView(buildSwitchRow(activity, "消息防撤回",
@@ -1582,6 +1656,119 @@ public class SettingsEntry {
             sOverlayActive = false;  // P_SE5: 解除 enterHidden 抑制
             Log.i(TAG, "[SET:overlay] dismissed");
         }
+    }
+
+    private static void showUpdateNoticeIfNeeded(final Activity activity) {
+        if (activity == null || sUpdateNoticeShown) return;
+        if (!EnvelopeStore.isAuthorizedNow()) return;
+        final int mode = EnvelopeStore.getUpdateMode();
+        if (mode < 0) return;
+        final String title = nonEmpty(EnvelopeStore.getUpdateTitle(), "量子密友更新");
+        final String msg = nonEmpty(EnvelopeStore.getUpdateMessage(), "发现新版本，请联系客服获取更新。");
+        final String url = EnvelopeStore.getUpdateUrl();
+        sUpdateNoticeShown = true;
+        LinearLayout box = new LinearLayout(activity);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(activity, 22), dp(activity, 20), dp(activity, 22), dp(activity, 16));
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(Color.WHITE);
+        bg.setCornerRadius(dp(activity, 20));
+        box.setBackground(bg);
+
+        TextView tvTitle = new TextView(activity);
+        tvTitle.setText(title);
+        tvTitle.setTextColor(Color.parseColor("#1C1C1E"));
+        tvTitle.setTextSize(18f);
+        tvTitle.getPaint().setFakeBoldText(true);
+        tvTitle.setGravity(Gravity.CENTER);
+        box.addView(tvTitle);
+
+        TextView tvMsg = new TextView(activity);
+        tvMsg.setText(msg);
+        tvMsg.setTextColor(Color.parseColor("#555555"));
+        tvMsg.setTextSize(14f);
+        tvMsg.setGravity(Gravity.CENTER);
+        tvMsg.setLineSpacing(dp(activity, 3), 1.0f);
+        LinearLayout.LayoutParams msgLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        msgLp.topMargin = dp(activity, 12);
+        box.addView(tvMsg, msgLp);
+
+        if (url != null && !url.isEmpty()) {
+            TextView linkHint = new TextView(activity);
+            linkHint.setText("点击底部按钮，用浏览器打开");
+            linkHint.setTextColor(Color.parseColor("#D97706"));
+            linkHint.setTextSize(13f);
+            linkHint.getPaint().setFakeBoldText(true);
+            linkHint.setGravity(Gravity.CENTER);
+            LinearLayout.LayoutParams hintLp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            hintLp.topMargin = dp(activity, 10);
+            box.addView(linkHint, hintLp);
+        }
+
+        LinearLayout buttons = new LinearLayout(activity);
+        buttons.setOrientation(LinearLayout.HORIZONTAL);
+        buttons.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams buttonsLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        buttonsLp.topMargin = dp(activity, 18);
+        box.addView(buttons, buttonsLp);
+
+        final AlertDialog dialog = new AlertDialog.Builder(activity).setView(box).create();
+
+        Button later = new Button(activity);
+        later.setText("稍后");
+        later.setTextColor(Color.parseColor("#555555"));
+        later.setTextSize(14f);
+        GradientDrawable laterBg = new GradientDrawable();
+        laterBg.setColor(Color.parseColor("#F2F2F7"));
+        laterBg.setCornerRadius(dp(activity, 18));
+        later.setBackground(laterBg);
+        later.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { dialog.dismiss(); }
+        });
+        buttons.addView(later, new LinearLayout.LayoutParams(0, dp(activity, 38), 1f));
+
+        Button primary = new Button(activity);
+        primary.setText((url != null && !url.isEmpty()) ? (mode == 1 ? "下载更新" : "联系客服") : "我知道了");
+        primary.setTextColor(Color.WHITE);
+        primary.setTextSize(14f);
+        primary.getPaint().setFakeBoldText(true);
+        GradientDrawable primaryBg = new GradientDrawable();
+        primaryBg.setColor(Color.parseColor("#07A85C"));
+        primaryBg.setCornerRadius(dp(activity, 18));
+        primary.setBackground(primaryBg);
+        LinearLayout.LayoutParams primaryLp = new LinearLayout.LayoutParams(0, dp(activity, 38), 1f);
+        primaryLp.leftMargin = dp(activity, 10);
+        buttons.addView(primary, primaryLp);
+        primary.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                if (url != null && !url.isEmpty()) {
+                    try {
+                        Intent it = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                        it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        activity.startActivity(it);
+                        dialog.dismiss();
+                    } catch (Throwable t) {
+                        Toast.makeText(activity, "无法打开下载链接", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    dialog.dismiss();
+                }
+            }
+        });
+
+        dialog.show();
+        try {
+            if (dialog.getWindow() != null) {
+                dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            }
+        } catch (Throwable ignored) {}
+    }
+
+    private static String nonEmpty(String v, String fallback) {
+        return v == null || v.isEmpty() ? fallback : v;
     }
 
     /**
@@ -1793,10 +1980,10 @@ public class SettingsEntry {
     private static String activationStatusText(Context ctx) {
         try {
             if (ctx != null) EnvelopeStore.init(ctx.getApplicationContext());
-            String prefix = "\u5fae\u4fe1 " + AuthEnvelopeVerifier.EXPECTED_WX_VERSION + " \u00b7 "; // 微信 x ·
-            if (EnvelopeStore.hasToken()) return prefix + "\u5df2\u6fc0\u6d3b"; // 已激活
-            String wxid = Bridge.getInstance().getLicensedWxid();
-            if (wxid != null && !wxid.isEmpty()) return prefix + "\u5df2\u7ed1\u5b9a"; // 已绑定
+            String prefix = "\u91cf\u5b50\u5bc6\u53cb "
+                    + EnvelopeStore.getProductVersion(AppConfig.GUARD_PRODUCT_VERSION)
+                    + " \u00b7 "; // 量子密友 vX ·
+            if (EnvelopeStore.isAuthorizedNow()) return prefix + "\u5df2\u6fc0\u6d3b"; // 已激活
             return prefix + "\u672a\u6388\u6743"; // 未授权
         } catch (Throwable ignored) {
             return "\u672a\u6388\u6743 / \u8f93\u5165\u6388\u6743\u7801";
@@ -1811,7 +1998,7 @@ public class SettingsEntry {
             if (exp <= 0) return "\u672a\u540c\u6b65"; // 未同步
             long now = System.currentTimeMillis() / 1000L;
             if (exp <= now) return "\u5df2\u5230\u671f"; // 已到期
-            return new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+            return new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.US)
                     .format(new java.util.Date(exp * 1000L));
         } catch (Throwable ignored) {
             return "\u672a\u540c\u6b65";
@@ -1822,6 +2009,7 @@ public class SettingsEntry {
                                              final String source) {
         if (activity == null || sAuthDialogShowing) return;
         sAuthDialogShowing = true;
+        final boolean requireActivation = !isActivationReady(activity);
 
         final LinearLayout box = new LinearLayout(activity);
         box.setOrientation(LinearLayout.VERTICAL);
@@ -1910,6 +2098,12 @@ public class SettingsEntry {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         errorLp.topMargin = dp(activity, 8);
         box.addView(error, errorLp);
+        if (requireActivation) {
+            String lastErr = EnvelopeStore.getAuthError();
+            if (lastErr != null && !lastErr.isEmpty()) {
+                showActivationError(error, box, lastErr);
+            }
+        }
 
         LinearLayout actions = new LinearLayout(activity);
         actions.setOrientation(LinearLayout.HORIZONTAL);
@@ -1976,13 +2170,24 @@ public class SettingsEntry {
                                         Log.i(TAG, "[SET:auth] activation ok source=" + source
                                                 + " state=" + NativeBridge.getAuthState());
                                         new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-                                            @Override public void run() { dialog.dismiss(); }
+                                            @Override public void run() {
+                                                dialog.dismiss();
+                                                try {
+                                                    ViewGroup decor = (ViewGroup) activity.getWindow().getDecorView();
+                                                    dismissOverlay(decor);
+                                                    showGuardOverlay(activity);
+                                                } catch (Throwable t) {
+                                                    Log.w(TAG, "[SET:auth] reopen overlay failed: " + t);
+                                                }
+                                            }
                                         }, 500L);
                                     } else {
                                         activate.setEnabled(true);
                                         activate.setText("\u7acb\u5373\u6fc0\u6d3b");
                                         showActivationError(error, box,
-                                                "\u6388\u6743\u7801\u65e0\u6548\u6216\u7f51\u7edc\u5f02\u5e38");
+                                                result.message != null && result.message.length() > 0
+                                                        ? result.message
+                                                        : "\u6388\u6743\u5f02\u5e38\uff0c\u8bf7\u8054\u7cfb\u552e\u540e");
                                         Log.w(TAG, "[SET:auth] activation failed source=" + source
                                                 + " msg=" + result.message);
                                     }
@@ -2115,7 +2320,7 @@ public class SettingsEntry {
         band.addView(thanks, tlp);
 
         TextView ver = new TextView(ctx);
-        ver.setText("Version 1.0.0");
+        ver.setText("Version " + EnvelopeStore.getProductVersion(AppConfig.GUARD_PRODUCT_VERSION));
         ver.setTextColor(Color.parseColor("#9A9AA0"));
         ver.setTextSize(11.5f);
         ver.setGravity(Gravity.CENTER);

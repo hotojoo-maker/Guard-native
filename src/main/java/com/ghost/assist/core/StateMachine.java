@@ -3,6 +3,8 @@ package com.ghost.assist.core;
 import android.app.Application;
 import android.util.Log;
 
+import com.ghost.assist.net.EnvelopeStore;
+
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -90,8 +92,8 @@ public class StateMachine {
             && mActive;
     }
 
-    /** v1 stub — 始终授权；v2 替换为 LicenseGate.check() */
-    public boolean isVipAuthorized() { return true; }
+    /** Server AuthGate: valid token + verified envelope + unexpired license. */
+    public boolean isVipAuthorized() { return EnvelopeStore.isAuthorizedNow(); }
     /** true when module is disabled (non-prod mode) */
     public boolean isDisabled() { return !AppConfig.getInstance().isProdMode(); }
 

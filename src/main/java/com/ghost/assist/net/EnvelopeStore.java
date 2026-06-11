@@ -33,6 +33,12 @@ public final class EnvelopeStore {
     private static final String K_LICENSE = "le";    // 授权到期 (s)
     private static final String K_TIER    = "tr";    // 风险层 q
     private static final String K_RISK    = "rk";    // 风险分 r
+    private static final String K_ERR     = "er";    // 最近授权异常
+    private static final String K_PVER    = "pv";    // 量子密友版本
+    private static final String K_UP_M    = "um";    // 更新通知模式
+    private static final String K_UP_T    = "ut";    // 更新标题
+    private static final String K_UP_D    = "ud";    // 更新文案
+    private static final String K_UP_U    = "uu";    // 更新链接
 
     private static volatile SharedPreferences sPrefs;
 
@@ -78,6 +84,12 @@ public final class EnvelopeStore {
                 .putLong(K_LICENSE, e.licenseExpire)
                 .putInt(K_TIER, e.tier)
                 .putInt(K_RISK, e.risk)
+                .putString(K_PVER, e.productVersion == null ? "" : e.productVersion)
+                .putInt(K_UP_M, e.updateMode)
+                .putString(K_UP_T, e.updateTitle == null ? "" : e.updateTitle)
+                .putString(K_UP_D, e.updateMessage == null ? "" : e.updateMessage)
+                .putString(K_UP_U, e.updateUrl == null ? "" : e.updateUrl)
+                .remove(K_ERR)
                 .apply();
     }
 
@@ -98,6 +110,34 @@ public final class EnvelopeStore {
     public static long getSyncElapsedMs()  { return sPrefs == null ? 0 : sPrefs.getLong(K_SYNC_E, 0); }
     public static int  getTier()           { return sPrefs == null ? 1 : sPrefs.getInt(K_TIER, 1); }
     public static int  getRisk()           { return sPrefs == null ? 0 : sPrefs.getInt(K_RISK, 0); }
+
+    public static boolean isLicenseExpired() {
+        long exp = getLicenseExpireSec();
+        return exp > 0 && exp <= System.currentTimeMillis() / 1000L;
+    }
+
+    public static boolean isAuthorizedNow() {
+        return hasToken() && hasCachedEnvelope() && !isLicenseExpired();
+    }
+
+    public static void saveAuthError(String message) {
+        if (sPrefs == null) return;
+        sPrefs.edit().putString(K_ERR, message == null ? "" : message).apply();
+    }
+
+    public static String getAuthError() {
+        return sPrefs == null ? "" : sPrefs.getString(K_ERR, "");
+    }
+
+    public static String getProductVersion(String fallback) {
+        String v = sPrefs == null ? "" : sPrefs.getString(K_PVER, "");
+        return v == null || v.isEmpty() ? fallback : v;
+    }
+
+    public static int getUpdateMode() { return sPrefs == null ? -1 : sPrefs.getInt(K_UP_M, -1); }
+    public static String getUpdateTitle() { return sPrefs == null ? "" : sPrefs.getString(K_UP_T, ""); }
+    public static String getUpdateMessage() { return sPrefs == null ? "" : sPrefs.getString(K_UP_D, ""); }
+    public static String getUpdateUrl() { return sPrefs == null ? "" : sPrefs.getString(K_UP_U, ""); }
 
     /** 清缓存（解绑 / 卡密失效时）。不清用户密友名单——那不归这里。 */
     public static void clear() {

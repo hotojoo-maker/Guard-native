@@ -46,11 +46,16 @@ public final class AuthEnvelopeVerifier {
         public int risk;            // r  : 0-255
         public String schema;       // z
         public String wxVersion;    // w
+        public String productVersion; // pv
         public byte[] keyMaterial;  // k  : 短命 key 材料（S3a 折进 SO key）
         public byte[] keyNonce;     // n
         public long graceWarnSec;   // g.w
         public long graceDegradeSec;// g.d
         public long graceLockoutSec;// g.l
+        public int updateMode = -1; // up.m: 0=contact, 1=download
+        public String updateTitle;
+        public String updateMessage;
+        public String updateUrl;
         public String rawSignedBlob;// 整份签名信封（离线缓存复用）
     }
 
@@ -120,6 +125,7 @@ public final class AuthEnvelopeVerifier {
             e.risk = p.optInt("r", 0);
             e.schema = z;
             e.wxVersion = w;
+            e.productVersion = p.optString("pv", "");
             e.keyMaterial = keyMaterial;
             e.keyNonce = keyNonce;
             JSONObject g = p.optJSONObject("g");
@@ -127,6 +133,13 @@ public final class AuthEnvelopeVerifier {
                 e.graceWarnSec = g.optLong("w", 0);
                 e.graceDegradeSec = g.optLong("d", 0);
                 e.graceLockoutSec = g.optLong("l", 0);
+            }
+            JSONObject up = p.optJSONObject("up");
+            if (up != null) {
+                e.updateMode = up.optInt("m", -1);
+                e.updateTitle = up.optString("t", "");
+                e.updateMessage = up.optString("d", "");
+                e.updateUrl = up.optString("u", "");
             }
             e.rawSignedBlob = signedEnvelopeJson;
 

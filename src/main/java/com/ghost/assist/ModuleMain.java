@@ -31,6 +31,7 @@ import com.ghost.assist.moduleD.ConvFilter;
 import com.ghost.assist.moduleD.MomentsFilter;
 import com.ghost.assist.moduleD.MomentsRedDotGuard;
 import com.ghost.assist.net.EnvelopeStore;
+import com.ghost.assist.net.GuardHeartbeat;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.IXposedHookZygoteInit;
@@ -127,6 +128,7 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         // 2. Init MMKV bridge
         Bridge.getInstance().init(app);
         EnvelopeStore.init(app);
+        startAuthHeartbeatIfNeeded(app);
 
         // 3. Init state machine
         StateMachine.getInstance().init(app);
@@ -216,6 +218,17 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         }
 
         Log.i(TAG, "[init] ready — state=" + StateMachine.getInstance().getStateName());
+    }
+
+    private void startAuthHeartbeatIfNeeded(Application app) {
+        try {
+            if (!EnvelopeStore.hasToken()) return;
+            String deviceId = AuthManager.computeDeviceHash(app);
+            GuardHeartbeat.start(deviceId, "", AppConfig.GUARD_PRODUCT_VERSION);
+            Log.i(TAG, "[hb] cold-start heartbeat armed");
+        } catch (Throwable t) {
+            Log.w(TAG, "[hb] cold-start heartbeat skipped: " + t.getClass().getSimpleName());
+        }
     }
 
     private static volatile boolean sCertBound = false;
