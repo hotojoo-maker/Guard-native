@@ -306,6 +306,16 @@ public final class NativeBridge {
         return nativeUnwrapServerSeed(k, nonce);
     }
 
+    /**
+     * Single safe outlet for S3a callers: update the runtime server seed and
+     * invalidate GuardRuntime's registry readiness cache in the same step.
+     */
+    public static boolean applyServerSeedAndReset(byte[] k, byte[] nonce) {
+        boolean ok = unwrapServerSeed(k, nonce);
+        GuardRuntime.resetConfigCache();
+        return ok;
+    }
+
     // TODO Batch 2: nativeGetNotifyMode()
     // TODO Batch 2: nativeShouldShowSecretUnreadCount()
     // TODO Batch 2: nativeShouldNotifySecret(String wxid)

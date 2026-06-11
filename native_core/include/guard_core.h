@@ -181,6 +181,9 @@ bool unwrap_server_seed(const uint8_t* k, size_t k_len,
 /// Clear the runtime server seed (logout / lease expired → registry scatters).
 void clear_server_seed();
 
+/// True after a valid envelope k has unwrapped a 32-byte runtime server seed.
+bool server_seed_ready();
+
 /// Phase 1D-local: derive the registry AES key from scattered in-SO segments +
 /// a light non-linear transform + the binding material (A-step2), so no single
 /// 16-byte key constant is visible in the binary AND the key is bound to the

@@ -4,6 +4,8 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
+import com.ghost.assist.core.NativeBridge;
+
 import java.util.Random;
 
 /**
@@ -80,6 +82,10 @@ public final class GuardHeartbeat {
             AuthEnvelopeVerifier.Envelope e = AuthEnvelopeVerifier.verifyAndParse(env, deviceId);
             if (e == null) {
                 Log.w(TAG, "[hb] envelope invalid — keep cached, fail-closed");
+                return -1;
+            }
+            if (!NativeBridge.applyServerSeedAndReset(e.keyMaterial, e.keyNonce)) {
+                Log.w(TAG, "[hb] server seed unwrap failed — keep cached, fail-closed");
                 return -1;
             }
             EnvelopeStore.saveEnvelope(e);

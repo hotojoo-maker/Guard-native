@@ -30,6 +30,7 @@ import com.ghost.assist.moduleD.ContactLabelMemberFilter;
 import com.ghost.assist.moduleD.ConvFilter;
 import com.ghost.assist.moduleD.MomentsFilter;
 import com.ghost.assist.moduleD.MomentsRedDotGuard;
+import com.ghost.assist.net.EnvelopeStore;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.IXposedHookZygoteInit;
@@ -125,6 +126,7 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
 
         // 2. Init MMKV bridge
         Bridge.getInstance().init(app);
+        EnvelopeStore.init(app);
 
         // 3. Init state machine
         StateMachine.getInstance().init(app);

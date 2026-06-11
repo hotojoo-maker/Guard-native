@@ -7,6 +7,7 @@ import android.content.ContextWrapper;
 import android.content.DialogInterface;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Handler;
 import android.os.Looper;
@@ -34,7 +35,11 @@ import android.widget.Toast;
 
 import com.ghost.assist.core.Bridge;
 import com.ghost.assist.core.AppConfig;
+import com.ghost.assist.core.AuthManager;
+import com.ghost.assist.core.NativeBridge;
 import com.ghost.assist.core.StateMachine;
+import com.ghost.assist.net.EnvelopeStore;
+import com.ghost.assist.net.GuardActivation;
 
 import java.lang.ref.WeakReference;
 
@@ -124,6 +129,9 @@ public class SettingsEntry {
     // 用户在密友设置面板里配置密友时不应被误触发拉回 H。
     // TriggerGuard 各 enterHidden 路径检查这个 flag、true 时跳过。
     private static volatile boolean sOverlayActive    = false;
+    private static volatile boolean sStartupAuthPromptShown  = false;
+    private static volatile boolean sSettingsAuthPromptShown = false;
+    private static volatile boolean sAuthDialogShowing       = false;
 
     /** TriggerGuard 用：overlay 显示中？显示时所有 enterHidden 触发都跳过。 */
     public static boolean isOverlayActive() {
@@ -144,6 +152,45 @@ public class SettingsEntry {
             return true;
         }
         return !Bridge.getInstance().isHideEntryInHidden();
+    }
+
+    /**
+     * AuthGate 入口提示：只收授权码并交给 GuardActivation，不切状态、不碰 Filter。
+     * 启动页只弹一次；量子密友设置面板首次进入未授权也弹一次。
+     */
+    private static void maybePromptActivation(final Activity activity, final String source,
+                                              boolean startup) {
+        if (activity == null || isActivationReady(activity)) return;
+        if (sAuthDialogShowing) return;
+        if (startup) {
+            if (sStartupAuthPromptShown) return;
+            sStartupAuthPromptShown = true;
+        } else {
+            if (sSettingsAuthPromptShown) return;
+            sSettingsAuthPromptShown = true;
+        }
+        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+            @Override public void run() {
+                try {
+                    if (!activity.isFinishing() && !isActivationReady(activity)) {
+                        showActivationDialog(activity, null, source);
+                    }
+                } catch (Throwable t) {
+                    Log.w(TAG, "[SET:auth] prompt failed: " + t);
+                }
+            }
+        }, startup ? 900L : 500L);
+    }
+
+    private static boolean isActivationReady(Context ctx) {
+        try {
+            if (ctx != null) EnvelopeStore.init(ctx.getApplicationContext());
+            if (EnvelopeStore.hasToken()) return true;
+            String wxid = Bridge.getInstance().getLicensedWxid();
+            return wxid != null && !wxid.isEmpty();
+        } catch (Throwable ignored) {
+            return false;
+        }
     }
 
     /**
@@ -265,6 +312,7 @@ public class SettingsEntry {
                                     syncEntry(activity);
                                 } else if (LAUNCHER_UI_CLASS.equals(cls)) {
                                     scheduleMoreTabProfileProbe(activity);
+                                    maybePromptActivation(activity, "startup", true);
                                 }
                             } catch (Throwable t) {
                                 Log.w(TAG, "[SET] syncEntry error: " + t);
@@ -1307,6 +1355,7 @@ public class SettingsEntry {
                     ViewGroup.LayoutParams.MATCH_PARENT));
             panel.requestFocus();
             sOverlayActive = true;  // P_SE5: 让 TriggerGuard 各 enterHidden 跳过
+            maybePromptActivation(activity, "settings-overlay", false);
             Log.i(TAG, "[SET:overlay] shown state="
                     + StateMachine.getInstance().getStateName());
         } catch (Throwable t) {
@@ -1503,12 +1552,25 @@ public class SettingsEntry {
         content.addView(buildCallNotifyModeRow(activity, br));  // 来电提示
         content.addView(buildNote(activity, "推荐静默"));
 
-        // ===== 授权（占位）=====
+        // ===== 授权 =====
         content.addView(buildSectionHeader(activity, "\u6388\u6743"));
-        content.addView(buildTextRow(activity, "\u6388\u6743\u72b6\u6001",
-                "\u5df2\u6fc0\u6d3b (\u5360\u4f4d)"));
+        final TextView[] authStatusOut = new TextView[1];
+        content.addView(buildButtonRow(activity, "\u6388\u6743\u7801",
+                "\u8f93\u5165 / \u6fc0\u6d3b",
+                new View.OnClickListener() {
+                    @Override public void onClick(View v) {
+                        showActivationDialog(activity, authStatusOut[0], "settings-row");
+                    }
+                }));
+        content.addView(buildButtonRow(activity, "\u6388\u6743\u72b6\u6001",
+                activationStatusText(activity),
+                new View.OnClickListener() {
+                    @Override public void onClick(View v) {
+                        showActivationDialog(activity, authStatusOut[0], "status-row");
+                    }
+                }, authStatusOut));
         content.addView(buildTextRow(activity, "\u5230\u671f\u65f6\u95f4",
-                "\u6c38\u4e45 (\u5360\u4f4d)"));
+                activationExpireText(activity)));
 
         // 底部留白（替代原"关闭"按钮——返回用顶部 ← 或系统返回键）
         View bottomPad = new View(activity);
@@ -1714,6 +1776,16 @@ public class SettingsEntry {
         ilp.topMargin = dp(activity, 14);
         box.addView(input, ilp);
 
+        final TextView error = new TextView(activity);
+        error.setTextColor(Color.parseColor("#D93025"));
+        error.setTextSize(12f);
+        error.setGravity(Gravity.CENTER);
+        error.setVisibility(View.GONE);
+        LinearLayout.LayoutParams errorLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        errorLp.topMargin = dp(activity, 8);
+        box.addView(error, errorLp);
+
         final AlertDialog dialog = new AlertDialog.Builder(activity)
                 .setTitle("密码设置")
                 .setView(box)
@@ -1744,6 +1816,223 @@ public class SettingsEntry {
             }
         });
         dialog.show();
+    }
+
+    private static String activationStatusText(Context ctx) {
+        try {
+            if (ctx != null) EnvelopeStore.init(ctx.getApplicationContext());
+            if (EnvelopeStore.hasToken()) return "\u5df2\u6fc0\u6d3b"; // 已激活
+            String wxid = Bridge.getInstance().getLicensedWxid();
+            if (wxid != null && !wxid.isEmpty()) return "\u5df2\u7ed1\u5b9a"; // 已绑定
+            return "\u672a\u6388\u6743"; // 未授权
+        } catch (Throwable ignored) {
+            return "\u672a\u6388\u6743";
+        }
+    }
+
+    private static String activationExpireText(Context ctx) {
+        try {
+            if (ctx != null) EnvelopeStore.init(ctx.getApplicationContext());
+            long exp = EnvelopeStore.getLeaseExpireSec();
+            if (exp <= 0) return "\u672a\u540c\u6b65"; // 未同步
+            long now = System.currentTimeMillis() / 1000L;
+            long hours = Math.max(0L, (exp - now) / 3600L);
+            return hours > 0 ? ("\u7ea6 " + hours + " \u5c0f\u65f6") : "\u5df2\u5230\u671f"; // 约 N 小时 / 已到期
+        } catch (Throwable ignored) {
+            return "\u672a\u540c\u6b65";
+        }
+    }
+
+    private static void showActivationDialog(final Activity activity, final TextView statusView,
+                                             final String source) {
+        if (activity == null || sAuthDialogShowing) return;
+        sAuthDialogShowing = true;
+
+        final LinearLayout box = new LinearLayout(activity);
+        box.setOrientation(LinearLayout.VERTICAL);
+        int pad = dp(activity, 18);
+        box.setPadding(pad, dp(activity, 14), pad, dp(activity, 12));
+        GradientDrawable cardBg = new GradientDrawable();
+        cardBg.setColor(Color.argb(226, 255, 255, 255)); // 半透明白，仍保持可读性
+        cardBg.setCornerRadius(dp(activity, 22));
+        box.setBackground(cardBg);
+
+        TextView badge = new TextView(activity);
+        badge.setText("\u672a\u6388\u6743"); // 未授权
+        badge.setTextColor(Color.parseColor("#07A85C"));
+        badge.setTextSize(12f);
+        badge.setGravity(Gravity.CENTER);
+        badge.getPaint().setFakeBoldText(true);
+        GradientDrawable badgeBg = new GradientDrawable();
+        badgeBg.setColor(Color.parseColor("#E8F7EE"));
+        badgeBg.setCornerRadius(dp(activity, 10));
+        badge.setBackground(badgeBg);
+        LinearLayout.LayoutParams badgeLp = new LinearLayout.LayoutParams(
+                dp(activity, 58), dp(activity, 22));
+        badgeLp.gravity = Gravity.CENTER_HORIZONTAL;
+        box.addView(badge, badgeLp);
+
+        TextView title = new TextView(activity);
+        title.setText("\u91cf\u5b50\u5bc6\u53cb\u6388\u6743"); // 量子密友授权
+        title.setTextColor(Color.parseColor("#1C1C1E"));
+        title.setTextSize(18f);
+        title.getPaint().setFakeBoldText(true);
+        title.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        titleLp.topMargin = dp(activity, 10);
+        box.addView(title, titleLp);
+
+        TextView hint = new TextView(activity);
+        hint.setText("\u8f93\u5165\u6388\u6743\u7801\u540e\uff0c\u7ed1\u5b9a\u5f53\u524d\u5fae\u4fe1\u4e0e\u8bbe\u5907\u3002");
+        hint.setTextColor(Color.parseColor("#666666"));
+        hint.setTextSize(13f);
+        hint.setGravity(Gravity.CENTER);
+        hint.setLineSpacing(dp(activity, 2), 1.0f);
+        LinearLayout.LayoutParams hintLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        hintLp.topMargin = dp(activity, 8);
+        box.addView(hint, hintLp);
+
+        final EditText input = new EditText(activity);
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+        input.setSingleLine(true);
+        input.setHint("\u8f93\u5165\u6388\u6743\u7801");
+        input.setTextSize(16f);
+        input.setGravity(Gravity.CENTER_VERTICAL);
+        GradientDrawable inputBg = new GradientDrawable();
+        inputBg.setColor(Color.parseColor("#F2F2F7"));
+        inputBg.setCornerRadius(dp(activity, 12));
+        inputBg.setStroke(1, Color.parseColor("#E1E1E6"));
+        input.setBackground(inputBg);
+        input.setPadding(dp(activity, 14), 0, dp(activity, 14), 0);
+        LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(activity, 48));
+        ilp.topMargin = dp(activity, 14);
+        box.addView(input, ilp);
+
+        final TextView error = new TextView(activity);
+        error.setTextColor(Color.parseColor("#D93025"));
+        error.setTextSize(12f);
+        error.setGravity(Gravity.CENTER);
+        error.setVisibility(View.GONE);
+        LinearLayout.LayoutParams errorLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        errorLp.topMargin = dp(activity, 8);
+        box.addView(error, errorLp);
+
+        LinearLayout actions = new LinearLayout(activity);
+        actions.setOrientation(LinearLayout.HORIZONTAL);
+        actions.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams actionsLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        actionsLp.topMargin = dp(activity, 14);
+
+        final Button activate = new Button(activity);
+        activate.setText("\u7acb\u5373\u6fc0\u6d3b"); // 立即激活
+        activate.setTextColor(Color.WHITE);
+        activate.setTextSize(15f);
+        activate.getPaint().setFakeBoldText(true);
+        GradientDrawable actBg = new GradientDrawable();
+        actBg.setColor(Color.parseColor("#07A85C"));
+        actBg.setCornerRadius(dp(activity, 19));
+        activate.setBackground(actBg);
+        LinearLayout.LayoutParams actLp = new LinearLayout.LayoutParams(
+                dp(activity, 142), dp(activity, 38));
+        actLp.gravity = Gravity.CENTER_HORIZONTAL;
+        actions.addView(activate, actLp);
+        box.addView(actions, actionsLp);
+
+        final AlertDialog dialog = new AlertDialog.Builder(activity)
+                .setView(box)
+                .create();
+        dialog.setCancelable(false);
+        dialog.setCanceledOnTouchOutside(false);
+        activate.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                final String code = input.getText() != null
+                        ? input.getText().toString().trim() : "";
+                if (code.isEmpty()) {
+                    showActivationError(error, box, "\u8bf7\u8f93\u5165\u6388\u6743\u7801");
+                    return;
+                }
+                error.setVisibility(View.GONE);
+                activate.setEnabled(false);
+                activate.setText("\u6fc0\u6d3b\u4e2d..."); // 激活中...
+                Toast.makeText(activity, "\u6b63\u5728\u6fc0\u6d3b...", Toast.LENGTH_SHORT).show();
+                new Thread(new Runnable() {
+                    @Override public void run() {
+                        final GuardActivation.Result result = GuardActivation.activate(code);
+                        final boolean bound = result.ok && AuthManager.bindAccount(activity);
+                        new Handler(Looper.getMainLooper()).post(new Runnable() {
+                            @Override public void run() {
+                                try {
+                                    if (result.ok) {
+                                        if (statusView != null) {
+                                            statusView.setText(activationStatusText(activity) + " \u203a");
+                                        }
+                                        Toast.makeText(activity,
+                                                bound ? "\u6fc0\u6d3b\u6210\u529f" : "\u6fc0\u6d3b\u6210\u529f\uff0c\u5f85\u83b7\u53d6\u5f53\u524d wxid",
+                                                Toast.LENGTH_SHORT).show();
+                                        activate.setText("\u6fc0\u6d3b\u6210\u529f"); // 激活成功
+                                        Log.i(TAG, "[SET:auth] activation ok source=" + source
+                                                + " state=" + NativeBridge.getAuthState());
+                                        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                                            @Override public void run() { dialog.dismiss(); }
+                                        }, 500L);
+                                    } else {
+                                        activate.setEnabled(true);
+                                        activate.setText("\u7acb\u5373\u6fc0\u6d3b");
+                                        showActivationError(error, box,
+                                                "\u6388\u6743\u7801\u65e0\u6548\u6216\u7f51\u7edc\u5f02\u5e38");
+                                        Log.w(TAG, "[SET:auth] activation failed source=" + source
+                                                + " msg=" + result.message);
+                                    }
+                                } catch (Throwable t) {
+                                    activate.setEnabled(true);
+                                    activate.setText("\u7acb\u5373\u6fc0\u6d3b");
+                                    showActivationError(error, box,
+                                            "\u6fc0\u6d3b\u5931\u8d25\uff0c\u8bf7\u91cd\u8bd5");
+                                    Log.w(TAG, "[SET:auth] activation ui failed: " + t);
+                                }
+                            }
+                        });
+                    }
+                }, "ncl-activation").start();
+            }
+        });
+        dialog.show();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            dialog.getWindow().setDimAmount(0.22f);
+            int width = (int) (activity.getResources().getDisplayMetrics().widthPixels * 0.82f);
+            dialog.getWindow().setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+        Log.i(TAG, "[SET:auth] dialog shown source=" + source);
+        dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override public void onDismiss(DialogInterface d) {
+                sAuthDialogShowing = false;
+            }
+        });
+    }
+
+    private static void showActivationError(TextView error, View target, String msg) {
+        if (error != null) {
+            error.setText(msg);
+            error.setVisibility(View.VISIBLE);
+        }
+        shakeView(target);
+    }
+
+    private static void shakeView(View target) {
+        if (target == null) return;
+        int dx = dp(target.getContext(), 8);
+        android.view.animation.TranslateAnimation anim =
+                new android.view.animation.TranslateAnimation(-dx, dx, 0, 0);
+        anim.setDuration(55);
+        anim.setRepeatCount(5);
+        anim.setRepeatMode(android.view.animation.Animation.REVERSE);
+        target.startAnimation(anim);
     }
 
     private static View buildTextRow(Context ctx, String title, String value) {

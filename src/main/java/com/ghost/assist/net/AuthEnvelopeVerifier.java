@@ -97,8 +97,20 @@ public final class AuthEnvelopeVerifier {
                 return null;
             }
 
+            byte[] keyMaterial = Base64.decode(kB64, Base64.DEFAULT);
+            byte[] keyNonce = Base64.decode(nB64, Base64.DEFAULT);
+            if (keyMaterial == null || keyMaterial.length != 48
+                    || keyNonce == null || keyNonce.length < 12) {
+                Log.w(TAG, "[env] bad key material length");
+                return null;
+            }
+
             Envelope e = new Envelope();
             e.status = p.optInt("s", 0);
+            if (e.status != 1) {
+                Log.w(TAG, "[env] inactive status");
+                return null;
+            }
             e.serverNow = p.optLong("sn", 0);
             e.issuedAt = p.optLong("iat", 0);
             e.leaseExpire = p.optLong("exp", 0);
@@ -107,8 +119,8 @@ public final class AuthEnvelopeVerifier {
             e.risk = p.optInt("r", 0);
             e.schema = z;
             e.wxVersion = w;
-            e.keyMaterial = Base64.decode(kB64, Base64.DEFAULT);
-            e.keyNonce = Base64.decode(nB64, Base64.DEFAULT);
+            e.keyMaterial = keyMaterial;
+            e.keyNonce = keyNonce;
             JSONObject g = p.optJSONObject("g");
             if (g != null) {
                 e.graceWarnSec = g.optLong("w", 0);

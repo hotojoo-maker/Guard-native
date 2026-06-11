@@ -409,6 +409,10 @@ void clear_server_seed() {
     g_server_seed_len = 0;
 }
 
+bool server_seed_ready() {
+    return g_server_seed_len == 32;
+}
+
 bool unwrap_server_seed(const uint8_t* k, size_t k_len,
                         const uint8_t* nonce, size_t nonce_len) {
     // k = ct(32) || tag(16). Decrypt AES-128-GCM(key=W[:16], nonce=n[:12]) → S_rel(32).
@@ -457,9 +461,11 @@ void derive_registry_key(uint8_t out[16]) {
             t = static_cast<uint8_t>(t ^ g_binding[(i + 7) % g_binding_len]);
         }
         // Phase 1D-server (S3a): fold the server seed S_rel. MUST mirror
-        // gen_registry_cipher.py::derive_registry_key() byte-for-byte. Guarded:
-        // no server seed → skipped → identical to the cert-only A-step2 key.
-        if (g_server_seed_len > 0) {
+        // gen_registry_cipher.py::derive_registry_key() byte-for-byte.
+        // DEV cert-only builds may run with no server seed; PROD server-lock
+        // builds are guarded in registry_load_embedded() and scatter before this
+        // derivation is used without a valid seed.
+        if (server_seed_ready()) {
             t = static_cast<uint8_t>(t ^ g_server_seed[(i * 3) % g_server_seed_len]);
             t = rotl8(t, g_server_seed[(i * 3 + 1) % g_server_seed_len] & 7);
             t = static_cast<uint8_t>(t ^ g_server_seed[(i + 11) % g_server_seed_len]);

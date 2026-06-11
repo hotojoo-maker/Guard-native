@@ -24,6 +24,7 @@ Phase 1D-server (later) folds server-derived key material into the derivation
 (skill: server material must participate in final key derivation; no server
 material → no real registry). Local material only raises the static-analysis bar.
 """
+import argparse
 import base64
 import json
 import os
@@ -38,6 +39,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 SRC = os.path.join(ROOT, "native_core", "registry_8071.json")
 OUT = os.path.join(ROOT, "native_core", "src", "registry_cipher.inc")
+
+MODE_DEV_CERT_ONLY = "dev_cert_only"
+MODE_PROD_SERVER_LOCK = "prod_server_lock"
 
 # Phase 1D-local: scattered key segments + non-linear mix. MUST match
 # guard::derive_registry_key() in native_core/src/config_crypto.cpp byte-for-byte.
@@ -96,11 +100,52 @@ def derive_registry_key(server_seed=b""):
     return bytes(out)
 
 
-# Phase 1D-server (S3a): S_rel comes from the env (NEVER hard-coded / committed).
-#   real lock:  GUARD_S_REL_B64=<base64> python tools/gen_registry_cipher.py
-#   no env (default) → empty seed → cert-only key = current behavior (backward-compat).
-_S_REL = base64.b64decode(os.environ["GUARD_S_REL_B64"]) if os.environ.get("GUARD_S_REL_B64") else b""
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Generate encrypted registry_cipher.inc from registry_8071.json."
+    )
+    parser.add_argument(
+        "--mode",
+        choices=[MODE_DEV_CERT_ONLY, MODE_PROD_SERVER_LOCK],
+        default=os.environ.get("GUARD_REGISTRY_MODE", MODE_DEV_CERT_ONLY),
+        help=(
+            "dev_cert_only preserves current cert-bound local behavior; "
+            "prod_server_lock requires a 32-byte GUARD_S_REL_B64 server seed."
+        ),
+    )
+    parser.add_argument(
+        "--server-seed-b64",
+        default=os.environ.get("GUARD_S_REL_B64", ""),
+        help="Base64-encoded 32-byte S_rel. Required in prod_server_lock mode.",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Validate mode/seed inputs and encrypt in memory without writing registry_cipher.inc.",
+    )
+    return parser.parse_args()
+
+
+def load_server_seed(args):
+    if not args.server_seed_b64:
+        if args.mode == MODE_PROD_SERVER_LOCK:
+            raise SystemExit("ERROR: prod_server_lock requires GUARD_S_REL_B64 / --server-seed-b64")
+        return b""
+    try:
+        seed = base64.b64decode(args.server_seed_b64, validate=True)
+    except Exception as exc:
+        raise SystemExit("ERROR: invalid server seed base64: %s" % exc)
+    if len(seed) != 32:
+        raise SystemExit("ERROR: S_rel must be exactly 32 bytes, got %d" % len(seed))
+    return seed
+
+
+args = parse_args()
+_S_REL = load_server_seed(args)
+requires_server_seed = args.mode == MODE_PROD_SERVER_LOCK
 key = derive_registry_key(_S_REL)
+print("registry_mode:", args.mode)
+print("server_seed_required:", requires_server_seed)
 print("server_seed_folded:", len(_S_REL) > 0)
 nonce = os.urandom(12)  # random per build → no GCM nonce reuse across builds
 
@@ -125,13 +170,17 @@ lines = [
     "// Source of truth: native_core/registry_8071.json\n",
     "// Phase 1D-local: NO key constant here. The AES key is derived in-SO by\n",
     "// guard::derive_registry_key() (config_crypto.cpp). Nonce is random per build.\n",
+    "#define GUARD_REGISTRY_REQUIRES_SERVER_SEED %d\n" % (1 if requires_server_seed else 0),
     carr("kRegistryNonce", nonce),
     carr("kRegistryCipher", ct),
     carr("kRegistryTag", tag),
 ]
-with open(OUT, "w", encoding="utf-8") as f:
-    f.writelines(lines)
+if args.dry_run:
+    print("dry_run: true")
+else:
+    with open(OUT, "w", encoding="utf-8") as f:
+        f.writelines(lines)
+    print("wrote", OUT)
 
-print("wrote", OUT)
 print("pt_len", len(pt), "ct_len", len(ct))
 print("schema entries:", list(data.get("entries", {}).keys()))

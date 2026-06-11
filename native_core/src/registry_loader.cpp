@@ -29,6 +29,10 @@ namespace {
 // it back into the registry JSON; tag mismatch / wrong key → scatter.
 #include "registry_cipher.inc"
 
+#ifndef GUARD_REGISTRY_REQUIRES_SERVER_SEED
+#define GUARD_REGISTRY_REQUIRES_SERVER_SEED 0
+#endif
+
 // ── Minimal JSON parser (objects + strings only) ──────────────
 // Registry is shallow: { string|object }. Numbers/arrays/bool/null are not
 // part of the schema; encountering them is treated as malformed → scatter.
@@ -178,6 +182,12 @@ ConfigRegistry registry_load_embedded() {
     // Phase 1D-local: key is derived in-SO (no plaintext key constant), nonce is
     // random per build. Decrypt the embedded AES-GCM registry blob, then parse.
     // Any tag/key/nonce mismatch → scatter (decrypt_config returns ok=false).
+    // Phase 1D-server S3a: prod_server_lock generated blobs require a valid
+    // server seed from the envelope before decrypt. DEV cert-only blobs preserve
+    // current P_NC1 behavior and skip this guard.
+    if (GUARD_REGISTRY_REQUIRES_SERVER_SEED && !server_seed_ready()) {
+        return make_scatter();
+    }
     uint8_t key[16];
     derive_registry_key(key);
     ConfigDecryptResult dec = decrypt_config(
