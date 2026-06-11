@@ -35,5 +35,9 @@
 -keepclassmembers class com.tencent.mmkv.** { *; }
 -dontwarn com.tencent.mmkv.**
 
+# net.i2p.crypto.eddsa — Ed25519 验签（S4）。保留以防反射/构造被裁掉。
+-keep class net.i2p.crypto.eddsa.** { *; }
+-dontwarn net.i2p.crypto.eddsa.**
+
 # Xposed（compileOnly，运行时由框架提供）
 -dontwarn de.robv.android.xposed.**

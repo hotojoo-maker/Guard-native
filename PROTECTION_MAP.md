@@ -258,27 +258,32 @@ StateMachine.isActive()                // 取中央总闸
 
 ## 10.6 Phase 1D-server（S2 服务器真锁）解冻 + 现状盘点（2026-06-11，用户拍板②）
 
-> §10.3 的「Phase 1D-server 冻结」已在 2026-06-11 由用户解除：先把**出站 / 信封 / 心跳骨架**建出来（**dormant，不接入主流程**），真锁接入仍是逐步受控步骤。本节为 S2 的**唯一权威现状**；证据等级 **L2 静态**（只读核查代码，未跑装机日志、未连服务器）。
+> §10.3 的「Phase 1D-server 冻结」已在 2026-06-11 由用户解除。当前已从 dormant 骨架推进到 **v1.1 商业授权最小闭环**：授权码 → token → envelope → 客户端 AuthGate；但仍不是服务器真锁全部完成。本节为 S2/S3a-1 的**唯一权威现状**。
 
 ### 已建（`net/` 包，L2 代码核查）
 - `net/EnvelopeClient`：HTTPS 出站。`activate(卡密)→token`、`fetchEnvelope(token)→签名信封`；按 `AppConfig.guardServerList()` 主备 fallback；强制 https、连不上 / 证书错 = fail-closed。
-- `net/AuthEnvelopeVerifier`：**确定性 sanity**（设备绑定 `sha256(deviceId)`、schema / 微信版本、key 材料存在、预过期租约）。**故意不做 HMAC**（不放可伪造 secret 进客户端）；Ed25519 验签留 S4。
-- `net/EnvelopeStore`：token / 信封本地缓存（离线冷启动复用）。
-- `net/GuardHeartbeat`：低频心跳骨架（新装 10~30min / 稳定 1~2h / 嫌疑 10min，**6h 硬封顶 + ±15% 抖动**）。**dormant：未接入 `ModuleMain`**（代码自标「保护区，待审接入」）。
-- `net/GuardActivation`：卡密激活入口；**当前唯一触发点 = `DebugServer`（DEV-gate 后）**，正常冷启动不跑。
-- `core/AppConfig`：`GUARD_SERVER_PRIMARY=https://zxmqq.shop`、`GUARD_SERVER_BACKUP=""`（备机槽留 `miyou.lol`）、`GUARD_PRODUCT_ID/RELEASE_ID`。
+- `net/AuthEnvelopeVerifier`：**① Ed25519 验签（S4，2026-06-11 装机 PASS）**→ **② 确定性 sanity**（设备绑定 `sha256(deviceId)`、schema / 微信版本、key 材料存在、预过期租约）。`alg` 只接受 `Ed25519`，HS256/缺签名一律判废（fail-closed）。**仍故意不做 HMAC**（不放可伪造 secret 进客户端）；客户端只内置公钥（`ED25519_PUBLIC_B64`），私钥仅在 miyou-server `crypto_utils.GUARD_ED25519_PRIVATE_B64`（env 可覆盖）。验签库 `net.i2p.crypto:eddsa`（minSdk 27 无原生 Ed25519）。
+- `net/EnvelopeStore`：token / 信封 / license 到期 / 产品版本 `pv` / 更新通知 `up` 本地缓存；不存用户密友数据。
+- `net/GuardHeartbeat`：低频心跳 + 冷启动有 token 时启动；遇 `CARD_BANNED / CARD_DISABLED / CARD_EXPIRED / DEVICE_BANNED / TOKEN_INVALID` 清 token/envelope，网络失败不清，避免断网误杀。
+- `net/GuardActivation`：设置页授权码激活入口；token 后必须立刻拉 envelope 成功才算激活成功。
+- `core/AppConfig`：`GUARD_SERVER_PRIMARY=https://zxmqq.shop`、`GUARD_SERVER_BACKUP=""`（备机槽留 `miyou.lol`）、`GUARD_PRODUCT_ID=quantum_wechat`、`GUARD_PRODUCT_VERSION=v1.1`、`GUARD_RELEASE_ID=android_8071`。
+- `StateMachine.isVipAuthorized()`：已从 v1 stub 改为 `EnvelopeStore.isAuthorizedNow()`（token + verified envelope + license 未过期）。Filter 仍只读 `StateMachine.isActive()`，未直接接触服务器/风控。
+- `I:\miyou-server`：主节点 `zxmqq.shop` 已部署 `/api/v1/activate`、`/api/v1/guard/envelope`、后台卡密/设备封停、渠道/release 定向更新通知下发；备节点 8080 已部署，`miyou.lol` HTTPS 反代仍待办。
+
+### 运营弹窗 vs 盗版引流（必须分开）
+- **正版运营弹窗**：服务器按 `version/channel/agent/release` 下发 envelope `up`，用于更新提示、渠道活动、联系客服。触发对象是正常授权用户，**不等于盗版引流**。
+- **盗版引流弹窗**：只在 `RiskState` 进入 funnel 时弹；文案/URL 后续也可由服务器下发，但触发条件必须是风险态，不能把普通未授权或正常更新误当盗版。
+- 验收必须分两条：正常授权卡密收到 `pv/up` 并显示运营提示；封停/风险设备进入 funnel 时才弹引流。
 
 ### 仍未做（真锁的「牙」，与诚实口径一致）
-1. 服务器短命 key 材料 `k` **未折进 SO registry key**（`derive_registry_key` 现只折证书 SHA-256 → 动态 dump / 自跑 key 仍可取 registry）。
-2. **无 Ed25519 验签**（只有 sanity）。
-3. `LeaseClock` **未被心跳喂数据** → 默认 `CLEAN`，不凭空降级（守「不因单纯断网误杀」红线）。
-4. `RiskState` 仍 **record-only**，不收紧、不关功能。
-5. `StateMachine.isVipAuthorized()` 仍是诱饵 `return true`。
-6. `GuardHeartbeat.start()` **未接 `ModuleMain` 冷启动**（保护区）。
-7. 服务器端（`zxmqq.shop`）`/api/v1/activate`、`/api/v1/guard/envelope` **是否在线未验证**（miyou-server 侧，不在本仓库）。
+1. S3a runtime seed apply 原型已接，但 **PROD server-lock / 真实 S_rel 与 registry_cipher 发布流水线尚未切硬失败**；仍不能宣称服务器真锁完成。
+2. ~~无 Ed25519 验签~~ → **S4 已落地（2026-06-11 装机 PASS）**：服务器 Ed25519 私钥签信封，客户端只放公钥验签，HS256 仅留 legacy `/api/v1/config` 公告路径。⚠️ 注意：Ed25519 防的是「伪造/篡改信封」，**不等于真锁**——真锁的「牙」仍是下面第 1 条 S3a 服务器短命 key 折进 SO。
+3. `LeaseClock` / `RiskState` 仍未作为硬门控；离线宽限正式策略未完成。
+4. 备节点 HTTPS (`miyou.lol`) 反代未完成；Android 当前只启用主节点。
+5. 更新通知 `up` 已下发并被客户端消费，但属于运营提示，不是强制升级/真锁。
 
 ### 口径
-当前 = 「**本地加密 + 服务器管道骨架（dormant）**」。**不得**对外或在文档里宣称「服务器真锁完成」。
+当前 = 「**v1.1 商业授权最小闭环 + S3a runtime seed apply 原型 + S4 Ed25519 信封验签（2026-06-11 装机 PASS）**」。可对内称“授权码→token→envelope→客户端 AuthGate 已通，且信封已 Ed25519 防伪造/防篡改”；**不得**对外或在文档里宣称「服务器真锁完成」（真锁的牙 = S3a 短命 key 折进 SO + S3a-PROD 硬失败，仍未完成）。
 
 ### 发包分发边界（避免误读）
 - **服务器真锁 ≠ 服务器打包 / 服务器分发 APK**。
@@ -287,16 +292,16 @@ StateMachine.isActive()                // 取中央总闸
 - 服务器只负责授权 / 公告 / envelope / 真锁材料登记，不托管 APK，不参与打包，不决定下载路径。
 
 ### 下一受控步骤（按序；每步前过授权检查官 + 安全官「改前审查」，并先 git 快照）
-1. **S3a** 把信封 `k` 折进 SO key（现 `set_binding_material` 只折了证书 SHA-256）。
-2. **S3b** `LeaseClock` / `RiskState` 接信封驱动（`onServerHeartbeat` 真喂数据 + 离线宽限 / 不误伤实测）。
-3. **S4** Ed25519 验签（客户端只放公钥）。
-4. **最后**才把 `GuardHeartbeat.start()` 接进 `ModuleMain` 冷启动（保护区，单独一刀 + 装机回归）。
-5. 服务器端：miyou-server 落 `/api/v1/activate` + `/api/v1/guard/envelope`，验证在线。
+1. **S3a-PROD**：把 `prod_server_lock` 发行流水线、S_rel 发版档案、registry_cipher 生成和服务器 envelope 同源打通后，再切无 seed scatter 硬失败。
+2. **S3b**：`LeaseClock` / `RiskState` 接信封驱动（离线宽限 / 不误伤实测）。
+3. ~~**S4**：Ed25519 验签（客户端只放公钥）~~ ✅ **已完成（2026-06-11 装机 PASS）**：服务器 `crypto_utils.sign_guard_envelope` 切 Ed25519；客户端 `AuthEnvelopeVerifier` 内置公钥验签 fail-closed；主/备节点已部署。证据：本地 `JAVA_EDDSA_VERIFY=PASS`/`TAMPER_REJECT=PASS`、线上直连 `alg=Ed25519` 公钥验签 PASS、真机 `[hb] synced`+`AUTH_OK` 无 `signature verify failed`。
+4. **备机**：完成 `miyou.lol` HTTPS 反代后，客户端再打开 `GUARD_SERVER_BACKUP`。
+5. **运营**：更新通知弹窗已通，后续补“强制升级 / 版本灰度 / 下载包托管”再单独审。
 
 ### future AI 接手自检（验证「现状是否仍如本节」）
 全部命中 = 现状未变；任一项变化 = 已推进，**必须回来更新本节**：
-- [ ] `StateMachine.isVipAuthorized()` 仍 `return true`？
-- [ ] `net/` 仍只被 `DebugServer → GuardActivation` 触发、`ModuleMain` 不调 `GuardHeartbeat`？
+- [ ] `StateMachine.isVipAuthorized()` 是否仍读 `EnvelopeStore.isAuthorizedNow()`？
+- [ ] `ModuleMain` 是否仅在本地已有 token 时启动冷启动 heartbeat？
 - [ ] `EncryptedConfigLoader` 仍只读本地 SO registry（无服务器 lease）？
 - [ ] `derive_registry_key` 仍只折证书指纹（未折信封 `k`）？
 - [ ] `RiskState` 仍 record-only、`LeaseClock` 默认 `CLEAN`？
