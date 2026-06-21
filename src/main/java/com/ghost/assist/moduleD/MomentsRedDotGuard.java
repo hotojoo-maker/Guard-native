@@ -17,28 +17,47 @@ import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
 /**
- * 朋友圈好友动态小红点屏蔽（P21 优先 #1，差异化点）.
+ * 朋友圈“好友互动 / 小红点”屏蔽（P21，差异化点）.
  *
  * 背景：
- *   iOS 蜘蛛密友/Catfish 都 hook 了朋友圈时间线 VC 过滤内容，但小红点 badge
- *   走独立通知路径未覆盖 → 隐藏密友后仍冒红点。
- *   Android 端 8.0.71 上提前解决。
+ *   iOS 蜘蛛密友/Catfish 只 hook 了朋友圈时间线 VC 过滤内容，但“互动消息列表”
+ *   和“小红点 badge”走独立路径未覆盖 → 隐藏密友后，其点赞/评论仍出现在
+ *   “互动消息”里、tab/朋友圈入口仍冒红点 → 隐私泄漏。本模块在 8.0.71 收口。
  *
- * 实施策略：保守探针 — 同时挂多个候选 hook，装机时看哪个真的命中，
- *           留下命中的、删未命中的（不一次性押单点）。
+ * 当前实现（权威口径见 docs/HOOK_MAP_8071_AUTHORITATIVE.md §8e；
+ *   本类注释随码演进，以该文档 + install() 实际挂载为准）。
+ *   install() 按层叠防御逐层挂载，关键层：
  *
- * 候选 hook（用户 8.0.71 调研，2026-05-21）:
- *   A) com.tencent.mm.plugin.sns.storage.SnsCommentStorage.E1(...)
- *      after → 隐藏态返回 0（评论数 = 0 → 主界面无红点）
- *   B) FriendSnsPreference 相关字段（待装机定位完整类名）
- *   C) FindMoreFriendsUI.M1() / l0() after → 返回 false / 0
- *   D) Event 通道拦截:
- *      - FindMoreFriendEntryRedDotEvent
- *      - EnterSnsTimeLineUIEvent  (← 仅记录,不阻断)
- *      - NotifyTabTipsToShowEvent
- *      - ResetBadgeCountEvent
+ *   ★ 主路径 — 互动列表 bm/rm live Cursor 过滤（P21B，2026-06-09 L1）
+ *       installSnsMsgLiveCursorFilter：WithAll/WithRelevance 屏幕真源是
+ *       com.tencent.mm.plugin.sns.ui.bm/rm，其父类 com.tencent.mm.ui.s9 的
+ *       Cursor 字段(s9.f=ValueCursor) 的 talker 列含 wxid。hook s9 的 Cursor
+ *       setter/getter → 包成 TalkerFilterCursor → talker∈密友 的行跳过
+ *       （仅位置重映射，不删 DB、不改 UI）。配套 installSnsMsgAdapterFilter(v24)。
  *
- * 早返铁律：StateMachine.isActive() == false → 全部透传，不动微信
+ *   · 互动列表 badge 归零（v15）：installSnsMsgUIFilter / handleSnsMsgUIEnter /
+ *       zeroSmsgBadge —— Activity.onResume 类名含 SnsMsgUI* → 进列表后清
+ *       w1.y / SnsMsgUI.s 计数。
+ *   · tab/入口红点数字精修：installTabBadgeCounterSuppressor(v18) /
+ *       installBadgePreciseFilter(v19，tab osw / 朋友圈行 o58 改成“非密友数”) /
+ *       retroactiveZeroOnBoot（开机追溯）。
+ *   · 兜底/历史层（按版本累积）：installEventBlocker(v2 Event ctor 精准 wxid) /
+ *       installFinderRedDotViewBlocker(v2) / installNsCAggregationBlocker(v8/v9 ns.c) /
+ *       installW1InteractionFilter(v10) / installInteractionListCursorFilter(v22 w1.O1/a2) /
+ *       installSnsCommentStorageHook(v11 getter→0) / installCatfishSnsMsgListHook(v15 黑名单) /
+ *       installAdapterGetCountBlocker / installTimelineBubblePrewarm(顶部“X 条新消息”气泡)。
+ *   · 只读诊断/探针：installSnsMsgListDump（已在 install 挂载）。
+ *       注：installSnsMsgUIDump / installListenerBlocker / dumpRedDotTargetClasses
+ *       三个未挂载的历史探针（及其私有助手 scanClassesByContains /
+ *       scanFullPathsBySimpleName、常量 LISTENER_NEEDLES）已于 2026-06-21 删除。
+ *
+ * 铁律：禁整行 View.GONE；禁反射自调 notifyDataSetChanged；禁 notifyItemRange*；
+ *   Cursor 层只做位置重映射，不写 DB、不碰状态机/授权链。
+ * 早返铁律：StateMachine.isActive() == false → 全部透传，不动微信。
+ *
+ * 注：2026-06-21 本注释由首版 A/B/C/D 探针方案（SnsCommentStorage.E1 /
+ *   FriendSnsPreference / FindMoreFriendsUI.M1·l0 / FindMoreFriendEntryRedDotEvent…，
+ *   2026-05-21）校准为现实现；旧候选多已被上面游标过滤主路径取代或降为兜底。
  */
 public class MomentsRedDotGuard {
 
@@ -102,15 +121,6 @@ public class MomentsRedDotGuard {
             "com.tencent.mm.autogen.events.TabRedDotChangeEvent";
     private static final String CLS_FINDER_RED_DOT_VIEW =
             "com.tencent.mm.plugin.finder.view.FinderRedDotTextView";
-
-    // v2 实证零命中：红点不走 Java ctor / View 方法。v3 改 hook IListener 回调。
-    // 用户 Frida dump 找到 4 个 IListener inner class，pattern 匹配：
-    private static final String[] LISTENER_NEEDLES = {
-            "DiscoveryFinderRedDotManager$",
-            "FinderRedDotTrigger$",
-            "FinderRedDotExpiredHandler$",
-            "FinderRedDotAvatarManager$",
-    };
 
     // v5 候选 wxid 字段名（朋友圈评论/赞 item 上的 wxid 持有字段）
     // iOS 8.0.71 实证（2026-05-21）：SnsAction.fromUserName / WCUserComment.commentUsername
@@ -823,210 +833,6 @@ public class MomentsRedDotGuard {
     }
 
     /**
-     * Dump SnsMsgUIWithRelevance 字段 + 方法签名。
-     * 用户进入此界面后，logcat 自动列出关键 getter / 列表字段，
-     * 下一轮 v5 据此精准 hook"新消息列表过滤密友"。
-     */
-    private static void installSnsMsgUIDump(XC_LoadPackage.LoadPackageParam lpparam) {
-        final String cn = "com.tencent.mm.plugin.sns.ui.SnsMsgUIWithRelevance";
-        try {
-            Class<?> cls = lpparam.classLoader.loadClass(cn);
-
-            // 字段
-            StringBuilder fields = new StringBuilder("[MRD:smsg:fields] ");
-            for (java.lang.reflect.Field f : cls.getDeclaredFields()) {
-                fields.append(f.getName()).append(":").append(f.getType().getSimpleName()).append(" ");
-            }
-            Log.i(TAG, fields.toString());
-
-            // 父类字段（很多 list 在父类）
-            Class<?> sup = cls.getSuperclass();
-            if (sup != null && !sup.getName().startsWith("android.")
-                    && !sup.getName().equals("java.lang.Object")) {
-                StringBuilder supFields = new StringBuilder("[MRD:smsg:superFields] "
-                        + sup.getSimpleName() + ": ");
-                for (java.lang.reflect.Field f : sup.getDeclaredFields()) {
-                    supFields.append(f.getName()).append(":").append(f.getType().getSimpleName()).append(" ");
-                }
-                Log.i(TAG, supFields.toString());
-            }
-
-            // 方法（0-2 param，所有返回值）
-            StringBuilder methods = new StringBuilder("[MRD:smsg:methods] ");
-            for (Method m : cls.getDeclaredMethods()) {
-                if (m.getParameterTypes().length > 2) continue;
-                methods.append(m.getName())
-                       .append("(").append(m.getParameterTypes().length).append("):")
-                       .append(m.getReturnType().getSimpleName()).append(" ");
-            }
-            Log.i(TAG, methods.toString());
-
-            // 实时探针：8.0.71 方法名全混淆，hook 所有 0-param void 方法兜底
-            int probeHooked = 0;
-            for (Method m : cls.getDeclaredMethods()) {
-                if (m.getParameterTypes().length != 0) continue;
-                if (m.getReturnType() != void.class) continue;
-                final String mn = m.getName();
-                XposedBridge.hookMethod(m, new XC_MethodHook() {
-                    @Override
-                    protected void afterHookedMethod(MethodHookParam param) {
-                        try {
-                            if (!sDiagSeen.add("smsg_enter_" + mn)) return;
-                            Log.i(TAG, "[MRD:smsg:enter] " + mn + " thisObject="
-                                    + param.thisObject.getClass().getSimpleName());
-                            // dump 本类 + 父类字段（父类有 D:ArrayList, t:SnsCmdList）
-                            java.util.List<Class<?>> dumpClasses = new java.util.ArrayList<>();
-                            for (Class<?> c = param.thisObject.getClass();
-                                    c != null && c != Object.class
-                                    && !c.getName().startsWith("android.");
-                                    c = c.getSuperclass()) {
-                                dumpClasses.add(c);
-                            }
-                            for (Class<?> c : dumpClasses) {
-                                for (java.lang.reflect.Field f : c.getDeclaredFields()) {
-                                    try {
-                                        f.setAccessible(true);
-                                        Object v = f.get(param.thisObject);
-                                        if (v == null) continue;
-                                        String vs;
-                                        if (v instanceof java.util.List) {
-                                            vs = "List size=" + ((java.util.List) v).size();
-                                        } else if (v instanceof java.util.Map) {
-                                            vs = "Map size=" + ((java.util.Map) v).size();
-                                        } else if (v instanceof Number || v instanceof Boolean) {
-                                            vs = v.toString();
-                                        } else {
-                                            vs = v.getClass().getSimpleName();
-                                        }
-                                        Log.i(TAG, "[MRD:smsg:field] " + c.getSimpleName()
-                                                + "." + f.getName() + " = " + vs);
-                                    } catch (Throwable ignored) {}
-                                }
-                            }
-                        } catch (Throwable t) {
-                            Log.w(TAG, "[MRD:smsg:enter] failed: " + t);
-                        }
-                    }
-                });
-                probeHooked++;
-            }
-            Log.i(TAG, "[MRD:smsg] dump probe installed on " + cn
-                    + ", " + probeHooked + " probes");
-        } catch (Throwable t) {
-            Log.w(TAG, "[MRD:smsg] load failed: " + t);
-        }
-    }
-
-    /**
-     * 扫 dex 找出所有名字含 RedDot listener pattern 的 inner class，
-     * hook 它们的所有方法：在 hidden 模式下立即 setResult 短路（不调原方法）。
-     */
-    private static void installListenerBlocker(XC_LoadPackage.LoadPackageParam lpparam) {
-        java.util.List<String> matched = scanClassesByContains(lpparam, LISTENER_NEEDLES);
-        Log.i(TAG, "[MRD:listener] matched " + matched.size() + " classes");
-
-        for (String fullName : matched) {
-            try {
-                Class<?> cls = lpparam.classLoader.loadClass(fullName);
-                int hooked = 0;
-                for (Method m : cls.getDeclaredMethods()) {
-                    if (m.getDeclaringClass() == Object.class) continue;
-                    // 合成 / 桥接方法跳过
-                    if (m.isSynthetic() || m.isBridge()) continue;
-                    Class<?>[] pt = m.getParameterTypes();
-                    // 接口实现回调通常 0-2 param
-                    if (pt.length > 2) continue;
-
-                    final String mn = m.getName();
-                    final Class<?> rt = m.getReturnType();
-                    final String shortFull = fullName;
-                    StringBuilder ptDesc = new StringBuilder();
-                    for (Class<?> p : pt) ptDesc.append(p.getSimpleName()).append(",");
-                    if (ptDesc.length() > 0) ptDesc.setLength(ptDesc.length() - 1);
-
-                    Log.i(TAG, "[MRD:listener:hook] " + shortFull + "." + mn
-                            + "(" + ptDesc + "):" + rt.getSimpleName());
-
-                    XposedBridge.hookMethod(m, new XC_MethodHook() {
-                        @Override
-                        protected void beforeHookedMethod(MethodHookParam param) {
-                            // 诊断：每个 hook 首次进入时记录，无论模式（验证 hook 在正确方法上）
-                            if (sDiagSeen.add("ENTER_" + shortFull + "." + mn)) {
-                                Log.i(TAG, "[MRD:listener:enter] " + shortFull + "." + mn
-                                        + " called, state=" + StateMachine.getInstance().getStateName());
-                            }
-
-                            if (!AppConfig.getInstance().isMomentsRedDotEnabled()) return;
-                            if (!StateMachine.getInstance().isActive()) return;
-
-                            // 短路：直接 setResult，不调原方法
-                            if (rt == void.class) param.setResult(null);
-                            else if (rt == boolean.class) param.setResult(false);
-                            else if (rt == int.class) param.setResult(0);
-                            else if (rt == long.class) param.setResult(0L);
-                            else param.setResult(null);
-
-                            if (sDiagSeen.add("L_" + shortFull + "." + mn)) {
-                                Log.i(TAG, "[MRD:listener] " + shortFull + "." + mn + " short-circuit");
-                            }
-                            InterceptCounter.getInstance().incF05("MRD-listener");
-                        }
-                    });
-                    hooked++;
-                }
-                Log.i(TAG, "[MRD:listener] " + fullName + " hooked " + hooked);
-            } catch (Throwable t) {
-                Log.w(TAG, "[MRD:listener] " + fullName + " failed: " + t);
-            }
-        }
-    }
-
-    /**
-     * 扫所有 dex entries，返回含任意 needle 子串的类全名。
-     */
-    private static java.util.List<String> scanClassesByContains(
-            XC_LoadPackage.LoadPackageParam lpparam, String[] needles) {
-        java.util.ArrayList<String> result = new java.util.ArrayList<>();
-        try {
-            Object cl = lpparam.classLoader;
-            java.lang.reflect.Field pathListField =
-                    Class.forName("dalvik.system.BaseDexClassLoader")
-                            .getDeclaredField("pathList");
-            pathListField.setAccessible(true);
-            Object pathList = pathListField.get(cl);
-            java.lang.reflect.Field elemsField = pathList.getClass().getDeclaredField("dexElements");
-            elemsField.setAccessible(true);
-            Object[] elements = (Object[]) elemsField.get(pathList);
-
-            for (Object elem : elements) {
-                java.lang.reflect.Field dexFileField = elem.getClass().getDeclaredField("dexFile");
-                dexFileField.setAccessible(true);
-                Object dexFile = dexFileField.get(elem);
-                if (dexFile == null) continue;
-                java.lang.reflect.Method entries = dexFile.getClass().getMethod("entries");
-                java.util.Enumeration<String> en =
-                        (java.util.Enumeration<String>) entries.invoke(dexFile);
-                while (en.hasMoreElements()) {
-                    String name = en.nextElement();
-                    for (String needle : needles) {
-                        if (name.contains(needle)) {
-                            result.add(name);
-                            break;
-                        }
-                    }
-                    if (result.size() > 80) {  // 防爆量
-                        Log.w(TAG, "[MRD:scan] >80 matches, stopping");
-                        return result;
-                    }
-                }
-            }
-        } catch (Throwable t) {
-            Log.w(TAG, "[MRD:scan] failed: " + t);
-        }
-        return result;
-    }
-
-    /**
      * 拦截 RedDot Event 构造 — 精准 wxid 过滤版（非盲拦截）。
      *
      * 策略：
@@ -1249,91 +1055,6 @@ public class MomentsRedDotGuard {
         } catch (Throwable t) {
             Log.w(TAG, "[MRD:view] hook failed: " + t);
         }
-    }
-
-    /**
-     * Dump 红点目标类的字段 + 0/1-param 方法，给下一轮 hook 决策用。
-     * 不实际 hook，纯诊断。
-     */
-    private static void dumpRedDotTargetClasses(XC_LoadPackage.LoadPackageParam lpparam) {
-        // 第一步：在 ClassLoader 全集里，按 simpleName 后缀匹配找到完整路径
-        java.util.HashMap<String, String> simpleToFull = scanFullPathsBySimpleName(lpparam,
-                new String[]{"WeChatTabRedDotEvent", "TabRedDotChangeEvent",
-                             "FinderRedDotTrigger", "FinderRedDotTextView",
-                             "ResetBadgeCountEvent"});
-
-        for (java.util.Map.Entry<String, String> e : simpleToFull.entrySet()) {
-            String simpleName = e.getKey();
-            String fullName = e.getValue();
-            try {
-                Class<?> cls = lpparam.classLoader.loadClass(fullName);
-                Log.i(TAG, "[MRD:tgt] " + simpleName + " = " + fullName);
-
-                // 字段
-                StringBuilder fields = new StringBuilder("[MRD:tgt:fields] " + simpleName + ": ");
-                for (java.lang.reflect.Field f : cls.getDeclaredFields()) {
-                    fields.append(f.getName())
-                          .append(":")
-                          .append(f.getType().getSimpleName())
-                          .append(" ");
-                }
-                Log.i(TAG, fields.toString());
-
-                // 方法（0/1 参 + bool/int 返回）
-                StringBuilder methods = new StringBuilder("[MRD:tgt:methods] " + simpleName + ": ");
-                for (Method m : cls.getDeclaredMethods()) {
-                    Class<?> ret = m.getReturnType();
-                    if (ret != boolean.class && ret != int.class
-                            && ret != void.class
-                            && ret != Boolean.class && ret != Integer.class) continue;
-                    if (m.getParameterTypes().length > 1) continue;
-                    methods.append(m.getName())
-                           .append("(").append(m.getParameterTypes().length).append(")")
-                           .append(":").append(ret.getSimpleName()).append(" ");
-                }
-                Log.i(TAG, methods.toString());
-            } catch (Throwable t) {
-                Log.w(TAG, "[MRD:tgt] " + fullName + " failed: " + t);
-            }
-        }
-    }
-
-    private static java.util.HashMap<String, String> scanFullPathsBySimpleName(
-            XC_LoadPackage.LoadPackageParam lpparam, String[] targetSimpleNames) {
-        java.util.HashMap<String, String> result = new java.util.HashMap<>();
-        try {
-            Object cl = lpparam.classLoader;
-            java.lang.reflect.Field pathListField =
-                    Class.forName("dalvik.system.BaseDexClassLoader")
-                            .getDeclaredField("pathList");
-            pathListField.setAccessible(true);
-            Object pathList = pathListField.get(cl);
-            java.lang.reflect.Field elemsField = pathList.getClass().getDeclaredField("dexElements");
-            elemsField.setAccessible(true);
-            Object[] elements = (Object[]) elemsField.get(pathList);
-
-            for (Object elem : elements) {
-                java.lang.reflect.Field dexFileField = elem.getClass().getDeclaredField("dexFile");
-                dexFileField.setAccessible(true);
-                Object dexFile = dexFileField.get(elem);
-                if (dexFile == null) continue;
-                java.lang.reflect.Method entries = dexFile.getClass().getMethod("entries");
-                java.util.Enumeration<String> en =
-                        (java.util.Enumeration<String>) entries.invoke(dexFile);
-                while (en.hasMoreElements()) {
-                    String name = en.nextElement();
-                    for (String target : targetSimpleNames) {
-                        if (result.containsKey(target)) continue;
-                        if (name.endsWith("." + target) || name.equals(target)) {
-                            result.put(target, name);
-                        }
-                    }
-                }
-            }
-        } catch (Throwable t) {
-            Log.w(TAG, "[MRD:scan] failed: " + t);
-        }
-        return result;
     }
 
     /**

@@ -33,7 +33,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
  *   Adapter:      kc5.v0  (field f286278p → MvvmConvList)
  *   Item class:   kc5.y
  *   Contact:      kc5.y.d (field "d") → com.tencent.mm.storage.l4
- *   wxid getter:  l4.h1() → field_username  ← CORRECTED from C0()
+ *   wxid getter:  l4.C0() → field_digestUser  (primary; h1() returns "officialaccounts" → fallback only)
  *   Batch insert: MvvmList.n(List, boolean)  ← CORRECTED from m() in 8.0.66
  *
  * Hook layers:
@@ -42,7 +42,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
  *   L4: kc5.v0.notifyDataSetChanged — primary clean-before gate (confirmed working)
  *   INIT: warm-attach via ConversationListView constructor
  *
- *   extractWxid(): CONTACT_FIELD_NAMES("d","e",...) → WXID_GETTER_NAMES("h1","C0","j1",...)
+ *   extractWxid(): CONTACT_FIELD_NAMES("d","e",...) → WXID_GETTER_NAMES("C0","h1","j1",...)
  *                  fallback: scan all 0-param String methods for isWxid() match
  *
  * FAILURE_LOG constraints:

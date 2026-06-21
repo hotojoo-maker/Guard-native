@@ -4,7 +4,15 @@
 > 维护角色：`guard-antiban_防封官`  
 > 当前底座：微信 8.0.71 官方 `com.tencent.mm`
 
-本文件是 Guard Native 防封 / 反检测结论的单一权威账。`JIDE_ANDROID_ACC_STRIKE_MAPPING_20260617.md`、`tools/*.log`、外部 8071 报告和 skill 只作为证据来源；如果口径冲突，以本文件的最新水位线为准，再回头修来源文档。
+> **★单一数据源约定（2026-06-21 收口）**：防封**研究结论**（轴 / 算法 / 命脉 / 喂什么 / 已坐实）唯一真源 = **研究线 `C:\Users\Me\Desktop\防封_反检测线\防封权威账_2026年6月.md`（§0–§十七）**。本文（ANTIBAN_MAP）**降级为主线落地账**：只镜像「主线接到哪、装机回归状态」+ 指回研究线权威账，**不再并行维护研究结论**。下方 06-18/B58 研究段 = 历史快照，**已冻结**（与研究线冲突一律以研究线权威账为准）。
+>
+> **研究线最新水位线回灌（2026-06-21）**：
+> - 隐藏血管：静态全 190 .so + 动态广扫(`so_identity_scan`) **双证无新增** → 检测仍**单血管 = normsg/c$p**（研究线 §十二）。
+> - 包名命门松动：native `/proc/self/cmdline` 冷启动补验 **0 读** → 包名检测走 Java `getPackageInfo`、c$p 咽喉 spoof 够，**不因包名被迫官替**（研究线 §13.4）。
+> - 三方跳转：跨进程，共存收不到 / 官替需 root 系统级 → **裁定放弃硬目标**（研究线 §十五）。
+> - 落地收敛：三轴（签名/android_id/包名）全在 `getPackageInfo`/`getApplicationInfo` afterHook 喂官方，落点 `ModuleMain.bindSigningCert` + 发版 `tools/gate_three_axis.js` 自检门（研究线 §十六/§十七）。
+
+本文件 = Guard Native 防封**落地状态账**。`JIDE_ANDROID_ACC_STRIKE_MAPPING_20260617.md`、`tools/*.log`、外部 8071 报告和 skill 只作为证据来源；**研究结论以研究线权威账为准**，本文只跟主线落地（下方 06-18 段为冻结历史）。
 
 ## 一、判定纪律
 
