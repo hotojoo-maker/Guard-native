@@ -190,7 +190,7 @@ jadx_8071_out/classes9.dex.jadx
 
 - `CLAUDE.md` §三 / §七、`FAILURE_LOG.md`、`PROJECT_INDEX.md` §四
 - `ANTIBAN_MAP.md`（**防封官权威账**，最新水位线；结论先看这里）
-- `JIDE_ANDROID_ACC_STRIKE_MAPPING_20260617.md`（**防封官 working doc**，按附录累加；最新 **附录H/B56**：官方 8.0.71 检测面复验、签名轴复验、event probe、f.run 追踪、静态索引启动）
+- `03_execute_执行任务/P_AntiBanGate_防封授权闸/PLAN.md`（**防封 × 授权 交叉线 · 「血管逻辑」**：首装宽限内授权 → 防封保活；超时从未授权 → `isAntiBanReady()` 让**防封散沙** → 宿主自然判非官方 = 用「被封」反制盗版。设计 / 状态机 / 风险见此。⚠️ 授权·激活·散沙**机制本体**归 `guard-security_网络安全官` + `PROTECTION_MAP.md`（那是「防破解」线）；本角色只认「**防封保护被门控**」这一防封面，交叉点见 PLAN §三 / §四。当前主线**尚无防封运行代码**，本闸是「等 A2 签名 spoof 落地后挂上的闸门」）
 - 工具脚本 `tools/`：`dump_mm_z3.js`（主调 `z3(0)`/`Y8` 设备指纹明文快照）、`dump_normsg_plaintext.js`（warm-attach hook 采集器明文）、`dump_wx_detect.js`（AccStrike/c29 快照）、`dump_normsg_native.js`（native 探针）、`dump_normsg_event_probe_v2_B56.js`（event 层明文/byte[]/stack）、`dump_normsg_f_run_loader_B56.js`（ClassLoader-aware f.run / WCProbe.m / c$p.ae-af 追踪，Java replacement 未接管时转 native/JNI 或静态切片）
 - L1 实证 log：`tools/normsg_dump_20260618.log`、`tools/normsg_mm_z3_B35_20260618.log`、`tools/normsg_sig_B35_20260618.log`、`tools/normsg_boot_probe_B35_20260618.log`、`tools/normsg_mm_z3_B56_cli_20260618.log`、`tools/normsg_sig_B56_cli_20260618.log`、`tools/normsg_boot_probe_B56_cli_20260618.log`、`tools/normsg_event_probe_v2_B56_20260618.log`
 
