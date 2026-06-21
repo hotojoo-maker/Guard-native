@@ -46,7 +46,7 @@ description: Guard Native 安全与加密官。负责客户端安全、DRM、防
 
 ## 硬红线
 
-1. 不把授权根锁做成客户端布尔值。`isVipAuthorized()`、`viptime`、`endtime` 只能是诱饵或展示，不得决定核心能力。
+1. 不把授权**根锁**做成「能被 NOP 的客户端布尔」。`viptime`/`endtime` 只能展示；`isVipAuthorized()` 现已是真授权门（接 `EnvelopeStore.isAuthorizedNow()` = token+Ed25519 信封+租约，是 `isActive()` 四层之一）。但**真锁的牙在服务器种子解 registry**（`isSensitiveConfigReady`）——门卫(返回是/否)只是门，翻译官(解密 registry)才是锁；客户端布尔不得作唯一根锁。
 2. 不把可签发授权的 secret 放客户端。客户端不能拥有能伪造永久授权的密钥。
 3. 不信任手机墙钟。时间判断必须使用服务器时间 + `elapsedRealtime` + 宽限策略。
 4. 不因单纯断网误杀。断网先用缓存和宽限，确认篡改或宽限耗尽才强制引流。
@@ -239,6 +239,18 @@ StateMachine.isActive()
 配方要粗（4 大动脉），来源要唯一（registry 一处），暴露要少（release 无明文）。
 拆更碎 = 更难维护 + 不增安全；归一 = 更好维护 + 配合删明文才增安全。
 ```
+
+## 防封能力反白嫖（isAntiBanReady 闸 + 载荷弹窗 canary · 2026-06-21）
+
+> 用户定调：防封（A2 三轴 = 签名/android_id/包名 喂官方）是**辛苦研究出来的成果**，**不能让人白嫖、不能被当成别人的底座**。完整设计 = `03_execute_执行任务/P_AntiBanGate_防封授权闸/DESIGN.md`；命脉真源 = 研究线权威账（见 `PROJECT_INDEX.md §四`）。本节只立**反白嫖准则**，细节看 DESIGN，不在此复写。
+
+反白嫖三道锁（都收口到 `RiskState` + `RiskPromptController`，红线#9 一个弹窗源）：
+
+1. **防封授权闸 `isAntiBanReady()`（时间闸，只门控 A2 防封，不碰隐私功能）**：首装宽限内授权 → 防封开；从未授权 + 超阈值 → **防封散沙（卸 A2）→ 宿主判非官方 → 号被平台封**。用「被封」反制白嫖，模块不自爆、不留痕、不删数据（红线#5/#6）。闸**不是客户端布尔**（红线#1），吊 `EnvelopeStore` + `LeaseClock`（红线#3，不信墙钟）。⚠️ 阈值待用户拍板（2h 太短易误伤真用户，建议 1h 软引流 + ≥24–72h 才真散）。
+2. **A2 料锁进加密 registry（防破解 = 防封同一把锁）**：official DER / SSAID 参数 / 官方包名进 `registry_pack`，只有服务器种子 + 验签信封 + `decrypt_config()` 成功才解得出；盗版无种子 → 解不出 → 防封自动散沙（fail-closed，不回退明文）。
+3. **载荷弹窗 canary（删弹窗自反噬）**：引流弹窗**稳定核心段** hash 掺进 A2 料 key 派生（USE 不 COMPARE，仿 `CompatProbe.BASELINE`）→ 删/改弹窗 → key 错 → 防封散沙 → 被封。想白嫖就得留着弹窗。坑：每版改弹窗须同源重生成加密料（同 §A.5 共享常量禁区），只把稳定段算进 hash。
+
+边界（诚实）：客户端 APK 防不住被反编译/改（视为预期威胁）；真锁是服务器种子 + 短命租约 + 设备绑定，上面三道是「让白嫖代价 = 被封 + 删弹窗自废」的加固，非无敌。隐私功能走原有 DRM（`isConfigReady`/`isActive` + registry 加密），**不进**这个时间闸——两闸独立、各管各能力，只共用 RiskState/弹窗。
 
 ## S3b 压测后硬锁收口（2026-06-12）
 

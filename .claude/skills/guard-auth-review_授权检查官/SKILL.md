@@ -124,7 +124,7 @@ description: Guard Native 授权检查官（别名：授权执行官、授权门
 
 **关键**：H↔V 切换 = `ConvFilter / MomentsFilter / ContactFilter / SearchFilter` 都要"立刻刷新"，密友/密群条目同步显隐。这是 P26 / `docs/CONV_REFRESH_PROBLEM.md` 整本书在讲的事。
 
-### C. `isActive()` 三层叠加的产品语义
+### C. `isActive()` 四层叠加的产品语义
 
 ```java
 StateMachine.isActive() = isVipAuthorized()                 // 1. 授权门 — token + Ed25519 信封 + license 未过期
@@ -165,7 +165,7 @@ StateMachine.isActive() = isVipAuthorized()                 // 1. 授权门 — 
 | `StateMachine` | 状态机：管 HIDDEN/VISIBLE/UNLOCKING 三态切换 |
 | `enterHidden()` / `exitHidden()` | 切到隐藏态 / 切出隐藏态（只能 SettingsEntry 按钮 + B 模块触发器调） |
 | `beginUnlock()` | 状态机进入"解锁中"——搜索框弹出时调 |
-| `isActive()` | 三层叠加：是否授权 + 密友总开关是否打开 + 当前是否 HIDDEN |
+| `isActive()` | 四层叠加：授权 + registry 配方门 + 密友总开关 + 当前是否 HIDDEN |
 | `isVipAuthorized()` | 当前 wxid 是否已有有效服务器授权；v1.1 已接 `EnvelopeStore.isAuthorizedNow()`，不再是 stub |
 | `isFeatureEnabled()` | 用户在设置页有没有手动关闭"密友功能"开关 f1 |
 | `AuthManager.evaluate()` | 评估当前 wxid + 设备 + license 的组合，输出 AUTH_OK / ACCOUNT_MISMATCH 等 |
@@ -434,7 +434,7 @@ SearchUnlock（口令命中）
 |------|---------|
 | `core/AuthManager.java` | wxid + device 双绑定评估逻辑 |
 | `core/NativeBridge.java` | AUTH_* 常量 + setAuthState / getAuthState |
-| `core/StateMachine.java` | 状态转换逻辑 + isVipAuthorized stub |
+| `core/StateMachine.java` | 状态转换逻辑 + isVipAuthorized（已接 EnvelopeStore.isAuthorizedNow，非 stub）|
 | `core/RefreshBus.java` | 状态变化广播 → Filter 热刷新入口，不得绕过 |
 | `core/Bridge.java` | licensedWxid / deviceHash / myWxid 读写 |
 | `moduleB/SearchUnlock.java` | 入口口令（v1 H→V + 入口可见；不授权、不扩过滤）|
@@ -493,7 +493,7 @@ SearchUnlock（口令命中）
 ```
 □ HIDDEN / VISIBLE / UNLOCKING 三态转换逻辑是否干净？
 □ 状态机是否不包含任何授权判断（授权由 AuthGate 负责）？
-□ StateMachine.isActive() 的三层门控（isVipAuthorized + isFeatureEnabled + mActive）是否正确？
+□ StateMachine.isActive() 的四层门控（isVipAuthorized + isSensitiveConfigReady + isFeatureEnabled + mActive）是否正确？
 □ 冷启动是否强制 HIDDEN（F-27 铁律）？
 □ Java StateMachine 与 C++ sm 是否同步（P2 双写桥）？
 □ 主进程是否只用 Java StateMachine，:push 进程是否只用 C++ NativeBridge.shouldBlockBadge()（铁律30）？
@@ -663,13 +663,14 @@ isVipAuthorized = true
 **铁律：** `isVipAuthorized()` 必须保留在 `isActive()` 中——无授权 = 无产品（含隐私）。
 **铁律：** 杂项开关写 `isVipAuthorized() && isXxxEnabled()`，**禁止**写 `isFeatureEnabled() && isXxxEnabled()`（不依赖 f1）。
 
-### 8.3 isActive() 三层门控（最终定义，不得修改）
+### 8.3 isActive() 四层门控（最终定义，以 core/StateMachine.java 为准）
 
 ```java
 public boolean isActive() {
-    return isVipAuthorized()                       // 层1：授权门
-        && Bridge.getInstance().isFeatureEnabled() // 层2：密友总开关 f1
-        && mActive;                                // 层3：HIDDEN 态
+    return isVipAuthorized()                            // 层1：授权门（EnvelopeStore.isAuthorizedNow）
+        && GuardRuntime.isSensitiveConfigReady()       // 层2：配方门（release 须 server seed 解 registry）
+        && Bridge.getInstance().isFeatureEnabled()     // 层3：密友总开关 f1
+        && mActive;                                    // 层4：HIDDEN 态
 }
 ```
 

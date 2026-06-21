@@ -46,7 +46,7 @@ description: Guard Native 安全与加密官。负责客户端安全、DRM、防
 
 ## 硬红线
 
-1. 不把授权根锁做成客户端布尔值。`isVipAuthorized()`、`viptime`、`endtime` 只能是诱饵或展示，不得决定核心能力。
+1. 不把授权**根锁**做成「能被 NOP 的客户端布尔」。`viptime`/`endtime` 只能展示；`isVipAuthorized()` 现已是真授权门（接 `EnvelopeStore.isAuthorizedNow()` = token+Ed25519 信封+租约，是 `isActive()` 四层之一）。但**真锁的牙在服务器种子解 registry**（`isSensitiveConfigReady`）——门卫(返回是/否)只是门，翻译官(解密 registry)才是锁；客户端布尔不得作唯一根锁。
 2. 不把可签发授权的 secret 放客户端。客户端不能拥有能伪造永久授权的密钥。
 3. 不信任手机墙钟。时间判断必须使用服务器时间 + `elapsedRealtime` + 宽限策略。
 4. 不因单纯断网误杀。断网先用缓存和宽限，确认篡改或宽限耗尽才强制引流。
