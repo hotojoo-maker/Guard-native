@@ -132,7 +132,7 @@ guard_native/
 | [`./docs/HOOK_MAP_8071_AUTHORITATIVE.md`](./docs/HOOK_MAP_8071_AUTHORITATIVE.md) | **8.0.71 hook 权威事实** |
 | [`./docs/GUARD_GATE_TRUTH.md`](./docs/GUARD_GATE_TRUTH.md) | 门控 / 状态机裁决 |
 | [`./docs/CONV_REFRESH_PROBLEM.md`](./docs/CONV_REFRESH_PROBLEM.md) | 会话 H↔V 热切问题单 |
-| [`./docs/RESEARCH_SUMMARY.md`](./docs/RESEARCH_SUMMARY.md) | 研究汇总 |
+| [`./docs/archive/wechat_8066/RESEARCH_SUMMARY.md`](./docs/archive/wechat_8066/RESEARCH_SUMMARY.md) | 研究汇总（8066 旧账，2026-06-22 已归档隔离） |
 
 ### 历史 / 竞品（非默认）
 

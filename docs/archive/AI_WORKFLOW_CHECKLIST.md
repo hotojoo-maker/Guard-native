@@ -1,7 +1,7 @@
 # AI 工作流清单 — 防遗忘 / 防原地转圈
 
 > 这是给用户看的中文总控清单。  
-> AI 每次接手项目时，必须先读 `CLAUDE.md`，再读本文件，再读 `docs/USER_AI_USAGE_GUIDE.md`，然后按本文件一步一步做。  
+> AI 每次接手项目时，必须先读 `CLAUDE.md`，再读本文件，再读 `docs/archive/USER_AI_USAGE_GUIDE.md`，然后按本文件一步一步做。  
 > 每完成一步，AI 必须在本文件里把对应复选框打钩，并写一句“实际结果”。
 
 ---
@@ -332,8 +332,8 @@ AI 做 F05 之前，必须先整理清楚，不允许直接开写。
 ## AI 每次开工前必须做的事
 
 - [ ] 读 `CLAUDE.md`
-- [ ] 读 `docs/AI_WORKFLOW_CHECKLIST.md`
-- [ ] 读 `docs/USER_AI_USAGE_GUIDE.md`
+- [ ] 读 `docs/archive/AI_WORKFLOW_CHECKLIST.md`
+- [ ] 读 `docs/archive/USER_AI_USAGE_GUIDE.md`
 - [ ] 读当前阶段对应的 `docs/HOOK_MAP_8071_AUTHORITATIVE.md（8071；8066 历史 → docs/archive/INDEX.md）`
 - [ ] 如果要用某个方案，先查 `refs/FAILURE_LOG.md`
 - [ ] 只做当前阶段，不跨阶段乱做

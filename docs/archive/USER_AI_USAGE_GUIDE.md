@@ -15,8 +15,8 @@
 
 开工前必须先读：
 1. CLAUDE.md
-2. docs/AI_WORKFLOW_CHECKLIST.md
-3. docs/USER_AI_USAGE_GUIDE.md
+2. docs/archive/AI_WORKFLOW_CHECKLIST.md
+3. docs/archive/USER_AI_USAGE_GUIDE.md
 4. 当前阶段相关的 docs/README.md + docs/HOOK_MAP_8071_AUTHORITATIVE.md
 5. 如果要尝试方案，先查 refs/FAILURE_LOG.md
 
@@ -27,8 +27,8 @@
 - 需要我操作手机时，必须一步一步告诉我，每一步等我确认后再继续。
 - 不允许让我联网测试，不允许加入联网、授权、反调试。
 - 崩溃次数多有风险，所以真机测试前必须先说明测试步骤、预期现象、失败后如何停止。
-- 每完成一个阶段，必须更新 docs/AI_WORKFLOW_CHECKLIST.md，在里面打钩并写实际结果。
-- 遇到坑、失败、崩溃、走不通，必须主动提醒我总结到 refs/FAILURE_LOG.md 或 docs/AI_WORKFLOW_CHECKLIST.md。
+- 每完成一个阶段，必须更新 docs/archive/AI_WORKFLOW_CHECKLIST.md，在里面打钩并写实际结果。
+- 遇到坑、失败、崩溃、走不通，必须主动提醒我总结到 refs/FAILURE_LOG.md 或 docs/archive/AI_WORKFLOW_CHECKLIST.md。
 
 现在请先告诉我：当前应该做哪个阶段、你准备改哪些文件、我需要配合做什么。不要先写代码。
 ```
@@ -42,8 +42,8 @@
 
 请只读取：
 - CLAUDE.md
-- docs/AI_WORKFLOW_CHECKLIST.md
-- docs/USER_AI_USAGE_GUIDE.md
+- docs/archive/AI_WORKFLOW_CHECKLIST.md
+- docs/archive/USER_AI_USAGE_GUIDE.md
 - refs/FEATURE_MATRIX.md
 
 然后用中文告诉我：
@@ -61,7 +61,7 @@
 ## 3. 如果你要 AI 开始做下一步，复制这段
 
 ```text
-请按 docs/AI_WORKFLOW_CHECKLIST.md 的当前下一步继续做。
+请按 docs/archive/AI_WORKFLOW_CHECKLIST.md 的当前下一步继续做。
 
 开工前先用中文确认：
 1. 本次只做哪一个阶段
@@ -178,9 +178,9 @@
 |------|----------|
 | 某个方案试了会崩溃 | `refs/FAILURE_LOG.md` |
 | 某个 hook 点确认有效 | `docs/README.md + docs/HOOK_MAP_8071_AUTHORITATIVE.md` |
-| 某个阶段完成或失败 | `docs/AI_WORKFLOW_CHECKLIST.md` |
+| 某个阶段完成或失败 | `docs/archive/AI_WORKFLOW_CHECKLIST.md` |
 | 某个功能状态变化 | `refs/FEATURE_MATRIX.md` |
-| 手机测试步骤和结果 | `docs/AI_WORKFLOW_CHECKLIST.md` 的实际结果 |
+| 手机测试步骤和结果 | `docs/archive/AI_WORKFLOW_CHECKLIST.md` 的实际结果 |
 
 ### 失败记录要写什么
 
@@ -256,7 +256,7 @@ AI 遇到下面情况必须先问你：
 - 崩溃后还让你继续反复打开微信。
 - 说“应该可以”，但不给依据。
 - 想提前做 Pine、SO、授权、联网。
-- 不更新 `docs/AI_WORKFLOW_CHECKLIST.md`。
+- 不更新 `docs/archive/AI_WORKFLOW_CHECKLIST.md`。
 
 ---
 
@@ -270,7 +270,7 @@ AI 遇到下面情况必须先问你：
 2. 实际改了哪些文件
 3. 最重要的函数或 Hook 点是什么
 4. 我应该怎么验证
-5. 是否已经更新 docs/AI_WORKFLOW_CHECKLIST.md
+5. 是否已经更新 docs/archive/AI_WORKFLOW_CHECKLIST.md
 6. 是否需要更新 refs/FEATURE_MATRIX.md
 7. 有没有新的坑需要写入 refs/FAILURE_LOG.md
 
