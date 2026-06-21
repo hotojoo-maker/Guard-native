@@ -29,11 +29,11 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
  * 职责：
  *   - BUS-H / BUS-V 回调（由 ContactFilter.install() 里的 RefreshBus.register 委托过来）
  *   - sContactCache 缓存管理（lazy-clear，覆写式 putCache）
- *   - H→V 注回 MvvmList.f135087o（in-place，不替换字段）
+ *   - H→V 注回 MvvmList 基类 o/p/h backing（in-place，不替换字段）
  *   - 80ms 异步 post-dedup（F-35 强制铁律：identity dedup 必须 notify 后异步）
  *
  * 跨类访问：与 ContactFilter 同包，直接访问 package-private 成员（sLiveListRef / sAdapterRef
- *           / MVVMLIST_DATA / ADDR_ITEM_CLS / extractWxid 等）。
+ *           / ADDR_ITEM_CLS / extractWxid 等）。
  */
 class ContactHotReload {
 
@@ -45,7 +45,7 @@ class ContactHotReload {
     static final class CachedContactItem {
         final String id;            // wxid 或 *@chatroom
         final Object item;          // fc5.g 实例
-        final String fieldName;     // MvvmList 内部数组字段名（"f135087o"）；null = addAll 入参链路
+        final String fieldName;     // 诊断标签（链路来源）；null = addAll/backing 链路。仅日志用，不参与逻辑
         final int    originalIndex;
         final long   timestamp;
         CachedContactItem(String id, Object item, String fieldName, int originalIndex) {
@@ -125,7 +125,7 @@ class ContactHotReload {
     /**
      * H→V：BUS-V 回调体。
      *
-     * 快照缓存 → 主线程 Runnable in-place 注回 AddressLiveList.f135087o → notify adapter
+     * 快照缓存 → 主线程 Runnable in-place 注回 AddressLiveList backing(o/p/h) → notify adapter
      * → 80ms 异步 post-dedup（F-35）→ 400ms retry 兜底。
      */
     static void handleBusVisible() {
@@ -225,7 +225,7 @@ class ContactHotReload {
     // =========================================================================
 
     /**
-     * In-place 把 cacheSnap 中缺失的 fc5.g 注回 AddressLiveList.f135087o。
+     * In-place 把 cacheSnap 中缺失的 fc5.g 注回 AddressLiveList 的 backing(o/p/h)。
      *
      * - 不替换字段（替换会让 ik3.t0 持旧引用，notify 无效果）
      * - 优先用 sContactItemMap 中最新存活对象（cached.item 可能 detach）
@@ -235,7 +235,7 @@ class ContactHotReload {
     @SuppressWarnings("unchecked")
     static int restoreToLiveList(Object liveList, List<CachedContactItem> cacheSnap) {
         if (cacheSnap == null || cacheSnap.isEmpty()) return 0;
-        // P_CV1（2026-05-29）：AddressLiveList 真 backing = MvvmList 基类 o/p/h（非 f135087o）。
+        // P_CV1（2026-05-29）：AddressLiveList 真 backing = MvvmList 基类 o/p/h。
         // 对标 ConvHotReload.restoreToMvvmList：逐字段注入所有含 fc5.g 的 List，触发 RecyclerView 重绘。
         int totalInjected = 0;
         for (String fn : ContactFilter.MVVMLIST_FIELDS) {
@@ -307,8 +307,8 @@ class ContactHotReload {
     // =========================================================================
 
     /**
-     * V3 兜底：sLiveListRef 为 null 时直接操作 backing ArrayList（从 addAll 钩取的 f135087o）。
-     * 逻辑与 restoreToLiveList 一致，跳过 f135087o 字段反射步骤。
+     * V3 兜底：sLiveListRef 为 null 时直接操作 addAll 钩取的 backing ArrayList。
+     * 逻辑与 restoreToLiveList 一致，跳过 o/p/h 字段反射步骤。
      * CME-safe：dup 扫描用 size+get，插入捕获 CME 跳过。
      */
     @SuppressWarnings("unchecked")

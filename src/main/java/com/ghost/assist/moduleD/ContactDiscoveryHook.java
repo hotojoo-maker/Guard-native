@@ -41,7 +41,7 @@ import java.util.List;
  *
  * 【本文件门控锁定】（与 ContactHotReload 同口径）
  *   允许：写 ContactFilter.sLiveListRef / sAdapterRef（package-private，跨类直访）
- *         读 ContactFilter.MVVMLIST_DATA / ADDR_ITEM_CLS
+ *         读 ContactFilter.ADDR_ITEM_CLS 等
  *         读 Application Activity 生命周期回调
  *   禁止：调 StateMachine.* / AuthManager.* / RefreshBus.fire* / NativeBridge.* / Bridge 写字段
  *         反射 ActivityThread.mActivities（用 Application.registerActivityLifecycleCallbacks 替代，铁律 7）
@@ -434,7 +434,7 @@ public class ContactDiscoveryHook {
                                 && ContactFilter.ADDR_ITEM_CLS
                                         .equals(list.get(0).getClass().getName())) {
                             // 找到 backing list；它本身不是 MvvmList，跳过；要继续扫 obj 父链找持有它的 MvvmList
-                            // 不立刻返回 list 本身（不能用作 sLiveListRef，restoreToLiveList 要反射 f135087o）
+                            // 不立刻返回 list 本身（不能用作 sLiveListRef，restoreToLiveList 要反射 o/p/h backing）
                             // 但 obj 本身可能就是 MvvmList — 检查 obj
                             if (isMvvmListLike(obj)) return obj;
                         }

@@ -31,7 +31,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
  *   LiveList:  com.tencent.mm.ui.contact.address.AddressLiveList (extends MvvmList<fc5.g>)
  *   Item:      fc5.g   — DEX field "d" → z3, DEX field "e" → type (2=contact, 1=header)
  *   wxid:      z3.c1() → field_username
- *   List fld:  MvvmList.f135087o (ArrayList<fc5.g>)
+ *   List fld:  MvvmList 基类 o/p/h (ArrayList<fc5.g>)
  *
  * Hook layers:
  *   L4:   ik3.t0.notifyDataSetChanged — clean-before gate
@@ -53,9 +53,7 @@ public class ContactFilter {
             BuildConfig.DEBUG ? "com.tencent.mm.ui.contact.address.AddressLiveList" : "";
     private static String MVVMLIST_CLASS  =
             BuildConfig.DEBUG ? "com.tencent.mm.plugin.mvvmlist.MvvmList" : "";
-    static final String MVVMLIST_DATA   = "f135087o"; // 旧字段名（8.0.71 AddressLiveList 实测不存在，见 worklog 2026-05-29）
-    // P_CV1（2026-05-29 L1 实证）：AddressLiveList 的 MvvmList 基类真实 backing 字段 = o/p/h（与会话 tab MvvmConvList 同），
-    // 元素 fc5.g。injected=0 根因 = 之前硬找 f135087o 不存在。对标 ConvFilter.MVVMLIST_ARRAY_FIELDS。
+    // AddressLiveList 的 MvvmList 基类真实 backing 字段 = o/p/h（与会话 tab MvvmConvList 同），元素 fc5.g（P_CV1 2026-05-29 L1 实证）。
     // 注：o/p/h 不在 registry，本轮保持硬编码（P1E Step2 范围外）。
     static final String[] MVVMLIST_FIELDS = {"o", "p", "h"};
     static String ADDR_ITEM_CLS   = BuildConfig.DEBUG ? "fc5.g" : "";
@@ -296,7 +294,7 @@ public class ContactFilter {
     // ------------------------------------------------------------------
     static volatile Object sLiveListRef = null; // 缓存最近见到的 AddressLiveList
     static volatile WeakReference<Object> sAdapterRef; // 通讯录 Adapter 弱引用
-    /** V3: backing ArrayList (f135087o) captured directly from addAll hook. */
+    /** V3: backing ArrayList captured directly from addAll hook. */
     @SuppressWarnings("unchecked")
     static volatile WeakReference<java.util.ArrayList<Object>> sBackingListRef = null;
 
@@ -324,9 +322,8 @@ public class ContactFilter {
         boolean filterOn = StateMachine.getInstance().isActive();
         Log.i(TAG, "[CTF:" + tag + "] cleanLiveList on=" + filterOn);
         if (!filterOn) return;
-        // P_CV1（2026-05-29 L1 实证）：AddressLiveList 真 backing = MvvmList 基类 o/p/h（非 f135087o）。
-        // 旧 getMvvmData 只找 f135087o → 返回 null → sz=-1 → 不删除（V→H 不隐藏 bug）。
-        // 改为逐字段遍历 o/p/h，对每个装 fc5.g 的 List 跑过滤，与 restoreToLiveList 对称。
+        // P_CV1（2026-05-29 L1 实证）：AddressLiveList 真 backing = MvvmList 基类 o/p/h。
+        // 逐字段遍历 o/p/h，对每个装 fc5.g 的 List 跑过滤，与 restoreToLiveList 对称。
         int totalRemoved = 0;
         for (String fn : MVVMLIST_FIELDS) {
             try {
@@ -355,7 +352,7 @@ public class ContactFilter {
 
     /**
      * V3: 直接对 backing ArrayList 做过滤（BUS-H 时 sLiveListRef 仍为 null 的兜底）。
-     * 与 cleanLiveList 等价，但绕过 f135087o 反射，因为 backing 已是 f135087o 本身。
+     * 与 cleanLiveList 等价，但直接对传入的 backing List 过滤（无需反射 o/p/h）。
      */
     @SuppressWarnings({"rawtypes", "unchecked"})
     static void cleanBackingList(java.util.List backing, String tag) {
@@ -387,7 +384,7 @@ public class ContactFilter {
             String wxid = extractWxid(item);
             if (wxid == null) { idx++; continue; }
             if (hidden.contains(wxid)) {
-                ContactHotReload.putCache(wxid, item, MVVMLIST_DATA, idx);
+                ContactHotReload.putCache(wxid, item, null, idx);
                 it.remove();
                 removed++;
                 Log.d(TAG, "[CTF:" + tag + "] removed id=" + wxid + " idx=" + idx);
