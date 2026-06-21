@@ -11,7 +11,7 @@ import java.lang.reflect.Method;
  * §5.8: no sensitive strings in class names or identifiers.
  *
  * EVIDENCE: L4 — all class/method/field names below are sourced from Catfish 8.0.70.
- * None have been verified against 8.0.66. Treat every reflection call as "may fail
+ * None have been verified against 8.0.71 (current base). Treat every reflection call as "may fail
  * gracefully". Upgrade to L2 only after live verification on target device.
  * See FAILURE_LOG.md before modifying.
  */
@@ -32,7 +32,7 @@ public class ContactResolver {
 
         try {
             // Attempt 1: reflect get contact storage + query by wxid
-            // In 8.0.66, storage is accessible via com.tencent.mm.kernel.h
+            // In 8.0.71 (assumed, L4 — unverified), storage is accessible via com.tencent.mm.kernel.h
             Class<?> kernelClass = Class.forName("com.tencent.mm.kernel.h");
             Method getStorageMethod = kernelClass.getMethod("getStorage", Class.class);
 
@@ -69,8 +69,8 @@ public class ContactResolver {
                 }
             }
         } catch (ClassNotFoundException e) {
-            // 8.0.66 may have different class names — graceful fallback
-            Log.w(TAG, "[CR] ContactStorage class not found (may be different in 8.0.66): " + e.getMessage());
+            // 8.0.71 may have different class names — graceful fallback
+            Log.w(TAG, "[CR] ContactStorage class not found (may be different in 8.0.71): " + e.getMessage());
         } catch (Exception e) {
             Log.w(TAG, "[CR] resolution error for " + wxid + ": " + e.getMessage());
         }

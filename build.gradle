@@ -1,5 +1,5 @@
 // Guard Native — LSPosed Module
-// Target: WeChat 8.0.66 / minSdk 27 (Android 8.1) / compileSdk 34
+// Target: WeChat 8.0.71 / minSdk 27 (Android 8.1) / compileSdk 34
 //
 // Dependencies that need manual setup before first build:
 //   1. XposedBridge API: place xposed-api-82.jar in app/libs/
