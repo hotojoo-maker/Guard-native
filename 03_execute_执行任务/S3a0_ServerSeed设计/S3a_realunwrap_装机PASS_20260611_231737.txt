@@ -1,0 +1,7 @@
+﻿S3a real-server unwrap PASS (子步A) - 20260611_231737
+Proof: [hb] synced requires applyServerSeedAndReset(k,n)==true (else logs 'server seed unwrap failed' and returns -1 before synced). Real token + real zxmqq.shop envelope + Ed25519 verified.
+
+06-11 23:17:00.696  5144  5144 I NCL     : [hb] cold-start heartbeat armed
+06-11 23:17:00.696  5144  5144 I NCL     : [auth] AUTH_OK wxid=wxid***
+06-11 23:17:01.997  5144  5305 I NCL     : [lease] heartbeat server_now=1781191023000 expire=1781191923000
+06-11 23:17:01.997  5144  5305 I NCL     : [hb] synced tier=2 lease=1781191923 risk=姝ｅ父

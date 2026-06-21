@@ -31,8 +31,8 @@
 
 | 工具 | 路径 | 用途 |
 |------|------|------|
-| frida_stats.js | `I:/apk2_official_research/official_wechat_ban_research/03_anti_frida/frida_stats.js` | 16 指标 KPI 采集 |
-| COLLECTION_SOP.md | `I:/apk2_official_research/official_wechat_ban_research/03_anti_frida/COLLECTION_SOP.md` | 采集操作规范 |
+| frida_stats.js | `I:/apk2/_3__D_wechat_ban/official_wechat_ban_research/03_anti_frida/frida_stats.js` | 16 指标 KPI 采集 |
+| COLLECTION_SOP.md | `I:/apk2/_3__D_wechat_ban/official_wechat_ban_research/03_anti_frida/COLLECTION_SOP.md` | 采集操作规范 |
 
 ---
 
@@ -67,7 +67,7 @@ echo "WeChat PID: $PID"
 
 # 挂 frida_stats（官方版无改包，采集 5 分钟即可）
 MSYS_NO_PATHCONV=1 frida -U -p $PID \
-  -l "I:/apk2_official_research/official_wechat_ban_research/03_anti_frida/frida_stats.js" \
+  -l "I:/apk2/_3__D_wechat_ban/official_wechat_ban_research/03_anti_frida/frida_stats.js" \
   2>&1 | tee "03_execute_执行任务/P18_离线采集/logs/frida_stats_v1_20260524.log"
 ```
 

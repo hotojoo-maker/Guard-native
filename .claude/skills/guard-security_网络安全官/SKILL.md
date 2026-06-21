@@ -18,6 +18,8 @@ description: Guard Native 安全与加密官。负责客户端安全、DRM、防
 - `RiskLevel`、`RiskState`、`RiskPromptController`
 - 当前 SO 的安全重构边界
 
+> 蜜罐诱饵清单（K1-K5/B1-B3）+ 触发逻辑 + 域名加密引导段 C2 设计 → 汇总见 `docs/HONEYPOT_蜜罐设计.md`（权威仍是 `PROTECTION_MAP.md` §5/§10.4/§10.6）。
+
 一句话原则：
 
 **服务器只发短命加密配方；客户端只有在签名验真、租约有效、SO 解密成功、风险等级允许时，才拿得到真正 hook 配方。失败时散沙，不崩、不全开、不清用户数据。**
@@ -192,6 +194,97 @@ StateMachine.isActive()
 - fallback 明文常量只能作为迁移期保险，必须在 worklog 标注「仍未彻底消除明文」；不得对外宣称真锁完成。
 - 服务器短命材料未接入前，当前只能叫「本地加密链路打通」，不能叫「服务器真锁」。
 
+## 加密 hook 名粒度与单一真源（2026-06-21 决策 · 维护性收口准绳）
+
+> 触发：用户问「当前加密的类名不需要那么细碎，再补一些是否更好维护？」本节给死结论。配套工作计划 `03_execute_执行任务/P_AntiBanGate_防封授权闸/PLAN.md` §二。
+
+### 一句话结论
+
+**维护难易 ≠ 加密了几个类名；维护难易 = 是不是单一真源。** 1 个源 = 好维护；同一个名字存 N 份 = 难维护，与数量无关。
+
+### 当前真实痛点不是「加密太少」，是「三处重复」
+
+同一个混淆名（如 `kc5.y`）现同时存在：
+
+1. `native_core/registry_8071.json`（加密源）
+2. Filter 里 `BuildConfig.DEBUG ? "kc5.y" : ""`（debug 兜底）
+3. Filter 里内联硬编码 `"kc5.y"`
+
+→ 既扩大明文暴露面，又使「下版本改名」要改 3 处、改漏即出 bug。现状量化：37 个 registry 字段只 22 个真接线、15 个挂空；registry 外还散着 ~25+ 个硬编码混淆名（SearchFilter / PushFilter 是重灾区，PushFilter 完全没接 registry）。
+
+### 「再补一些」会更好还是更难维护？（分三种，别混）
+
+| 怎么补 | 维护性 | 说明 |
+|---|---|---|
+| 把散在 Java 的硬编码名**搬进 registry 当唯一源 + 同时删 Java 重复** | ✅ 更好 | 这是「归一」，下版本只改一个 json |
+| 往 registry 加更多项，但 Java 仍留旧字面量 | ❌ 更难 | 份数从 3 变更多，漂移更狠 |
+| 把加密拆更细（每个小功能一条配方） | ❌ 更难 | 每版本要更新的字段更多，且违背「拆大动脉不碎拆」（见 §配方收敛原则 / `PROTECTION_MAP.md` §10.1）|
+
+### 建议（决策）
+
+1. **粒度保持粗**：加密类名**不需要更细碎**。维持「4 大动脉 + 5 pack」粗粒度，不为「全加密」而拆碎、到处补。
+2. **要做的是归一，不是增量**：
+   - `registry_*.json` 设为混淆名**唯一源**；
+   - DEBUG fallback 由 build 时**从 json 生成**，不再手写；
+   - Filter 内联字面量全部改走 `getRecipe()`；
+   - 把 SearchFilter / PushFilter 的硬编码锚点也收进 registry（它俩是最大洼地）；
+   - 15 个挂空 registry 字段接上或删掉，别留半截。
+3. **registry 版本化**：按宿主 versionCode 分块，运行时按检测版本派发 → 一个 SO 支持多版本，下版本 = 加一块、不动旧块。
+4. **安全靠服务器 + 删 release 明文 fallback，不靠把名字拆更碎**：真锁是「服务器种子解 registry」+「release fail-closed 无明文」；名字拆细只增维护、不增安全。
+5. **删 fallback 是最后一步**：归一（1~3）做完、且与 V3「每发行证书重生成 cipher」绑定后再删（`PROTECTION_MAP.md` §10.8），否则重签即裸奔。
+
+### 准绳（写死）
+
+```text
+配方要粗（4 大动脉），来源要唯一（registry 一处），暴露要少（release 无明文）。
+拆更碎 = 更难维护 + 不增安全；归一 = 更好维护 + 配合删明文才增安全。
+```
+
+## S3b 压测后硬锁收口（2026-06-12）
+
+背景：V1.2 LSPatch 包经外部 AI 反编译压测，约 10 分钟内定位到
+`resources/assets/lspatch/modules/com.ghost.assist.apk`、`libguardcore.so`、
+`NativeBridge`、`GuardRuntime`、`server_seed` / recipe 关键字，并尝试走
+`nativeIsAuthorized()` / 自建服务器 / 替换公钥三类绕过路线。
+
+判定口径：
+
+- 能反编译、能抽出模块、能看到 `NativeBridge` 都是预期威胁，不算破防。
+- 只 hook `nativeIsAuthorized()` / `nativeGetAuthState()` / UI 授权显示，不算破防。
+- 真正破防标准只有一个：无合法 envelope / 无 S_rel / 无有效签名时，仍能让
+  `GuardRuntime.getRecipe()` 返回真实 registry recipe，并让业务 hook 正常命中。
+- 任何安全结论必须围绕 `recipeOk`、`registrySummary != scatter`、
+  `GuardRuntime.isConfigReady()` 和关键 gateway 的 `getRecipe()` 结果展开。
+
+V1.2 暴露的实际收口项：
+
+- **Release/PROD 禁止明文 fallback。** 业务 Filter 在 `GuardRuntime.getRecipe()`
+  返回空时，必须 fail-closed：跳过该 hook / 该功能不可用；不得继续使用 Java
+  字面量类名、方法名、字段名保持功能可用。
+- DEV/DEBUG 可以保留 fallback 方便开发，但必须由 `BuildConfig.DEBUG` 或显式
+  dev flag 控制，不能混入客户 release 包。
+- `ConvFilter`、`SearchFilter`、`ContactFilter`、`MomentsFilter` 是首批必查
+  Filter；新增 Filter 默认按 release fail-closed 设计。
+- `NativeBridge.isAuthorized()` 不是根锁，不得把它当作唯一防线；根锁必须是
+  envelope 验签 + server seed 解封 + registry 解密 + recipe 出口。
+- Debug 面板、Phase 文案、`record-only` 日志、`cp-*` 状态词会给逆向者路线图；
+  release 包必须删除、降噪或伪装，不得暴露真实阶段和真实网关名。
+- `EncryptedConfigLoader` 必须逐步接入 LeaseClock / RiskState；过期、篡改、
+  包名/证书不符时应 scatter，而不是只靠 UI 或日志提示。
+
+加密官审查时必须问：
+
+```text
+没有服务器 envelope / S_rel 时：
+1. registrySummary 是否仍是 scatter？
+2. GuardRuntime.isConfigReady() 是否为 false？
+3. conv.list / search.gateway / contact.address / moments.feed 是否都拿不到真实 recipe？
+4. 业务 Filter 是否停止安装敏感 hook，而不是 fallback 到 Java 明文？
+5. release APK 内是否还存在可直接搜索的核心 hook 类名/字段名？
+```
+
+任一答案不满足，禁止称为“真锁完成”，只能标记为“迁移期加密链路”。
+
 ## 签名策略
 
 优先使用：
@@ -339,20 +432,20 @@ trusted_now = last_server_now + (current_elapsedRealtime - last_elapsedRealtime)
 - 断网超过 72h：进入 `DEGRADED`，开始散沙。
 - 联网成功且服务器确认正常：可恢复到 `CLEAN`。
 
-不要使用固定 10 天锁定策略。确认蜜罐命中后按 24 到 48h 影子期进入长期引流；具体影子期可由服务端 risk 参数调节，但默认不得超过 48h。
+不要使用固定 10 天锁定策略。安全默认口径是确认蜜罐命中后按 24 到 48h 影子期进入长期引流；具体影子期可由服务端 risk 参数调节。**Guard Native 当前代码有项目级 override**：用户 2026-06-12 拍板盗版转卖场景影子期为 7 天，落点 `RiskState.SHADOW_HOURS_DEFAULT=168h`；后续应改为服务端签名 `risk_pack` 下发，不再硬编码。
 
 ## 蜜罐影子期引流策略
 
 蜜罐命中后进入 `TAMPER_SHADOW`。
 
-影子期默认 24 到 48 小时：
+影子期安全默认 24 到 48 小时；本项目当前发布代码为 7 天 override（见上）：
 
 - 表面显示已激活。
 - 功能可以继续使用。
 - 不弹窗，不暴露蜜罐。
 - 记录 `tamper_first_seen`。
 - 足够骗过初步逆向测试，但不让白嫖版本长期传播。
-- 若确有运营原因需要更长影子期，必须由服务端策略显式下发，并在审查报告里说明风险。
+- 若确有运营原因需要更长影子期，必须在审查报告里说明风险；当前 7 天为已落地硬编码，下一步应迁到服务端签名策略。
 
 影子期结束后进入 `TAMPER_FUNNEL`：
 
@@ -449,13 +542,13 @@ GuardRuntime.getActiveRegistry()
 4. ✅ Phase 1B Registry 抽取：核心 hook 配方抽成 registry，明文跑通。（PHASE1B_VERIFY PASS）
 5. ✅ Phase 1C Encrypted Registry：`registry_8071.json` 单一源 → `registry_cipher.inc`，SO 解密 registry，失败散沙；搜索收敛 `search.gateway`；另含 1D-local 派生 key（去明文 key 常量）+ A-step2 证书绑定。（PHASE1C/1D_VERIFY PASS）
 6. 🟡 **Phase 1C.5 Filter 读 registry（消明文双份，任务名 `P1E_Filter读Registry`）**：让 ContactFilter/MomentsFilter/ConvFilter 真从 registry 读类名（取件口 `GuardRuntime.getRecipe`+`nativeGetRecipe`），conv.list 漂移债已结案；现为 registry+fallback 双份，**删 fallback 未做**（每个 Filter 删前要先核账 registry 完整性）。SearchFilter 暂未迁。⚠️ 注意：这里的任务名 P1E ≠ 下面第 8 条的 Phase 1E。
-7. 🟡 **Phase 1D-server 服务器心跳（S2，2026-06-11 解冻；dormant 骨架已建）**：miyou-server 下发 signed envelope + encrypted packs，key 派生折入服务器短命材料 + device/customer 绑定。已建 `net/` 出站层（`EnvelopeClient`/`AuthEnvelopeVerifier`/`EnvelopeStore`/`GuardHeartbeat`/`GuardActivation`），但**未接入 `ModuleMain`、信封 k 未折进 SO key、无 Ed25519、`LeaseClock` 未喂数据**（真锁核心仍未完成，不得宣称真锁完成）。现状权威 + 下一受控步骤见 `PROTECTION_MAP.md` §10.6。
-8. 🟡 **Phase 1E LeaseClock + RiskState（P1F 本地一刀 + 两闸，2026-06-10 装机 PASS）**：已落地 `LeaseClock` 骨架（服务器授时外推 + 防回拨，v1 无心跳默认 CLEAN）+ `RiskState` 唯一 L0~L6 等级机（**record-only**，与 isActive 并联、放行不收紧）+ `RiskPromptController` 唯一弹窗（仅 FUNNEL 弹 + 冷却）+ kill↔funnel 拆两闸（kill 已从篡改链剥离）。**仍未做**：服务器授时真数据源、真正的散沙降级后果、蜜罐绊线真检测（随 Phase 1D-server）。
+7. ✅/🟡 **Phase 1D-server（S2/S3a/S4/S3b，2026-06-11）**：miyou-server 已下发 Ed25519 signed envelope；客户端 `EnvelopeClient` / `AuthEnvelopeVerifier` / `EnvelopeStore` / `GuardHeartbeat` / `GuardActivation` 已形成 v1.1 授权闭环。当前 `android_8071` 已切 `prod_server_lock`：`registry_cipher.inc` 为 `GUARD_REGISTRY_REQUIRES_SERVER_SEED=1`，线上 envelope `k/n` unwrap 后 `recipeOk=true`。现状权威 + 下一受控步骤见 `PROTECTION_MAP.md` §10.6。
+8. 🟡 **Phase 1E LeaseClock + RiskState（P1F 本地一刀 + 两闸，S3b 已推进）**：`LeaseClock` 已接信封授时并用于到期判定；设置页断网 >72h 强制重验，失败撤销授权但保留 token 自愈；`RiskState` 主链仍偏 record-only，但来电拦截已接 `RiskState.isTamperDegraded()` 单点散沙例外；全链路散沙降级与正版恢复闭环仍未完成。
 
 ## 当前 SO 基线与工作量
 
 - 当前 `libguardcore.so`：在 Phase 0/Batch1 骨架（加载/JNI/进程角色/隐藏状态机/wxid 匹配/轻量包名/config_version）之上，**已加** `decrypt_config()` + AES-GCM + encrypted registry + 派生 key（去明文 key 常量）+ 证书绑定 + `registry_get_recipe`（取件口）。
-- **仍不是安全官标准真锁**：`nativeIsAuthorized()` / `nativeGetAuthState()` 仍是占位（`StateMachine.isVipAuthorized()` 也是 `return true` stub），**缺**：签名 envelope 验真、服务器短命材料折入 key、服务器授时真数据源、真正散沙降级（`LeaseClock` 骨架 + `RiskState` record-only 已 P1F 落地，但服务器侧真锁后果未接）。对外不得宣称真锁完成。
+- **仍不是安全官标准真锁终局**：`nativeIsAuthorized()` / `nativeGetAuthState()` 仍是占位；`StateMachine.isVipAuthorized()` 已接 `EnvelopeStore.isAuthorizedNow()`；当前 `android_8071` 已用 server seed 解 registry。**缺**：共存版 `GUARD_RELEASE_ID` flavor 注入、删剩余 Filter 明文字面量 / fallback 债、V3 官替/共存证书源完整对齐、RiskState 全链路散沙降级与正版恢复闭环。对外不得宣称“授权无法破解”或“服务器真锁终局完成”。
 - 最低可用真锁：约 10 到 18 人天。范围：AES-GCM 测试向量、`decrypt_config()`、3 到 5 个核心 registry 抽取、`EncryptedConfigLoader`、基础 signed envelope、解不开散沙。
 - 上线标准：约 20 到 35 人天。范围：验签、防重放、device/customer/package/cert 绑定、LeaseClock、RiskState、蜜罐影子期、正版恢复闭环、release 混淆和装机回归。
 - 最小可用版：300 到 500 行 C++。
@@ -471,8 +564,8 @@ SO 只管“验真 + 解密 + 关键风险信号”；弹窗、影子期倒计�
 - 不要重写 SO、不重写 AES-GCM、不换 crypto 依赖；除非有明确编译失败、验收失败或安全缺陷证据。
 - **加密主线已推进到 P1E（Filter 读 registry，2026-06-09）**：1B 抽取 → 1C 加密 registry + search.gateway 收敛 → 1D-local 派生 key（去明文 key 常量）→ A-step2 证书绑定 → P1E 让 ContactFilter/MomentsFilter/ConvFilter 真从 registry 读类名（取件口 `GuardRuntime.getRecipe` + `nativeGetRecipe`）+ conv.list 漂移债结案；均装机 PHASE1A-1E PASS。
 - **P1F 两闸 + 风险骨架已落地（2026-06-10，装机 PASS）**：`LeaseClock` 骨架 + `RiskState`（record-only L0~L6）+ `RiskPromptController`（唯一弹窗）+ kill↔funnel 拆两闸；web 驾驶舱同步显示 风险等级/停用闸/引流。详见 `07_archive_归档/P1F_十字防护整合设计/`（DESIGN + worklog）。
-- **真锁仍未做（最大的洞）**（⚠️ 2026-06-11：S2 服务器出站/信封/心跳骨架已建但 **dormant**——未接 `ModuleMain`、信封 k 未折进 SO key、无 Ed25519；现状见 `PROTECTION_MAP.md` §10.6）：服务器短命钥匙（Phase 1D-server）、服务器授时真数据源、真正散沙降级、Ed25519 验签**仍未做**；`RiskState` 仍 record-only 不收紧（防误伤正版）；`StateMachine.isVipAuthorized()` 仍是 `return true` 死桩。对外不得宣称真锁完成。
-- 不接服务器、不改已验证 hook 回调体、不改 `isVipAuthorized()` stub（仍归授权检查官）。
+- **真锁现状（2026-06-11）**：S2/S3a/S4/S3b 已推进到授权码 → token → Ed25519 envelope → AuthGate → server seed 解 registry；`StateMachine.isVipAuthorized()` 不再是 stub。仍未收口：删 Filter fallback、V3 发行线对齐、RiskState 真降级。对外不得宣称真锁终局完成。
+- 不改已验证 hook 回调体；授权/状态机边界仍归授权检查官共同审查。
 - 业务本体是“密友/密群隐藏 + 通知/红点/搜索/朋友圈等过滤链”，不是通用 DRM demo；registry 抽取必须服务这些已验收链路。
 - 安全官只维护安全/加密/DRM/风控路线；授权/状态机/模块边界仍归 `guard-auth-review_授权检查官`。不要把同一策略复制到授权检查官 skill。
 
@@ -486,7 +579,7 @@ SO 只管“验真 + 解密 + 关键风险信号”；弹窗、影子期倒计�
 - 生成 cipher 时的签名证书 SHA-256 必须等于运行时 binding material；官替版/共存版签名不同就必须分别生成，不得混用。
 - Java 白名单、Xposed scope、C++ `GUARD_EXPECTED_PACKAGE`、服务器 `release_id` 必须来自同一包档案；不能只改 C++。
 - 业务 hook 仍生效但 `PHASE1D/1E` 失败时，可能只是 fallback 在兜底；禁止宣称加密链路通过。
-- 当前仍只能宣称“本地 encrypted registry + 证书绑定”；服务器真锁、Ed25519、服务器短命 key 必要条件未完成前，禁止宣称“授权无法破解”。
+- 当前可宣称“v1.1 商业授权闭环 + Ed25519 防伪造信封 + 当前发行线 server seed 解 registry 已接入”；删 fallback / V3 发行线 / RiskState 真降级完成前，禁止宣称“授权无法破解”或“服务器真锁终局完成”。
 
 ## 安全任务收尾铁律
 
@@ -506,7 +599,7 @@ SO 只管“验真 + 解密 + 关键风险信号”；弹窗、影子期倒计�
 
 3. 发布前安全摘要
    - 必须写清：当前做到哪一阶段、哪些 PASS、哪些只是占位、哪些不能对外宣称已完成。
-   - 对当前加密主线的发布口径：P1E = AES-GCM encrypted registry + Filter 真读 registry（Contact/Moments/Conv）+ 派生 key + 证书绑定；**P1F**（2026-06-10）= `LeaseClock` 骨架 + `RiskState` record-only L0~L6 + `RiskPromptController` 唯一弹窗 + kill↔funnel 拆两闸（装机 PASS）—— 一起作为 v1 最小发布防护；**服务器真锁（Phase 1D-server）/ 服务器授时真数据源 / 真正散沙降级 / Ed25519 验签 未完成，`isVipAuthorized()` 仍是 stub，`RiskState` 仍 record-only 不收紧，registry+fallback 双份明文未完全消除。**
+   - 对当前加密主线的发布口径：P1E = AES-GCM encrypted registry + Filter 真读 registry（Contact/Moments/Conv）+ 派生 key + 证书绑定；P1F/S3b = `LeaseClock` 服务器授时 + `RiskState` record-only L0~L6 + `RiskPromptController` 唯一弹窗 + kill↔funnel 拆两闸；S4 = Ed25519 信封验签；S3a = 当前 `android_8071` `prod_server_lock` 发行线 server seed 解 registry。**仍未完成**：删 Filter fallback、V3 官替/共存发行线对齐、RiskState 真散沙降级与正版恢复闭环，registry+fallback 双份明文未完全消除。
 
 当前 P1E 收口口径（2026-06-09）：
 

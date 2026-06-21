@@ -92,7 +92,7 @@ grep 代码是否有被禁模式：
 **Step 1 — 跑 KPI**
 
 ```
-frida -U -f com.tencent.mm --no-pause -l "I:/apk2/_3__D_wechat_ban/official_wechat_ban_research/03_anti_frida/frida_stats.js" 2>&1 | tee logs/frida_stats_release.log
+frida -U -f com.tencent.mm --no-pause -l "I:/apk2_official_research/official_wechat_ban_research/03_anti_frida/frida_stats.js" 2>&1 | tee logs/frida_stats_release.log
 ```
 
 | 指标 | 安全上限 | 红线 |

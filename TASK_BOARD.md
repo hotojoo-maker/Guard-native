@@ -114,7 +114,7 @@ W4 P18        ─→ 本轮跳过；正式发布门控再补 KPI
 | A2  | 密友列表（数据层 + 导入 UI） | ✅ | 原生 `SelectContactUI` 导入；详见权威 §3。|
 | A3  | 密群（数据层 + Filter union + 导入 UI）| ✅ | 过滤链 + 原生 `GroupCardSelectUI` 导入；详见权威 §4。|
 | **P23** | **F08 防撤回（C1）** | ✅ | 2026-05-31 L1 装机；详见 P23 result / 权威 §2。|
-| P_NC1 | native_core Batch 1 装机验证 | 🟡 | 编译/接入完成，待 `[native] BATCH1_VERIFY PASS` 装机日志。|
+| P_NC1 / S3a / S4 / S3b | native 加密 + 授权真锁链 | 🟡 | `BATCH1/PHASE1A~1E PASS`、S4 Ed25519、S3b LeaseClock、当前 `android_8071` server seed 解 registry 已验；仍待删 Filter fallback / V3 发行线对齐 / RiskState 真降级。详见 `03_execute_执行任务/S3a0_ServerSeed设计/result.md` 与 `PROTECTION_MAP.md` §10.6。|
 | **P22** | **PushFilter 通知策略层** | 🟡 | 主拦截/来电/未读已收口；普通消息通知 + 铃声功能转 v1.1，详见 `docs/P22_PushFilter_VoIP.md`。|
 | **P_CV1** | **通讯录 V↔H 热切** | ✅ | 2026-05-29 装机收口；证据 `bug排查/final_pcv1_v8_双通成功.log`。|
 | **P_PF2** | **语音/视频来电拦截 + CallGuard** | ✅ | 2026-05-29 装机验证；详见 `docs/P22_PushFilter_VoIP.md`。|
@@ -170,9 +170,9 @@ W4 P18        ─→ 本轮跳过；正式发布门控再补 KPI
 🟡 v1 收尾（阶段 ② 替换/加密预热）
   P24  docs/classmap/v8071.yaml + tools/check_classmap.ps1
        人看的混淆类名字典 + 一键校验代码硬编码 ↔ 字典是否同步
-  P25  字符串/类名 seed 化流水线（自动出每客户独立 seed 包）
+  P25  字符串/类名 seed 化本地生成流程（自动出每客户独立 seed 包）
        ⚠️ 编号撞车：P25 已被归档任务「B2 触发器误触发修复」占用（07_archive_归档/P25_B2触发键修复）。
-          本计划项以后请用名字「seed 化流水线」称呼，不要再用 P25 号。详见 PROJECT_INDEX §零 重复编号表。
+          本计划项以后请用名字「seed 化本地生成流程」称呼，不要再用 P25 号。详见 PROJECT_INDEX §零 重复编号表。
 
 ⬜ v2（阶段 ②.5 + ③ + ④）
   P26  UI 优化：调试页 → 注入到微信「设置」顶部的用户设置页
@@ -185,7 +185,7 @@ W4 P18        ─→ 本轮跳过；正式发布门控再补 KPI
   P30  通知伪装 C2（来自 weixin wxid）
 
 ⬜ v3（阶段 ⑤ 打包形态）
-  P31  LSPatch 双模式打包流水线
+  P31  LSPatch 双模式本地打包流程
        ├─ 主版本：劫持模式（保 com.tencent.mm + SignatureGuard 三层绕过）
        └─ 副版本：共存模式（包名隔离 + 跟官方并存）
   P32  签名校验绕过（PMS / CRC / native 自校验）

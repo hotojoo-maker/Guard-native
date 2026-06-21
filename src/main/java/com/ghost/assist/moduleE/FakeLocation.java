@@ -10,6 +10,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.ghost.assist.BuildConfig;
 import com.ghost.assist.core.Bridge;
 import com.ghost.assist.core.StateMachine;
 
@@ -43,7 +44,9 @@ public final class FakeLocation {
     private static final String DISPATCH_METHOD = "c";
 
     // 原生选点页 + 结果载体
-    private static final String WECHAT_PKG   = "com.tencent.mm";
+    // 启动目标包名 = 宿主包（官替=com.tencent.mm / 共存=com.tencent.mn），随 flavor 自动注入。
+    // 写死会让共存版跨包拉官方微信选点页被系统拦截 → 伪装定位选点拉不起来。
+    private static final String WECHAT_PKG   = BuildConfig.GUARD_WX_PKG;
     private static final String REDIRECT_UI  = "com.tencent.mm.plugin.location.ui.RedirectUI";
     private static final String EX_KLOCATION = "KLocationIntent";
     private static final String LOC_PLUGIN_PREFIX = "com.tencent.mm.plugin.location";

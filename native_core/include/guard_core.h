@@ -68,8 +68,11 @@ constexpr int     GRACE_LOCKOUT_DAYS    = 10;   // full lockout
 #define GUARD_EXPECTED_PACKAGE "com.tencent.mm"
 #endif
 constexpr char    EXPECTED_PACKAGE[]    = GUARD_EXPECTED_PACKAGE;
-constexpr char    PROCESS_MAIN[]        = "com.tencent.mm";
-constexpr char    PROCESS_PUSH[]        = "com.tencent.mm:push";
+// V3 共存版铁律：进程名必须跟随构建注入的宿主包名（GUARD_WX_PKG → GUARD_EXPECTED_PACKAGE），
+// 禁止写死 com.tencent.mm。写死会让共存版（com.tencent.mn）进程角色判为 UNKNOWN，
+// BATCH1_VERIFY FAIL → 业务 hook 不安装 → 不隐藏。官替版值不变（=com.tencent.mm）。
+constexpr char    PROCESS_MAIN[]        = GUARD_EXPECTED_PACKAGE;
+constexpr char    PROCESS_PUSH[]        = GUARD_EXPECTED_PACKAGE ":push";
 
 // ── Module: ProcessRouter ─────────────────────────────────────
 

@@ -32,7 +32,7 @@
 
 | 功能 | 编号 | 文件夹 / 说明 |
 |------|------|--------|
-| native 加密原型链（已编译接入，整批装机待验） | P_NC1（实体 = P1A/P1B/P1C/P1E/P1F，缺 P1D） | `07_archive_归档/P1A…P1F`；待 `[native] BATCH1_VERIFY PASS` 日志 |
+| native 加密 / 授权真锁链 | P_NC1 + S3a/S4/S3b | P1A~P1E 已有 `BATCH1/PHASE1A~1E PASS`；S3a `android_8071` 已 `prod_server_lock` + server seed 解 registry；S4 Ed25519、S3b LeaseClock 已装机 PASS。仍待删 Filter fallback / V3 发行线对齐 / RiskState 真降级。详见 `03_execute_执行任务/S3a0_ServerSeed设计/result.md` 与 `PROTECTION_MAP.md` §10.6 |
 | 普通消息通知 + 铃声完整体验 | P22 的 P_NF1/P_NF2/P_NF3 | 转 v1.1；`03_execute_执行任务/P22_PushFilter` |
 
 ### ⬜ 没做 / 计划 / 暂存
@@ -51,7 +51,7 @@
 
 | 重复号 | ① 已完成（归档·不改名） | ② 计划/另一义（还没做） |
 |--------|------------------------|------------------------|
-| **P25** | B2 触发器误触发 V→H 修复 | 类名 / 字符串 seed 化流水线 |
+| **P25** | B2 触发器误触发 V→H 修复 | 类名 / 字符串 seed 化本地生成流程 |
 | **P26** | 好友 V 态热切 fresh-item | v2 设置页 UI 优化（注入微信设置） |
 | **P26C** | 隐藏指定通讯录标签（文件夹实体） | 搜索高亮（看板旧写法） |
 
@@ -59,7 +59,7 @@
 
 ---
 
-## 一、根目录核心文档（13 份）
+## 一、根目录核心文档（14 份）
 
 > doc-audit / 资料员 / 文档员 三个角色已于 2026-05-27 合并入 **guard-review_质检门控** 的"资料功能"档。
 
@@ -75,6 +75,7 @@
 | [`RISK_REGISTER.md`](./RISK_REGISTER.md) | 风险表 | risk-check |
 | [`FAILURE_LOG.md`](./FAILURE_LOG.md) | F-01~F-38 失败方案档案（F-38 最新：伪装订位坐标候选证伪）| review |
 | [`PROTECTION_MAP.md`](./PROTECTION_MAP.md) | **上线前防破解总账 / 四阶段路线图 / 发版门控** | security |
+| [`ANTIBAN_MAP.md`](./ANTIBAN_MAP.md) | **防封官权威账**：反检测 / 防封号最新水位线、证据等级、阻塞项 | antiban |
 | [`TOOLS_INDEX.md`](./TOOLS_INDEX.md) | 工具 / 脚本索引 | review |
 | [`FINDINGS.md`](./FINDINGS.md) | 发现即落盘 / 防压缩断链 | review |
 | [`docs/DOC_AUDIT_2026-05-27.md`](./docs/DOC_AUDIT_2026-05-27.md) | 8071 隔离后文档审计报告 | review |
@@ -85,7 +86,7 @@
 
 ```
 guard_native/
-├── 根目录 (12 份核心 md + 同步脚本)
+├── 根目录 (核心 md + 同步脚本)
 ├── .cursor/skills/       8 个角色 skill（核心4：总调度/执行/质检/终端 + 专项4：授权检查官/授权门控别名/网络安全官/git保姆；主目录，日常编辑这里）
 ├── .claude/skills/       8 个角色 skill（镜像，sync_skills.ps1 同步；以主目录大写 SKILL.md 为准）
 ├── 00_start_入口/        新会话第一站（PROMPT_TEMPLATES）

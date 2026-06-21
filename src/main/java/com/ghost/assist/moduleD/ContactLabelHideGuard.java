@@ -132,11 +132,11 @@ public class ContactLabelHideGuard {
     // L3: 深链兜底 — 标签相关 Activity 直接 finish
     // ------------------------------------------------------------------
     private static void installBlockLabelActivities(XC_LoadPackage.LoadPackageParam lpparam) {
-        final String[] targets = {
+        final java.util.Set<String> targets = new java.util.HashSet<>(java.util.Arrays.asList(
                 "com.tencent.mm.plugin.label.ui.ContactLabelManagerUI",
                 "com.tencent.mm.ui.contact.MvvmContactListUI",
-                "com.tencent.mm.plugin.label.ui.searchLabel.LabelSearchUI",
-        };
+                "com.tencent.mm.plugin.label.ui.searchLabel.LabelSearchUI"
+        ));
         int hooked = 0;
         for (String clsName : targets) {
             try {
@@ -149,6 +149,10 @@ public class ContactLabelHideGuard {
                                 if (!shouldHideContactLabel()) return;
                                 try {
                                     Activity act = (Activity) param.thisObject;
+                                    // getMethod("onResume") 解析到共同父类(MMActivity)的 onResume，该 hook
+                                    // 会命中所有未重写 onResume 的微信页面(搜索/设置等)。必须按真实类名精确放行，
+                                    // 只 finish 目标标签页，否则误杀 FTSMainUI/MainSettingsUI 等导致页面进不去。
+                                    if (!targets.contains(act.getClass().getName())) return;
                                     Log.i(TAG, "[CLH:act] finish " + act.getClass().getSimpleName());
                                     act.finish();
                                 } catch (Throwable t) {

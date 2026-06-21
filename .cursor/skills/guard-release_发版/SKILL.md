@@ -1,0 +1,88 @@
+---
+name: guard-release-officer
+description: Guard Native 发版官（发布 / 出包 / 官替版 / 共存版 / 换 s_rel / LSPatch 注入 / miyou-server 同步 / 装机验证）。把"真锁种子轮换 + 双版本出包 + LSPatch 注入 + 服务器同步 + 装机 L1 验证"串成一条可复刻流水线，用同一套签名 / 工具 / 流程 / 服务器方式。用户说"发版 / 发布新版本 / 做官替版 / 做共存版 / 出包 / 打包 / 换种子 / s_rel 轮换"时使用本 skill。
+---
+
+# guard-release-officer — 发版官 / 双版本出包流水线
+
+## 定位
+
+本 skill 是 Guard Native 的**发版总指挥**，把一次完整发版串成固定流水线：
+
+```text
+（可选）换 s_rel → 出包(官替/共存 flavor) → LSPatch 注入宿主 → miyou-server 同步 → 装机 L1 验证
+```
+
+> 权威细节流程在 [`docs/RELEASE_RULES.md`](../../../docs/RELEASE_RULES.md) 的「s_rel 轮换 + 双版本 LSPatch 发版工作流」。本 skill 只做角色入口 + 检查清单 + 防坑，不复制全部细节。
+
+## 触发场景
+
+用户提到：发版、发布新版本、出包、打包、官替版、共存版、换 s_rel / 换种子、LSPatch、改包名 release、guardWxPkg。
+
+## 每次发版用户必须亲自提供（AI 生不了）
+
+- **官替版**：微信原版 APK（按目标微信版本）。
+- **共存版**：用户用 MT 管理器改好包名（如 `com.tencent.mn`）的克隆 APK。
+- 一部可 USB 调试的手机 + 测试卡密。
+
+## 不可变（跨版本固定，换了等于新产品线）
+
+| 项 | 值 / 位置 |
+|---|---|
+| 签名 keystore | `signing/guard-native-debug.keystore`（guardFixed；store/key pass=android，alias=androiddebugkey）|
+| 模块证书 SHA-256 | `ca421ec3...` = registry `_CERT_SHA256`（模块包必须用此证书签，否则 registry 解不开）|
+| 工具 | `02_tools_工具/lspatch.jar`（JingMatrix LSPatch）、`02_tools_工具/apktool.jar`（共存改包名）|
+| 真锁配方 | `release/secrets/<release_id>.json`（机密，gitignore，含 `s_rel`/`wrap_key`，禁进 git/聊天/文档）|
+| W（wrap_key） | 客户端 SO `g_wk` = 服务器 `wrap_key[:16]`；换 s_rel **不动** W |
+
+## 头号原则：复用当前框架优先（新版本 / 新平台都先复用，别另起炉灶）
+
+不管以后出**新微信版本**还是**iOS**，默认都**复用现有框架**，只加"数据 + 配方"，不重写机制：
+
+- **服务器**：一套 `miyou-server` 吃全部。新版本/新平台 = `products` / `release_lines` 加一行（`platform × wechat_version × schema × cert`），**零代码**（SCHEMA.md §1/§8）。授权链路 activate→token→envelope、Ed25519、卡密、风控、`s_rel/W` 机制一律不动。
+- **安全模型**：真锁 = envelope + `s_rel/W` 折进 SO key + encrypted registry + Ed25519 验签。新版本只换 `registry`（hook 锚点）+ 新 `release_id` + 新 `s_rel`，模型不变。
+- **客户端注入层是唯一平台特定的**：Android = LSPosed/LSPatch + `libguardcore.so`；iOS = dylib/Frida（`USAGE.md` 旧线）。这层代码不能跨平台直接复用，但**对接的是同一套服务器框架和同一套配方/授权概念**。
+- **铁律**：新微信版本 = 新 `release_id` + 新 `registry` 明文源（对账活跃锚点）+ 出包，**不改服务器机制**；能加行解决的绝不加代码；能复用 flavor/发行线的绝不新建一套。
+
+> 一句话：服务器 + 安全模型 + 发行线管理 → **强复用**；客户端注入实现 → 平台特定但插同一套框架。
+
+## 二号原则：版本隔离（发新版本不动老客户）
+
+- **每个版本的官替/共存各占独立 `release_id`**（如 `android_8072_hijack` / `android_8072_coexist`），各自 s_rel。客户端 `GUARD_RELEASE_ID` 按 flavor 烧死对应 id。
+- **一旦某 `release_id` 有装机包在用，它的 s_rel / registry 就冻结**；要换内容 = 开**新 `release_id`**，**绝不在原线上原地改 s_rel**。
+- 发新版本 = 新 `release_id`（老线置 `deprecated` 但不删）→ 老客户手机继续走老线、不受影响。这才是"安全"。
+- ⚠️ **今日教训（2026-06-12，已修复）**：在**在用线** `android_8071` 上**原地轮换 s_rel**，把已装机的 v1.2 官替/共存包全打散（服务器发新 seed、客户端 registry 是另一份 → 解不开）。更糟：`config.py` 文件里的 s_rel 还漂回过旧值，一次重启就把线上带回旧 seed。**根因 = 原地改在用线 + 文件态漂移**。自测无真客户才敢这么救；正式发布后，在用线的 s_rel 一律冻结，换内容只开新 `release_id`。
+- 排错口径：怀疑 s_rel 漂移时，**用测试卡激活→取信封→W 解 k→sha256[:8] 实测**线上真发的 s_rel，别只信 `release_lines.s_rel_fingerprint`（那列是登记时写死的，重启不刷新）。
+
+## 主流程（5 步）
+
+- **A 换 s_rel（可选）**：改 `release/secrets/<id>.json` 的 `s_rel_b64`（新随机 32B，W 不变）→ `python tools/gen_registry_cipher.py --recipe release/secrets/<id>.json` 重生成 `registry_cipher.inc`（确认 `GUARD_REGISTRY_REQUIRES_SERVER_SEED=1`）。两边指纹 `sha256(s_rel)[:8]` 对齐。
+- **B 出包**：`./gradlew :assembleOfficialDebug`（`com.tencent.mm`）或 `:assembleCoexistDebug`（`com.tencent.mn`）。
+- **C LSPatch 注入**：`java -jar 02_tools_工具/lspatch.jar <宿主APK> -m <对应flavor模块APK> -l 2 -k signing/guard-native-debug.keystore android androiddebugkey android -o 02_tools_工具/lspatch_out -f`。校验日志 `Embedding modules - com.ghost.assist`，可拆包比对内嵌 `libguardcore.so` 哈希。
+- **D 服务器同步**（交 guard-server_服务器运维）：`config.py` 的 `GUARD_REL_KEYS[<id>].srel` 换同一新 s_rel + `release_lines` 登记（package_line/product_version）+ 部署主/备两节点。
+- **E 装机 L1 验证**：冷启动看 `available=true`、`role=1 MAIN`、`BATCH1_VERIFY PASS`；心跳后 `recipeOk=true`。日志落盘才算发布候选。
+
+## 五条坑（已实证，违反即翻车）
+
+1. **包名注入要连进程名**：`GUARD_WX_PKG` 不能只喂 `anti_tamper` 的 `EXPECTED_PACKAGE`，还必须驱动 `guard_core.h` 的 `PROCESS_MAIN`/`PROCESS_PUSH`。漏了 → 共存版 `role=UNKNOWN` + `BATCH1 FAIL` → 不报错但不隐藏。新增"按包名分支"的 native 常量一律从 `GUARD_EXPECTED_PACKAGE` 派生。
+2. **同 release_id 换 s_rel = 旧装机包散沙**。要"新版不影响老用户"必须用**新 release_id**（如 `android_8071_coexist`，需 flavor 专属 `GUARD_RELEASE_ID` + 独立 s_rel + 服务器加线）。
+3. **服务器 `config.py` 不在默认部署文件里**：`deploy_release_health.py` 只推 `server.py`/`db.py`；s_rel 在 `config.py`，要单独推 + 先核远端基线逐字节一致 + 远端备份 `config.py`+`auth.db`。
+4. **装机反复 install/卸载会出半损坏僵尸**（启动崩 LSPatch metaloader `NoClassDefFoundError` / 卸载报 `DELETE_FAILED_INTERNAL_ERROR`）→ **重启手机**清 dex/odex 状态再装，别误判为代码/兼容问题。
+5. **改包重签固有限制**：第三方 App 调起 / 跳转微信支付会失败（微信内支付正常）。需第三方支付跳转的客户走官方微信；共存版定位 = 官方管支付跳转 + 共存版管隐私。
+
+## 边界（不越权，交对应 skill）
+
+- 加密配方 / 真锁 / RiskState / decrypt_config → `guard-security_网络安全官`
+- miyou-server 服务端改动 / 部署 / release_lines → `guard-server_服务器运维`
+- 状态机 / 授权 / 模块边界 / 过滤位置 → `guard-auth-review_授权检查官`
+- build / adb / lspatch / frida / logcat 命令 → `guard-terminal_终端操作`
+- 任务编排 / 看板 / 接手 → `guard-dispatch_总调度`
+- 快照 / 备份 / 回退 → `guard-git_保姆`
+
+## 收尾铁律
+
+1. 必须装机 L1（`role=1 MAIN` + `BATCH1 PASS` + `recipeOk=true`，终端直采日志落盘）才算发布候选；用户口述只记待补。
+2. 只更新当前发版 `worklog` + `docs/RELEASE_RULES.md`，不把同一结论复制到多处。
+3. 对外口径：可说"v1.1 授权闭环 + Ed25519 防伪造信封 + 当前发行线 server seed 解 registry"；**禁说**"服务器真锁终局完成 / 授权无法破解"。
+4. keystore 密码 / 私钥 / `s_rel` / `wrap_key` 原文禁进 git / 聊天 / 文档；只记 `sha256[:8]` 指纹。
+5. 1.0 正式发布后：`packageName` / keystore / `customerSeed` / `release_id` 永久不可变，只递增 `versionCode`（见 RELEASE_RULES「1.0 后签名证书不可变」）。

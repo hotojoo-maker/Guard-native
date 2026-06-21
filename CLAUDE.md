@@ -18,13 +18,15 @@
 | **质检** | P 任务完成后装机前 / 发版前 | `.cursor/skills/guard-review_质检门控/SKILL.md`（或 `.claude/...`） |
 | **终端操作** | build / adb / frida / logcat | `.cursor/skills/guard-terminal_终端操作/SKILL.md` |
 
-**专项 4 角色（按场景触发，非每会话必用）：**
+**专项 6 角色（按场景触发，非每会话必用）：**
 
 | 角色 | 触发时机 | skill 路径 |
 |------|---------|-----------|
 | **授权检查官** | 动 状态机 / 授权 / 模块边界 / 过滤位置 / 拆代码 / 新增 Filter 链 前必审 | `.cursor/skills/guard-auth-review_授权检查官/SKILL.md` |
 | **授权门控**（= 授权检查官快捷别名，同一角色入口） | 同上，快捷入口 | `.cursor/skills/auth-gate_授权门控/SKILL.md` |
 | **网络安全官** | 加密 / SO / DRM / 授权防护 / 服务器授权信封 / 蜜罐 / 改 vip 前 | `.cursor/skills/guard-security_网络安全官/SKILL.md` |
+| **发版官** | 发布 / 出包 / 官替版 / 共存版 / 换 s_rel / LSPatch 注入 / 装机验证（双版本出包流水线） | `.cursor/skills/guard-release_发版/SKILL.md` |
+| **服务器运维** | miyou-server / 卡密 / release_lines / envelope / S_rel·W / 版本状态后台 | `.cursor/skills/guard-server_服务器运维/SKILL.md` |
 | **git 保姆** | 备份 / 快照 / 提交 / 回退 / 清 git 垃圾（替不懂 git 的用户跑命令） | `.cursor/skills/guard-git_保姆/SKILL.md` |
 
 **登记日志**：每个 P 任务开始时在 `03_execute_执行任务/P<N>_xxx/worklog.md` 写第一行时间戳。
@@ -273,9 +275,11 @@ v4  2 月     底层 C++ 蜜罐 + 加盐字幕混合加密
 | **终端** | PowerShell / adb / frida / build 全套命令 | `guard-terminal_终端操作` |
 | **授权检查官** | 大框架守门：状态机 / 授权 / 模块边界 / 过滤位置 / 拆-合代码决策 | `guard-auth-review_授权检查官`（别名入口 `auth-gate_授权门控`） |
 | **网络安全官** | 客户端安全 / 加密配方 / DRM / 授权防护 / 服务器授权信封 / 蜜罐 | `guard-security_网络安全官` |
+| **发版官** | 发布出包流水线：官替/共存双版本 + 换 s_rel + LSPatch 注入 + 服务器同步 + 装机 L1（同一套签名/工具/流程/服务器） | `guard-release_发版` |
+| **服务器运维** | miyou-server 授权后台：卡密 / release_lines / envelope / S_rel·W / 版本状态 / 主备部署 | `guard-server_服务器运维` |
 | **git 保姆** | 替不懂 git 的用户跑命令：快照 / 备份 / 提交 / 回退 / 清 git 垃圾 | `guard-git_保姆` |
 
-> 共 **8 个 skill**（核心 4 + 专项 4）。`auth-gate_授权门控` 是 `guard-auth-review_授权检查官` 的快捷别名（同一角色，2 个入口文件夹）。
+> 共 **10 个 skill 文件夹**（核心 4 + 专项 6：授权检查官、网络安全官、发版官、服务器运维、git 保姆，外加授权门控别名）。`auth-gate_授权门控` 是 `guard-auth-review_授权检查官` 的快捷别名（同一角色，2 个入口文件夹）。**发版/发布/做官替/做共存 → 发版官**；服务器后台 → 服务器运维。
 
 **调试铁律（执行角色核心）**：需要设备操作时，必须给用户一个明确指令，等结果回来再推进。禁止假设输出、禁止"估计 XXX"后直接改代码。
 **主目录**: `.cursor/skills/`（Cursor 日常用，统一 `SKILL.md` 大写）

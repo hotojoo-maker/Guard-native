@@ -36,4 +36,6 @@
 诚实口径：
 
 - 本次只证明本地 encrypted registry + 证书绑定 + recipe 出口在装机冷启动通过。
-- 服务器真锁仍未完成：服务器短命 key 必要条件、Ed25519 验签、服务器授时真数据源、真正散沙降级仍未接。
+- 当时服务器真锁仍未完成：服务器短命 key 必要条件、Ed25519 验签、服务器授时真数据源、真正散沙降级仍未接。
+
+> 2026-06-11 口径更新：本段是 18:05 时点历史记录。后续 S3a/S4/S3b 已推进：当前 `android_8071` 已 `prod_server_lock` + server seed 解 registry，Ed25519 与 LeaseClock 已装机 PASS。现状以 `03_execute_执行任务/S3a0_ServerSeed设计/result.md` 与 `PROTECTION_MAP.md` §10.6 为准。

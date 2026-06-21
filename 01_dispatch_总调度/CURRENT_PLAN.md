@@ -82,12 +82,12 @@ W4  离线资料库采集 (P18)           本轮跳过（不阻塞当前 v1）
 
 ### 阶段 ② 替换/加密预热（v1 收尾）
 - P24 docs/classmap/v8071.yaml + tools/check_classmap.ps1
-- P25 字符串/类名 seed 化流水线
+- P25 字符串/类名 seed 化本地生成流程
 
 ### 阶段 ②.5 + ③ + ④（v2）
 - P26–P30：UI 优化 / LicenseGate / ClassMap 加密 / miyou-server / 通知伪装 C2
 
-> **防护 / 服务器真锁（S2 = Phase 1D-server）现状**：2026-06-11 解冻，已建 **dormant 出站/信封/心跳骨架**（`net/`），**未接入主流程**；权威现状 + 下一受控步骤见 [`../PROTECTION_MAP.md`](../PROTECTION_MAP.md) §10.6。不占 v1 功能窗口，单独受控推进。
+> **防护 / 服务器真锁（S2/S3a/S4/S3b = Phase 1D-server）现状**：2026-06-12 已接入主流程最小闭环。冷启动会应用缓存 envelope seed 并启动 `GuardHeartbeat`；激活后会立即 `syncOnce()` 拉 signed envelope；release 严格模式下 `StateMachine.isActive()` 已依赖 `GuardRuntime.isSensitiveConfigReady()`。当前仍未完成：共存版 `GUARD_RELEASE_ID` flavor 注入、删剩余 Filter 明文字面量、RiskState 全链路散沙降级与正版恢复闭环。权威现状见 [`../PROTECTION_MAP.md`](../PROTECTION_MAP.md) §10.6 与 `03_execute_执行任务/S3a0_ServerSeed设计/result.md`。
 
 ### 阶段 ⑤ 打包形态（v3）— **已提为主攻方向（D-016, 2026-06-08）**
 - P31–P33：LSPatch 双模式 / 签名校验绕过 / 反盗版引流壳
@@ -134,7 +134,7 @@ W4  离线资料库采集 (P18)           本轮跳过（不阻塞当前 v1）
 - **报告**：`03_execute_执行任务/V3T5_迁移探针/迁移接收端协议画像.md`（含全部 file:line 证据 + 动态验证清单）。
 
 ### 调研通过后的实现任务（工期待 T1–T3 出报告再定）
-- **P31** LSPatch 双模式打包流水线（主：劫持 com.tencent.mm + SignatureGuard 三层绕过；副：共存改包名）
+- **P31** LSPatch 双模式本地打包流程（主：劫持 com.tencent.mm + SignatureGuard 三层绕过；副：共存改包名）
 - **P32** 签名校验绕过 `SignatureGuard.install()`（PMS / CRC / native 自校验，目标来自 V3-T2）
 - **P33** 反盗版引流壳 + 私域链接（cs_url + shop_url）
 - **防破解证书源切换**（V3 落地时，见 D-016）：`_CERT_SHA256` 换 V3 发行证书 + 运行时改读宿主自身签名。

@@ -1,10 +1,10 @@
-# FAILURE_LOG — 失败方案归档（F-01~F-38）
+# FAILURE_LOG — 失败方案归档（F-01~F-41）
 
 > **铁律**：已证实失败的方案，**任何人不得复用**。AI 接手必读。
 > 旧 15 条详细 → [`./refs/FAILURE_LOG.md`](./refs/FAILURE_LOG.md)
-> 新 23 条（F-16 ~ F-38）见下方 §二
+> 新 26 条（F-16 ~ F-41）见下方 §二
 
-更新时间：2026-06-07（F-38 已补：伪装订位消息层坐标候选全证伪 → pz0.h.c 分发源；F-37 a2.b→jy0.t.f 防撤回；F-36 来电 6 证伪）
+更新时间：2026-06-12（F-39~41 已补：CLH getMethod("onResume") 命中父类误 finish 搜索/设置页；反复重装顶爆 risk→decoy 假种子→recipeOk=false；后台「标记正常」不重置 tier/risk）｜2026-06-07（F-38 伪装订位 pz0.h.c；F-37 防撤回 a2.b→jy0.t.f；F-36 来电 6 证伪）
 
 ---
 
@@ -30,7 +30,7 @@
 
 ---
 
-## 二、F-16 ~ F-38 新增（基于 D 线 + 8.0.66/8.0.71 实证）
+## 二、F-16 ~ F-41 新增（基于 D 线 + 8.0.66/8.0.71 实证）
 
 ### F-16：LSPosed 模块不加进程白名单 → 沙箱进程 FATAL
 
@@ -118,7 +118,7 @@
 
 | 项 | 内容 |
 |----|------|
-| 日期 | 2026-05-19（基于 QE66 P0~P14 流水线）|
+| 日期 | 2026-05-19（基于 QE66 P0~P14 流程）|
 | 分类 | 质量门控失守 |
 | 方案 | 写完代码直接装机不跑检测密度对比 |
 | 症状 | 某次发包后某指标突增（如 verifiedbootstate 从 15 跳到 30）未被及时发现 |
@@ -410,6 +410,33 @@ H→V 后：  [BUS:pendingRestore] notified adapter=v0 ← 同上
 
 **正解**：单 hook `pz0.h.c(...)` beforeHook 改 arg2(纬度)/arg3(经度) → 全局生效；下游 `n83.g.onGetLocation` 自动继承。PoC 装机跳点成功（`tools/probe_loc_poc_8071.js`，天安门 39.9087/116.3975）。
 **教训**：静态 smali 猜的 hook 点必须动态验证（同 F-02）；location 插件主体类 smali11 缺失时，别在缺失 dex 上空推，直接 Frida `enumerateLoadedClasses` + 调用栈定位。
+
+### F-39：ContactLabelHideGuard `getMethod("onResume")` 命中父类 → 误 finish 搜索/设置页（2026-06-12, L1+L2）
+
+> vivo 共存 LSPatch 装机 L1 实证（`03_execute_执行任务/S3a0_ServerSeed设计/s3a_coexist_vivo_trigdiag_20260612.txt`）。`installBlockLabelActivities` 本意只关 3 个标签页（ContactLabelManagerUI / MvvmContactListUI / LabelSearchUI），写法是 `actCls.getMethod("onResume")` 取方法再 `XposedBridge.hookMethod`。这 3 个类未自己声明 onResume，`getMethod` 沿继承链解析到共同父类 `MMActivity.onResume` → hook 挂到父类实现 → **所有未重写 onResume 的微信页面**（搜索 `FTSMainUI`、设置 `MainSettingsUI` 等）onResume 后全被 `finish()`。
+
+| 现象 | 根因 | 正解 |
+|------|------|------|
+| 点搜索/设置秒弹回主界面、密友/密群加不进 | hook 挂在父类 `MMActivity.onResume`，命中所有子类 | afterHook 里 `if (!targets.contains(act.getClass().getName())) return;` 按真实类名精确放行 |
+| 弹回的总是 LauncherUI | LauncherUI 自己重写了 onResume，逃过命中 | — |
+
+**日志铁证**：`[CLH:act] finish FTSMainUI` / `finish MainSettingsUI`（无任何 `[SU]`/`[SF:unlock]`，与 111111 解锁无关）。
+**教训**：同 F-26 家族——`getMethod()` 沿继承链解析到父类方法，hook 到的是父类实现 → 命中所有子类。hook Activity 生命周期方法务必在回调里按真实类名二次校验，别假设 getMethod 拿到的是子类自己的。
+
+### F-40：反复重装顶爆 risk → 服务器发 decoy 假种子 → recipeOk=false 全功能空转（2026-06-12, L1）
+
+> vivo 共存装机 L1：`role=1 MAIN`、`BATCH1 PASS`、`[TG] install done`、`[init] ready` 全正常，但 `[hb] synced tier=3` + `[hb] registry after seed recipeOk=false`。根因不在客户端、不在配方、不在 LSPatch：服务器 `evaluate_guard_device` 对 install_id 变化（重装）每次 +35~95 risk、token churn +20~40；`risk_score ≥ risk_honey(110)` → `tier=3` → `crypto_utils.py` 发随机垃圾种子（decoy）→ 客户端解出垃圾 → registry scatter → 隐私 filter 无配方 → 状态机进 HIDDEN 也隐不了人。一下午反复 `install -r` 把这台顶到 `risk=255`。
+
+**排错口径**：隐藏失效先用信封/心跳实测 `tier_code`，别只看后台 `device_status`（见 F-41）。
+**修法（服务端，2026-06-12 已落代码待部署）**：`_reset_device_risk()` 激活即清风险 + 每日重装宽限 5 次（`REINSTALL_FREE_PER_DAY`）。存量高 risk 设备需重新激活或 admin 重置才清，不会自愈得很快（255×0.85ⁿ）。
+**教训**：开发期反复 `install -r` 会触发自家防盗版蜜罐，把测试机误判成盗版。测试用专卡 + 别狂重装；要么走 testing 豁免。
+
+### F-41：后台「标记正常」只改 device_status，不重置 tier/risk（2026-06-12, L1）
+
+> 把 tier=3 的 vivo 在后台点「标记正常」后，`device_status=normal` 但 `tier_code=3 / risk_score=255` 原样不动；而发不发 decoy 看的是 `tier_code`（每次心跳由 `risk_score` 重算）→ 仍发假种子 → 仍不隐藏。运维极易"点了正常以为修好了"。
+
+**正解**：后台需要独立的「重置设备风控」动作（`risk_score=0 / tier_code=1 / reinstall_count=0 / token_churn_count=0 / shadow_started_ts=0 / notice_after_ts=0`），与 `device_status` 显示位分开。
+**教训**：状态显示位 ≠ 风控决策位。运维手册要写清"隐藏失效查 `tier/risk`，不查 `status`"。
 
 ---
 

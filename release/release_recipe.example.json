@@ -1,6 +1,6 @@
 {
   "_comment": "真锁发版配方模板（一个版本 = 一份配方）。客户端构建 + miyou-server（另一个 AI）两边读同一份，版本号对上就不会错配。这是【模板】，不含真密钥；真配方放 release/secrets/<release_id>.json（已 gitignore），两个 AI 之间安全传递，绝不进 git。字段语义见 docs/RELEASE_RECIPE契约.md。",
-  "release_id": "android_8071_v1.1_r1",
+  "release_id": "android_8071",
   "schema_id": "r8071_v1",
   "wechat_version": "8.0.71",
   "kid": "e1",

@@ -125,8 +125,6 @@ Frida 脚本: 03_execute_执行任务\<当前P任务>\scripts\ 或 tools\
 
 日志路径必须跟当前 P 任务走；当前 P 任务不明确时，先问用户，不默认写到 P16、docs 或 skill 目录。
 
----
-
 ## 命令速查（PowerShell 语法）
 
 ### Build
@@ -252,7 +250,7 @@ frida -U -f com.tencent.mm --no-pause -l "C:\Users\Me\Desktop\guard_native\03_ex
 ## KPI 门控流程（场景 C，每个 P 任务关闭必做）
 
 ```powershell
-frida -U -f com.tencent.mm --no-pause -l "I:/apk2/_3__D_wechat_ban/official_wechat_ban_research/03_anti_frida/frida_stats.js" 2>&1 | Tee-Object "logs\kpi.log"
+frida -U -f com.tencent.mm --no-pause -l "I:/apk2_official_research/official_wechat_ban_research/03_anti_frida/frida_stats.js" 2>&1 | Tee-Object "logs\kpi.log"
 ```
 
 对比红线：verifiedbootstate ≤ 38，PROP ≤ 220，normsg ≤ 5124，CONN ≤ 0.5

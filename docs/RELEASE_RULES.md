@@ -79,6 +79,68 @@ Guard Native / Guard Pack 从 **1.0 正式发布**开始，同一客户包必须
 
 ## 双版本发布手册（官替版 / 共存版）
 
+### 下次发新版最短流程（先看这里）
+
+> 目标：新版本发版只走一条线，不再临时猜“官替/共存/服务器配方”。
+
+**一句话模型：**
+
+```text
+一个发行包 = 一个 release_id = 一份 registry_cipher = 服务器一条 release_line + 一份 S_rel
+```
+
+**A. 先定版本线**
+
+| 发行包 | 宿主包名 | 客户端 release_id | 服务器 release_line |
+|--------|----------|-------------------|---------------------|
+| 官替版 | `com.tencent.mm` | 例如 `android_8072_hijack` | 同名 |
+| 共存版 | 例如 `com.tencent.mn` | 例如 `android_8072_coexist` | 同名 |
+
+铁律：客户端 `BuildConfig.GUARD_WX_PKG` 和 `BuildConfig.GUARD_RELEASE_ID` 必须按 flavor 注入；不能只改包名、不改 release_id。否则会出现“共存包名 `com.tencent.mn`，但服务器归到官替线 `android_8071`”的错位。
+
+**B. 客户端生成配方**
+
+1. 为每条新线准备 `release/secrets/<release_id>.json`（真密钥文件，gitignore，禁止进聊天/文档）。
+2. 用该 recipe 生成 `native_core/src/registry_cipher.inc`：
+
+```text
+python tools/gen_registry_cipher.py --recipe release/secrets/<release_id>.json
+```
+
+3. 编对应 flavor：官替编 official，共存编 coexist。
+4. LSPatch 注入对应宿主 APK：官替用原版微信 APK，共存用已改包名克隆 APK。
+
+**C. 服务器上传配方 / 登记发行线**
+
+服务器不接收 hook 热更新，只登记发行线并发同一条线的 server seed：
+
+1. 在 `I:\miyou-server\config.py` 增加或更新同名 `GUARD_REL_KEYS[release_id]`，只同步 `s_rel/W` 所需材料，部署前先备份远端 `config.py` 和 `data/auth.db`。
+2. 在后台「高级设置 → 发版档案」登记同名 release：`package_line`、`product_version`、宿主包名、证书指纹、`S_rel/W` 指纹、registry hash。
+3. 部署主备服务器；注意常规 `deploy_release_health.py` 只推 `server.py/db.py`，涉及 `config.py` 的配方上传必须单独核对、备份、覆盖、重启。
+4. 验证 `/api/v1/ping`、`/admin/api/releases`，再用测试卡取 envelope 实测 `s_rel` 指纹，不只看后台登记列。
+
+**D. 装机验收**
+
+必须看到：
+
+```text
+role=1 MAIN
+BATCH1_VERIFY PASS
+[hb] registry after seed ... recipeOk=true
+```
+
+后台版本总账应显示为：
+
+```text
+新设备 / 观察中 / 稳定设备 / 需处理
+```
+
+新设备或观察期不是异常；只有 tier>=2、封停、seed/配方失败、风险态、失败计数才算“需处理”。
+
+**E. 不动老客户**
+
+已经发布给客户的 `release_id` 冻结：不原地换 `S_rel`、不换 registry、不改证书/包名。要发新内容就开新 `release_id`，老线只做 `deprecated` 或按节奏通知升级。
+
 > 目标：后续发版由 AI 按包档案自动改包、签名、生成加密配方和打包；用户只选择发哪条版本线，不手动碰签名。
 
 ### 两条版本线
@@ -103,6 +165,14 @@ Guard Native / Guard Pack 从 **1.0 正式发布**开始，同一客户包必须
 - 网盘只放 APK；网盘路径、目录名、下载链接由用户随意决定，**不属于项目状态，不写入发版档案**。
 - 服务器只用于授权 / 公告 / 真锁材料登记；**不参与打包、不托管 APK、不决定网盘路径**。
 - 发版流程不得要求用户说明“APK 放哪个网盘 / 哪个目录”；只要本地 APK 产物和装机验证通过即可。
+
+本机改包工具路径：
+
+```text
+apktool: C:\Users\Me\Desktop\guard_native\02_tools_工具\apktool.jar
+```
+
+> 说明：`apktool.jar` 用于共存版静态改包名 / manifest / provider authority 等 APK 结构处理；LSPatch 仍只负责注入模块，不负责改包名。
 
 ### AI 发版档案
 
@@ -144,9 +214,13 @@ cert_sha256_source: 从 keystore/签名自动读取，不手写
 
 当前状态提醒：
 
-- C++ 包名注入已预留：`-PguardWxPkg=...`。
-- Java 宿主包白名单和 scope 仍需纳入同一套构建参数，不能只改 C++。
-- 共存版如果由 MT 管理器等工具改包名，仍必须把最终包名同步给模块构建链。
+- C++ 包名注入已预留：`-PguardWxPkg=...`（CMake `-DGUARD_WX_PKG` → `GUARD_EXPECTED_PACKAGE`）。
+- Java 宿主包白名单已随 `BuildConfig.GUARD_WX_PKG` 区分 official/coexist；共存版进程识别不再写死 `com.tencent.mm`。
+- ⚠️ `GUARD_RELEASE_ID` 仍在 `AppConfig` 硬编码为 `android_8071`，尚未随 flavor 注入。因此当前共存版即使宿主包名是 `com.tencent.mn`，客户端仍会上报 `android_8071`，不会真正走 `android_8071_coexist` 发行线。
+- **下次新版本发版前第一步**：先把 `GUARD_RELEASE_ID` 改成 `BuildConfig.GUARD_RELEASE_ID`，并在 official/coexist flavor 分别注入自己的 release_id；否则服务器版本总账会继续按 `android_8071` 聚合。
+- 共存版如果由 MT 管理器等工具改包名，仍必须把最终包名同步给模块构建链；下一步还必须同步 `GUARD_RELEASE_ID`，不能只改 C++ / 宿主包名。
+
+> ⚠️ **包名注入坑（2026-06-12 实证修正）**：`GUARD_WX_PKG` 不能只喂 `anti_tamper` 的 `EXPECTED_PACKAGE`，还**必须**驱动 `guard_core.h` 的 `PROCESS_MAIN` / `PROCESS_PUSH`（进程角色判定）。历史上后两者写死 `com.tencent.mm`，导致共存版（`com.tencent.mn`）进程角色判为 `UNKNOWN` → `BATCH1_VERIFY FAIL` → 业务 hook 不安装 → **不报错但不隐藏**。已改为 `PROCESS_MAIN = GUARD_EXPECTED_PACKAGE`、`PROCESS_PUSH = GUARD_EXPECTED_PACKAGE ":push"`（官替版值不变，零影响）。新增任何"按包名分支"的 native 常量，一律从 `GUARD_EXPECTED_PACKAGE` 派生，禁止再写死。
 
 ### 加密接手清单（AI 发版必读）
 
@@ -173,10 +247,11 @@ native_core/registry_8071.json
 
 加密现状口径：
 
-- 已完成：AES-GCM encrypted registry、签名证书绑定、`GuardRuntime.getRecipe()` 取配方、失败 scatter。
-- 仍未完成：服务器短命 key 材料成为 registry 必要条件、Ed25519 验签、服务器授时真数据源、真正散沙降级。
-- 对外只能说：**本地 encrypted registry + 证书绑定已接入**。
-- 对外禁止说：**服务器真锁已完成** 或 **授权无法破解**。
+- 已完成：AES-GCM encrypted registry、签名证书绑定、`GuardRuntime.getRecipe()` 取配方、失败 scatter、S4 Ed25519 信封验签、S3b-A/B 服务器授时 + 设置页 72h 离线强验。
+- 已完成（当前 `android_8071` 发行线）：`prod_server_lock` 生成链路已把服务器 `S_rel` 折入 `registry_cipher.inc`，产物 `GUARD_REGISTRY_REQUIRES_SERVER_SEED=1`；线上 envelope `k/n` unwrap 后 `recipeOk=true`，无有效 server seed 时 registry scatter。
+- 仍未完成：共存版 `GUARD_RELEASE_ID` flavor 注入、删剩余 Filter 明文字面量 / fallback 债、V3 官替/共存证书源完整对齐、RiskState 全链路散沙降级与正版恢复闭环（当前仅来电拦截有篡改散沙例外）。
+- 对外只能说：**v1.1 商业授权闭环 + Ed25519 防伪造信封 + 当前发行线 server seed 解 registry 已接入**。
+- 对外禁止说：**服务器真锁终局完成** 或 **授权无法破解**。
 
 发版时必须保证：
 
@@ -195,6 +270,18 @@ scatter 排查顺序：
 3. 看 `PHASE1E_VERIFY` 是否 FAIL：优先查 `GuardRuntime.getRecipe()` / `EncryptedConfigLoader` / `nativeGetRecipe()` 出口。
 4. 共存版整片 scatter：优先查最终包名、运行时证书源、`guardWxPkg`、Java 白名单和 scope 是否同源。
 5. 业务 hook 仍生效但加密验证 FAIL：可能是旧 fallback 在兜底，不能当作加密链路通过。
+6. **`recipeOk=false` 但配方/证书/s_rel 都对 → 查设备风控 decoy（不是配方坏）**：服务器对 `tier_code>=3`（蜂窝/decoy）设备发**随机垃圾种子**（`crypto_utils` `is_decoy → secrets.token_bytes`）→ 客户端解出垃圾 → registry scatter。`tier` 由 `risk_score>=risk_honey` 触发，而 `risk_score` 主要被**重装churn**(install_id 变 +35+…)、token churn 顶上去。排错：用测试卡激活后看 `[hb] synced tier=`；tier≥3 就是被风控误判，不是发版材料问题。
+
+### 服务器设备风控语义（2026-06-12 上线，发版/排错必读）
+
+- **device_id = `SHA256(ANDROID_ID)[:8]`**，同签名 App 共享 ANDROID_ID → **官替 `com.tencent.mm` 与共存 `com.tencent.mn` 在同一台手机上 device_id 相同、共用一条 `guard_device_state`**。
+- 现行风控（`db.py`）：
+  - **激活即清风险**：有效卡密激活绑定设备 → `risk_score/tier/reinstall` 清零（授权用户随便重装不触雷）。
+  - **每日重装宽限 5 次**：同日前 5 次重装不加分，超出才罚。
+  - **同机双版本不互 churn**：仅当 `release_id` 相同才计 reinstall/token churn；官替↔共存跨线翻转视为版本共存、不罚。
+  - **后台「恢复正常」真清风险**：`update_device_status('normal')` 会重置 risk/tier（不只是改 status 标记）。
+- **后台「版本状态」→「展开真锁/异常设备」** 可列出本发行线 tier≥2/decoy/失败 设备并一键「恢复正常(清风险)」。
+- 测试机被反复 install 顶成 decoy 时：**重新激活**或后台**恢复正常**即脱离；别再狂重装（255×0.85ⁿ 自愈很慢）。
 
 ### 标准发版流程
 
@@ -212,8 +299,37 @@ scatter 排查顺序：
    - `PHASE1D_VERIFY PASS`
    - `PHASE1E_VERIFY PASS`
 8. 验证业务主链路：显隐切换、会话过滤、通讯录过滤、朋友圈过滤、搜索过滤、红点/通知相关链路。
-9. 产物只收口为本地 APK：官替版 APK / 共存版 APK。上传网盘由用户自由处理，路径不进项目流水线。
+9. 产物只收口为本地 APK：官替版 APK / 共存版 APK。上传网盘由用户自由处理，路径不进项目发版档案。
 10. 通过后递增并回写包档案里的 `version_code_next`。
+
+### s_rel 轮换 + 双版本 LSPatch 发版工作流（2026-06-12 实操固化）
+
+> 一次完整发版（换种子 / 出官替 + 共存）实际跑通的步骤，照此复刻，别再各处猜。
+
+**A. 换 s_rel（可选；同 release_id 换种子 = 旧装机包会散沙，需重装）**
+1. 改 `release/secrets/<release_id>.json` 的 `s_rel_b64`（新随机 32B；`wrap_key` 不变 = 不用动 SO 的 W）。
+2. `python tools/gen_registry_cipher.py --recipe release/secrets/<release_id>.json` → 重生成 `native_core/src/registry_cipher.inc`（确认 `GUARD_REGISTRY_REQUIRES_SERVER_SEED=1`）。
+3. 指纹对账：客户端/服务器两边 `sha256(s_rel)[:8]` 必须一致（只记指纹，不记原文）。
+
+**B. 出包（每条发行线各编一次）**
+4. 官替版：`./gradlew :assembleOfficialDebug`（`GUARD_WX_PKG=com.tencent.mm`）。
+5. 共存版：`./gradlew :assembleCoexistDebug`（`GUARD_WX_PKG=com.tencent.mn`）。
+6. LSPatch 注入：`java -jar 02_tools_工具/lspatch.jar <宿主APK> -m <对应flavor模块APK> -l 2 -k signing/guard-native-debug.keystore android androiddebugkey android -o 02_tools_工具/lspatch_out -f`
+   - 官替宿主 = 微信原版 APK；共存宿主 = 改好包名的克隆 APK（`com.tencent.mn`）。
+   - 模块签名证书（guardFixed）= registry 的 `_CERT_SHA256`；LSPatch 外层签名不影响 registry 解密（`bindSigningCert` 读模块自身证书）。
+   - 校验：日志 `Embedding modules - com.ghost.assist`；可拆包比对内嵌 `libguardcore.so` 哈希 = 重编模块 SO。
+
+**C. 服务器同步（关键，别漏）**
+7. `I:\miyou-server\config.py` 的 `GUARD_REL_KEYS[<release_id>].srel_b64` 换成同一新 s_rel（`secrets.local` 同步）。
+8. `release_lines` 登记该线：`package_line`（hijack/coexist）、`product_version`、`s_rel_fingerprint` 等（后台「版本状态」可见、可分线管理、可独立 deprecate/kill）。
+9. 部署到主+备两节点：**注意 `deploy_release_health.py` 默认只推 `server.py`/`db.py`，不推 `config.py`（s_rel 在此）**；推 `config.py` 前先逐字节核对远端基线一致、远端备份 `config.py`+`auth.db`，再覆盖、`py_compile`、重启、`/api/v1/ping` 200。
+10. 同 release_id 换 s_rel = 旧装机包散沙；要「新版不影响老用户」必须用**新 release_id**（如 `android_8071_coexist`，需 flavor 专属 `GUARD_RELEASE_ID` + 独立 s_rel + 服务器加线）。
+
+**D. 装机验证（L1，缺一不可）**
+11. 冷启动看：`available=true`、`certBind=<证书前缀>`、`BATCH1_VERIFY PASS`、`role=1 MAIN`（共存版尤其要确认 role 正确，见上方包名注入坑）。
+12. 心跳取回信封后看：`[hb] registry after seed ... entries=4 ... recipeOk=true`。
+13. `PHASE1B~1E` 在拿到 server seed 前 FAIL/scatter 是预期（prod_server_lock）。
+14. 装机若用 `am start` 起不来或崩在 LSPatch metaloader，优先让用户**桌面点开图标**（真启动），再抓日志。
 
 ### 共存版特别说明
 

@@ -4,6 +4,8 @@
 > 性质：**设计文档，不动代码逻辑、不接 `ModuleMain` 冷启动**。证据等级 **L2 静态**（只读核查代码，未跑装机）。
 > 权威关联：`PROTECTION_MAP.md` §10.6（S2 现状唯一权威）· 安全官 skill「Key 来源准则 / 粗粒度解密包」· `docs/RELEASE_RULES.md` §加密接手清单。
 
+> **现状提示（2026-06-11 口径统一）**：本文是 S3a-0 历史设计，不再代表当前实现状态。当前 `android_8071` 已切 `prod_server_lock`：`registry_cipher.inc` 为 `GUARD_REGISTRY_REQUIRES_SERVER_SEED=1`，线上 envelope unwrap 后 `recipeOk=true`；S4 Ed25519 与 S3b LeaseClock 也已装机 PASS。现状以本目录 `result.md` + `PROTECTION_MAP.md` §10.6 为准。
+
 ---
 
 ## 0. 一句话目标
@@ -17,7 +19,7 @@ S3a 只管真锁材料如何参与 registry key，**不改变发包方式**：
 - APK 由本地 AI 构建签名，只产出 **官替版 APK** 和 **共存版 APK**。
 - 网盘只放 APK；用户放哪里都可以，网盘路径不写入发版档案，也不作为项目状态。
 - 服务器只负责授权 / envelope / 真锁材料登记，**不参与打包、不托管 APK、不决定下载路径**。
-- 后续任何“服务器流水线”描述都只指授权和真锁材料，不指 APK 分发。
+- 后续任何“服务器真锁材料流程”描述都只指授权和真锁材料，不指 APK 分发。
 
 ---
 
@@ -120,20 +122,20 @@ derive 时：
 
 ## 4. 不做（本轮明确排除，守裁决）
 
-- ❌ 不碰 `StateMachine.isVipAuthorized()`（v1 诱饵 stub，仍 `return true`）。
+- ❌ S3a-0 当时不碰 `StateMachine.isVipAuthorized()`（历史约束；现状已在 v1.1 授权闭环中接 `EnvelopeStore.isAuthorizedNow()`）。
 - ❌ 不让 Filter / hook 回调读授权 / risk / 服务器时间；业务层继续只读 `GuardRuntime.getRecipe()` / `StateMachine.isActive()`。
 - ❌ 不接 `GuardHeartbeat.start()` 进冷启动。
 - ❌ 不改 `derive_registry_key` 默认行为、不重新生成 `registry_cipher.inc`、不切 PROD 开关。
-- ❌ 不做 Ed25519（S4）、不做 LeaseClock 喂数（S3b）。
+- ❌ S3a-0 当时不做 Ed25519（S4）、不做 LeaseClock 喂数（S3b）；现状二者均已装机 PASS，见 `result.md`。
 
 ---
 
 ## 5. 与 V3 改包路线的冲突（落地前必须先对齐，来自 PROTECTION_MAP §10.6 ②③）
 
 S3a fail-closed 一旦切 PROD，**没有 fallback 兜底**：
-1. **删 fallback = 重签即死**：任何「证书/seed 变了却没重生成 `registry_cipher`」的重签/改包 → 钥匙错 → registry 散沙 → 隐私 hook 静默全挂。⇒ S3a-PROD 必须与 V3 发版流水线**绑同一条**（每个 `release_id` 都重生成 cipher + 装机回归）。
+1. **删 fallback = 重签即死**：任何「证书/seed 变了却没重生成 `registry_cipher`」的重签/改包 → 钥匙错 → registry 散沙 → 隐私 hook 静默全挂。⇒ S3a-PROD 必须与 V3 本地 AI 发版流程**绑定同一套步骤**（每个 `release_id` 都重生成 cipher + 装机回归）。
 2. **共存版改包名 → 误判篡改**：`anti_tamper` 期望包名必须随 `WX_PKG`/`guardWxPkg` 注入，不能硬编码 `com.tencent.mm`。
-⇒ **S3a 切 PROD 前置条件**：V3 包名注入 + 每发行线独立 `registry_cipher.inc` 流水线先就位。
+⇒ **S3a 切 PROD 前置条件**：V3 包名注入 + 每发行线独立 `registry_cipher.inc` 本地生成步骤先就位。
 
 ---
 
@@ -144,7 +146,7 @@ S3a-0  本文（设计）                                          ← 当前，
 S3a-1  发版档案 schema 落地（S_rel / W / cert 三材料分槽）+ gen 脚本读档案（DEV 默认不变）
 S3a-2  config_crypto 加 GUARD_REQUIRE_SERVER_SEED 守门（默认关，DEV 行为零变化）+ 主机自测覆盖两档
 S3a-3  GuardActivation certHex 同源补全 + DEV-gated 手动验 unwrap→fold→解密链（仍不进冷启动）
-S3a-4  （需 miyou-server 在线 + V3 流水线就位后）才谈切 PROD fail-closed
+S3a-4  （需 miyou-server 在线 + V3 本地 AI 发版流程就位后）才谈切 PROD fail-closed
 ```
 
 ---

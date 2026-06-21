@@ -16,7 +16,7 @@ TOOLS_INDEX — 工具/脚本/资源索引
 | **8.0.66 APK（可选）** | ⬜ 对比样本 | `06_refs_参考资料/apk_samples/wechat_8066.apk` | 仅 P18 版本 diff / 见 §A |
 | **8.0.66 jadx** | ⬜ 可选 | `06_refs_参考资料/apk_samples/wechat_8066_jadx/` | W4 对比用 |
 | 小米9 + Android 11 + Magisk + LSPosed | ✅ | — | 已就绪 |
-| Frida 17.9.3 PC + frida-server | ✅ | — | 已就绪 |
+| Frida CLI 17.11.0 + frida-server 17.11.0 | ✅ | — | 已就绪；B56 后旧 `.js` 取证脚本优先用 CLI，Python runner 需显式 Java bridge |
 
 ### §A 8.0.66 APK 落地清单（**可选**，非主车道）
 
@@ -58,6 +58,16 @@ TOOLS_INDEX — 工具/脚本/资源索引
 | 伪装订位 选点结果捕获 | `tools/probe_loc_pick_8071.js` | hook setResult 抓选点页返回（发现 KLocationIntent extra）|
 | 伪装订位 LocationIntent dump | `tools/probe_loc_intent_8071.js` | 反射 dump LocationIntent 字段 → d=纬度/e=经度/h=POI名 |
 | 伪装订位 朋友圈选点排查 | `tools/probe_loc_moments_8071.js` | hook startActivity/setResult 排查朋友圈 POI 选点器（列表式，未采用）|
+| normsg 设备指纹明文快照 | `tools/dump_mm_z3.js` | **防封官**：主动调 `u.z3(0)`/`Y8` 读 Java 采集层设备指纹明文（快进快出，低暴露；B35 实证 k33/k49）|
+| normsg 采集器明文 hook | `tools/dump_normsg_plaintext.js` | **防封官**：warm-attach hook `u.z3`/`Y8`/`WCProbe$Info.dispatchEncryptJNIFuncCall` 明文入/密文出 |
+| normsg native 探针 | `tools/dump_normsg_native.js` | **防封官**：hook libc `__system_property_get`/`lstat`（按 normsg 模块 returnAddress 过滤）+ `getPackageInfo` SIG flags |
+| 微信环境检测快照(AccStrike) | `tools/dump_wx_detect.js` | **防封官**：`AccConfigManager` strike XML + `c$q.c29` installed_pkgs + `AccExptService` 因子/evilStackList/evilPkgList |
+| normsg S6 解密器 hook | `tools/dump_normsg_s6.js` | **防封官**：hook `u.S6()`（ql3.j XOR 解密器）抓 密文入→明文出 + 主调 `z3(0)` 触发（B35）|
+| normsg 启动期捕获(spawn) | `tools/dump_normsg_boot.js` | **防封官**：冷启 spawn 一次拿 ① S6 明文 ② normsg native `__system_property_get`/`lstat` 探测名单（B35 实证 root/解锁属性组）|
+| normsg S6 离线解码器 | `tools/s6_decode.py` | **防封官**：S6（ql3.j XOR，**对合**）离线解/验；`--str`/`--hex`/`--hex16`/`--selftest`；配 Ghidra 抠出的密文常量用（B35）|
+| normsg SO 暴力 S6 扫描 | `tools/s6_scan_so.py` | **防封官**：扫 `libwechatnormsg.so` 候选串跑 S6 捞可读关键词（B35 实测 0 命中 → 佐证 S6 无活跃密文）|
+| 签名轴动态探针 | `tools/dump_sig_check.js` | **防封官**：hook `getPackageInfo`(GET_SIGNATURES/SIGNING)+`Signature.toByteArray`+调用栈；**B35 实证 normsg 上报自身签名 → 官替版签名轴暴露**（spawn 用）|
+| ELF 导入符号列举 | `tools/elf_imports.py` | **防封官**：列 `.so` 导入(UNDEF dynsym) 筛 文件/crypto/zip/属性；B35 判 normsg 无文件读/crypto/zip 导入 → 无 native 直读签名能力（签名伪装门控）|
 
 ---
 
@@ -146,6 +156,8 @@ MSYS_NO_PATHCONV=1 frida -U -p $PID -l script.js
 adb forward tcp:8080 tcp:8080
 # 然后浏览器开 http://localhost:8080
 ```
+
+Frida 17 方法学：旧 `Java.perform` 脚本优先用 `frida` CLI 直接加载；Python `create_script` 普通 agent 不再默认带 Java bridge，需改成显式 bridge agent 后再跑。
 
 ---
 

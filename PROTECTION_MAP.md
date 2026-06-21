@@ -5,7 +5,8 @@
 > **证据基线**：2026-06-02 代码实测（只读核查，见 §附录 A），标 L2 = 静态已证实。
 > **关联**：`CLAUDE.md`（29 条铁律）· `docs/GUARD_GATE_TRUTH.md`（门控权威）· `docs/PRODUCT_GATE.md`（四层模型）· `DECISION_LOG.md` D-013（危险通告/kill switch）· `RISK_REGISTER.md` · `docs/DEBUG_CONSOLE_V2.md`（防护驾驶舱）
 > **当前进度（2026-06-02）**：**Phase 0 完成 ✅** —— 仪表盘（防护驾驶舱 + `/api/native` + `tools/guard_status`）+ ① DebugServer DEV-gate + ② proguard 收窄（release `BATCH1_VERIFY PASS` + mapping 实锤：NativeBridge 保留、过滤器混淆、诱饵留亮）+ ③ 接 `AuthManager.evaluate()`+`PiracyNotice`（装机 `evaluate=NO_LICENSE`，v1 放行不变）。**下一步 Phase 1**（真锁+心跳，接 miyou-server）。
-> **2026-06-11 更新**：Phase 1D-server（S2 服务器真锁）已解冻，建出**出站/信封/心跳骨架（dormant，未接入主流程）**；现状 + 下一受控步骤见 **§10.6**。
+> **2026-06-11 更新**：Phase 1D-server（S2 服务器真锁）解冻，先建出出站/信封/心跳骨架。
+> **2026-06-12 更新**：S2/S3a/S4/S3b 已接入主流程最小闭环：冷启动应用缓存 envelope seed 并启动 `GuardHeartbeat`，激活后立即拉 signed envelope；`android_8071` 已 `prod_server_lock`，无 server seed 时 registry scatter。现状 + 下一受控步骤见 **§10.6**。
 
 ---
 
@@ -34,7 +35,7 @@
 
 **一句话**：地基（真授权 + 服务器）还没有，城墙（混淆）开着大门，但漏斗零件大多现成。
 
-> ⚠️ **2026-06-11 更新**：本表「服务器/心跳 = 完全没有」一行已过时——`net/` 下 S2 出站/信封/心跳骨架已建（**dormant，未接入主流程**）。本表保留 2026-06-02 基线快照不改；服务器侧现状以 **§10.6** 为准。
+> ⚠️ **2026-06-11/12 更新**：本表「服务器/心跳 = 完全没有」一行已过时——`net/` 下 S2 出站/信封/心跳先建骨架，后续已接入冷启动 / 激活 / 设置页 72h 重验主流程。本表保留 2026-06-02 基线快照不改；服务器侧现状以 **§10.6** 为准。
 > ⚠️ **2026-06-12 更新（漂移修正）**：本表「真授权」行的 `isVipAuthorized(){return true;}` 也已过时——**现 `StateMachine.java:97 isVipAuthorized()` = `EnvelopeStore.isAuthorizedNow()`（真授权门：token+Ed25519验签信封+license未过期）**，见 §10.6。因此本文 §2/§4/§5/§10.4/§附录A 中把 `isVipAuthorized` 当「return true 假锁诱饵」的描述均为旧态；**当前关键词党诱饵是 `PromoConfig` + `CompatProbe` 绊线（§10.9），不再是 isVipAuthorized**。下方相关节已就地更正。
 
 ---
@@ -141,12 +142,12 @@
 > - [x] **P1B/1C** 核心 4 条 hook registry 抽取 + AES-GCM 加密（单一源 `registry_8071.json` → `registry_cipher.inc`；装机 `PHASE1B/1C_VERIFY PASS`）
 > - [x] **A-step1** 派生 key（去明文 key 常量，SO 内多段散装 + nonce 随机）
 > - [x] **A-step2** registry key 折入模块签名证书 SHA-256（防重打包；装机 `certBind=ca421ec3` + `PHASE1D_VERIFY PASS`）
-> - ⚠️ 仍是**本地锁非真锁**：Frida hook `decrypt_config` 出参仍可拿 registry；服务器短命钥匙/设备绑定 = 下面 miyou-server 项。
+> - ⚠️ 本段为 2026-06-08 历史快照：当时仍是本地锁。2026-06-12 当前 `android_8071` 已进入 `prod_server_lock`：无 server seed 时 registry scatter，心跳取回 signed envelope 后才 `recipeOk=true`。最新口径见 §10.6。
 > - V3 形态：cert 绑定证书源需从模块 APK 改为读宿主自身签名（见 DECISION_LOG D-016）。
 
 - [x] SO `decrypt_config()`（AES-GCM）实现 + 自测向量 —— P1A 装机 PASS（见上）
 - [x] miyou-server 心跳端点：授权码 → token → Ed25519 signed envelope；字段伪装 `K2i_m` / `k,n` 下发；**当前 `android_8071` 已用 `prod_server_lock` 把服务器 `S_rel` 折进 `registry_cipher`，线上 unwrap 后 `recipeOk=true`，见 §10.6**
-- [ ] `isActive()` 依赖「配方解开成功」；解不开 = 散沙（不崩、不全开）
+- [x] release 严格模式下 `isActive()` 依赖「配方解开成功」：`StateMachine.isActive()` 已叠加 `GuardRuntime.isSensitiveConfigReady()`；无有效 server seed / registry scatter 时敏感隐藏链静默失效（debug/dev 仍保留诊断 fallback）。
 - [ ] **离线宽限实测**：拔网后正版在宽限期内正常；超期才降级；重连自愈
 - [ ] **付费客户不误伤实测**：飞行模式 24/72h 内不出现关不掉弹窗
 - [ ] KPI：装 SO 前后跑 `frida_stats`，对比 `verifiedbootstate` 等无超红线
@@ -156,7 +157,7 @@
 - [ ] 蜜罐绊线 → `tampered` → 延迟散沙 + 水印
 - [ ] 防重放：心跳/零件带一次性 nonce + 签名时间戳
 - [ ] 水印溯源：seed 派生指纹可从泄漏样本反查客户
-- [ ] 强制弹窗（10天 lockout）→ `zxmqq.shop`，且**只对确认破解/过期**触发
+- [ ] 强制弹窗 / 引流漏斗：当前客户端篡改影子期为 **7 天**（用户 2026-06-12 拍板 override，代码在 `RiskState.SHADOW_HOURS_DEFAULT=168h`），且只对确认破解/过期触发；后续应改为服务端 `risk_pack` 下发。
 - [ ] 旧版本破解实测：微信升级后旧配方失效 → 自动散沙
 
 ### Phase 3（打磨，选做）
@@ -234,7 +235,7 @@ StateMachine.isActive()                // 取中央总闸
 - v1 只做轻的：**B 钉文档（本节）→ C 拆两闸（纯 Java）**。
 - **A 删 Filter fallback 缓做**：收益是兑现 registry 加密，但碰已验证 Filter，必须单独一刀 + 先 git 快照 + 逐条三证核账 + fail-closed + 装机回归。
 - **真锁主体 Phase 1D-server 冻结**：服务器短命钥匙 / Ed25519 验签 / LeaseClock 真数据源 / 远程 kill，等「真有客户 / 真有人来破」再启动（skill 估 20~35 人天，现在做属提前优化）。
-  - → ⚠️ **2026-06-11 此冻结已解除**（用户拍板②）：重启 Phase 1D-server（S2），先建 **dormant 出站/信封/心跳骨架**，真锁接入仍逐步受控。现状以 **§10.6** 为唯一权威。
+  - → ⚠️ **2026-06-11 此冻结已解除**（用户拍板②）：重启 Phase 1D-server（S2），先建出站/信封/心跳骨架；**2026-06-12 已接入主流程最小闭环**。现状以 **§10.6** 为唯一权威。
 
 ### 10.4 两种「党」两个蜜罐（现状 + 待办）
 

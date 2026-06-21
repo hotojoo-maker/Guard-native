@@ -28,8 +28,10 @@ import java.util.Random;
  * 边界：本类只调出站 / 信封 sanity / 缓存 / NativeBridge seed 出口，
  * 不做隐藏/显示决策，不碰 StateMachine / Filter。
  *
- * ⚠️ 未接入 ModuleMain（冷启动触发点 = 保护区，单独走授权检查官审）；
- *    本骨架默认 dormant，wiring 是后续受控步骤。
+ * 接入点（2026-06-12 已落地）：
+ *   • ModuleMain 冷启动：有 token 时 startAuthHeartbeatIfNeeded() 启动周期心跳。
+ *   • GuardActivation 激活后：syncOnce() 取首个 envelope，再 start() 周期续租。
+ *   • SettingsEntry：断网超过 72h 时 reverifyIfStale() 做算账重验。
  */
 public final class GuardHeartbeat {
 

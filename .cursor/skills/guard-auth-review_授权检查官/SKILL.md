@@ -127,9 +127,10 @@ description: Guard Native 授权检查官（别名：授权执行官、授权门
 ### C. `isActive()` 三层叠加的产品语义
 
 ```java
-StateMachine.isActive() = isVipAuthorized()       // 1. 授权门 — 没付费就什么都不工作
-                       && Bridge.isFeatureEnabled() // 2. 密友总开关 f1 — 用户在设置页关掉了？
-                       && mActive;                  // 3. 当前 HIDDEN 态？— V 态不过滤
+StateMachine.isActive() = isVipAuthorized()                 // 1. 授权门 — token + Ed25519 信封 + license 未过期
+                       && GuardRuntime.isSensitiveConfigReady() // 2. 配方门 — release 必须 server seed 解开 registry
+                       && Bridge.isFeatureEnabled()          // 3. 密友总开关 f1 — 用户在设置页关掉了？
+                       && mActive;                           // 4. 当前 HIDDEN 态？— V 态不过滤
 ```
 
 - 任意一层 false → **过滤直接放行**（朋友圈/会话/通讯录/搜索都看到密友）
@@ -141,6 +142,7 @@ StateMachine.isActive() = isVipAuthorized()       // 1. 授权门 — 没付费�
 |----|--------------|------------------|
 | **EntryGate** 入口门 | 别人随便拿到手机 → 看到密友入口 → 知道你在用 | 看不到设置入口；放大镜搜 `111111` 才能复活 |
 | **AuthGate** 授权门 | 破解党拿到 APK → 全功能白嫖 | 安装能装、能切状态，**但所有功能按钮灰色**；引流到购买 |
+| **ConfigGate** 配方门 | hook 授权显示 / 缺 server seed / registry scatter | release 严格模式下敏感隐藏链静默失效，debug/dev 可保留诊断 fallback |
 | **StateGate** 状态门 | 老婆/老板拿过手机 → 一眼看到密友 | 模块当前 HIDDEN → 密友/密群/朋友圈密友帖 **全部消失** |
 | **RiskGate** 风险门 | 包被改 / 微信版本不对 / 服务器下发 killSwitch | **静默失效**：不崩溃、不弹窗，但所有 hook 都跳过，等同于没装模块 |
 
@@ -164,7 +166,7 @@ StateMachine.isActive() = isVipAuthorized()       // 1. 授权门 — 没付费�
 | `enterHidden()` / `exitHidden()` | 切到隐藏态 / 切出隐藏态（只能 SettingsEntry 按钮 + B 模块触发器调） |
 | `beginUnlock()` | 状态机进入"解锁中"——搜索框弹出时调 |
 | `isActive()` | 三层叠加：是否授权 + 密友总开关是否打开 + 当前是否 HIDDEN |
-| `isVipAuthorized()` | 当前 wxid 是否已经在服务器买了 license（v1 是 stub，永远返回 true）|
+| `isVipAuthorized()` | 当前 wxid 是否已有有效服务器授权；v1.1 已接 `EnvelopeStore.isAuthorizedNow()`，不再是 stub |
 | `isFeatureEnabled()` | 用户在设置页有没有手动关闭"密友功能"开关 f1 |
 | `AuthManager.evaluate()` | 评估当前 wxid + 设备 + license 的组合，输出 AUTH_OK / ACCOUNT_MISMATCH 等 |
 | `bindAccount()` | 通过 DebugServer `/api/bind_account` 建立首次绑定关系 |
@@ -192,11 +194,15 @@ StateMachine.isActive() = isVipAuthorized()       // 1. 授权门 — 没付费�
 │     wxid + device + license                             │
 │     → 决定能不能使用功能（添加密友/切显隐/改策略）        │
 ├─────────────────────────────────────────────────────────┤
-│  3. StateGate  状态门                                    │
+│  3. ConfigGate  配方门                                   │
+│     server seed + encrypted registry ready               │
+│     → 决定 release 严格模式下敏感隐藏链是否可生效         │
+├─────────────────────────────────────────────────────────┤
+│  4. StateGate  状态门                                    │
 │     HIDDEN / VISIBLE / UNLOCKING                        │
 │     → 决定当前是隐藏模式还是显形模式                    │
 ├─────────────────────────────────────────────────────────┤
-│  4. RiskGate  风险门                                     │
+│  5. RiskGate  风险门                                     │
 │     packageHash / certHash / signature / configVersion  │
 │     → 决定是否进入 SAFE_MODE，静默失效所有 hook          │
 └─────────────────────────────────────────────────────────┘
@@ -205,6 +211,7 @@ StateMachine.isActive() = isVipAuthorized()       // 1. 授权门 — 没付费�
 **四层完全独立，不得互相替代：**
 - `EntryGate` 通过 ≠ `AuthGate` 通过
 - `StateGate` VISIBLE ≠ 授权通过
+- `AuthGate` 通过 ≠ registry 已解开；release 严格模式还必须过 `ConfigGate`
 - `RiskGate` 失败 → 全链路静默，不看前三层
 
 ---
@@ -472,8 +479,8 @@ SearchUnlock（口令命中）
 □ 5 种状态是否全部处理：AUTH_OK / ACCOUNT_MISMATCH / DEVICE_MISMATCH / NO_LICENSE / TAMPERED？
 □ AUTH_TAMPERED → PiracyNotice 引流弹窗 + 功能全关？
 □ v1 放行逻辑（MISMATCH/NO_LICENSE 仍注册 hook）是否有明确注释，不误解为"已授权"？
-□ isVipAuthorized() 是否仍是 stub（返回 true），而非接了真实 AuthGate？
-  （v2 前不允许提前接，禁止用推断替代）
+□ isVipAuthorized() 是否仍接 `EnvelopeStore.isAuthorizedNow()`，没有被临时 hardcode true/false？
+  （v1.1 授权闭环已落地；现状以 `PROTECTION_MAP.md` §10.6 为准）
 □ DebugServer 写操作是否全部加了 isAuthOk() 门控？
   覆盖：apiSetFeature / apiSetNotifyPolicy / apiTrigger(show/toggle/unlock)
         apiSetMode / apiHidden(POST) / apiSetMyWxid(POST)
