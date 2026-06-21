@@ -130,7 +130,7 @@
 |------|------|
 | **8.0.71 状态** | ✅ 时间线(ImproveSnsTimelineUI) + 详情页(SnsCommentDetailUI) L1 装机（2026-06-10）；个人相册页 = Flutter，v1 不做（见下「相册页边界」） |
 | **目标** | 自己看自己朋友圈时，受限帖（仅可见分组/部分可见）右下角那个图标隐藏（自己端视觉过滤，不影响别人看） |
-| **磁盘实证（dumpsys）** | `03_execute_执行任务/M6a_MomentsGroupIcon/logs/gi_dump.txt` L1775-1784（ImproveSnsTimelineUI）：item 根 `ha4.q3/k4/s2`(app:id/n9a) > 正文 `n95` > ConstraintLayout > 元信息行 `n93` > LinearLayout > [时间, ViewStub×2, **pt**, pi]；`pt`=#7f090304 app:id/pt = 可见分组图标(WeImageView) ← 藏；`pi`=#7f0902f8 app:id/pi = 删除 ← 不碰。普通帖该行只有折叠 ViewStub，受限帖才把 ViewStub inflate 成 pt/pi |
+| **磁盘实证（dumpsys）** | `07_archive_归档/M6a_MomentsGroupIcon/logs/gi_dump.txt` L1775-1784（ImproveSnsTimelineUI）：item 根 `ha4.q3/k4/s2`(app:id/n9a) > 正文 `n95` > ConstraintLayout > 元信息行 `n93` > LinearLayout > [时间, ViewStub×2, **pt**, pi]；`pt`=#7f090304 app:id/pt = 可见分组图标(WeImageView) ← 藏；`pi`=#7f0902f8 app:id/pi = 删除 ← 不碰。普通帖该行只有折叠 ViewStub，受限帖才把 ViewStub inflate 成 pt/pi |
 | **实现（MomentsGroupIconFilter）** | ① `ViewStub.inflate()` afterHook：图标首次 inflate 即 GONE（低频、无闪烁）；② `Activity.onResume`(类名含 `plugin.sns`) 立即扫 decorView + 挂 `ViewTreeObserver.OnGlobalLayout` 监听、节流 60ms 重扫 → 滚动/异步渲染出新帖即藏。两层都只对 `getResourceEntryName==pt` 调 `setVisibility(GONE)`，pi 的 id 不同天然不命中 |
 | **开关** | `AppConfig.isMomentsGroupIconEnabled()`（MMKV `mgi`，默认开；纯开关驱动，**独立于 HIDDEN 状态**——外观偏好，不属密友隐私链）；SettingsEntry 行「隐藏朋友圈分组图标」 |
 | **绕过的雷** | 不走 `onBindViewHolder`（F-32x 实证 8.0.71 朋友圈 RV onBindViewHolder 0 命中）；不全局 hook `View.setVisibility`（铁律 H1） |

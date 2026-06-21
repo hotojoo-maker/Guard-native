@@ -39,7 +39,7 @@
 1. P22 普通消息通知 + 铃声功能转 v1.1，不阻塞当前 v1。
 2. P26C 搜索高亮归 UI 优化，不阻塞 P20。
 
-**详情**：`07_archive_归档/P20_搜索拦截/result.md`、`03_execute_执行任务/P20B_BTriggers_SearchUnlock/worklog.md`、`docs/HOOK_MAP_8071_AUTHORITATIVE.md` §8b。
+**详情**：`07_archive_归档/P20_搜索拦截/result.md`、`07_archive_归档/P20B_BTriggers_SearchUnlock/worklog.md`、`docs/HOOK_MAP_8071_AUTHORITATIVE.md` §8b。
 
 ---
 

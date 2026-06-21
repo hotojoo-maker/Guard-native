@@ -145,7 +145,7 @@
 
 | #   | 功能 | 方向 | 状态 | Android 技术点 | 难度 |
 | --- | --- | --- | --- | --- | --- |
-| B1  | 摇一摇 → 立即隐藏（**默认关闭**，用户可开） | VISIBLE→HIDDEN | ✅ 8071 已验 2026-06-07 | `TriggerGuard.java` SensorManager TYPE_ACCELEROMETER；证据 `03_execute_执行任务/P20B_BTriggers_SearchUnlock/logs/b1_shake_fixedkey.log` | ⭐⭐ |
+| B1  | 摇一摇 → 立即隐藏（**默认关闭**，用户可开） | VISIBLE→HIDDEN | ✅ 8071 已验 2026-06-07 | `TriggerGuard.java` SensorManager TYPE_ACCELEROMETER；证据 `07_archive_归档/P20B_BTriggers_SearchUnlock/logs/b1_shake_fixedkey.log` | ⭐⭐ |
 | B2  | 切后台/Home/手势切 App → 自动隐藏（**默认开启**，不可关） | VISIBLE→HIDDEN | ✅ **8071 已验** | `TriggerGuard.java` ActivityLifecycleCallbacks + CLOSE_SYSTEM_DIALOGS | ⭐ |
 | B3  | ~~Home 键单独~~ | — | ❌ | 被 B2 的 CLOSE_SYSTEM_DIALOGS 覆盖，无需单独实现 | — |
 | B4  | 返回键 → 隐藏（仅会话/通讯录主页） | VISIBLE→HIDDEN | ⬜ 用户设备无返回键，按确认不阻塞；未取得 B4 专属 L1，不标 ✅ | hook onBackPressed，按页面判断 | ⭐ |

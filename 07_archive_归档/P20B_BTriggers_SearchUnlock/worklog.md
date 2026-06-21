@@ -72,7 +72,7 @@
 #### 6. B1 — 摇一摇隐藏好友
 **改动**：`SettingsEntry` 密友设置页新增「摇一摇隐藏好友」开关；`TriggerGuard` 支持开关即时注册/注销加速度传感器。
 **验收**：VISIBLE 态打开开关，退出设置面板后摇一摇，状态机单向进入 HIDDEN。
-**证据路径**：`03_execute_执行任务/P20B_BTriggers_SearchUnlock/logs/b1_shake_fixedkey.log`
+**证据路径**：`07_archive_归档/P20B_BTriggers_SearchUnlock/logs/b1_shake_fixedkey.log`
 
 **日志原文**：
 ```
@@ -90,7 +90,7 @@
 
 #### 8. B4 — 返回键隐藏（用户设备无返回键，按确认不阻塞）
 **现场情况**：用户设备没有传统返回按钮，用户确认“没有返回键，就算过了 / 不阻塞”。
-**证据路径**：`03_execute_执行任务/P20B_BTriggers_SearchUnlock/logs/b4_back_live.log`
+**证据路径**：`07_archive_归档/P20B_BTriggers_SearchUnlock/logs/b4_back_live.log`
 
 **日志原文（只作为 B4 尝试证据，不标 L1 ✅）**：
 ```
@@ -105,7 +105,7 @@ KEYCODE_BACK
 
 #### 9. P20B KPI — frida_stats 200s 轻采样（发版前重测）
 **采集方式**：Cursor 安装 `frida-tools` 后，使用 `tools/frida_run.py` attach 安卓设备 `609b4b18` 的微信主进程，固定采集 200 秒。
-**证据路径**：`03_execute_执行任务/P20B_BTriggers_SearchUnlock/logs/p20b_frida_stats_20260607.log`
+**证据路径**：`07_archive_归档/P20B_BTriggers_SearchUnlock/logs/p20b_frida_stats_20260607.log`
 
 **日志原文摘要**：
 ```

@@ -83,7 +83,7 @@ RedirectUI.onResume()
 > F-22 铁律：关任务前必跑 `frida_stats.js` 对比基线。
 
 - ⬜ E2 启用前/后 `verifiedbootstate / SELinux / phoneActiveCount` 等 LSPosed KPI 对比
-- 现有数据：`03_execute_执行任务/P20B_BTriggers_SearchUnlock/logs/p20b_frida_stats_20260607.log`（P20B 的，非 E2 专用）
+- 现有数据：`07_archive_归档/P20B_BTriggers_SearchUnlock/logs/p20b_frida_stats_20260607.log`（P20B 的，非 E2 专用）
 - 补跑责任：下一会话切 `/guard-terminal_终端操作` 跑 `tools/frida_stats.js` 对比 E2 启停。
 - 不阻塞 git 收敛，但**阻塞发版**——发版前必须补。
 

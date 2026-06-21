@@ -25,8 +25,8 @@
 | 来电拦截 + 通知拦截 + 未读计数过滤 | P22 / P_PF2 / P_NF4 | `03_execute_执行任务/P22_PushFilter` |
 | 伪装定位（全局伪造位置） | E2 | `07_archive_归档/E2_FakeLocation` |
 | 会话热切 V↔H（部分场景） | P_CV1 / P_ConvWarm / P26（热切版） | `07_archive_归档/P_CV1…`、`P_ConvWarm`、`P26_会话场景freshwarm` |
-| B 触发：摇一摇 / 切后台 / 锁屏 / 搜索解锁 | P20B（B1/B2/B5/B6） | `03_execute_执行任务/P20B_BTriggers_SearchUnlock` |
-| 朋友圈"可见分组"图标隐藏 | M6a | `03_execute_执行任务/M6a_MomentsGroupIcon`；时间线/详情页 `pt GONE` L1（2026-06-10），个人相册页=Flutter 无原生 pt、v1 不做。详见 `HOOKMAP.md` M6a 行 / 权威 §6a |
+| B 触发：摇一摇 / 切后台 / 锁屏 / 搜索解锁 | P20B（B1/B2/B5/B6） | `07_archive_归档/P20B_BTriggers_SearchUnlock` |
+| 朋友圈"可见分组"图标隐藏 | M6a | `07_archive_归档/M6a_MomentsGroupIcon`；时间线/详情页 `pt GONE` L1（2026-06-10），个人相册页=Flutter 无原生 pt、v1 不做。详见 `HOOKMAP.md` M6a 行 / 权威 §6a |
 
 ### 🟡 进行中 / 部分（别当已完成）
 
@@ -54,7 +54,7 @@
 | 任务 | 编号 | 状态 | 文件夹 / 说明 |
 |------|------|------|--------|
 | 统一风控引擎（防封授权闸 × A2 三轴 × 蜜罐 / 引流 / 延迟弹窗 canary）| P_AntiBanGate | ⬜ 设计 only（未动代码，待用户拍板 + 装机回归）| `03_execute_执行任务/P_AntiBanGate_防封授权闸/`（DESIGN + PLAN；归属 网络安全官 + 防封官）|
-| normsg 三轴身份上报实证（封号根因 = k33 包名 / k49 数据路径 / k18 签名 MD5 明文上报）| P_ANTIBAN_B36 | ✅ 研究结论 L1（frida / tcpdump 实抓 2026-06-18）| `03_execute_执行任务/P_ANTIBAN_B36_normsg三轴/result.md`（防封官研究产物；命脉真源在外部防封线）|
+| normsg 三轴身份上报实证（封号根因 = k33 包名 / k49 数据路径 / k18 签名 MD5 明文上报）| P_ANTIBAN_B36 | ✅ 研究结论 L1（frida / tcpdump 实抓 2026-06-18）| `07_archive_归档/P_ANTIBAN_B36_normsg三轴/result.md`（防封官研究产物；命脉真源在外部防封线）|
 | 重放绑定 ReplayBind（SO envelope 摘要折入 key 派生，堵 W 静态明文缝）| P_RB1 | ⬜ 未开工（仅排期，P1 加固项）| `03_execute_执行任务/P_RB1_重放绑定_ReplayBind/DESIGN.md`（来源 PROTECTION_MAP §10.7）|
 
 ### ⚠️ 四个重复编号（同号两义，看清单别被绕晕）
