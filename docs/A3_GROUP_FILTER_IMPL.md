@@ -79,26 +79,27 @@ L-CONV: ArrayList.addAll(kc5.y) → item.d → l4 → l4.C0() = xxx@chatroom
 
 ### 3.1 添加密群
 
-**当前方案（2026-05-24 改）**：
+> ⚠️ **2026-06-22 勘误**：本节原内容（2026-05-24）把导入正路写**反**了——曾称 SelectContactUI 为「当前方案」、GroupCardSelectUI 为「废弃」。现行代码与 L1 实证（2026-06-02）恰恰相反，已按代码改正。
+> **唯一真源**：`src/main/java/com/ghost/assist/moduleB/ContactImportGuard.java`（`launchSelectGroup` + 注释 ②）+ `docs/HOOK_MAP_8071_AUTHORITATIVE.md` §4。本节如再与代码冲突，以代码为准。
+
+**当前正路（GroupCardSelectUI，L1 实证 2026-06-02）**：
 ```
-+ 添加 → SettingsEntry.startSelectGroup(context)
-  → SelectContactUI (list_type=2, list_attr=16471)
-  → 用户多选群聊 → 返回 putExtra("Select_Contact", "xxx@chatroom,yyy@chatroom")
-  → installSelectContactHook:
-      isConvKey || isGroupKey → hasChatroom=true → isGroup=true
-      diff: resultSet vs sPreSelectedGroupIds
-      → addGroupId / removeGroupId
-      → RefreshBus.notifyHiddenChanged
-      → sPendingReopen=true → onResume → showGuardDialog 重开
+密群列表点击 → SettingsEntry → ContactImportGuard.launchSelectGroup(act)
+  → com.tencent.mm.ui.contact.GroupCardSelectUI（选群器，≠ 选人器 SelectContactUI）
+     extras: group_multi_select=true, group_select_need_result=true,
+             group_select_type=true, max_limit_num=MAX,
+             already_select_contact=现有密群 CSV（预选 → 增删一体）
+  → 用户多选群聊 → setResult(-1) 返回 Select_Conv_User="xxx@chatroom,yyy@chatroom"
+  → consumeResult: 只收 @chatroom → diff(预选 vs 返回) → addGroupId/removeGroupId
+  → RefreshBus.notifyHiddenChanged → overlay「已选择 N 个」即时刷新
+  证据: bug排查/probe_groupselect_8071.log、probe_groupkeys_8071.log（2026-06-02）
 ```
 
-**废弃方案（GroupCardSelectUI）**：
+**已证伪（SelectContactUI list_type=2）**：
 ```
-GroupCardSelectUI 问题记录：
-- group_multi_select=true 但实际单次只返回 1 个群
-- 某些群（群类型限制）在 UI 内点不动
-- 未确认其 putExtra key；Activity.setResult hook 诊断无命中
-- 根因：GroupCardSelectUI 对应 "从群聊导入" 功能，有群类型白名单过滤
+旧「list_type=2 = 密群」来自竞品 mn1(8.0.70.2) / 早期 A3 推断；8.0.71 已证伪：
+群不走 SelectContactUI（选人器）。真实入口（群发助手→选择朋友→从群聊导入）= GroupCardSelectUI。
+（2026-05-24 旧版本节曾把「当前/废弃」两者写反，2026-06-22 已纠正。）
 ```
 
 ### 3.2 移除密群
@@ -107,7 +108,7 @@ GroupCardSelectUI 问题记录：
 ```java
 Bridge.getInstance().removeGroupId(gid)
 RefreshBus.getInstance().notifyHiddenChanged(sm.isActive())
-dialog.dismiss() → 100ms 后 showGuardDialog(context)
+dialog.dismiss() → 100ms 后 showGuardOverlay(context)
 ```
 
 **清空按钮**：
