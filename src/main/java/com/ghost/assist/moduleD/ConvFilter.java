@@ -36,10 +36,6 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
  *   wxid getter:  l4.h1() → field_username  ← CORRECTED from C0()
  *   Batch insert: MvvmList.n(List, boolean)  ← CORRECTED from m() in 8.0.66
  *
- * Chain (8.0.66 reference):
- *   Adapter: f45.s0 (field p → MvvmList), Item: f45.u, Contact: m3, wxid: m3.j1()
- *   Batch insert: MvvmList.m(List, boolean)
- *
  * Hook layers:
  *   L1: MvvmList.n/m(?, boolean) / MvvmConvList.n/m(?, boolean) — getDeclaredMethods scan
  *   L2: MvvmList.s(?) — fallback
@@ -68,7 +64,7 @@ public class ConvFilter {
     static final String MVVMCONV_CLASS      = "com.tencent.mm.ui.conversation.adapter.MvvmConvList";
     private static final String CONV_LIST_VIEW      = "com.tencent.mm.ui.conversation.ConversationListView";
     static String ADAPTER_CLASS_71    = BuildConfig.DEBUG ? "kc5.v0" : "";   // confirmed 8.0.71 (ConvHotReload reads it)
-    static final String ADAPTER_CLASS_66    = "f45.s0";
+    // 2026-06-21 清理：删除 ADAPTER_CLASS_66="f45.s0"（8.0.66 旧适配器，8.0.71 不存在；3 处引用全为空转死代码）。
 
     // MvvmList internal ArrayList field names
     static final String[] MVVMLIST_ARRAY_FIELDS = {"o", "p", "h"};
@@ -786,9 +782,7 @@ public class ConvFilter {
                     if (!cn.equals(sAdapterClassName)) {
                         sAdapterClassName = cn;
                         Log.i(TAG, "[CF] adapter discovered: " + cn);
-                        if (!ADAPTER_CLASS_66.equals(cn)) {
-                            hookAdapterByClass(adapter.getClass());
-                        }
+                        hookAdapterByClass(adapter.getClass());
                     }
                 }
             };
@@ -810,7 +804,7 @@ public class ConvFilter {
     // =========================================================================
 
     private static void installAdapterHook(XC_LoadPackage.LoadPackageParam lpparam) {
-        for (String cn : new String[]{ADAPTER_CLASS_71, ADAPTER_CLASS_71_H0, ADAPTER_CLASS_66}) {
+        for (String cn : new String[]{ADAPTER_CLASS_71, ADAPTER_CLASS_71_H0}) {
             try {
                 Class<?> adapterCls = lpparam.classLoader.loadClass(cn);
                 hookAdapterByClass(adapterCls);
@@ -2339,8 +2333,7 @@ public class ConvFilter {
         Object conv = sConvAdapterRef != null ? sConvAdapterRef.get() : null;
         if (conv == adapter) return true;
         String cn = adapter.getClass().getName();
-        if (ADAPTER_CLASS_71_H0.equals(cn) || ADAPTER_CLASS_71.equals(cn)
-                || ADAPTER_CLASS_66.equals(cn)) return true;
+        if (ADAPTER_CLASS_71_H0.equals(cn) || ADAPTER_CLASS_71.equals(cn)) return true;
         return findMvvmListOnAdapter(adapter) != null;
     }
 
