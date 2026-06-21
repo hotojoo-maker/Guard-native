@@ -85,6 +85,10 @@ lsp_work/
 02_tools_工具/apktool.jar
 02_tools_工具/uber-apk-signer.jar
 
+# b56 静态索引（classes.tsv / dex_classes.tsv + 16MB 硬切分片，体积大、可重生成，绝不入 git）
+# 历史教训：曾被提交，把 .git pack 顶到 419MB，新机 clone/pull 极慢。
+tools/b56_static_index/
+
 # 根目录一次性 logcat / 探针抓取 scratch（不入库）
 /mgi_*.txt
 /gi_dump.txt
