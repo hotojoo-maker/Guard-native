@@ -65,3 +65,23 @@ pine/
 
 # 全景手册 = CLAUDE.md 的 ChatGPT 导出副本，避免双份铁律占上下文
 CHATGPT_项目全景手册.md
+
+
+# ---- L5 large regenerable artifacts (align with .gitignore, 2026-06-22) ----
+# Already in .gitignore but missing here, so Cursor still indexes them and
+# slows search/index/@-mentions. lsp_work ~257k decompiled text files = biggest.
+# Ignore != delete: open the path manually when needed.
+lsp_work/
+dex_out/
+bug*/
+node_modules/
+**/_probe_build/
+tools/re_8071/
+tools/b56_static_index/
+tools/frida_build/
+tools/*.log
+tools/probe_*.js
+02_tools_*/lspatch_out/
+02_tools_*/coexist_work/
+02_tools_*/*.jar
+*-lspatched.apk
