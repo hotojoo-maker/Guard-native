@@ -438,6 +438,23 @@ H→V 后：  [BUS:pendingRestore] notified adapter=v0 ← 同上
 **正解**：后台需要独立的「重置设备风控」动作（`risk_score=0 / tier_code=1 / reinstall_count=0 / token_churn_count=0 / shadow_started_ts=0 / notice_after_ts=0`），与 `device_status` 显示位分开。
 **教训**：状态显示位 ≠ 风控决策位。运维手册要写清"隐藏失效查 `tier/risk`，不查 `status`"。
 
+### F-42：LSPatch 439 × Android 15 — 干净装官替仍闪退（Load modules / boot class loader）（2026-06-22, L1，调查中）
+
+> vivo V2361GA / Android 15 / 免 root LSPatch 官替 `com.tencent.mm`。`adb reboot` → `uninstall com.tencent.mm` Success → 只装一次 6/12 `量子密友_8071_官替版.apk` → 桌面启动 **仍闪退**（用户 L1）。崩溃栈：`LSPAppComponentFactoryStub.<clinit>` ← `NoClassDefFoundError: Class not found using the boot class loader`；启动序列显示 LSPatch 已 `Loading legacy module com.ghost.assist`，在 `Load modules` 后崩，**未进入 ModuleMain/NCL**。
+
+| 已证伪 | 依据 |
+|--------|------|
+| 反复 install -r 僵尸（单独解释） | 干净卸+只装一次仍崩 |
+| Tinker 热更新 | 崩在 AppComponentFactory，Tinker 未启动 |
+| vivo DynamicLoadDetect 拦微信 | openDexFile 报错来自 monkey(uid 2000) |
+| 今天系统/iqoo.secure 更新 | 镜像 2026-05-09；secure 2026-05-17 |
+
+**矛盾**：2026-06-12 同机 coexist `com.tencent.mn` 有完整 NCL 运行 log（L1）；今日同世代 APK 官替干净装失败。**待查**：LSPatch 439 A15 回归 / mm vs mn 注入差异 / 6/12 官替「能起」口述(L4)。
+
+**发版**：LSPatch 免 root 客户包 **🔴 阻塞**（A15 干净装失败 = 客户会重演）。详查 → `03_execute_执行任务/P_LSPatch_A15_VivoCrash/INVESTIGATION.md`。
+
+**下一步**：换最新 LSPatch 重 patch；A15 干净装冲烟写入发版门控；USB 稳定补 logcat。
+
 ---
 
 1. 写代码前先 grep 本文件查"我要做的事"是否已被否决

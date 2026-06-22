@@ -20,3 +20,5 @@
 [2026-05-27 00:30] widerprobe_v1.log(1525行) 搜索数据流全貌 | ①z15.ef6→LinkedList.add→聊天记录FTS,无wxid,p=ch6(pb消息)待深挖 ②fz2.e c≠3→ArrayList.addAll size=1→通讯录匹配,g=SOSItemRelevant:wxid✅ ③fz2.e c=3→addAll size=1→聊天记录内联,g=UIN缺映射 ④kc5.y→addAll size=17→会话匹配,d→l4→C0()✅ ⑤搜索页Adapter=q2 | 证据：widerprobe_v1.log SF:ALLseen #45 fz2.e + SF:DUMP z15.ef6完整字段 | 下一步：往搜索上游深挖(不在列表层删/堵)，用户准备重新抓日志
 
 [2026-05-27 00:30] PushFilter通知链路 | Frida实证NM.notify()在8.0.71被调用但Xposed hook零命中→hook签名可能不匹配(notify(tag,id,N) vs notify(id,N)) | 8.0.71链: w.handleMessage→x.d→m0.a→e0.a→a.a→NI.a(Context)[final,ART内联]→z2.n1.c→NM.notify | :push LLseen 24类+主进程49+类均无NotificationItem | PF:VV+PF:MP正常拦截但通知内容层未拦截 | SettingsEntry B2 H/V态都不显示,疑似setResult(null)对void不可靠
+
+[2026-06-22 11:10] **发版红线**：vivo V2361GA / Android 15 / LSPatch 439 官替包 — **干净卸+只装一次仍闪退** | 证据 L1：adb uninstall Success + 用户确认闪退；崩溃栈 LSPatch Load modules → NoClassDefFoundError boot class loader（未进 NCL）；6/12 同机 mn 曾 L1 成功（s3a_coexist_vivo_trigdiag）| 详查：`03_execute_执行任务/P_LSPatch_A15_VivoCrash/INVESTIGATION.md` | 下一步：换新版 LSPatch 重 patch + A15 干净装冲烟
