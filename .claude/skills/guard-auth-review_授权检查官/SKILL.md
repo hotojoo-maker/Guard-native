@@ -436,12 +436,15 @@ SearchUnlock（口令命中）
 | `core/NativeBridge.java` | AUTH_* 常量 + setAuthState / getAuthState |
 | `core/StateMachine.java` | 状态转换逻辑 + isVipAuthorized（已接 EnvelopeStore.isAuthorizedNow，非 stub）|
 | `core/RefreshBus.java` | 状态变化广播 → Filter 热刷新入口，不得绕过 |
-| `core/Bridge.java` | licensedWxid / deviceHash / myWxid 读写 |
+| `core/Bridge.java` | licensedWxid / deviceHash / myWxid 读写；**防封闸首装时间新键**（age 基准，防清数据 / 重装刷新宽限，见 §九）|
 | `moduleB/SearchUnlock.java` | 入口口令（v1 H→V + 入口可见；不授权、不扩过滤）|
 | `moduleB/SettingsEntry.java` | showGuardDialog() 的状态切换/功能开关按钮 AUTH 门控 |
 | `moduleB/TriggerGuard.java` | B1/B2/B5 触发器（StateGate 写入者），触发判定漏洞 = V→H 误触（2026-05-25 锁定） |
 | `debug/DebugServer.java` | 所有 isAuthOk() 门控接口 |
 | `core/LicenseGate.java` | （v2 待建）Ed25519 验签 |
+| `core/GuardRuntime.java` | 能力闸出口 `isConfigReady` / **`isAntiBanReady`（防封闸，待建）**；**与安全官共审**，机制本体归安全官（见 §九）|
+| `net/EnvelopeStore.java` | 服务器授权信封仓 `isAuthorizedNow` / 曾授权；防封闸吊此（红线#1）；**与安全官共审** |
+| `core/LeaseClock.java` | 可信时间 `trustedNow` + 防回拨；防封闸时间基准（红线#3）；**与安全官共审** |
 
 ### C++ 层
 | 文件/目录 | 保护原因 |
@@ -675,3 +678,25 @@ public boolean isActive() {
 ```
 
 此方法**只用于密友过滤决策**。v2 接 LicenseGate 时只换 `isVipAuthorized()` 实现，结构不变。
+
+---
+
+## 九、防封授权闸：边界与交叉引用（2026-06-22）
+
+> 防封授权闸 `isAntiBanReady()`（A2 防封能力的时间闸）**机制本体不在本 skill**。本节只立授权检查官**独有**的审查维度（接线 / 边界 / 模块化）；机制与技术料一律**交叉引用、不复制**（呼应安全官 skill「不要把同一策略复制进授权检查官」）。
+
+### 本 skill 只审这三条（授权检查官独有职责）
+
+1. **两闸独立、互不连坐**：`isAntiBanReady()`（防封 A2）与 `isActive()` / `isConfigReady()`（隐私密友）各管各能力；一闸散沙**不得连坐**另一闸。时间闸**只门控 A2**，隐私走原有 DRM，**不进**时间闸。
+2. **挂载点 / 模块边界**：`isAntiBanReady()` 出口只在 `GuardRuntime`；业务 / 防封 hook **只问闸**（单出口，见本 skill §一 GuardRuntime 出口白名单），不得自判 vip / 时间 / 风险。
+3. **保护区共审**：改 `GuardRuntime` / `EnvelopeStore` / `LeaseClock` / `Bridge`（首装时间键）→ 本 skill 与**安全官共审**（见 §三）。
+
+### 机制本体与技术料（不抄，指过去）
+
+| 维度 | 权威落点（看那里，不在此复写）|
+|---|---|
+| 散沙 / 租约 / 弹窗 / 加密料 / 蜜罐 / 不续命 / 载荷 canary / 反白嫖三道锁 | **安全官 skill**「防封能力反白嫖」节 + 硬红线 #1/#3/#4/#5/#6/#9 |
+| 防封闸完整设计（触发线 A/B/C、阈值、宽限分档、§9A 实施步骤）| `03_execute_执行任务/P_AntiBanGate_防封授权闸/DESIGN.md`（单一真源）|
+| A2 喂官方身份技术料（签名轴 / getPackageInfo 阀门 / c$p 实证）| **防封官 skill**（侦察阶段已完成、留档；做新侦察才再触发该角色）|
+
+> 落代码纪律（DESIGN §9A）：动代码前 git 快照 → 改 → 装机回归绿；守红线 #1/#3/#4/#5/#6/#9/#23/#27 + PLAN §A.5 四共享常量禁区 + 不改已验证 hook（铁律 29 / F-31）。
