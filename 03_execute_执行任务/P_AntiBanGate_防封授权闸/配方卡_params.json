@@ -1,0 +1,108 @@
+{
+  "schema_id": "antiban_params_v1",
+  "wechat_version": "8.0.71",
+  "_note": "防封授权闸配方卡 A 参数表 + isAntiBanReady 真值表的机器可读副本。风格沿用 native_core/registry_8071.json（schema_id/version/_note + 结构体），因每参数需带 值/含义/谁判/成色，故 value 用嵌套对象（非 registry 的扁平字符串）。值一律以 配方卡_SPEC_v1.md 为准，禁自改。时间口径=架构师 C81 拍板（覆盖 DESIGN 旧 72h/2h）。",
+  "enums": {
+    "decided_by": ["server", "server+client_fallback", "client(LeaseClock)+server", "client(rate)+server(issue)", "server(client_reports_only)", "gate(release_check)"],
+    "grade": ["L1", "L2", "L4", "design-only"]
+  },
+  "params": {
+    "t_soft": {
+      "value_human": "1h", "value_ms": 3600000,
+      "meaning": "从未授权满 1h → 起可关软引流弹窗",
+      "decided_by": "server+client_fallback", "grade": "design-only"
+    },
+    "t_login": {
+      "value_human": "2h", "value_ms": 7200000,
+      "meaning": "从未授权满 2h → 弹关不掉登录砸门、强制输授权码（输一次后不再弹）；只挡进隐私功能、不挡微信、不动 A2；非封号",
+      "decided_by": "server+client_fallback", "grade": "design-only"
+    },
+    "t_kill": {
+      "value_human": "24h", "value_ms": 86400000,
+      "meaning": "从未授权满 24h → 撤 A2 → 宿主读非官方 → 平台自判/封；模块不自爆",
+      "decided_by": "server+client_fallback", "grade": "design-only"
+    },
+    "paid_offline_grace": {
+      "value_human": "7天", "value_ms": 604800000,
+      "meaning": "曾授权+断网（付费用户掉线）宽限，不误杀",
+      "decided_by": "client(LeaseClock)+server", "grade": "design-only"
+    },
+    "honeypot_shadow": {
+      "value_human": "7天", "value_ms": 604800000,
+      "meaning": "触发线A：碰假诱饵 → 延迟弹窗期",
+      "decided_by": "server", "grade": "L2",
+      "note": "现客户端硬编码 SHADOW_HOURS=7天，应迁服务端 risk_pack"
+    },
+    "redline_shadow_lease": {
+      "value_human": "7天", "value_ms": 604800000,
+      "meaning": "触发线C：铁证篡改 → 影子租约让其觉正常 → 到期不续命",
+      "decided_by": "server", "grade": "design-only",
+      "note": "原 DESIGN 7-10 区间 → 定 7"
+    },
+    "privacy_offline_grace": {
+      "value_human": "72h", "value_ms": 259200000,
+      "meaning": "隐私功能（会话/通讯录/朋友圈/搜索）断网宽限；独立闸、非 A2 时间闸，在功能界面弹",
+      "decided_by": "client(LeaseClock)+server", "grade": "L2",
+      "note": "已实现（LeaseClock GRACE_DEGRADE_HOURS=72h）；配方卡只标注、不重做"
+    },
+    "trust_score_pass": {
+      "value_human": "60%", "value_pct": 60,
+      "meaning": "一周累计 ≥60% 及格 → 长租约",
+      "decided_by": "server(client_reports_only)", "grade": "design-only",
+      "note": "占位，待第4步 KPI 基线校准（F-22）；客户端只上报、不自评/不自封信任档（红线#1）"
+    },
+    "heartbeat_start": {
+      "value_human": "2-3min 带抖动，激活即停", "min_ms": 120000, "max_ms": 180000, "stop_on": "activation",
+      "meaning": "首装短促抓激活",
+      "decided_by": "client(rate)+server(issue)", "grade": "design-only"
+    },
+    "heartbeat_fallback": {
+      "value_human": "10-30min（probe）", "min_ms": 600000, "max_ms": 1800000,
+      "meaning": "激活后回落",
+      "decided_by": "client(rate)+server(issue)", "grade": "design-only"
+    },
+    "heartbeat_stable": {
+      "value_human": "1-2h（封顶 6h，±15% 抖动）", "min_ms": 3600000, "max_ms": 7200000, "cap_ms": 21600000, "jitter_pct": 15,
+      "meaning": "稳定态",
+      "decided_by": "client(rate)+server(issue)", "grade": "L2",
+      "note": "GuardHeartbeat 已实装"
+    },
+    "heartbeat_suspect": {
+      "value_human": "10min 升频", "value_ms": 600000,
+      "meaning": "嫌疑/蜜罐密集观察",
+      "decided_by": "server", "grade": "L2", "note": "已实装"
+    },
+    "conn_density_redline": {
+      "value_human": "0.5", "value_num": 0.5,
+      "meaning": "心跳频率硬约束，测出 >0.5 即停",
+      "decided_by": "gate(release_check)", "grade": "L2", "note": "CLAUDE §七"
+    },
+    "verifiedbootstate_redline": {
+      "value_human": "38", "value_num": 38,
+      "meaning": "KPI 上限",
+      "decided_by": "gate(release_check)", "grade": "L1", "note": "P15 基线 4"
+    },
+    "device_binding": {
+      "value": "wxid + device(=android_id)",
+      "meaning": "永久标签按 wxid+device",
+      "decided_by": "server", "grade": "L2", "note": "AuthManager.computeDeviceHash 已有"
+    },
+    "unbind": {
+      "value": "backend_admin_only",
+      "meaning": "用户自己解不了，换机/换号走客服→后台",
+      "decided_by": "server", "grade": "design-only"
+    }
+  },
+  "is_antiban_ready_truth_table": {
+    "_note": "本闸只决 A2 装/卸；不检查登录、不检查隐私授权。软引流(1h)/登录砸门(2h)=同一 evaluate 的 UI 副作用，走唯一 RiskPromptController，不改本布尔。",
+    "official_der_md5_baseline": "18c867f0717aa67b2ab7347505ba07ed",
+    "branches": [
+      { "branch": "authorized", "condition": "EnvelopeStore.isAuthorizedNow()", "is_antiban_ready": true, "ui_side_effect": "none", "grade": "design-only" },
+      { "branch": "paid_offline", "condition": "曾授权 && (租约未到期 || 离线宽限 7天内)", "is_antiban_ready": true, "ui_side_effect": "none", "grade": "design-only" },
+      { "branch": "fresh_early", "condition": "从未授权 && age<1h", "is_antiban_ready": true, "ui_side_effect": "none", "grade": "design-only" },
+      { "branch": "soft_funnel", "condition": "从未授权 && 1h<=age<2h", "is_antiban_ready": true, "ui_side_effect": "soft_funnel_popup(closeable)", "grade": "design-only" },
+      { "branch": "login_enforcer", "condition": "从未授权 && 2h<=age<24h", "is_antiban_ready": true, "ui_side_effect": "login_enforcer_popup(uncloseable, blocks_privacy_features_only, A2_still_on)", "grade": "design-only" },
+      { "branch": "dissolve", "condition": "从未授权 && age>=24h", "is_antiban_ready": false, "ui_side_effect": "A2_uninstalled(platform_self_ban)", "grade": "design-only" }
+    ]
+  }
+}

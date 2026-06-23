@@ -127,6 +127,7 @@ W4 P18        ─→ 本轮跳过；正式发布门控再补 KPI
 | **P_NF3** | **:push 独立震动** | 🟡 | route1 代码已写，纯 :push 场景待实证。|
 | **P_NF4** | **密友未读计数过滤（UNREADFIX）** | ✅ | 2026-06-06 装机实证；默认隐藏态密友未读数在底部 tab + 顶部「微信(N)」标题被**过滤/隐藏**，打开「显示密友未读消息数」开关则**显示**；证据 `03_execute_执行任务/P22_PushFilter/pnf4_unread_20260606.log`。|
 | **E2** | **伪装订位（全局伪造定位）** | ✅ | 2026-06-07 装机验证（提前于 v2/v3 应用户要求）：`moduleE/FakeLocation` hook `pz0.h.c` 注入伪经纬度 → 发位置/共享/朋友圈/附近的人全局生效；设置页「特色功能」复用原生选点页设置坐标（talker=filehelper 防误发）；关闭复原已验。详见权威 §一.1。|
+| **P_AntiBanGate** | **防封授权闸（重构·版本轴）** | 🟡 | 配方卡 v1 定稿（设计only）；D-017 定性=重构、按版本轴（官替/共存/管理）、不受 D-015 新功能序卡。授权检查官独立审=架构 WARN（4 落地修正+2 watch）。落代码待安全官共审（GuardRuntime/EnvelopeStore/LeaseClock/Bridge）+ watch（isAntiBanReady 计时自算不连坐隐私门 / A2 料只进 registry_pack）。详见 `03_execute_执行任务/P_AntiBanGate_防封授权闸/`。|
 
 > 编号从 P15 起，是接续 apk2 项目 QE66 的 P14（保持跨项目可追溯）。`P_CV*` 系列与 `P_NC*` 同属语义号，不占 v2 路线图 P26–P30 / v3 P31–P33 编号位。
 >

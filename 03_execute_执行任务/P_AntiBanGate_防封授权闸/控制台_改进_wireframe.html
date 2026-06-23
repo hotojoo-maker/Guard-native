@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>防封控制台 · 低保真线框 v1（方向稿配图）</title>
+<style>
+  /* ========== 浅底中性「企业运维后台」皮（主推） ========== */
+  :root{
+    --bg:#f6f7f9; --surface:#ffffff; --surface2:#fbfcfd; --border:#e5e7eb; --divider:#eef0f3;
+    --ink:#1f2933; --ink2:#5b6675; --ink3:#8a94a3;
+    --accent:#3b6ea5; --accent-tint:rgba(59,110,165,.10);
+    --ok:#4f8a5b; --warn:#b8863b; --bad:#b5524b; --new:#6b7280; --honey:#9a7b3f;
+    --ok-t:rgba(79,138,91,.12); --warn-t:rgba(184,134,59,.12); --bad-t:rgba(181,82,75,.12);
+    --new-t:rgba(107,114,128,.12); --honey-t:rgba(154,123,63,.12);
+    --radius:7px; --mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+  }
+  /* ========== 可选：去饱和暗色皮（Grafana/Linear 风，非现版霓虹蓝） ========== */
+  body.dark{
+    --bg:#1b1e24; --surface:#22262e; --surface2:#1f232a; --border:#30353d; --divider:#2a2f37;
+    --ink:#e6e8ec; --ink2:#aab2bd; --ink3:#7b828d;
+    --accent:#5b8fc7; --accent-tint:rgba(91,143,199,.16);
+    --ok:#69a578; --warn:#caa15a; --bad:#cf6f68; --new:#8a93a0; --honey:#b89a63;
+    --ok-t:rgba(105,165,120,.16); --warn-t:rgba(202,161,90,.16); --bad-t:rgba(207,111,104,.16);
+    --new-t:rgba(138,147,160,.16); --honey-t:rgba(184,154,99,.16);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:"PingFang SC","Microsoft YaHei","Segoe UI",system-ui,-apple-system,sans-serif;
+    background:var(--bg); color:var(--ink); font-size:13px; line-height:1.5;
+    -webkit-font-smoothing:antialiased;}
+  .mono{font-family:var(--mono); font-variant-numeric:tabular-nums; font-size:12px}
+  .num{font-variant-numeric:tabular-nums}
+  h1,h2,h3{font-weight:600; margin:0}
+  .muted{color:var(--ink3)} .sub{color:var(--ink3); font-size:11.5px}
+
+  /* page chrome */
+  .pgbar{display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:14px 20px; border-bottom:1px solid var(--border); background:var(--surface)}
+  .pgbar h1{font-size:16px} .grow{flex:1}
+  .tag{font-size:11px; font-weight:600; padding:2px 8px; border-radius:999px; border:1px solid var(--border); color:var(--ink2); background:var(--surface2)}
+  .tag.wf{color:var(--warn); border-color:var(--warn); background:var(--warn-t)}
+  .seg-toggle{display:inline-flex; border:1px solid var(--border); border-radius:999px; overflow:hidden}
+  .seg-toggle button{border:0; background:var(--surface); color:var(--ink2); padding:5px 12px; font-size:12px; cursor:pointer}
+  .seg-toggle button.on{background:var(--accent); color:#fff}
+  .note{margin:14px 20px 0; padding:9px 13px; border:1px dashed var(--border); border-left:3px solid var(--warn);
+    border-radius:6px; background:var(--warn-t); color:var(--ink2); font-size:12px}
+
+  .wrap{padding:18px 20px 60px; max-width:1320px}
+  .sec-h{display:flex; align-items:baseline; gap:10px; margin:26px 0 10px}
+  .sec-h h2{font-size:14px} .sec-h .muted{font-size:12px}
+
+  /* annotation callout */
+  .anno{display:inline-flex; align-items:center; gap:5px; font-size:11px; color:var(--accent);
+    border:1px dashed var(--accent); background:var(--accent-tint); border-radius:5px; padding:1px 7px; margin-left:6px}
+  .anno::before{content:"注"; font-size:9px; border:1px solid var(--accent); border-radius:3px; padding:0 3px; line-height:1.4}
+
+  /* status dot (NO emoji) */
+  .dot{display:inline-block; width:8px; height:8px; border-radius:50%; vertical-align:middle; margin-right:5px}
+  .d-ok{background:var(--ok)} .d-warn{background:var(--warn)} .d-bad{background:var(--bad)}
+  .d-new{background:var(--new)} .d-honey{background:var(--honey)} .d-accent{background:var(--accent)}
+  .chiplbl{display:inline-flex; align-items:center; font-size:11.5px; padding:2px 8px; border-radius:5px; white-space:nowrap}
+  .c-ok{color:var(--ok); background:var(--ok-t)} .c-warn{color:var(--warn); background:var(--warn-t)}
+  .c-bad{color:var(--bad); background:var(--bad-t)} .c-new{color:var(--new); background:var(--new-t)}
+  .c-honey{color:var(--honey); background:var(--honey-t)} .c-accent{color:var(--accent); background:var(--accent-tint)}
+
+  /* ===== desktop app mock ===== */
+  .appframe{border:1px solid var(--border); border-radius:10px; overflow:hidden; background:var(--surface); position:relative}
+  .app{display:grid; grid-template-columns:188px 1fr}
+  .nav{border-right:1px solid var(--border); padding:12px 10px; background:var(--surface2)}
+  .brand{display:flex; align-items:center; gap:9px; padding:4px 8px 14px; border-bottom:1px solid var(--divider); margin-bottom:8px}
+  .brand .sq{width:26px; height:26px; border-radius:6px; border:1px solid var(--border); display:grid; place-items:center; color:var(--accent); font-weight:700}
+  .brand b{font-size:13px} .brand small{display:block; color:var(--ink3); font-size:10.5px; font-weight:500}
+  .navi{display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:6px; color:var(--ink2); font-size:12.5px; cursor:default; margin-bottom:2px}
+  .navi:hover{background:var(--bg)}
+  .navi.on{background:var(--accent-tint); color:var(--accent); font-weight:600}
+  .navi svg{width:15px; height:15px; flex:0 0 15px}
+
+  .main{min-width:0; padding:14px 16px}
+  .toolbar{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:12px}
+  .fld{border:1px solid var(--border); background:var(--surface); color:var(--ink2); border-radius:6px; padding:6px 9px; font-size:12px}
+  .btn{border:1px solid var(--border); background:var(--surface); color:var(--ink); border-radius:6px; padding:6px 11px; font-size:12px; cursor:default}
+  .btn.pri{background:var(--accent); color:#fff; border-color:var(--accent)}
+  .btn.ghost{color:var(--ink3)}
+
+  .kpis{display:grid; grid-template-columns:repeat(7,1fr); gap:8px; margin-bottom:14px}
+  .kpi{border:1px solid var(--border); border-radius:7px; padding:9px 10px; background:var(--surface)}
+  .kpi .k{font-size:10.5px; color:var(--ink3)} .kpi .v{font-size:18px; font-weight:600; margin-top:1px} .kpi .s{font-size:10px; color:var(--ink3)}
+
+  table{width:100%; border-collapse:collapse}
+  .tbl-wrap{border:1px solid var(--border); border-radius:8px; overflow:hidden}
+  thead th{text-align:left; font-size:11px; font-weight:600; color:var(--ink3); padding:8px 9px; background:var(--surface2); border-bottom:1px solid var(--border); white-space:nowrap}
+  thead th.grp{color:var(--accent); border-bottom:1px solid var(--accent-tint)}
+  tbody td{padding:8px 9px; border-bottom:1px solid var(--divider); font-size:12px; vertical-align:middle}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr:hover{background:var(--surface2)}
+  .axis-lamps{display:inline-flex; gap:3px}
+
+  /* mini timeline in a row */
+  .mini{display:flex; height:14px; border:1px solid var(--border); border-radius:4px; overflow:hidden; min-width:150px}
+  .mini i{display:block; height:100%} .mini i+i{border-left:1px solid var(--surface)}
+  .mini .s1{flex:1; background:var(--new-t)} .mini .s2{flex:1; background:var(--warn-t)} .mini .s3{flex:6; background:var(--accent-tint)} .mini .s4{flex:2; background:var(--bad-t)}
+
+  /* ===== drawer ===== */
+  .drawer{position:absolute; top:0; right:0; bottom:0; width:46%; min-width:380px; background:var(--surface);
+    border-left:1px solid var(--border); box-shadow:-12px 0 30px rgba(0,0,0,.10); padding:14px 16px; overflow:auto}
+  body.dark .drawer{box-shadow:-12px 0 30px rgba(0,0,0,.45)}
+  .drawer h3{font-size:14px; display:flex; align-items:center; gap:8px}
+  .dr-close{margin-left:auto; border:1px solid var(--border); background:var(--surface); border-radius:6px; width:24px; height:24px; cursor:pointer; color:var(--ink2)}
+  .block{border:1px solid var(--border); border-radius:8px; padding:12px; margin-top:12px; background:var(--surface)}
+  .block > .bt{font-size:12px; font-weight:600; color:var(--ink2); margin-bottom:10px; display:flex; align-items:center; gap:8px}
+
+  /* ===== multi-track timeline (core) ===== */
+  .track{display:grid; grid-template-columns:120px 1fr; gap:8px; align-items:center; margin-bottom:11px}
+  .track .tl{font-size:11.5px; color:var(--ink2)}
+  .track .tr{min-width:0}
+  .segbar{display:flex; height:22px; border:1px solid var(--border); border-radius:5px; overflow:hidden; position:relative; background:var(--surface2)}
+  .segbar .seg{display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--ink3); border-right:1px solid var(--border); position:relative; padding:0 4px; white-space:nowrap; overflow:hidden}
+  .segbar .seg:last-child{border-right:0}
+  .segbar .seg.cur{background:var(--accent-tint); color:var(--accent); font-weight:600}
+  .segbar .seg.cur::after{content:""; position:absolute; left:var(--p,40%); top:0; bottom:0; width:2px; background:var(--accent)}
+  .segbar .seg.warnseg.cur{background:var(--warn-t); color:var(--warn)} .segbar .seg.warnseg.cur::after{background:var(--warn)}
+  .segbar .seg.badseg{color:var(--bad)}
+  .meta{font-size:10.5px; color:var(--ink3); margin-top:3px; display:flex; gap:8px; flex-wrap:wrap}
+  .meta b{color:var(--ink2); font-weight:600}
+  .grade{font-size:9.5px; border:1px solid var(--border); border-radius:4px; padding:0 4px; color:var(--ink3)}
+
+  /* capability switches */
+  .caps{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+  .cap{display:flex; align-items:center; gap:8px; border:1px solid var(--border); border-radius:6px; padding:7px 9px; font-size:12px}
+  .sw{margin-left:auto; width:30px; height:17px; border-radius:999px; background:var(--ok); position:relative; flex:0 0 30px}
+  .sw.off{background:var(--ink3)} .sw::after{content:""; position:absolute; top:2px; left:2px; width:13px; height:13px; border-radius:50%; background:#fff} .sw.off::after{left:15px}
+  .ops{display:flex; gap:7px; flex-wrap:wrap; margin-top:12px}
+  .op{border:1px solid var(--border); background:var(--surface); border-radius:6px; padding:6px 10px; font-size:12px; cursor:default}
+  .op.danger{color:var(--bad); border-color:var(--bad-t)}
+
+  /* legend */
+  .legend{display:flex; gap:14px; flex-wrap:wrap; font-size:11.5px; color:var(--ink2); margin-top:6px}
+
+  /* ===== phone mock ===== */
+  .phone{width:340px; border:1px solid var(--border); border-radius:18px; overflow:hidden; background:var(--surface)}
+  .ph-top{padding:10px 13px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; background:var(--surface2)}
+  .ph-body{padding:11px; min-height:300px}
+  .pcard{border:1px solid var(--border); border-radius:8px; padding:10px; margin-bottom:9px}
+  .pcard .row{display:flex; justify-content:space-between; gap:8px; font-size:12px; margin-bottom:5px}
+  .pcard .row .k{color:var(--ink3)}
+  .ph-tab{display:flex; border-top:1px solid var(--border); background:var(--surface2)}
+  .ph-tab div{flex:1; text-align:center; padding:9px 0; font-size:10.5px; color:var(--ink3)}
+  .ph-tab div.on{color:var(--accent)}
+  .ph-tab .gl{display:block; width:16px; height:16px; margin:0 auto 3px; border:1.5px solid currentColor; border-radius:4px}
+
+  .twocol{display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start}
+  .foot{margin:30px 20px 0; padding-top:14px; border-top:1px solid var(--border); color:var(--ink3); font-size:11.5px}
+</style>
+</head>
+<body>
+  <div class="pgbar">
+    <h1>防封控制台 · 低保真线框</h1>
+    <span class="tag wf">WIREFRAME</span>
+    <span class="tag">v1 · 方向稿配图</span>
+    <div class="grow"></div>
+    <span class="muted" style="font-size:12px">主题预览：</span>
+    <div class="seg-toggle">
+      <button id="tLight" class="on" onclick="setTheme('light')">浅底中性（推荐）</button>
+      <button id="tDark" onclick="setTheme('dark')">去饱和暗色</button>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>低保真线框</b>：仅示意<b>布局 / 信息层级 / 多轨时间轴</b>，非最终视觉、非完整 demo。所有数值锚定 <span class="mono">配方卡_SPEC_v1</span>（1h/2h/24h · 72h · 7天 · 心跳四档 · 信任60%占位），<b>不推翻既定决策</b>。配色已按硬要求做扁平 + 低饱和 + 去 emoji（状态用色点不用 ⚪🔵🟢）。
+  </div>
+
+  <div class="wrap">
+
+    <!-- ============ 桌面 ============ -->
+    <div class="sec-h"><h2>■ 桌面（≥1200px）— 左栏 + 主表 + 详情抽屉三栏</h2></div>
+    <div class="appframe">
+      <div class="app">
+        <!-- nav -->
+        <aside class="nav">
+          <div class="brand"><div class="sq">盾</div><div><b>防封控制台</b><small>风控运维后台</small></div></div>
+          <div class="navi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>概览</div>
+          <div class="navi on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>设备</div>
+          <div class="navi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>卡密</div>
+          <div class="navi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg>版本</div>
+          <div class="navi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>风控影子</div>
+          <div class="navi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 12 7 12 10 5 14 19 17 12 21 12"/></svg>心跳 & KPI</div>
+          <div class="navi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.5-2.3 1a7 7 0 0 0-1.7-1l-.4-2.5h-4l-.4 2.5a7 7 0 0 0-1.7 1l-2.3-1-2 3.5 2 1.5a7 7 0 0 0 0 2l-2 1.5 2 3.5 2.3-1a7 7 0 0 0 1.7 1l.4 2.5h4l.4-2.5a7 7 0 0 0 1.7-1l2.3 1 2-3.5-2-1.5a7 7 0 0 0 .1-1z"/></svg>策略阈值</div>
+          <div class="navi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>审计</div>
+        </aside>
+
+        <!-- main -->
+        <div class="main">
+          <div class="toolbar">
+            <span class="fld">全部 release ▾</span>
+            <span class="fld">官替 / 共存 ▾</span>
+            <span class="fld" style="min-width:160px; color:var(--ink3)">搜 设备 / 卡密 / wxid</span>
+            <span class="chiplbl c-new"><span class="dot d-new"></span>新</span>
+            <span class="chiplbl c-accent"><span class="dot d-accent"></span>建立</span>
+            <span class="chiplbl c-ok"><span class="dot d-ok"></span>稳定</span>
+            <span class="chiplbl c-honey"><span class="dot d-honey"></span>蜜罐</span>
+            <span class="chiplbl c-bad"><span class="dot d-bad"></span>改包</span>
+            <div class="grow"></div>
+            <span class="btn ghost">重置</span>
+            <span class="anno">筛选=扁平工具条，非渐变胶囊</span>
+          </div>
+
+          <div class="kpis">
+            <div class="kpi"><div class="k">设备总数</div><div class="v num">18</div><div class="s">官替11·共存7</div></div>
+            <div class="kpi"><div class="k">在线</div><div class="v num">15</div><div class="s">83%</div></div>
+            <div class="kpi"><div class="k">建立信任</div><div class="v num">5</div><div class="s">线60%</div></div>
+            <div class="kpi"><div class="k">稳定</div><div class="v num">6</div><div class="s">长租约</div></div>
+            <div class="kpi"><div class="k">影子/改包</div><div class="v num">3</div><div class="s">仅审计</div></div>
+            <div class="kpi"><div class="k">CONN</div><div class="v num">0.18</div><div class="s">红线0.5</div></div>
+            <div class="kpi"><div class="k">vbs</div><div class="v num">4</div><div class="s">红线38</div></div>
+          </div>
+
+          <div class="tbl-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>设备 / wxid</th>
+                  <th class="grp">A2三轴</th>
+                  <th class="grp">信任</th>
+                  <th>风险</th>
+                  <th class="grp">闸状态 · 时间段</th>
+                  <th>心跳</th>
+                  <th>租约</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="mono">D8A3F1C2</span><div class="sub mono">wxid_a1b29x</div></td>
+                  <td><span class="axis-lamps"><span class="dot d-ok" title="签名"></span><span class="dot d-ok" title="android_id"></span><span class="dot d-ok" title="包名"></span></span></td>
+                  <td><span class="chiplbl c-new"><span class="dot d-new"></span>新设备</span><div class="sub num">60 / 60</div></td>
+                  <td><span class="num" style="color:var(--ok)">6</span></td>
+                  <td><span class="chiplbl c-accent">首装 · isReady=true</span>
+                      <div class="mini" style="margin-top:4px"><i class="s1"></i><i class="s2"></i><i class="s3"></i><i class="s4"></i></div>
+                      <div class="sub">距软引流 48m</div></td>
+                  <td><span class="sub">密集 · 2m前</span></td>
+                  <td><span class="sub">短租约 7天</span></td>
+                  <td><span class="btn">⋯</span></td>
+                </tr>
+                <tr style="background:var(--accent-tint)">
+                  <td><span class="mono">C1F94D60</span><div class="sub mono">wxid_c1f94d</div></td>
+                  <td><span class="axis-lamps"><span class="dot d-ok"></span><span class="dot d-ok"></span><span class="dot d-warn"></span></span></td>
+                  <td><span class="chiplbl c-accent"><span class="dot d-accent"></span>建立信任</span><div class="sub num">48 / 60</div></td>
+                  <td><span class="num" style="color:var(--warn)">24</span></td>
+                  <td><span class="chiplbl c-warn">登录砸门 · 关不掉</span>
+                      <div class="mini" style="margin-top:4px"><i class="s1"></i><i class="s2"></i><i class="s3"></i><i class="s4"></i></div>
+                      <div class="sub">距解体 16h · A2仍开</div></td>
+                  <td><span class="sub">10–30m · 6m前</span></td>
+                  <td><span class="sub">短租约 6天</span></td>
+                  <td><span class="btn">⋯</span></td>
+                </tr>
+                <tr>
+                  <td><span class="mono">AA12CF80</span><div class="sub mono">wxid_aa12cf</div></td>
+                  <td><span class="axis-lamps"><span class="dot d-ok"></span><span class="dot d-ok"></span><span class="dot d-ok"></span></span></td>
+                  <td><span class="chiplbl c-ok"><span class="dot d-ok"></span>稳定</span><div class="sub num">88 / 60</div></td>
+                  <td><span class="num" style="color:var(--ok)">4</span></td>
+                  <td><span class="chiplbl c-ok">已授权 · isReady=true</span>
+                      <div class="sub" style="margin-top:4px">付费 · 断网宽限 7天</div></td>
+                  <td><span class="sub">稳定 1–2h</span></td>
+                  <td><span class="sub">长租约 30天</span></td>
+                  <td><span class="btn">⋯</span></td>
+                </tr>
+                <tr>
+                  <td><span class="mono">7C5520E9</span><div class="sub mono">wxid_7c5520</div></td>
+                  <td><span class="axis-lamps"><span class="dot d-bad" title="签名不符"></span><span class="dot d-ok"></span><span class="dot d-ok"></span></span></td>
+                  <td><span class="chiplbl c-bad"><span class="dot d-bad"></span>确认改包</span><div class="sub num">18 / 60</div></td>
+                  <td><span class="num" style="color:var(--bad)">93</span></td>
+                  <td><span class="chiplbl c-honey">影子期 · 默不作声</span>
+                      <div class="mini" style="margin-top:4px"><i class="s3" style="flex:5;background:var(--honey-t)"></i><i class="s4" style="flex:2"></i></div>
+                      <div class="sub">7天不续命 · 剩4天</div></td>
+                  <td><span class="sub">影子租约</span></td>
+                  <td><span class="sub">不续命</span></td>
+                  <td><span class="btn">⋯</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="sub" style="margin-top:8px">显示 4 / 18 台 · <span class="anno" style="margin:0">表头分组着色 = A2三轴/信任/闸时间段；点行→右侧抽屉</span></div>
+        </div>
+      </div>
+
+      <!-- drawer (open) -->
+      <aside class="drawer">
+        <h3><span class="dot d-accent"></span>设备详情 · <span class="mono">C1F94D60</span>
+          <span class="chiplbl c-accent" style="margin-left:6px">官替 r71.3</span>
+          <button class="dr-close" onclick="this.closest('.drawer').style.display='none'">×</button></h3>
+        <div class="sub" style="margin-top:4px">wxid_c1f94d · 上海 · 渠道 代理A · cert <span class="mono">18c867f0</span></div>
+
+        <!-- ① multi-track timeline -->
+        <div class="block">
+          <div class="bt">① 多轨时间轴 <span class="muted" style="font-weight:400">每段：进度 + 当前 ▲ + 剩余 + 成色</span><span class="anno" style="margin-left:auto">满足硬要求#4 的核心控件</span></div>
+
+          <div class="track"><div class="tl">防封授权闸<br><span class="sub">A2 时间闸</span></div><div class="tr">
+            <div class="segbar">
+              <div class="seg" style="flex:1">0–1h 首装</div>
+              <div class="seg" style="flex:1">1–2h 软引流</div>
+              <div class="seg warnseg cur" style="flex:11; --p:18%">2–24h 登录砸门（关不掉·只挡进隐私·A2仍开）</div>
+              <div class="seg badseg" style="flex:2">≥24h 解体</div>
+            </div>
+            <div class="meta"><b>当前</b> age≈2h20m <b>·</b> 距解体 <b>21h40m</b> <b>·</b> isAntiBanReady=<b style="color:var(--ok)">true</b> <span class="grade">设计only</span></div>
+          </div></div>
+
+          <div class="track"><div class="tl">隐私离线宽限<br><span class="sub">独立闸·不连坐</span></div><div class="tr">
+            <div class="segbar"><div class="seg cur" style="flex:1; --p:9%">72h 离线宽限（会话/通讯录/朋友圈/搜索）</div></div>
+            <div class="meta">已用 <b>6h</b> / 剩 <b>66h</b> <b>·</b> 在功能界面弹 <b>·</b> 与 A2 各自计时 <span class="grade">L2 已实现</span></div>
+          </div></div>
+
+          <div class="track"><div class="tl">心跳</div><div class="tr">
+            <div class="segbar">
+              <div class="seg" style="flex:2">密集 2–3m</div>
+              <div class="seg cur" style="flex:4; --p:55%">回落 10–30m</div>
+              <div class="seg" style="flex:5">稳定 1–2h(封顶6h)</div>
+              <div class="seg" style="flex:2">嫌疑 10m</div>
+            </div>
+            <div class="meta">相位 <b>回落</b> <b>·</b> 上次 6m前 <b>·</b> 下次 ~12m <b>·</b> CONN <b>0.21</b>(&lt;0.5) <span class="grade">设计only/L2</span></div>
+          </div></div>
+
+          <div class="track"><div class="tl">租约</div><div class="tr">
+            <div class="segbar"><div class="seg cur" style="flex:4; --p:70%">短租约 7天</div><div class="seg" style="flex:6">升长租约 30天（信任≥60%）</div></div>
+            <div class="meta">短租约 <b>·</b> 剩 <b>6天</b> <b>·</b> 升档差：seen≥3 / 存活≥48h / trust≥60 <span class="grade">服务器判</span></div>
+          </div></div>
+
+          <div class="track"><div class="tl">影子期<br><span class="sub">未命中</span></div><div class="tr">
+            <div class="segbar"><div class="seg" style="flex:1; color:var(--ink3)">未进入（触发线A蜜罐/C红线时出现 · 7天不续命）</div></div>
+            <div class="meta">命中后：暗记 + 影子租约 + 到期不续命 <b>·</b> 仅审计可溯 <span class="grade">设计only</span></div>
+          </div></div>
+
+          <div class="legend">
+            <span><span class="dot d-accent"></span>当前段</span>
+            <span><span class="dot d-warn"></span>需注意（关不掉/嫌疑）</span>
+            <span><span class="dot d-bad"></span>解体/改包</span>
+            <span><span class="dot d-honey"></span>影子（默不作声）</span>
+          </div>
+        </div>
+
+        <!-- ② capability panel -->
+        <div class="block">
+          <div class="bt">② 能力开关（看 + 管）<span class="anno" style="margin-left:auto">满足#2 客户端能力全覆盖</span></div>
+          <div class="caps">
+            <div class="cap">A2 签名 <span class="sub mono">18c867f0</span><span class="sw"></span></div>
+            <div class="cap">A2 android_id <span class="sub">官方SSAID</span><span class="sw"></span></div>
+            <div class="cap">A2 包名/路径 <span class="sub">共存需</span><span class="sw"></span></div>
+            <div class="cap">隐私四链 <span class="sub">会/通/朋/搜</span><span class="sw"></span></div>
+            <div class="cap">来电拦截 <span class="sw"></span></div>
+            <div class="cap">通知伪装 <span class="sw off"></span></div>
+            <div class="cap" style="grid-column:1 / -1">绑定 wxid + device(=android_id) <span class="sub mono">d=…3f1c</span><span class="chiplbl c-bad" style="margin-left:auto">解绑·仅后台</span></div>
+          </div>
+        </div>
+
+        <!-- ③ ops -->
+        <div class="block">
+          <div class="bt">③ 操作（高危二次确认 + 审计）</div>
+          <div class="ops">
+            <span class="op">设为信任</span><span class="op">标可疑</span><span class="op">改授权时间</span>
+            <span class="op danger">封停</span><span class="op danger">kill 弹窗</span><span class="op danger">kill 解体</span><span class="op danger">解绑</span>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- ============ 时间轴放大 ============ -->
+    <div class="sec-h"><h2>■ 多轨时间轴（核心控件放大看）</h2><span class="muted">硬要求#4：三钟 1h/2h/24h · 隐私72h · 心跳四档 · 租约 · 影子7天 · 付费宽限7天</span></div>
+    <div class="block" style="max-width:880px">
+      <div class="track"><div class="tl">防封授权闸 A2</div><div class="tr">
+        <div class="segbar" style="height:26px">
+          <div class="seg" style="flex:1">0–1h 首装</div>
+          <div class="seg" style="flex:1">1–2h 软引流(可关)</div>
+          <div class="seg warnseg cur" style="flex:11; --p:40%">2–24h 登录砸门(关不掉)</div>
+          <div class="seg badseg" style="flex:2">≥24h 解体(撤A2·平台自封)</div>
+        </div>
+        <div class="meta">6 分支：authorized / paid_offline / fresh / soft_funnel / <b>login_enforcer</b> / dissolve <span class="grade">设计only</span></div>
+      </div></div>
+      <div class="track"><div class="tl">隐私离线宽限</div><div class="tr"><div class="segbar" style="height:26px"><div class="seg cur" style="flex:1; --p:9%">72h（独立闸·不连坐 A2·在功能界面弹）</div></div><div class="meta">L2 已实现（LeaseClock GRACE_DEGRADE 72h）</div></div></div>
+      <div class="track"><div class="tl">付费断网宽限</div><div class="tr"><div class="segbar" style="height:26px"><div class="seg cur" style="flex:1; --p:30%">7天（仅「曾授权 + 断网」时出现，不误杀付费用户）</div></div><div class="meta">客户端 LeaseClock / 服务器 <span class="grade">设计only</span></div></div></div>
+      <div class="track"><div class="tl">影子 / 不续命</div><div class="tr"><div class="segbar" style="height:26px"><div class="seg cur" style="flex:1; --p:55%; background:var(--honey-t); color:var(--honey)">7天 影子租约 → 到期不续命（触发线 A 蜜罐 / C 红线）</div></div><div class="meta">默不作声 · 仅审计可溯 · 永久标签 wxid+device</div></div></div>
+    </div>
+
+    <!-- ============ 手机 ============ -->
+    <div class="sec-h"><h2>■ 手机（&lt;768px）— 表降级为卡片列表 + 底部 tab</h2></div>
+    <div class="twocol">
+      <div class="phone">
+        <div class="ph-top"><div class="brand" style="padding:0; border:0; margin:0"><div class="sq" style="width:22px;height:22px">盾</div></div><b style="font-size:13px">设备</b><div class="grow"></div><span class="fld" style="padding:4px 8px">筛选 ▾</span></div>
+        <div class="ph-body">
+          <div class="pcard">
+            <div class="row"><span><span class="mono">C1F94D60</span></span><span class="chiplbl c-accent"><span class="dot d-accent"></span>建立信任</span></div>
+            <div class="row"><span class="k">闸状态</span><span><span class="chiplbl c-warn">登录砸门</span></span></div>
+            <div class="mini" style="margin:2px 0 6px"><i class="s1"></i><i class="s2"></i><i class="s3"></i><i class="s4"></i></div>
+            <div class="row"><span class="k">距解体</span><span class="num">16h · A2仍开</span></div>
+            <div class="row"><span class="k">心跳 / 租约</span><span class="num">回落 / 短租6天</span></div>
+            <div style="display:flex; gap:7px; margin-top:8px"><span class="op" style="flex:1; text-align:center">详情</span><span class="op danger" style="flex:1; text-align:center">操作</span></div>
+          </div>
+          <div class="pcard">
+            <div class="row"><span><span class="mono">AA12CF80</span></span><span class="chiplbl c-ok"><span class="dot d-ok"></span>稳定</span></div>
+            <div class="row"><span class="k">闸状态</span><span><span class="chiplbl c-ok">已授权</span></span></div>
+            <div class="row"><span class="k">租约</span><span class="num">长租约 30天</span></div>
+            <div style="display:flex; gap:7px; margin-top:8px"><span class="op" style="flex:1; text-align:center">详情</span><span class="op danger" style="flex:1; text-align:center">操作</span></div>
+          </div>
+          <div class="sub" style="text-align:center; margin-top:4px">点「详情」→ 全屏抽屉（时间轴竖向堆叠）</div>
+        </div>
+        <div class="ph-tab">
+          <div class="on"><span class="gl"></span>设备</div>
+          <div><span class="gl"></span>卡密</div>
+          <div><span class="gl"></span>版本</div>
+          <div><span class="gl"></span>风控</div>
+          <div><span class="gl"></span>更多</div>
+        </div>
+      </div>
+      <div style="flex:1; min-width:260px">
+        <div class="block">
+          <div class="bt">手机端要点（硬要求#1）</div>
+          <div style="font-size:12.5px; color:var(--ink2); line-height:1.9">
+            • 大表 → <b>卡片列表</b>（一台机一张卡，关键字段竖排，含 mini 时间轴）<br>
+            • 左栏 → <b>底部 5 tab</b>；详情抽屉 → <b>全屏页</b>，多轨时间轴竖向堆叠<br>
+            • 操作按钮 <b>≥44px</b> 触控热区；高危二次确认 + 审计照旧<br>
+            • 同一套数据/组件，纯 CSS 响应式三档（≥1200 / 768–1200 / &lt;768）
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="foot">
+    低保真线框 v1 · guard_native-A15 · 配套 <span class="mono">控制台_改进方向_v1.md</span> · 纯前端假数据示意，不连服务器、不动主仓/核心代码 · 数值锚定 <span class="mono">配方卡_SPEC_v1</span>，不推翻既定决策。
+  </div>
+
+<script>
+  function setTheme(t){
+    document.body.classList.toggle('dark', t==='dark');
+    document.getElementById('tLight').classList.toggle('on', t==='light');
+    document.getElementById('tDark').classList.toggle('on', t==='dark');
+  }
+</script>
+</body>
+</html>
