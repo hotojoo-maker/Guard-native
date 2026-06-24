@@ -8,6 +8,7 @@ import com.ghost.assist.BuildConfig;
 import com.ghost.assist.core.Bridge;
 import com.ghost.assist.core.GuardRuntime;
 import com.ghost.assist.core.RefreshBus;
+import com.ghost.assist.core.RegistryFallback;
 import com.ghost.assist.core.StateMachine;
 
 import java.lang.ref.WeakReference;
@@ -41,26 +42,25 @@ public class ContactFilter {
 
     static final String TAG = "NCL";
 
-    // P1E Step2: class-name anchors now sourced from the encrypted SO registry
-    // (contact.address) via GuardRuntime.getRecipe(), with the literal kept as a
-    // fallback. resolveRecipes() (called first thing in install()) overrides each
+    // P1E Step2: class-name anchors sourced from the encrypted SO registry
+    // (contact.address) via GuardRuntime.getRecipe(). C5a 归一: the DEBUG fallback
+    // is no longer hand-written here — it comes from RegistryFallback, generated
+    // at build time from native_core/registry_8071.json (debug = literal, release
+    // = ""). resolveRecipes() (called first thing in install()) overrides each
     // when the registry returns a non-empty value; on scatter / SO-unavailable it
-    // keeps the literal → behaviour unchanged. NON-FINAL on purpose so the
-    // resolved value can replace the fallback. ADDR_ITEM_CLS stays package-visible
-    // because ContactHotReload / ContactDiscoveryHook read it.
-    private static String ADDR_ADAPTER    = BuildConfig.DEBUG ? "ik3.t0" : "";
-    private static String ADDR_LIVE_LIST  =
-            BuildConfig.DEBUG ? "com.tencent.mm.ui.contact.address.AddressLiveList" : "";
-    private static String MVVMLIST_CLASS  =
-            BuildConfig.DEBUG ? "com.tencent.mm.plugin.mvvmlist.MvvmList" : "";
+    // keeps the generated debug fallback → behaviour unchanged. NON-FINAL on
+    // purpose so the resolved value can replace the fallback. ADDR_ITEM_CLS stays
+    // package-visible because ContactHotReload / ContactDiscoveryHook read it.
+    private static String ADDR_ADAPTER    = RegistryFallback.CONTACT_ADDRESS__ADAPTER_CLASS;
+    private static String ADDR_LIVE_LIST  = RegistryFallback.CONTACT_ADDRESS__LIVE_LIST;
+    private static String MVVMLIST_CLASS  = RegistryFallback.CONTACT_ADDRESS__MVVMLIST_CLASS;
     // AddressLiveList 的 MvvmList 基类真实 backing 字段 = o/p/h（与会话 tab MvvmConvList 同），元素 fc5.g（P_CV1 2026-05-29 L1 实证）。
     // 注：o/p/h 不在 registry，本轮保持硬编码（P1E Step2 范围外）。
     static final String[] MVVMLIST_FIELDS = {"o", "p", "h"};
-    static String ADDR_ITEM_CLS   = BuildConfig.DEBUG ? "fc5.g" : "";
-    private static String ADDR_Z3_CLS     =
-            BuildConfig.DEBUG ? "com.tencent.mm.storage.z3" : "";
+    static String ADDR_ITEM_CLS   = RegistryFallback.CONTACT_ADDRESS__ITEM_CLASS;
+    private static String ADDR_Z3_CLS     = RegistryFallback.CONTACT_ADDRESS__CONTACT_CLASS;
     // z3 wxid getter method name (was inline "c1"); now registry-sourced w/ fallback.
-    private static String WXID_GETTER     = BuildConfig.DEBUG ? "c1" : "";
+    private static String WXID_GETTER     = RegistryFallback.CONTACT_ADDRESS__WXID_GETTER;
 
     private static volatile boolean sRecipesResolved = false;
 

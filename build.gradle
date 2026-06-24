@@ -111,6 +111,16 @@ android {
         coexist {
             res.srcDirs      = ['src/coexist/res']
         }
+        // C5a 归一: build-time-generated RegistryFallback (single source =
+        // native_core/registry_8071.json via tools/gen_registry_fallback.py).
+        // debug = real literals, release = "" stubs. AGP maps these by
+        // convention; declared explicitly (additive) for clarity/determinism.
+        debug {
+            java.srcDirs += ['src/debug/java']
+        }
+        release {
+            java.srcDirs += ['src/release/java']
+        }
     }
 
     compileOptions {

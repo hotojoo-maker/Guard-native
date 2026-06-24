@@ -8,6 +8,7 @@ import com.ghost.assist.core.Bridge;
 import com.ghost.assist.core.GuardRuntime;
 import com.ghost.assist.core.InterceptCounter;
 import com.ghost.assist.core.RefreshBus;
+import com.ghost.assist.core.RegistryFallback;
 import com.ghost.assist.core.StateMachine;
 import com.ghost.assist.debug.DebugTelemetry;
 
@@ -36,29 +37,31 @@ public class MomentsFilter {
 
     private static final String TAG = "NCL";
 
-    // P1E Step3: these 8 anchors are now sourced from the encrypted SO registry
-    // (moments.feed) via GuardRuntime.getRecipe(), literal kept as fallback.
-    // resolveRecipes() (called first in install()) overrides each on registry hit;
-    // scatter / SO-unavailable → keeps literal → behaviour unchanged. NON-FINAL so
-    // the resolved value can replace the fallback. (z15.e56 actor_class /
-    // f435583d FIELD_E56_WXID NOT migrated — no live anchor / dead constant.)
-    private static String ITEM_PROMO      = BuildConfig.DEBUG ? "la4.p" : "";
-    private static String ITEM_FRIEND     = BuildConfig.DEBUG ? "na4.b" : "";
+    // P1E Step3: these 8 anchors are sourced from the encrypted SO registry
+    // (moments.feed) via GuardRuntime.getRecipe(). C5a 归一: the DEBUG fallback is
+    // generated from native_core/registry_8071.json (RegistryFallback; debug =
+    // literal, release = ""), not hand-written here. resolveRecipes() (called
+    // first in install()) overrides each on registry hit; scatter / SO-unavailable
+    // → keeps the generated debug fallback → behaviour unchanged. NON-FINAL so the
+    // resolved value can replace the fallback. (z15.e56 actor_class / f435583d
+    // FIELD_E56_WXID NOT migrated — no live anchor / dead constant.)
+    private static String ITEM_PROMO      = RegistryFallback.MOMENTS_FEED__ITEM_PROMO;
+    private static String ITEM_FRIEND     = RegistryFallback.MOMENTS_FEED__ITEM_FRIEND;
     private static final String ITEM_BUBBLE     = "com.tencent.mm.plugin.sns.ui.SnsMsgUIWithRelevance";
     private static final String ITEM_NOTIFY     = "jw1.d";
     // 控制台高频类，待确认语义（疑似 like/comment 元素）
     private static final String ITEM_WQ_C1      = "wq.c1";
     private static final String ITEM_WQ_Y0      = "wq.y0";
     private static final String ITEM_II5_B      = "ii5.b";
-    private static String METHOD_SNS_OBJ  = BuildConfig.DEBUG ? "h1" : "";   // la4.p.h1() → TimeLineObject（p1 字段的解包 getter）
+    private static String METHOD_SNS_OBJ  = RegistryFallback.MOMENTS_FEED__SNS_GETTER;   // la4.p.h1() → TimeLineObject（p1 字段的解包 getter）
     private static final String METHOD_NICKNAME = "O0";
-    private static String FIELD_WXID      = BuildConfig.DEBUG ? "field_userName" : "";
-    private static String FIELD_INNER     = BuildConfig.DEBUG ? "d" : "";
-    private static String ADAPTER_CLASS   = BuildConfig.DEBUG ? "e2" : "";
+    private static String FIELD_WXID      = RegistryFallback.MOMENTS_FEED__WXID_FIELD;
+    private static String FIELD_INNER     = RegistryFallback.MOMENTS_FEED__INNER_FIELD;
+    private static String ADAPTER_CLASS   = RegistryFallback.MOMENTS_FEED__ADAPTER_CLASS;
 
     // SnsObject 字段（agent 实证 2026-05-20）
-    private static String FIELD_LIKE_LIST    = BuildConfig.DEBUG ? "LikeUserList" : "";     // LinkedList<e56>
-    private static String FIELD_COMMENT_LIST = BuildConfig.DEBUG ? "CommentUserList" : "";  // LinkedList<e56>
+    private static String FIELD_LIKE_LIST    = RegistryFallback.MOMENTS_FEED__LIKE_LIST;     // LinkedList<e56>
+    private static String FIELD_COMMENT_LIST = RegistryFallback.MOMENTS_FEED__COMMENT_LIST;  // LinkedList<e56>
     private static final String FIELD_LIKE_COUNT   = "LikeCount";
     private static final String FIELD_LIKE_UC      = "LikeUserListCount";
     private static final String FIELD_CMT_COUNT    = "CommentCount";

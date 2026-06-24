@@ -1,0 +1,39 @@
+# C5a 装机 L1 抓取 — 2026-06-25 06:43 — 小米9 / 609b4b18 / official debug
+# 来源：adb logcat -d 关键行摘录（全量原始 buffer 为 PS UTF-16 scratch，已删，不入库）
+
+## ① Filter recipes（fallback 生效，值 == 原手写兜底；fallbackSelfTest=ok ×4）
+06-25 06:43:19.920 NCL [SF] recipes gateway=fts_result_view adapterFamily=q2,f0 renderHook=getView profile=wechat8071_fts_mixed scope=result_render_only fallbackSelfTest=ok ready=true
+06-25 06:43:19.925 NCL [MF] recipes friend=na4.b promo=la4.p adapter=e2 wxid=field_userName inner=d sns=h1 like=LikeUserList cmt=CommentUserList fallbackSelfTest=ok ready=true
+06-25 06:43:19.934 NCL [CF] recipes mvvm=com.tencent.mm.plugin.mvvmlist.MvvmList adapter=kc5.v0 getters=[C0, h1, j1, i1, k1, getUsername, getUserName] fallbackSelfTest=ok ready=true
+06-25 06:43:19.981 NCL [CTF] recipes adapter=ik3.t0 item=fc5.g contact=com.tencent.mm.storage.z3 getter=c1 live=com.tencent.mm.ui.contact.address.AddressLiveList fallbackSelfTest=ok ready=true
+
+## native verify（设备无 server seed → registry scatter；与 C5a 无关）
+06-25 06:43:19.838 NCL [native] decryptScatter=true
+06-25 06:43:19.838 NCL [native] registrySummary=scatter
+06-25 06:43:19.838 NCL [native] BATCH1_VERIFY PASS
+06-25 06:43:19.838 NCL [native] PHASE1A_VERIFY PASS
+06-25 06:43:19.838 NCL [native] PHASE1B_VERIFY FAIL
+06-25 06:43:19.838 NCL [native] PHASE1C_VERIFY FAIL
+06-25 06:43:19.838 NCL [native] PHASE1D_VERIFY FAIL
+06-25 06:43:19.838 NCL [native] configReady=false summary=scatter
+06-25 06:43:19.838 NCL [native] PHASE1E_VERIFY FAIL
+06-25 06:43:19.855 NCL [native] C2_VERIFY PASS
+
+## auth（开发机未授权 = 环境态，非 C5a 引起）
+06-25 06:43:19.864 NCL [hb] cached envelope seed=miss
+06-25 06:43:19.865 NCL [auth] NO_LICENSE -- not bound yet
+
+## build（两 ABI）
+:assembleOfficialDebug   -> BUILD SUCCESSFUL in 15s  (arm64-v8a + armeabi-v7a)
+:assembleOfficialRelease -> BUILD SUCCESSFUL in 39s  (R8 minify + 双 ABI)
+
+## ③ release 无明文扫描（strings-on-dex 代 jadx；distinctive 15 个）
+DEBUG  : 15/15 present（对照成立）
+RELEASE: 10 absent / 5 present
+  absent  : kc5.v0  ik3.t0  la4.p  na4.b  AddressLiveList  fts_result_view
+            wechat8071_fts_mixed  result_render_only  q2,f0
+            "C0,h1,j1,i1,k1,getUsername,getUserName"
+  present : MvvmList            <- ContactDiscoveryHook.java:459 (内联)
+            fc5.g / z3          <- ContactLabelHideGuard.java:31/35 (内联 static final)
+            LikeUserList / CommentUserList <- MomentsFilter 内联 LikeUserListCount/CommentUserListCount (子串命中)
+            => 5 个全属 C5b 旧账（本轮明令不碰）

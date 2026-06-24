@@ -8,6 +8,7 @@ import com.ghost.assist.BuildConfig;
 import com.ghost.assist.core.Bridge;
 import com.ghost.assist.core.InterceptCounter;
 import com.ghost.assist.core.RefreshBus;
+import com.ghost.assist.core.RegistryFallback;
 import com.ghost.assist.core.StateMachine;
 import com.ghost.assist.debug.DebugTelemetry;
 
@@ -53,17 +54,19 @@ public class ConvFilter {
     static final String TAG = "NCL";
 
     // P1E Step4: 3 named anchors sourced from encrypted registry (conv.list) via
-    // GuardRuntime.getRecipe(), literal kept as fallback. resolveRecipes() (first
-    // in install()) overrides on hit; scatter/SO-missing → keep literal. NON-FINAL
-    // so resolved value replaces fallback. Only these 3 — inline literals ("kc5.y",
-    // "notifyDataSetChanged") inside hook callbacks are NOT touched (iron rules
-    // 13-22). registry contact_fields(subset)/l1_methods drift left as a debt.
-    private static String MVVMLIST_CLASS      =
-            BuildConfig.DEBUG ? "com.tencent.mm.plugin.mvvmlist.MvvmList" : "";
+    // GuardRuntime.getRecipe(). C5a 归一: the DEBUG fallback comes from
+    // RegistryFallback, generated from native_core/registry_8071.json (debug =
+    // literal, release = ""), not hand-written. resolveRecipes() (first in
+    // install()) overrides on hit; scatter/SO-missing → keep the generated debug
+    // fallback. NON-FINAL so resolved value replaces fallback. Only these 3 —
+    // inline literals ("kc5.y", "notifyDataSetChanged") inside hook callbacks are
+    // NOT touched (iron rules 13-22). registry contact_fields(subset)/l1_methods
+    // drift left as a debt.
+    private static String MVVMLIST_CLASS      = RegistryFallback.CONV_LIST__MVVMLIST_CLASS;
     // 8.0.71: MvvmList subclass for conversation list (static analysis confirmed)
     static final String MVVMCONV_CLASS      = "com.tencent.mm.ui.conversation.adapter.MvvmConvList";
     private static final String CONV_LIST_VIEW      = "com.tencent.mm.ui.conversation.ConversationListView";
-    static String ADAPTER_CLASS_71    = BuildConfig.DEBUG ? "kc5.v0" : "";   // confirmed 8.0.71 (ConvHotReload reads it)
+    static String ADAPTER_CLASS_71    = RegistryFallback.CONV_LIST__ADAPTER_CLASS;   // confirmed 8.0.71 (ConvHotReload reads it)
     // 2026-06-21 清理：删除 ADAPTER_CLASS_66="f45.s0"（8.0.66 旧适配器，8.0.71 不存在；3 处引用全为空转死代码）。
 
     // MvvmList internal ArrayList field names
@@ -79,9 +82,13 @@ public class ConvFilter {
     // Methods on contact obj that return wxid
     // C0() = 8.0.71 l4.C0() → field_digestUser = wxid  (confirmed by live broad-scan 2026-05-22)
     // h1() = returns "officialaccounts" for public account items — NOT wxid for regular contacts
-    private static String[] WXID_GETTER_NAMES = BuildConfig.DEBUG
-            ? new String[]{"C0", "h1", "j1", "i1", "k1", "getUsername", "getUserName"}
-            : new String[0];
+    // C5a 归一: getter-name fallback comes from registry_8071.json
+    // (conv.list.wxid_getters) via RegistryFallback; debug = split list, release =
+    // empty array (RegistryFallback.CONV_LIST__WXID_GETTERS == "" → new String[0]).
+    private static String[] WXID_GETTER_NAMES =
+            RegistryFallback.CONV_LIST__WXID_GETTERS.isEmpty()
+                    ? new String[0]
+                    : RegistryFallback.CONV_LIST__WXID_GETTERS.split(",");
     // Fields on contact obj that hold wxid directly
     private static final String[] WXID_FIELD_NAMES = {"field_userName", "username", "d", "e"};
     private static final String UNREAD_FIELD = "field_unReadCount";

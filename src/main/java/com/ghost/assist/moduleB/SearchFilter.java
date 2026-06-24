@@ -11,6 +11,7 @@ import com.ghost.assist.BuildConfig;
 import com.ghost.assist.core.Bridge;
 import com.ghost.assist.core.GuardRuntime;
 import com.ghost.assist.core.RefreshBus;
+import com.ghost.assist.core.RegistryFallback;
 import com.ghost.assist.core.StateMachine;
 import com.ghost.assist.debug.UiContextTracker;
 
@@ -77,12 +78,14 @@ public class SearchFilter {
     // P_SEC1: search.gateway is a coarse registry profile. It records the
     // adapter family and render hook only; it does NOT decide hide/show and it
     // explicitly excludes SearchUnlock / 111111 entry logic.
+    // C5a 归一: the DEBUG fallback below is generated from registry_8071.json
+    // (RegistryFallback; debug = literal, release = ""), not hand-written.
     private static final String REGISTRY_ENTRY = "search.gateway";
-    private static String sGateway = BuildConfig.DEBUG ? "fts_result_view" : "";
-    private static String sAdapterFamily = BuildConfig.DEBUG ? "q2,f0" : "";
-    private static String sRenderHook = BuildConfig.DEBUG ? "getView" : "";
-    private static String sExtractorProfile = BuildConfig.DEBUG ? "wechat8071_fts_mixed" : "";
-    private static String sScope = BuildConfig.DEBUG ? "result_render_only" : "";
+    private static String sGateway = RegistryFallback.SEARCH_GATEWAY__GATEWAY;
+    private static String sAdapterFamily = RegistryFallback.SEARCH_GATEWAY__ADAPTER_FAMILY;
+    private static String sRenderHook = RegistryFallback.SEARCH_GATEWAY__RENDER_HOOK;
+    private static String sExtractorProfile = RegistryFallback.SEARCH_GATEWAY__EXTRACTOR_PROFILE;
+    private static String sScope = RegistryFallback.SEARCH_GATEWAY__SCOPE;
     private static volatile boolean sRecipesResolved = false;
 
     private static String recipe(String key, String fallback) {
