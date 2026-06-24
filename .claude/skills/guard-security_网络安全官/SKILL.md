@@ -92,7 +92,6 @@ SO 不能只是被动门卫；它必须是“能力翻译官”。
 - 租约决定能不能继续用。
 - registry 决定核心 hook 能不能命中。
 - risk 决定异常后怎么表现。
-- watermark 决定泄露后能否溯源。
 - compat 决定断网和旧 schema 如何恢复，避免误杀。
 
 每层都要有一点作用，但不要拆成一堆细碎机制。优先粗粒度能力包，少数关键出口，便于维护、测试和回滚。
@@ -162,21 +161,19 @@ SO 不能只是被动门卫；它必须是“能力翻译官”。
 1. `license_pack`：租约、客户、设备、版本绑定。
 2. `registry_pack`：核心 hook 配方 registry。
 3. `risk_pack`：蜜罐、弹窗冷却、引流策略、RiskLevel 参数。
-4. `watermark_pack`：客户 seed、批次水印。
-5. `compat_pack`：旧 schema 兼容、缓存恢复策略。
+4. `compat_pack`：旧 schema 兼容、缓存恢复策略。
 
 客户端只在签名验真、租约有效、SO 解密成功后启用这些能力包。失败时散沙，不崩、不全开。
 
 ## 配方收敛原则
 
-加密配方只能收敛成「五个 pack + 一个 GuardRuntime 出口」，禁止每个功能各自发明一套小配方、小网关、小授权。
+加密配方只能收敛成「四个 pack + 一个 GuardRuntime 出口」，禁止每个功能各自发明一套小配方、小网关、小授权。
 
 | pack | 只管什么 | 不管什么 |
 |---|---|---|
 | `license_pack` | 授权、租约、客户/设备/版本/签名绑定 | hook 类名、弹窗策略 |
 | `registry_pack` | 微信 hook 类名、方法名、字段名、gateway recipe | 授权判断、状态切换、风险后果 |
 | `risk_pack` | 蜜罐、tampered、降级、弹窗、影子期、引流冷却 | hook 锚点、用户名单 |
-| `watermark_pack` | 客户 seed、批次水印、泄漏溯源 | 功能开关、授权时长 |
 | `compat_pack` | 旧 schema、断网缓存、灰度恢复、版本兼容 | 新功能逻辑 |
 
 统一出口：
@@ -224,7 +221,7 @@ StateMachine.isActive()
 
 ### 建议（决策）
 
-1. **粒度保持粗**：加密类名**不需要更细碎**。维持「4 大动脉 + 5 pack」粗粒度，不为「全加密」而拆碎、到处补。
+1. **粒度保持粗**：加密类名**不需要更细碎**。维持「4 大动脉 + 4 pack」粗粒度，不为「全加密」而拆碎、到处补。
 2. **要做的是归一，不是增量**：
    - `registry_*.json` 设为混淆名**唯一源**；
    - DEBUG fallback 由 build 时**从 json 生成**，不再手写；
@@ -347,11 +344,11 @@ AES key 不得是 SO 里的静态明文常量。
 - 本地材料只用于绑定和增加静态分析成本，不能替代服务器材料。
 - 不追求复杂白盒密码，但要避免 IDA 一眼看到固定 key。
 - Frida hook `decrypt_config()` 出参仍是高级威胁，防线重点是短命租约、设备绑定、risk 记录和服务端轮换。
-- ⚠️ **当前已知违规（待收口，2026-06-24 核实）**：解服务器信封 `k→S_rel` 的 wrapping key `W`（`config_crypto.cpp` 的 `g_wk_lo`/`g_wk_hi`）现仍是**全局静态明文常量**，违反本准则——抽一台 SO 的 W 可离线解任意设备的合法信封。修复 = W 一机一密（`03_execute_执行任务/S3a0_ServerSeed设计/W_DERIVE_DESIGN.md`：`W_dev=KDF(本地段+设备材料)`）+ 重放绑定（`03_execute_执行任务/P_RB1_重放绑定_ReplayBind/DESIGN.md`：已验签摘要折入 key），二者均 📄 仅设计未落地，见「阶段计划」第 9/10 项。
+- ⚠️ **当前已知违规（待收口，2026-06-24 核实）**：解服务器信封 `k→S_rel` 的 wrapping key `W`（`config_crypto.cpp` 的 `g_wk_lo`/`g_wk_hi`）现仍是**全局静态明文常量**，违反本准则——抽一台 SO 的 W 可离线解任意设备的合法信封。修复 = W 一机一密 + 重放绑定（合并设计稿 `03_execute_执行任务/P_RB1_重放绑定_ReplayBind/钥匙加固_KeyHardening设计.md`：`W_dev=KDF(本地段+设备材料)` + 已验签摘要折入 key），📄 仅设计未落地，见「阶段计划」第 9/10 项。
 
 ## 三端钥匙派生镜像对账（维护铁律 · F-31 静默翻车重灾区）
 
-> 触发：用户问「写进 SO 黑盒方便维护吗」（2026-06-24）。结论已写死在「加密 hook 名粒度与单一真源」节：**维护难易 = 是不是单一真源，与代码在 Java 还是 SO 无关**。本节把「钥匙派生」这条最贵的维护税单列成铁律——它此前只散在设计稿（`W_DERIVE_DESIGN.md` §7 / `P_RB1_重放绑定_ReplayBind/DESIGN.md` §6），未进 skill。
+> 触发：用户问「写进 SO 黑盒方便维护吗」（2026-06-24）。结论已写死在「加密 hook 名粒度与单一真源」节：**维护难易 = 是不是单一真源，与代码在 Java 还是 SO 无关**。本节把「钥匙派生」这条最贵的维护税单列成铁律——它此前只散在设计稿（已并入 `P_RB1_重放绑定_ReplayBind/钥匙加固_KeyHardening设计.md`），未进 skill。
 
 **铁律**：任何 key 派生算法（`derive_registry_key` / `derive_bootstrap_key` / 未来 `derive_wrap_key`(W_dev) / 摘要折入）一旦改动，**Java（如有）/ SO（`config_crypto.cpp`）/ 生成脚本（`tools/gen_*_cipher.py`）三处必须逐字节一致**，否则正版机解不开 → registry 散沙 → 已装机密友隐藏**静默全挂、无报错无崩溃**（F-31）。
 
@@ -574,8 +571,8 @@ GuardRuntime.getActiveRegistry()
 6. 🟡 **Phase 1C.5 Filter 读 registry（消明文双份，任务名 `P1E_Filter读Registry`）**：让 ContactFilter/MomentsFilter/ConvFilter 真从 registry 读类名（取件口 `GuardRuntime.getRecipe`+`nativeGetRecipe`），conv.list 漂移债已结案；现为 registry+fallback 双份，**删 fallback 未做**（每个 Filter 删前要先核账 registry 完整性）。SearchFilter 暂未迁。⚠️ 注意：这里的任务名 P1E ≠ 下面第 8 条的 Phase 1E。
 7. ✅/🟡 **Phase 1D-server（S2/S3a/S4/S3b，2026-06-11）**：miyou-server 已下发 Ed25519 signed envelope；客户端 `EnvelopeClient` / `AuthEnvelopeVerifier` / `EnvelopeStore` / `GuardHeartbeat` / `GuardActivation` 已形成 v1.1 授权闭环。当前 `android_8071` 已切 `prod_server_lock`：`registry_cipher.inc` 为 `GUARD_REGISTRY_REQUIRES_SERVER_SEED=1`，线上 envelope `k/n` unwrap 后 `recipeOk=true`。现状权威 + 下一受控步骤见 `PROTECTION_MAP.md` §10.6。
 8. 🟡 **Phase 1E LeaseClock + RiskState（P1F 本地一刀 + 两闸，S3b 已推进）**：`LeaseClock` 已接信封授时并用于到期判定；设置页断网 >72h 强制重验，失败撤销授权但保留 token 自愈；`RiskState` 主链仍偏 record-only，但来电拦截已接 `RiskState.isTamperDegraded()` 单点散沙例外；全链路散沙降级与正版恢复闭环仍未完成。
-9. 📄 **Phase 1F W 一机一密（`W_DERIVE_DESIGN.md`，仅设计未落地）**：wrapping key W 从「全局静态明文 `g_wk_lo`/`g_wk_hi`」改为 `W_dev = KDF(本地三段 wseg + 设备材料 SHA-256(ANDROID_ID))`，服务器按设备上报 `dm` 逐设备 wrap `S_rel`。收「抽一把 W 离线通杀所有设备信封」。必走 3 步灰度（双试 → 按设备切 → 删全局 W），缺迁移方案即全量正版散沙。落地受「三端钥匙派生镜像对账」铁律约束。
-10. 📄 **Phase 1G 重放绑定 P_RB1（`P_RB1_重放绑定_ReplayBind/DESIGN.md`，仅设计未落地）**：把已 Ed25519 验签的 envelope 摘要（expire_at / device / release / digest）折进 `derive_registry_key`，让过期 / 重放的旧 `k/n` 推出错 key → 散沙，短租约在 SO 层才真正有牙。优先级 P1（设备绑定已堵转卖，本项属加固）。
+9. 📄 **Phase 1F W 一机一密（`P_RB1_重放绑定_ReplayBind/钥匙加固_KeyHardening设计.md`，仅设计未落地）**：wrapping key W 从「全局静态明文 `g_wk_lo`/`g_wk_hi`」改为 `W_dev = KDF(本地三段 wseg + 设备材料 SHA-256(ANDROID_ID))`，服务器按设备上报 `dm` 逐设备 wrap `S_rel`。收「抽一把 W 离线通杀所有设备信封」。必走 3 步灰度（双试 → 按设备切 → 删全局 W），缺迁移方案即全量正版散沙。落地受「三端钥匙派生镜像对账」铁律约束。
+10. 📄 **Phase 1G 重放绑定 P_RB1（`P_RB1_重放绑定_ReplayBind/钥匙加固_KeyHardening设计.md`，仅设计未落地）**：把已 Ed25519 验签的 envelope 摘要（expire_at / device / release / digest）折进 `derive_registry_key`，让过期 / 重放的旧 `k/n` 推出错 key → 散沙，短租约在 SO 层才真正有牙。优先级 P1（设备绑定已堵转卖，本项属加固）。
 
 ## 当前 SO 基线与工作量
 

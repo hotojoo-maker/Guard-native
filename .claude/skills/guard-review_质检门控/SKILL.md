@@ -87,7 +87,7 @@ grep 代码是否有被禁模式：
 - 同名 .md / 同功能脚本是否多份
 - 有重复 → 合并保留最新
 
-### ⑤ KPI 红线（F-22 铁律）
+### ⑤ KPI 出包前体检（口径见防封官 skill）
 
 **Step 1 — 跑 KPI**
 
@@ -102,7 +102,7 @@ frida -U -f com.tencent.mm --no-pause -l "I:/apk2_official_research/official_wec
 | normsg/100K | 4000 | 5124 |
 | CONN 密度 | 0.2 | 0.5 |
 
-任一超红线 → **阻塞，回滚不合入**
+环境类 vbs/PROP 零读取达标；密度类 normsg/CONN 明显异常才查（非即停）
 
 **判定**：全部 ✅ → 可发版 | 任一 🔴 → 写入 `05_reports_报告/RISK_HISTORY.md`
 

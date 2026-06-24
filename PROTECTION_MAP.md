@@ -54,7 +54,7 @@
 |---|---|---|---|---|
 | **0 止血+摆诱饵** | 关 release DebugServer；收 proguard（混真留假）；把现成死代码 `AuthManager.evaluate()`+`PiracyNotice` 接上 | 纯本地改，不用服务器 | 低、零风险 | 摆好诱饵；接基础「已篡改」弹窗 |
 | **1 地基:真锁+心跳** | SO 加 `decrypt_config()`(AES-GCM)；miyou-server 出心跳端点，发短命钥匙+加密配置（租约字段伪装 `K2i_m`）；解不开=散沙 | 写服务器 + SO 加密 | 中 | 弹窗按 GRACE 阶梯（24h提醒/72h降级） |
-| **2 补组合拳+漏斗** | 加密配方（类名服务器下发、随版本）；蜜罐绊线→tampered→后果；水印溯源；防重放 | 接 Phase1 服务器 | 中 | 绊线后果上线；强制弹窗（10天 lockout）引流 `zxmqq.shop` |
+| **2 补组合拳+漏斗** | 加密配方（类名服务器下发、随版本）；蜜罐绊线→tampered→后果；防重放 | 接 Phase1 服务器 | 中 | 绊线后果上线；强制弹窗（10天 lockout）引流 `zxmqq.shop` |
 | **3 打磨** | 更多决策下沉 SO；控制流混淆；服务器查「一码多机」 | — | 高、选做 | — |
 
 > 蜜罐：诱饵 **Phase 0** 就摆（便宜），「牙」（绊线后果）等 **Phase 2**（真锁就位才有意义）。
@@ -72,7 +72,6 @@
 | 4 | SO 翻译官 `auth_engine.cpp` / 新 `decrypt_config()` | SO 零 crypto | ④ AES-GCM 解密，唯一能产出真配方 | 是（核心） | 新函数，不动现有 native 逻辑 |
 | 5 | 失败表现 `StateMachine.isActive()` → `Bridge.allHiddenIds()` | 现 stub true | ⑤ 解不开/过期→喂乱码=散沙，不崩不全开 | — | 半残+重连自愈，**别清用户名单** |
 | 6 | 延迟炸弹+引流 `PiracyNotice`（死代码） | 写好没人调 | ⑥ risk 触发→延迟弹窗引流 | — | 1~2 个陷阱够了，别遍地埋 |
-| 7 | 水印溯源 seed（`g_a7f2` 已有 seed） | 部分 | ⑦ seed 派生指纹写进 1 个常量 | — | 零检测代价，泄漏可追 |
 
 ---
 
@@ -82,10 +81,10 @@
 |---|---|---|
 | **假锁 / 诱饵** | `PromoConfig`（明文 `PROMO_URL` + base64 `PROMO_TOKEN` + 开关，名字像真引流配置）（§10.9）。⚠️ 旧文写的 `isVipAuthorized()` return true 已过时——它现是真授权门，不是诱饵 | 留明文/留亮名（**故意不混淆**）；`CompatProbe` 绊线比对 → `markTampered` |
 | **真锁** | 新增 SO `decrypt_config()`（无 vip/auth/license 关键词） | 重混淆 / 干脆无名；解不开 = 散沙 |
-| **后果** | `PiracyNotice` + 水印 + (v2)上报 | 咬钩后**延迟**触发，不是当场 |
+| **后果** | `PiracyNotice` + (v2)上报 | 咬钩后**延迟**触发，不是当场 |
 
 - 诱饵让关键词党（搜 `is vip`）秒命中、上钩；真锁同一搜索**搜不到**。
-- **诚实边界**：蜜罐抓静态/关键词党（90%）；动态高手翻了诱饵发现没反应会去找真锁 —— 挡他靠服务器+SO+短命钥匙。绊线本身可被删，**最稳当「标记+溯源」用**。
+- **诚实边界**：蜜罐抓静态/关键词党（90%）；动态高手翻了诱饵发现没反应会去找真锁 —— 挡他靠服务器+SO+短命钥匙。绊线本身可被删，**最稳当「标记」用**。
 - **两种党两个蜜罐**（关键词党 vs 抓包党）的现状与待办 → 见 §10.4。
 - **诱饵清单（K1-K5 关键词党 / B1-B3 抓包党）+ 触发逻辑 + 域名加密引导段 C2 设计** → 汇总见 [`docs/HONEYPOT_蜜罐设计.md`](./docs/HONEYPOT_蜜罐设计.md)（本表仍为权威，专档不另立结论）。
 
@@ -121,7 +120,7 @@
 3. **本文 = 唯一总账**：谁加密、谁不加密、为什么，全记这里；改代码先看本文。
 4. **关节处加注释标记** `// [GUARD-TRAP] 别动/别优化，见 PROTECTION_MAP` —— 专治顺手优化掉陷阱。
 5. **不动已验证 hook**（铁律 29 / F-31）：防护只加在「网关 + 配方 + 钥匙」层，不进已跑通的 hook 回调体。
-6. **红线**：不为加固去 hook/dlopen 微信自身 SO（铁律 23）；不主动反调试/读 `ro.boot.*`/`getRunningAppProcesses`（铁律 5/7）；先过反检测 KPI（`verifiedbootstate ≤ 38` 等）。
+6. **红线**：不为加固去 hook/dlopen 微信自身 SO（铁律 23）；不主动反调试/读 `ro.boot.*`/`getRunningAppProcesses`（铁律 5/7）；KPI 出包前体检（口径见防封官 skill）。
 
 ---
 
@@ -150,13 +149,12 @@
 - [x] release 严格模式下 `isActive()` 依赖「配方解开成功」：`StateMachine.isActive()` 已叠加 `GuardRuntime.isSensitiveConfigReady()`；无有效 server seed / registry scatter 时敏感隐藏链静默失效（debug/dev 仍保留诊断 fallback）。
 - [ ] **离线宽限实测**：拔网后正版在宽限期内正常；超期才降级；重连自愈
 - [ ] **付费客户不误伤实测**：飞行模式 7天（付费断网宽限）内不出现关不掉弹窗
-- [ ] KPI：装 SO 前后跑 `frida_stats`，对比 `verifiedbootstate` 等无超红线
+- [ ] KPI 出包前体检：跑 `frida_stats`，环境类零读取达标、密度类异常才查
 
 ### Phase 2（补组合拳+漏斗）
 - [ ] 核心类名改为服务器下发的加密配方（随微信版本）
-- [ ] 蜜罐绊线 → `tampered` → 延迟散沙 + 水印
+- [ ] 蜜罐绊线 → `tampered` → 延迟散沙
 - [ ] 防重放：心跳/零件带一次性 nonce + 签名时间戳
-- [ ] 水印溯源：seed 派生指纹可从泄漏样本反查客户
 - [ ] 强制弹窗 / 引流漏斗：当前客户端篡改影子期为 **7 天**（用户 2026-06-12 拍板 override，代码在 `RiskState.SHADOW_HOURS_DEFAULT=168h`），且只对确认破解/过期触发；后续应改为服务端 `risk_pack` 下发。
 - [ ] 旧版本破解实测：微信升级后旧配方失效 → 自动散沙
 
@@ -184,11 +182,10 @@
 ### E3 修改余额 UI 层（**用户决定走 UI 层方向 2026-06-08**）
 - 方案：b — 用户自设假数字 UI 显示（**不动金融后端**，转账时仍是真数据，不会触发交易纠纷）。
 - 装机限制：⛔ F-37 钱包页反 frida 杀进程已实证 → 必须用 LSPosed + 静态 smali / Xposed Java，**禁 frida 进支付域**。
-- 接入前必走：`/guard-auth-review` 合规预审 → 产出告知文案 + 截屏水印 + kill switch 路径。
+- 接入前必走：`/guard-auth-review` 合规预审 → 产出告知文案 + kill switch 路径。
 - 发版前必查（每条逐条打勾）：
   - [ ] 默认关闭，需要用户主动开 + 主动设值才生效
   - [ ] 首启风险弹窗：告知"伪造余额仅供自身娱乐，不得用于诈骗/欺骗他人，否则法律责任自负"，用户必须勾选「已知晓」
-  - [ ] 截屏 / 录屏在伪余额可见区叠加水印（如客户 seed 派生指纹）
   - [ ] kill switch：远程关闭通道（对齐 D-013 危险通告；Phase 1 miyou-server 上线后接入）
   - [ ] 不动金融后端代码（仅 hook 显示层 TextView.setText 或对应渲染方法）
   - [ ] release proguard 后 `BalanceMask` 类名 / 假数字键名混淆（增加破解成本）
@@ -209,7 +206,7 @@
 用户原话：「不要把配方拆太碎了，拆大动脉。」对齐安全官 skill「多层但不细碎，粗粒度能力包 + 少数关键出口」。
 
 - 全家 **1 个保险柜**：SO `libguardcore.so`（验真 + 解密 + 风险信号）；v1 不做多 SO 互校验。
-- **5 个能力包**（服务器下发，粗粒度）：`license_pack` / `registry_pack` / `risk_pack` / `watermark_pack` / `compat_pack`。
+- **4 个能力包**（服务器下发，粗粒度）：`license_pack` / `registry_pack` / `risk_pack` / `compat_pack`。
 - **3 个唯一出口**（业务全项目只准调这三句）：
 
 ```text
@@ -362,9 +359,8 @@ StateMachine.isActive()                // 取中央总闸
 
 #### P2（可延后，等 P0/P1 完成后）
 
-1. 每客户 / 每发行线 registry 水印，泄漏样本可反查客户。
-2. 服务器侧一码多机、同 token 多 device / 多 wxid 异常检测。
-3. V3 官替 / 共存发行线独立 registry / cert / package 绑定自动化。
+1. 服务器侧一码多机、同 token 多 device / 多 wxid 异常检测。
+2. V3 官替 / 共存发行线独立 registry / cert / package 绑定自动化。
 
 #### 新口径
 

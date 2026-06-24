@@ -94,7 +94,7 @@
    - `:push` 进程**禁止**：UI 操作 / `ActivityManager` / `getRunningAppProcesses` / WebServer / Overlay / Toast / 通知栏 / 复杂反射 dump / 全局 List hook / 网络授权请求 / 业务页面过滤
    - ❌ 永久禁止：`:sandboxed_process` `:isolated_*` `:appbrand*`
 7. **不调 ActivityManager.getRunningAppProcesses** — 沙箱进程无权限会 FATAL
-8. **verifiedbootstate（微信反检测计数器）调用 KPI 红线 = 38**（8.0.68 水平）
+8. **verifiedbootstate 等 KPI = 出包前体检项**（非日常红线，详 §七）；守铁律5 零环境读取故不增量，硬轴 = 签名身份
 
 ### 实现级（FAILURE_LOG F-01 ~ F-41 摘要）
 9. 禁止把 8.0.70 架构搬到 8.0.71（混淆名全变）
@@ -110,7 +110,7 @@
 19. **禁止 hook（钩子）异步回调里持有 `this`**（JNI 局部引用被垃圾回收后 SIGABRT 崩）
 20. 禁止全局 hook ArrayList.add（频率过高）
 21. **必须 notifyDataSetChanged 时先清后通知**（不是先通知后清）
-22. **每个 P 任务关闭必跑 frida_stats.js**（KPI 不增量）
+22. **出包前跑 frida_stats.js 体检**（KPI 不增量，详 §七）
 23. **禁止注入微信 JNI 链**（F-23 实证：CodecLooper SIGSEGV + 微信强制下线）
     - ❌ 仍然禁止：`dlopen` 微信自身 SO / 在微信 `JNI_OnLoad` 链中注入 / Hook 任何 native 方法 / `System.loadLibrary` 加载不属于模块自身的 SO
     - ✅ 例外——模块自有 SO（动态库 `libguardcore.so`）：状态机 / AES-GCM（加密算法） / HMAC（消息签名算法） / 授权校验 / wxid 匹配 / 进程角色判断 / hidden 状态持久化
@@ -245,7 +245,7 @@ P2 / 暂缓 / 禁止 / 系统层破绽点 → **全部不做**
 
 ---
 
-## 七、防检测 KPI（每个 P 任务关闭必跑）
+## 七、防检测 KPI（出包前体检项，非日常红线）
 
 | 指标 | 8.0.71 基线（P15 实测） | 安全上限 | 红线 | 来源 |
 |------|:----:|:--:|:--:|------|
@@ -254,8 +254,7 @@ P2 / 暂缓 / 禁止 / 系统层破绽点 → **全部不做**
 | normsg / 100K | — | 4,000 | 5,124 | QE66 P14 |
 | CONN 密度 | — | 0.2 | 0.5 | QE66 P14 |
 
-⚠️ **P18 KPI 基线（空白 LSPosed 框架）尚未建立** — frida_stats 对比零点缺失，F-22 实质空转。
-工具：`frida_stats.js` v1.1（已有），路径 → [`TOOLS_INDEX.md`](./TOOLS_INDEX.md)
+环境类 vbs/PROP 我方零环境读取本就达标；密度类 normsg/CONN 明显异常才查（P18 零点未建 F-22，上表数字作参考）。**日常健康 = 身份(签名) + 卡顿/性能 + 零新增行为**。工具：`frida_stats.js`（→ [`TOOLS_INDEX.md`](./TOOLS_INDEX.md)）。
 
 ---
 

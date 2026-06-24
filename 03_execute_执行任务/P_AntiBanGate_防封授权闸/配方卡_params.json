@@ -1,7 +1,7 @@
 {
   "schema_id": "antiban_params_v1",
   "wechat_version": "8.0.71",
-  "_note": "防封授权闸配方卡 A 参数表 + isAntiBanReady 真值表的机器可读副本。风格沿用 native_core/registry_8071.json（schema_id/version/_note + 结构体），因每参数需带 值/含义/谁判/成色，故 value 用嵌套对象（非 registry 的扁平字符串）。值一律以 配方卡_SPEC_v1.md 为准，禁自改。时间口径=架构师 C81 拍板（覆盖 DESIGN 旧 72h/2h）。",
+  "_note": "防封授权闸配方卡 A 参数表 + isAntiBanReady 真值表的机器可读副本。风格沿用 native_core/registry_8071.json（schema_id/version/_note + 结构体），因每参数需带 值/含义/谁判/成色，故 value 用嵌套对象（非 registry 的扁平字符串）。值一律以 配方卡_SPEC_v1.md 为准，禁自改。时间口径=A51+C18 拍板：从未授权走影子期7天+不续命；正版到期走7天续费宽限后才撤A2。",
   "enums": {
     "decided_by": ["server", "server+client_fallback", "client(LeaseClock)+server", "client(rate)+server(issue)", "server(client_reports_only)", "gate(release_check)"],
     "grade": ["L1", "L2", "L4", "design-only"]
@@ -27,6 +27,12 @@
       "value_human": "7天", "value_ms": 604800000,
       "meaning": "曾授权+断网（付费用户掉线）宽限，不误杀",
       "decided_by": "client(LeaseClock)+server", "grade": "design-only"
+    },
+    "auth_expiry_grace": {
+      "value_human": "7天（可加 6-12h 服务器抖动）", "value_ms": 604800000, "server_jitter_h": "6-12",
+      "meaning": "正版授权到期后短期只催续费，不立刻撤 A2；宽限耗尽仍未续费 → isAntiBanReady=false、A2 撤",
+      "decided_by": "server+client_fallback", "grade": "design-only",
+      "note": "C18 指挥拍板 2026-06-24"
     },
     "honeypot_shadow": {
       "value_human": "7天", "value_ms": 604800000,
@@ -95,14 +101,16 @@
     }
   },
   "is_antiban_ready_truth_table": {
-    "_note": "本闸只决 A2 装/卸；不检查登录、不检查隐私授权。软引流(1h)/登录砸门(2h)=age 触发的 UI 副作用、不改本布尔(登录砸门只挡隐私功能、A2 不撤)；A2 撤只看影子租约到期/不续命(7天±服务器抖动)、不看固定小时数(A51 反分析)。均走唯一 RiskPromptController。",
+    "_note": "本闸只决 A2 装/卸；不检查登录、不检查隐私授权。软引流(1h)/登录砸门(2h)=age 触发的 UI 副作用、不改本布尔(登录砸门只挡隐私功能、A2 不撤)；A2 撤看正版到期续费宽限耗尽(C18)或影子租约到期/不续命(7天±服务器抖动)、不看固定小时数(A51 反分析)。均走唯一 RiskPromptController。",
     "official_der_md5_baseline": "18c867f0717aa67b2ab7347505ba07ed",
     "branches": [
       { "branch": "authorized", "condition": "EnvelopeStore.isAuthorizedNow()", "is_antiban_ready": true, "ui_side_effect": "none", "grade": "design-only" },
+      { "branch": "auth_expiry_grace", "condition": "曾授权 && 授权到期 && 7天续费宽限内", "is_antiban_ready": true, "ui_side_effect": "renew_prompt_or_privacy_auth_gate", "grade": "design-only", "note": "C18: 到期不立刻撤 A2" },
       { "branch": "paid_offline", "condition": "曾授权 && (租约未到期 || 离线宽限 7天内)", "is_antiban_ready": true, "ui_side_effect": "none", "grade": "design-only" },
       { "branch": "fresh_early", "condition": "从未授权 && age<1h", "is_antiban_ready": true, "ui_side_effect": "none", "grade": "design-only" },
       { "branch": "soft_funnel", "condition": "从未授权 && 1h<=age<2h", "is_antiban_ready": true, "ui_side_effect": "soft_funnel_popup(closeable)", "grade": "design-only" },
       { "branch": "login_enforcer", "condition": "从未授权 && age>=2h && 影子租约未到期", "is_antiban_ready": true, "ui_side_effect": "login_enforcer_popup(uncloseable, blocks_privacy_features_only, A2_still_on)", "grade": "design-only", "note": "A51: 与解体解耦, 砸门只挡隐私功能、A2 不撤" },
+      { "branch": "auth_expiry_dissolve", "condition": "曾授权 && 授权到期 && 7天续费宽限耗尽仍未续费", "is_antiban_ready": false, "ui_side_effect": "A2_uninstalled(looks_like_natural_lease_expiry)", "grade": "design-only", "note": "C18: 7天宽限后 false" },
       { "branch": "dissolve", "condition": "从未授权 && 影子租约到期不续", "is_antiban_ready": false, "ui_side_effect": "A2_uninstalled(looks_like_natural_lease_expiry, platform_self_ban)", "grade": "design-only", "note": "A51: 去掉固定小时阈值, 影子期 7天 ± 服务器抖动, 反分析" }
     ]
   }

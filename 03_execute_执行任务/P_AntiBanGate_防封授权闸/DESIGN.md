@@ -25,6 +25,7 @@
   | `isActive()` / `isConfigReady()` | 隐私功能（隐藏密友） | 原有 DRM + registry 加密 |
 
 - **时间真源 = 配方卡（本文不复述数值）**：`T_soft` / `T_login` / `T_kill` / 影子期 / 各宽限 → 全看 `配方卡_SPEC_v1.md §A`。
+- **到期宽限拍板（2026-06-24 C18）**：正版授权到期**不立刻撤 A2**；继续保护 **7 天续费宽限**（可加服务器抖动），宽限耗尽仍未续费才 `isAntiBanReady=false`、A2 防封料撤。短期过期 = 催续费，不等于立刻散沙。
 - **硬信号只有一个**：破解者要白嫖必须改包重签 → **签名/canary 删即自爆**。其余（root/解锁/环境）= 服务器侧软风险分，客户端不碰。
 - **第一步**：建 `GuardRuntime.isAntiBanReady()`（§7 S1）。现状：全仓无此函数，需新建。
 
@@ -51,6 +52,7 @@
 | 情形 | 触发线 | 三态归类 | `isAntiBanReady`(A2) | 隐私 | 用户可见现象 |
 |---|---|---|---|---|---|
 | 授权有效 | — | **正版** | 开 | 开 | 全功能 |
+| 正版授权到期 | B | **正版续费宽限** | **7 天内继续开 → 宽限耗尽才撤** | 按隐私授权闸催续费/砸门 | 短期只催续费，不立刻散沙 |
 | 从未授权（白嫖） | B | **观望** | 影子期内开 → 到期不续 | 登录砸门挡（`T_login`） | 看着正常 → 悄悄失效 |
 | 碰蜜罐诱饵 | A | **蜜罐** | 影子期养 → 过期废 | — | 延迟弹引流 |
 | 铁证篡改（签名/canary） | C | **蜜罐** | **SO 本地立刻停料**（不等服务器） | 散 | 静默散沙 → 官方包判非官方 → 封 |
@@ -143,7 +145,7 @@
   - 🟡 引流 URL 当 canary 太弱：留 URL 字符串骗过 hash、只 NOP 弹窗显示。
   - 🟡 服务器 / 引流 URL 本在 C2 加密引导段解耦（防死锁），折进 key = 重新焊死、换地址要重生成料。
   - → **URL（服务器 / 引流）永不进 key**：放 C2 加密段 + 服务器 `risk_pack` 下发，随便轮换、不封旧包。
-- **诚实边界**：纯客户端 canary（hash 代码 / 绑行为）动态党都能 patch；定位 = 抓静态党（90%）+ 标记 / 溯源，不追「必自爆」，动态党靠服务器弱信号 + 短租约。
+- **诚实边界**：纯客户端 canary（hash 代码 / 绑行为）动态党都能 patch；定位 = 抓静态党（90%）+ 标记，不追「必自爆」，动态党靠服务器弱信号 + 短租约。
 - **工程坑**：改诱饵 / 弹窗稳定段 → 同步重算 canary 基线（`PLAN.md §A.5` 共享常量禁区），否则正版误报。
 
 ### 5.3 状态黑盒化（做「灰盒」，不做「纯黑盒永不可破」）
@@ -166,13 +168,15 @@
 ```
 isAntiBanReady():                  # 只门控 A2;不读登录(登录砸门是独立的一条线)
   if EnvelopeStore.isAuthorizedNow():            return true   # 授权有效 → 开
+  if 曾授权过 and 正版到期续费宽限内(配方卡:7天+抖动): return true   # 到期短期只催续费, A2 不撤
   if 曾授权过 and 离线在宽限内(配方卡:付费断网宽限): return true   # 不误伤付费断网(红线#4)
   if 影子租约未到期(配方卡:影子期 + 服务器抖动):    return true   # 白嫖/篡改:影子期内仍开、看着正常
-  return false                                                 # 到期不续 → 像租约自然过期 → A2 撤 → 官方包判非官方
+  return false                                                 # 续费宽限/影子租约耗尽仍不续 → 像租约自然过期 → A2 撤 → 官方包判非官方
 # 铁证篡改(签名/canary)走旁路:SO 本地立刻停料、不等影子期(决策#15)
 ```
 
 - **不读墙钟**：时间用 `LeaseClock`（服务器时间 + elapsedRealtime + 防回拨 `max_trusted_now`，红线#3）。
+- **正版到期宽限 = 7 天**：到期后 7 天内只催续费/砸隐私授权门，A2 仍开；宽限耗尽仍未续费，服务器不续防封租约，`isAntiBanReady=false`。
 - **登录砸门 = 另一条线**：`T_login` 只弹关不掉的登录窗、**只挡进隐私功能、A2 不撤、非账号异常**，与解体解耦（决策#21）。
 - 持久化 2 值：`首装时间`（Bridge 新键，4 字符短哈希）、`是否曾授权`（`EnvelopeStore`）。
 
@@ -181,7 +185,7 @@ isAntiBanReady():                  # 只门控 A2;不读登录(登录砸门是�
 - #3 不信墙钟（`LeaseClock`）。#4 不因单纯断网误杀（曾授权走宽限）。
 - #5/#6 散沙 = 卸能力，**不删数据、不破坏原版（官方包）**。#9 弹窗一个策略源。
 - 防封官：散沙后官方包判非官方是平台行为，**模块不自爆**。KPI 红线见 §8。
-- **工程红线：不新增官方包没有的检测面 + 不叠 KPI 足迹** —— 不扫 su/magisk/frida 文件名（`.mm` 也不扫）、**不读 `ro.boot.*`**（verifiedbootstate KPI 数的是 `__system_property_get` 调用次数，每读 +1 逼近红线 38）。root/env 一律服务器侧软风险（附录 C）。
+- **工程红线：不新增官方包没有的检测面 + 零环境读取** —— 不扫 su/magisk/frida 文件名（`.mm` 也不扫）、**不读 `ro.boot.*`**（每读一次 verifiedbootstate +1，故零读取）。root/env 一律服务器侧软风险（附录 C）。
 - **残留自爆点（押后验）**：`libilink2.so` `/proc/self/maps` 是否扫到我方注入 SO 待 L1（附录 B / §7 S7）；上线前补验。
 
 ---
@@ -201,7 +205,7 @@ isAntiBanReady():                  # 只门控 A2;不读登录(登录砸门是�
 ### 阶段二 · 接 A2 防封（~3-5 人天）
 - **S5 A2 本体接主线**：`A2SignatureSpoof`（签名料/android_id 料/包名料 喂官方）接 `ModuleMain.handleLoadPackage`(L61)：`if(isAntiBanReady()) A2SignatureSpoof.install(lpp)`；`bindSigningCert`(L280) 扩 getPackageInfo afterHook 喂官方 DER；A2 料进加密 registry（§5.1）。
 - **S6 device×A2 scope 隔离（必修）**：A2 android_id hook 限定仅 `.mm` caller，放过我方 `computeDeviceHash` 读真值。验收：A2 开后各机 device id 仍各异、envelope `d` 不塌。
-- **S7 P18 KPI 基线**：官方包跑 `frida_stats.js` 建基线 → 装 A2 后对照不超红线（§8）；**并补 libilink2 `/proc/self/maps` L1 验**（残留 L4 / 决策#18）。
+- **S7 KPI 出包前体检**：官方包跑 `frida_stats.js` 建参考 → 装 A2 后对照（环境类零读取达标、密度类异常才查，§8）；**并补 libilink2 `/proc/self/maps` L1 验**（残留 L4 / 决策#18）。
 
 ### 阶段三 · 后期
 - **S8 大脑下沉 SO**：判定 + Ed25519 验签 C 化下沉 `libguardcore.so`（~5-10 天，放 A2 + KPI 之后）。
@@ -212,7 +216,7 @@ isAntiBanReady():                  # 只门控 A2;不读登录(登录砸门是�
 ## 8. 验收（L4 + KPI）
 
 - **机制层**：`isAntiBanReady` 各分支（授权/曾授权断网/影子期内/到期）行为正确；A2 受闸开/散沙；删弹窗 → 散沙（载荷 canary 生效）；蜜罐命中 → 影子期 → 引流；服务器强校验 → 转正。
-- **足迹层（接 A2 后必做）**：建 P18 KPI 基线 → 装模块后 KPI **不超官方基线**（verifiedbootstate=38 / PROP=220 / normsg=5124 / CONN=0.5）。
+- **足迹层（接 A2 后）**：出包前 frida_stats 体检——环境类 vbs/PROP 零读取达标、密度类 normsg/CONN 明显异常才查（数字见 CLAUDE §七 参考）。
 - **终验**：真号 L4 长期不被判异常（研究线 §10.7 口径，本设计只验机制 + 足迹层）。
 
 ---
@@ -249,6 +253,12 @@ isAntiBanReady():                  # 只门控 A2;不读登录(登录砸门是�
 | 22 | 三态 = 正版 / 蜜罐 / 观望（见 §1.1） |
 | 23 | 付费但 root = 服务器认付费即转正版 |
 | 24 | 「没服务器通信」= 短期断网不算，长期才往蜜罐推 |
+| 25 | 【评审建议·待拍板·20260624】牙③ W 一机一密 → **P0**：W 现全局静态明文（钥匙加固§1）+ registry key 无 per-device 料 → **一个付费用户可离线重建整条 release 的 registry key → 解明文配方公开**；落地前 server seed 解 registry 不得称「真锁」 |
+| 26 | 【评审建议·待拍板·20260624】牙④ 重放绑定 → **P1 必做**：原「不紧急」理由（转卖已被信封设备绑定堵死）靠 Java `payload.d` 校验、破解客户端会跳过 → 论证不成立；牙④把 device+expire 折进 `derive_registry_key` 才让 key per-device+per-lease |
+| 27 | 【评审盘点·L2·20260624】release fail-closed：取件口 `GuardRuntime` + 4 Filter 锚点字段机制 ✅ fail-closed；但明文未清零（`PushFilter` 未接 registry / ~25+ 内联硬编码混淆名 / 15 个 registry 字段挂空）；删明文 = 改已验证 Filter → 须设备在场 + 装机回归（F-31），不能一口气 |
+| 28 | 【C18 指挥拍板·20260624】正版授权到期也会进 `isAntiBanReady=false`，但**不是立刻 false**：到期后给 **7 天续费宽限**（服务器时间 / `LeaseClock`，可加 6-12h 抖动），宽限内 A2 仍开；宽限耗尽仍未续费 → 服务器不续防封租约 → A2 撤 |
+
+> 25–27 = 网络安全官评审增补（2026-06-24），**评审建议待指挥拍板**后方升「已锁」；区别于 1–24 已锁决策。证据：牙③依钥匙加固§1 +本文 §5/registry key 牙表；fail-closed = 只读源码 L2，与 skill/PROTECTION_MAP 自述一致。28 = C18 已拍板，配方卡同步落值。
 
 ## 附录 B. 现状 As-Is + 检测面（侦察实证 · 只读未改码）
 

@@ -55,7 +55,7 @@ W4  离线资料库采集 (P18)           本轮跳过（不阻塞当前 v1）
   - 存储：MMKV `trans_voice_msg` boolean
 - **E3 修改余额 UI 层** ⬜
   - 用户决定走 UI 层方向（**不动金融后端**），按 b 方案：用户自设假数字 UI 显示
-  - **金融敏感**：接入前必走 `/guard-auth-review` 合规预审，产出告知文案 + 截屏水印 + kill switch
+  - **金融敏感**：接入前必走 `/guard-auth-review` 合规预审，产出告知文案 + kill switch
   - 详见 `PROTECTION_MAP.md` §9b E3 行
   - 反 frida 风险：F-37 钱包页杀进程已实证，必须用 LSPosed + 静态 smali（禁 frida 进支付域）
 

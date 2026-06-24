@@ -63,7 +63,7 @@ A2 要 hook `Settings.Secure.getString(_, "android_id")` 给**官方包**灌官�
 | `core/AuthManager.java` | 新增 `rawAndroidId(ctx)`（唯一读 + `volatile` memoize）；`computeDeviceHash` L106 改调它 |
 | `ModuleMain.java` | step2 后预热一次 device 读（落 memoize）；step7 装 A2 前**先断言 device hash 已缓存**（没缓存 → 不装 A2，fail-safe 防误伤），再按 `isAntiBanReady()` 决定 install |
 | A2 hook 段（新建 `A2SignatureSpoof`，签名+android_id+包名 三轴收一处） | android_id afterHook **无条件**灌官方 SSAID；料进加密 `registry_pack`（**不明文写死**） |
-| 防封授权判定 | **新建** `GuardRuntime.isAntiBanReady()`（授权检查官拍定：新建、不复用 isSensitiveConfigReady，两闸独立互不连坐）。**它不是用户开关 / 功能开关**——是「没授权到期 → 自动撤防封」的反白嫖判定，吊 `EnvelopeStore` 授权 + `LeaseClock` 租约 + 影子租约（DESIGN §6）|
+| 防封授权判定 | **新建** `GuardRuntime.isAntiBanReady()`（授权检查官拍定：新建、不复用 isSensitiveConfigReady，两闸独立互不连坐）。**它不是用户开关 / 功能开关**——是「正版到期 7 天续费宽限后才撤 A2 / 从未授权走影子期不续命 / 红线篡改进影子期」的反白嫖判定，吊 `EnvelopeStore` 授权 + `LeaseClock` 租约 + 影子租约（DESIGN §6 / 配方卡 C18）|
 
 - **落码 gate**：全仓 grep `Settings\.Secure.*ANDROID_ID` 必须**只剩 `rawAndroidId` 一处**（同源不再二次裸读的硬验收）。
 - **不纳入** `computeDeviceMaterial`（全 32B）：那是钥匙加固（W_dev）的事、现仓未实装；若将来落地，其 android_id 读**必须同走 `rawAndroidId`**（别再开污染口）。

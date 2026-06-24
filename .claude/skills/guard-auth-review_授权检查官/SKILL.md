@@ -50,13 +50,13 @@ description: Guard Native 授权检查官（别名：授权执行官、授权门
 
 ### ★ 加密配方收敛红线（防止越拆越碎）
 
-安全官口径已收敛为 **五个 pack + 一个 GuardRuntime 出口**：`license_pack` / `registry_pack` / `risk_pack` / `watermark_pack` / `compat_pack`，业务层只通过 `GuardRuntime`、`RiskState`、`LeaseClock`、`StateMachine` 的白名单接口消费结果。
+安全官口径已收敛为 **四个 pack + 一个 GuardRuntime 出口**：`license_pack` / `registry_pack` / `risk_pack` / `compat_pack`，业务层只通过 `GuardRuntime`、`RiskState`、`LeaseClock`、`StateMachine` 的白名单接口消费结果。
 
 审查时遇到以下情况直接 WARN / BLOCK：
 
 | 情况 | 裁决 |
 |------|------|
-| 新功能自己新增 `xxx_pack` / `xxx_decrypt` / `xxx_license` | BLOCK：先归并到五个 pack 之一 |
+| 新功能自己新增 `xxx_pack` / `xxx_decrypt` / `xxx_license` | BLOCK：先归并到四个 pack 之一 |
 | Filter 里读取授权、risk、租约、服务器时间 | BLOCK：Filter 只拿 recipe，不做门控 |
 | recipe 决定「藏不藏」而不是只决定「hook 哪个类」 | BLOCK：隐藏决策仍走 `isActive()` + 名单 |
 | Java 业务代码散落 schema/key/risk 分支 | WARN：收回 GuardRuntime / RiskState / LeaseClock |

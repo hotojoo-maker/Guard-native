@@ -139,7 +139,7 @@ Layer 2 密友隐私功能：需 isAuthorized() + isPrivacyEnabled() + 名单非
   → 密友/密群过滤 / 通知伪装 / badge 拦截
 
 Layer 3 高级功能（v3+）：需独立 feature license
-  → 步数装b / 蜜罐溯源功能
+  → 步数装b
 ```
 
 ### 5.4 服务端弹窗设计意图
