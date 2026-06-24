@@ -10,7 +10,7 @@ description: Guard Native 发版官（发布 / 出包 / 官替版 / 共存版 / 
 本 skill 是 Guard Native 的**发版总指挥**，把一次完整发版串成固定流水线：
 
 ```text
-（可选）换 s_rel → 出包(官替/共存 flavor) → LSPatch 注入宿主 → miyou-server 同步 → 装机 L1 验证
+（可选）换 s_rel → 出包(官替/共存 flavor) → LSPatch 重新打包进宿主 → miyou-server 同步 → 装机 L1 验证
 ```
 
 > 权威细节流程在 [`docs/RELEASE_RULES.md`](../../../docs/RELEASE_RULES.md) 的「s_rel 轮换 + 双版本 LSPatch 发版工作流」。本 skill 只做角色入口 + 检查清单 + 防坑，不复制全部细节。
@@ -58,7 +58,7 @@ description: Guard Native 发版官（发布 / 出包 / 官替版 / 共存版 / 
 
 - **A 换 s_rel（可选）**：改 `release/secrets/<id>.json` 的 `s_rel_b64`（新随机 32B，W 不变）→ `python tools/gen_registry_cipher.py --recipe release/secrets/<id>.json` 重生成 `registry_cipher.inc`（确认 `GUARD_REGISTRY_REQUIRES_SERVER_SEED=1`）。两边指纹 `sha256(s_rel)[:8]` 对齐。
 - **B 出包**：`./gradlew :assembleOfficialDebug`（`com.tencent.mm`）或 `:assembleCoexistDebug`（`com.tencent.mn`）。
-- **C LSPatch 注入**：`java -jar 02_tools_工具/lspatch.jar <宿主APK> -m <对应flavor模块APK> -l 2 -k signing/guard-native-debug.keystore android androiddebugkey android -o 02_tools_工具/lspatch_out -f`。校验日志 `Embedding modules - com.ghost.assist`，可拆包比对内嵌 `libguardcore.so` 哈希。
+- **C LSPatch 重新打包**：`java -jar 02_tools_工具/lspatch.jar <宿主APK> -m <对应flavor模块APK> -l 2 -k signing/guard-native-debug.keystore android androiddebugkey android -o 02_tools_工具/lspatch_out -f`。校验日志 `Embedding modules - com.ghost.assist`，可拆包比对内嵌 `libguardcore.so` 哈希。
 - **D 服务器同步**（交 guard-server_服务器运维）：`config.py` 的 `GUARD_REL_KEYS[<id>].srel` 换同一新 s_rel + `release_lines` 登记（package_line/product_version）+ 部署主/备两节点。
 - **E 装机 L1 验证**：冷启动看 `available=true`、`role=1 MAIN`、`BATCH1_VERIFY PASS`；心跳后 `recipeOk=true`。日志落盘才算发布候选。
 

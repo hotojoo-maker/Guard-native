@@ -7,6 +7,8 @@ description: Guard Native 安全与加密官。负责客户端安全、DRM、防
 
 ## 定位
 
+**产品形态铁定（领先本 skill 一切默认口径）**：**打包型 APK**（LSPatch 打包进 rebuild 后的官方包），面向 **非 root 正常用户**；**核心检测轴 = 是否官方（签名/身份）**，**root/解锁本身正常、非异常、非封因**（L1：开发机 root 一月零封、官方包读 unlocked 不 kill），不当破解者嫌疑，root 至多服务器侧弱信号、付费即正版。**核心打法 = 中间程序「掐官方检测咽喉（`getPackageInfo`/c$p）、骑它脖子上」：灌官方值保号（不被判异常）+ 借官方的眼睛读「签名变没变」抓改包破解；自己不造检测面、env 仍官方自己读（守 KPI/§6）。** 命名（定死词表见 `CLAUDE.md`）：不写品牌名 → 官方包/官方客户端/原版；不写「注入」→ **重新打包**（进原版/官方包，不写「宿主」）；不写「封号」全词 → 封/账号异常；防破解/逆向/反编译**直接写**（我们正派、护自家产品）。机制真源 = `03_execute_执行任务/P_AntiBanGate_防封授权闸/DESIGN.md`；A2 实证 = `C:\Users\Me\Desktop\防封_反检测线\防封权威账_2026年6月.md`。
+
 本 skill 是 Guard Native 的客户端安全、DRM、防破解与加密防护负责人，专管：
 
 - 服务器授权信封和短命租约
@@ -246,7 +248,7 @@ StateMachine.isActive()
 
 反白嫖三道锁（都收口到 `RiskState` + `RiskPromptController`，红线#9 一个弹窗源）：
 
-1. **防封授权闸 `isAntiBanReady()`（时间闸，只门控 A2 防封，不碰隐私功能）**：首装宽限内授权 → 防封开；从未授权 + 超阈值 → **防封散沙（卸 A2）→ 宿主判非官方 → 号被平台封**。用「被封」反制白嫖，模块不自爆、不留痕、不删数据（红线#5/#6）。闸**不是客户端布尔**（红线#1），吊 `EnvelopeStore` + `LeaseClock`（红线#3，不信墙钟）。⚠️ 阈值待用户拍板（2h 太短易误伤真用户，建议 1h 软引流 + ≥24–72h 才真散）。
+1. **防封授权闸 `isAntiBanReady()`（时间闸，只门控 A2 防封，不碰隐私功能）**：首装宽限内授权 → 防封开；从未授权 + 超阈值 → **防封散沙（卸 A2）→ 官方包判非官方 → 号被平台封**。用「被封」反制白嫖，模块不自爆、不留痕、不删数据（红线#5/#6）。闸**不是客户端布尔**（红线#1），吊 `EnvelopeStore` + `LeaseClock`（红线#3，不信墙钟）。⚠️ 阈值以配方卡为准：T_soft=1h 软引流 / T_login=2h 登录砸门（只挡隐私、A2 不撤）/ T_kill=影子期7天+不续命+服务器抖动（A51 去固定短散）。
 2. **A2 料锁进加密 registry（防破解 = 防封同一把锁）**：official DER / SSAID 参数 / 官方包名进 `registry_pack`，只有服务器种子 + 验签信封 + `decrypt_config()` 成功才解得出；盗版无种子 → 解不出 → 防封自动散沙（fail-closed，不回退明文）。
 3. **载荷弹窗 canary（删弹窗自反噬）**：引流弹窗**稳定核心段** hash 掺进 A2 料 key 派生（USE 不 COMPARE，仿 `CompatProbe.BASELINE`）→ 删/改弹窗 → key 错 → 防封散沙 → 被封。想白嫖就得留着弹窗。坑：每版改弹窗须同源重生成加密料（同 §A.5 共享常量禁区），只把稳定段算进 hash。
 
@@ -345,6 +347,22 @@ AES key 不得是 SO 里的静态明文常量。
 - 本地材料只用于绑定和增加静态分析成本，不能替代服务器材料。
 - 不追求复杂白盒密码，但要避免 IDA 一眼看到固定 key。
 - Frida hook `decrypt_config()` 出参仍是高级威胁，防线重点是短命租约、设备绑定、risk 记录和服务端轮换。
+- ⚠️ **当前已知违规（待收口，2026-06-24 核实）**：解服务器信封 `k→S_rel` 的 wrapping key `W`（`config_crypto.cpp` 的 `g_wk_lo`/`g_wk_hi`）现仍是**全局静态明文常量**，违反本准则——抽一台 SO 的 W 可离线解任意设备的合法信封。修复 = W 一机一密 + 重放绑定（合并设计稿 `03_execute_执行任务/P_RB1_重放绑定_ReplayBind/钥匙加固_KeyHardening设计.md`：`W_dev=KDF(本地段+设备材料)` + 已验签摘要折入 key），📄 仅设计未落地，见「阶段计划」第 9/10 项。
+
+## 三端钥匙派生镜像对账（维护铁律 · F-31 静默翻车重灾区）
+
+> 触发：用户问「写进 SO 黑盒方便维护吗」（2026-06-24）。结论已写死在「加密 hook 名粒度与单一真源」节：**维护难易 = 是不是单一真源，与代码在 Java 还是 SO 无关**。本节把「钥匙派生」这条最贵的维护税单列成铁律——它此前只散在设计稿（已并入 `P_RB1_重放绑定_ReplayBind/钥匙加固_KeyHardening设计.md`），未进 skill。
+
+**铁律**：任何 key 派生算法（`derive_registry_key` / `derive_bootstrap_key` / 未来 `derive_wrap_key`(W_dev) / 摘要折入）一旦改动，**Java（如有）/ SO（`config_crypto.cpp`）/ 生成脚本（`tools/gen_*_cipher.py`）三处必须逐字节一致**，否则正版机解不开 → registry 散沙 → 已装机密友隐藏**静默全挂、无报错无崩溃**（F-31）。
+
+落地要求（缺一即 BLOCK）：
+
+1. **单一真源 + 自动生成**：能从一份源生成的（registry / 字段表 / 域名表）一律构建期生成，禁止手抄第二份。
+2. **KDF 测试向量自动对账**：派生算法改动必须先出「固定输入 → 期望输出」测试向量，SO 自测（DEBUG-only，勿编进 release SO）+ 脚本单测 +（如有）Java 单测三处断言同一结果；向量不过禁止改 `unwrap` / `derive`。
+3. **域分离向量**：不同用途的段常量（registry key 的 `seg_*` vs wrap key 的 `wseg_*`）必须断言互不相等，防误用削弱安全。
+4. **改 key 派生 = 全发行线重生成 cipher + 装机回归**：每个 `release_id`（官替 / 共存）各自重生成 `registry_cipher.inc` 并验 `recipeOk=true` + 密友隐藏不挂（呼应「发布 / 共存版加密铁律」）。
+
+一句话：**好不好维护不取决于代码在 Java 还是 SO，取决于「钥匙派生只有一份真源 + 三端用测试向量自动对账」。做到这条，下沉 SO 才安全可维护；做不到，写哪都是 F-31。**
 
 ## 字段伪装
 
@@ -556,6 +574,8 @@ GuardRuntime.getActiveRegistry()
 6. 🟡 **Phase 1C.5 Filter 读 registry（消明文双份，任务名 `P1E_Filter读Registry`）**：让 ContactFilter/MomentsFilter/ConvFilter 真从 registry 读类名（取件口 `GuardRuntime.getRecipe`+`nativeGetRecipe`），conv.list 漂移债已结案；现为 registry+fallback 双份，**删 fallback 未做**（每个 Filter 删前要先核账 registry 完整性）。SearchFilter 暂未迁。⚠️ 注意：这里的任务名 P1E ≠ 下面第 8 条的 Phase 1E。
 7. ✅/🟡 **Phase 1D-server（S2/S3a/S4/S3b，2026-06-11）**：miyou-server 已下发 Ed25519 signed envelope；客户端 `EnvelopeClient` / `AuthEnvelopeVerifier` / `EnvelopeStore` / `GuardHeartbeat` / `GuardActivation` 已形成 v1.1 授权闭环。当前 `android_8071` 已切 `prod_server_lock`：`registry_cipher.inc` 为 `GUARD_REGISTRY_REQUIRES_SERVER_SEED=1`，线上 envelope `k/n` unwrap 后 `recipeOk=true`。现状权威 + 下一受控步骤见 `PROTECTION_MAP.md` §10.6。
 8. 🟡 **Phase 1E LeaseClock + RiskState（P1F 本地一刀 + 两闸，S3b 已推进）**：`LeaseClock` 已接信封授时并用于到期判定；设置页断网 >72h 强制重验，失败撤销授权但保留 token 自愈；`RiskState` 主链仍偏 record-only，但来电拦截已接 `RiskState.isTamperDegraded()` 单点散沙例外；全链路散沙降级与正版恢复闭环仍未完成。
+9. 📄 **Phase 1F W 一机一密（`P_RB1_重放绑定_ReplayBind/钥匙加固_KeyHardening设计.md`，仅设计未落地）**：wrapping key W 从「全局静态明文 `g_wk_lo`/`g_wk_hi`」改为 `W_dev = KDF(本地三段 wseg + 设备材料 SHA-256(ANDROID_ID))`，服务器按设备上报 `dm` 逐设备 wrap `S_rel`。收「抽一把 W 离线通杀所有设备信封」。必走 3 步灰度（双试 → 按设备切 → 删全局 W），缺迁移方案即全量正版散沙。落地受「三端钥匙派生镜像对账」铁律约束。
+10. 📄 **Phase 1G 重放绑定 P_RB1（`P_RB1_重放绑定_ReplayBind/钥匙加固_KeyHardening设计.md`，仅设计未落地）**：把已 Ed25519 验签的 envelope 摘要（expire_at / device / release / digest）折进 `derive_registry_key`，让过期 / 重放的旧 `k/n` 推出错 key → 散沙，短租约在 SO 层才真正有牙。优先级 P1（设备绑定已堵转卖，本项属加固）。
 
 ## 当前 SO 基线与工作量
 
@@ -568,6 +588,8 @@ GuardRuntime.getActiveRegistry()
 - 带完整自检、签名、AES-GCM、Risk hint、JNI 包装、测试向量：1200 到 1800 行 C++。
 
 SO 只管“验真 + 解密 + 关键风险信号”；弹窗、影子期倒计时、冷却、断网宽限主要放 Java/Kotlin。
+
+**黑盒化边界（写死，2026-06-24）**：想「写进 SO 黑盒」时，**能下沉的只有钥匙层**——key 派生、验签、解密、设备 / 摘要折入（如 `W_dev`、重放摘要）；**不该下沉的是策略与表现层**——弹窗、影子期、冷却、时间宽限、RiskLevel 表现，留 Java（好调试、可热改、崩溃可控）。把策略也塞进 SO = 每改一次都要 NDK 重编 + 难调崩溃 + 放大三端漂移，反而最难维护。黑盒抬高的是「静态分析成本」；真锁仍靠服务器短租约 + 设备绑定（Frida 动态仍能 dump 解密结果，SO ≠ 不可破）。
 
 ## 后续 AI 接手快照
 

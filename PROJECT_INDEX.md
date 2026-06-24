@@ -1,8 +1,33 @@
 # PROJECT_INDEX — 项目导航 + 路径表
 
 > 所有路径在一处维护，SKILL.md 不写死路径，统一查本文件
-> 更新时间：2026-06-10（文档收敛：FAILURE_LOG 至 F-38；补 PROTECTION_MAP；以 06-09 看板 + 代码为准）
+> 更新时间：2026-06-24（产品形态铁定 + 文档权威链；FAILURE_LOG 至 F-42）
 > 2026-06-10 增补 §零 功能总清单（编号 ↔ 任务 ↔ 状态 ↔ 文件夹）作为账实唯一权威，治理"看板与目录对不上"。
+
+---
+
+## 负一、产品形态 + 文档权威链（AI 接手 30 秒）
+
+### 产品形态铁定
+
+- **打包型 APK**（LSPatch 打包进 rebuild 后的官方包为主）；面向 **非 root 正常用户**。
+- **核心检测轴 = 是否官方（签名/身份）**；**root/解锁本身正常、非异常、非封因**（L1 实证），不当破解者嫌疑；root 至多服务器侧弱信号、付费即正版。
+- **核心打法 = 中间程序「掐官方检测咽喉、骑它脖子上」**：不自己造检测（守 KPI、env 仍官方自己读、我方零环境读取），卡在 `getPackageInfo`/c$p 咽喉——**灌官方值**保号（不被判异常）+ **借官方的眼睛读「签名变没变」**抓改包破解。机制 = `P_AntiBanGate/DESIGN.md §0`。
+- **命名（定死词表，全表见 `CLAUDE.md`）**：不写品牌名 → 官方包/共存包/官替/原版；不写「注入」→ **重新打包**（进原版/官方包，不写「宿主」）；不写「封号」全词 → **封/账号异常**；防破解/逆向/反编译直接写；往官方检测回官方真值 = **灌官方值**；核心打法 = 中间程序「掐咽喉/骑脖子」+ 借官方的眼睛。
+
+### 文档权威链（冲突时按此顺序）
+
+| 层级 | 管什么 | 路径 |
+|:---:|---|---|
+| 1 | 产品形态 / 阶段 / 29 条铁律 | [`CLAUDE.md`](./CLAUDE.md) |
+| 2 | 功能账实 / 路径导航 | 本文 §零（本文件） |
+| 3 | hook 事实 / 拦截层状态 | [`HOOKMAP.md`](./HOOKMAP.md) + [`docs/HOOK_MAP_8071_AUTHORITATIVE.md`](./docs/HOOK_MAP_8071_AUTHORITATIVE.md) |
+| 4 | 防封机制设计 | [`03_execute_执行任务/P_AntiBanGate_防封授权闸/DESIGN.md`](./03_execute_执行任务/P_AntiBanGate_防封授权闸/DESIGN.md) |
+| 5 | 防封时间/参数 | [`03_execute_执行任务/P_AntiBanGate_防封授权闸/配方卡_SPEC_v1.md`](./03_execute_执行任务/P_AntiBanGate_防封授权闸/配方卡_SPEC_v1.md) |
+| 6 | A2 三轴 / 检测面实证 | `C:\Users\Me\Desktop\防封_反检测线\防封权威账_2026年6月.md`（外部研究线，只读引用） |
+| 7 | 授权门控 / 状态机 | [`docs/GUARD_GATE_TRUTH.md`](./docs/GUARD_GATE_TRUTH.md) + [`PROTECTION_MAP.md`](./PROTECTION_MAP.md) |
+
+> `PLAN.md` / `进度安全盘点_v0` / `A3-0` = **ARCHIVED 留档**，不作决策依据。
 
 ---
 
@@ -53,9 +78,9 @@
 
 | 任务 | 编号 | 状态 | 文件夹 / 说明 |
 |------|------|------|--------|
-| 统一风控引擎（防封授权闸 × A2 三轴 × 蜜罐 / 引流 / 延迟弹窗 canary）| P_AntiBanGate | ⬜ 设计 only（未动代码，待用户拍板 + 装机回归）| `03_execute_执行任务/P_AntiBanGate_防封授权闸/`（DESIGN + PLAN；归属 网络安全官 + 防封官）|
+| 统一风控引擎（防封授权闸 × A2 三轴 × 蜜罐 / 引流 / 延迟弹窗 canary）| P_AntiBanGate | ⬜ 设计 only · 决策已锁（未动代码，待装机回归）| `03_execute_执行任务/P_AntiBanGate_防封授权闸/`（DESIGN + PLAN；归属 网络安全官 + 防封官）|
 | normsg 三轴身份上报实证（封号根因 = k33 包名 / k49 数据路径 / k18 签名 MD5 明文上报）| P_ANTIBAN_B36 | ✅ 研究结论 L1（frida / tcpdump 实抓 2026-06-18）| `07_archive_归档/P_ANTIBAN_B36_normsg三轴/result.md`（防封官研究产物；命脉真源在外部防封线）|
-| 重放绑定 ReplayBind（SO envelope 摘要折入 key 派生，堵 W 静态明文缝）| P_RB1 | ⬜ 未开工（仅排期，P1 加固项）| `03_execute_执行任务/P_RB1_重放绑定_ReplayBind/DESIGN.md`（来源 PROTECTION_MAP §10.7）|
+| 重放绑定 ReplayBind（SO envelope 摘要折入 key 派生，堵 W 静态明文缝）| P_RB1 | ⬜ 未开工（仅排期，P1 加固项）| `03_execute_执行任务/P_RB1_重放绑定_ReplayBind/钥匙加固_KeyHardening设计.md`（来源 PROTECTION_MAP §10.7）|
 
 ### ⚠️ 四个重复编号（同号两义，看清单别被绕晕）
 
@@ -63,7 +88,7 @@
 |--------|------------------------|------------------------|
 | **P22** | SearchCrawler 搜索链路调研（`07_archive_归档/P22_SearchCrawler`，research.md + result.md：`fz2.e c=3` UIN→wxid 映射 / 聊天记录内联行过滤） | PushFilter 通知 / 来电 / 未读策略层（`03_execute_执行任务/P22_PushFilter`，活跃·主用此义） |
 | **P25** | B2 触发器误触发 V→H 修复 | 类名 / 字符串 seed 化本地生成流程 |
-| **P26** | 好友 V 态热切 fresh-item | v2 设置页 UI 优化（注入微信设置） |
+| **P26** | 好友 V 态热切 fresh-item | v2 设置页 UI 优化（打包进官方包设置页） |
 | **P26C** | 隐藏指定通讯录标签（文件夹实体） | 搜索高亮（看板旧写法） |
 
 > 处理原则：**已完成的归档目录一律不改名**（防止链接断）；以后提"计划那一件"时**用名字、不要用号**，避免再撞。
@@ -84,7 +109,7 @@
 | [`TASK_BOARD.md`](./TASK_BOARD.md) | 4 窗口分工 / P 任务进度 | dispatch |
 | [`DECISION_LOG.md`](./DECISION_LOG.md) | 重大决策履历 | dispatch |
 | [`RISK_REGISTER.md`](./RISK_REGISTER.md) | 风险表 | risk-check |
-| [`FAILURE_LOG.md`](./FAILURE_LOG.md) | F-01~F-38 失败方案档案（F-38 最新：伪装订位坐标候选证伪）| review |
+| [`FAILURE_LOG.md`](./FAILURE_LOG.md) | F-01~F-42 失败方案档案（F-42 最新：LSPatch A15 官替闪退，调查中）| review |
 | [`PROTECTION_MAP.md`](./PROTECTION_MAP.md) | **上线前防破解总账 / 四阶段路线图 / 发版门控** | security |
 | [`ANTIBAN_MAP.md`](./ANTIBAN_MAP.md) | **防封官权威账**：反检测 / 防封号最新水位线、证据等级、阻塞项 | antiban |
 | [`TOOLS_INDEX.md`](./TOOLS_INDEX.md) | 工具 / 脚本索引 | review |
@@ -271,7 +296,7 @@ I:/apk2_build/
 | 8071 某 hook 点怎么写 | [`./docs/HOOK_MAP_8071_AUTHORITATIVE.md`](./docs/HOOK_MAP_8071_AUTHORITATIVE.md) |
 | 8066 历史类名（仅 diff） | [`./docs/archive/INDEX.md`](./docs/archive/INDEX.md) |
 | Catfish 行为参考 | [`./docs/isolation/INDEX_COMPETITOR.md`](./docs/isolation/INDEX_COMPETITOR.md) |
-| 我能不能做 X | [`FAILURE_LOG.md`](./FAILURE_LOG.md) F-01~F-38 档案 + CLAUDE.md §三 29 条战略铁律 先查 |
+| 我能不能做 X | [`FAILURE_LOG.md`](./FAILURE_LOG.md) F-01~F-42 档案 + CLAUDE.md §三 29 条战略铁律 先查 |
 | Catfish 怎么做的 | [`./refs/MainEntry.java`](./refs/MainEntry.java) + [`UserControll.java`](./refs/UserControll.java) |
 | 历史版本对比 | 外部 `apk2/_4__samples/sample_history_research/VERSION_INDEX.md` |
 | 防封号边界 | 外部 `apk2/QE66_RESUME.md` + [`CLAUDE.md`](./CLAUDE.md) §六 KPI |

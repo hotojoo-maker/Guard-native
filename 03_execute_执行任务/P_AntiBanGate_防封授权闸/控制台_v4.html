@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>防封控制台 v4 · demo（以原 demo 为底 · 行内展开 · 无 emoji · 纯前端假数据）</title>
+<style>
+  :root{
+    --bg:#0b1220; --panel:#0f1b2e; --panel2:#13233b; --line:#1e3350;
+    --ink:#e8eef7; --ink2:#9fb2cc; --ink3:#6b80a0;
+    --accent:#4f7cff; --accent2:#7aa2ff;
+    --new:#7c8aa3; --new-bg:rgba(124,138,163,.16);
+    --build:#3b82f6; --build-bg:rgba(59,130,246,.16);
+    --stable:#22c55e; --stable-bg:rgba(34,197,94,.15);
+    --honey:#f59e0b; --honey-bg:rgba(245,158,11,.15);
+    --tamper:#ef4444; --tamper-bg:rgba(239,68,68,.15);
+    --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444;
+    --radius:14px; --shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{font-family:"PingFang SC","Microsoft YaHei","Segoe UI",system-ui,-apple-system,sans-serif;
+    background:radial-gradient(1200px 600px at 80% -10%,#15294a 0%,var(--bg) 55%) fixed;
+    color:var(--ink); font-size:14px; line-height:1.5;}
+  a{color:var(--accent2)}
+  .app{display:flex; min-height:100vh}
+
+  /* sidebar */
+  .side{width:212px; flex:0 0 212px; background:linear-gradient(180deg,#0d1828,#0b1322);
+    border-right:1px solid var(--line); padding:18px 14px; position:sticky; top:0; height:100vh}
+  .brand{display:flex; align-items:center; gap:10px; padding:6px 8px 16px}
+  .brand .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#4f7cff,#22c55e);
+    display:grid;place-items:center;font-weight:800;color:#08101f;box-shadow:0 6px 16px rgba(79,124,255,.4)}
+  .brand b{font-size:15px;letter-spacing:.5px}
+  .brand small{display:block;color:var(--ink3);font-size:11px;font-weight:500}
+  .nav{margin-top:6px}
+  .nav a{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;color:var(--ink2);
+    text-decoration:none;font-size:13.5px;margin-bottom:3px;cursor:pointer}
+  .nav a:hover{background:var(--panel2);color:var(--ink)}
+  .nav a.on{background:linear-gradient(90deg,rgba(79,124,255,.22),transparent);color:#fff;box-shadow:inset 2px 0 0 var(--accent)}
+  .nav .ico{width:18px;text-align:center}
+  .nav .navsep{height:1px;background:var(--line);margin:8px 6px}
+  .side-foot{position:absolute;bottom:16px;left:14px;right:14px;font-size:11px;color:var(--ink3);
+    border-top:1px dashed var(--line);padding-top:10px}
+
+  /* main */
+  .main{flex:1;min-width:0;padding:18px 22px 70px}
+  .topbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+  .topbar h1{font-size:19px;margin:0;font-weight:700}
+  .demo-tag{font-size:11px;font-weight:700;color:#08101f;background:linear-gradient(135deg,#fbbf24,#f59e0b);
+    padding:3px 9px;border-radius:999px;letter-spacing:.5px}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink2);
+    background:var(--panel);border:1px solid var(--line);padding:5px 11px;border-radius:999px}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(34,197,94,.18)}
+  .grow{flex:1}
+  .ribbon{display:flex;gap:10px;align-items:center;background:rgba(245,158,11,.08);
+    border:1px solid rgba(245,158,11,.3);color:#ffd98a;border-radius:12px;padding:9px 14px;margin-bottom:14px;font-size:12.5px}
+  .ribbon b{color:#ffe9bf}
+
+  /* tabs */
+  .tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--line)}
+  .tab{padding:10px 18px;cursor:pointer;color:var(--ink2);border-bottom:2px solid transparent;font-weight:600;font-size:13.5px;
+    display:flex;align-items:center;gap:7px}
+  .tab:hover{color:var(--ink)}
+  .tab.on{color:#fff;border-bottom-color:var(--accent)}
+  .tab .cnt{font-size:11px;color:var(--ink3);background:var(--panel2);border-radius:999px;padding:1px 7px}
+  .page.hide{display:none}
+
+  /* kpi */
+  .kpi{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:10px;margin-bottom:16px}
+  .stat{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:12px;padding:11px 12px}
+  .stat .k{font-size:11.5px;color:var(--ink3)}
+  .stat .v{font-size:21px;font-weight:800;margin-top:2px}
+  .stat .s{font-size:10.5px;color:var(--ink3);margin-top:2px}
+  .stat.v-feed .v,.stat.v-ok .v{color:var(--stable)} .stat.v-sand .v,.stat.v-bad .v{color:var(--bad)}
+  .stat.v-alert .v,.stat.v-warn .v{color:var(--warn)} .stat.v-shadow .v{color:var(--honey)}
+  .stat.v-new .v{color:#cdd6e6} .stat.v-build .v{color:var(--build)} .stat.v-stable .v{color:var(--stable)}
+  .stat.accent{box-shadow:inset 0 0 0 1px rgba(79,124,255,.4)}
+
+  .card{background:linear-gradient(180deg,var(--panel),#0e1a2c);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px;margin-bottom:16px;box-shadow:var(--shadow)}
+  .card h2{font-size:14px;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+  .card h2 .muted{font-weight:500;color:var(--ink3);font-size:12px}
+
+  /* filters */
+  .filters{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  select,input[type=text],input[type=datetime-local]{background:#0b1626;border:1px solid var(--line);color:var(--ink);
+    border-radius:9px;padding:8px 10px;font-size:13px;outline:none}
+  select:focus,input:focus{border-color:var(--accent)}
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{cursor:pointer;user-select:none;font-size:12.5px;padding:6px 11px;border-radius:999px;border:1px solid var(--line);
+    background:#0b1626;color:var(--ink2);display:inline-flex;gap:6px;align-items:center}
+  .chip.on{color:#fff;border-color:transparent}
+  .chip[data-s=new].on{background:var(--new-bg);box-shadow:inset 0 0 0 1px var(--new)}
+  .chip[data-s=building].on{background:var(--build-bg);box-shadow:inset 0 0 0 1px var(--build)}
+  .chip[data-s=stable].on{background:var(--stable-bg);box-shadow:inset 0 0 0 1px var(--stable)}
+  .chip[data-s=honeypot].on{background:var(--honey-bg);box-shadow:inset 0 0 0 1px var(--honey)}
+  .chip[data-s=tampered].on{background:var(--tamper-bg);box-shadow:inset 0 0 0 1px var(--tamper)}
+
+  /* legend hovercards (not in overflow) */
+  .legend{display:flex;gap:10px;flex-wrap:wrap}
+  .lg{position:relative}
+  .hovercard{position:absolute;top:130%;left:0;z-index:40;width:300px;background:#0c1a2e;border:1px solid var(--line);
+    border-radius:12px;padding:12px 13px;box-shadow:var(--shadow);opacity:0;visibility:hidden;transform:translateY(-6px);transition:.16s;font-size:12.5px}
+  .lg:hover .hovercard{opacity:1;visibility:visible;transform:translateY(0)}
+  .hovercard h4{margin:0 0 8px;font-size:13px}
+  .hovercard .row4{display:grid;grid-template-columns:64px 1fr;gap:5px 8px}
+  .hovercard .row4 dt{color:var(--ink3)} .hovercard .row4 dd{margin:0;color:var(--ink)}
+  .hovercard .nxt{margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);color:var(--accent2)}
+
+  /* body floating layers */
+  #floatPop{position:fixed;z-index:95;width:300px;background:#0c1a2e;border:1px solid var(--line);border-radius:12px;
+    padding:12px 13px;box-shadow:var(--shadow);font-size:12.5px;display:none;pointer-events:none}
+  #floatPop h4{margin:0 0 8px;font-size:13px}
+  #floatPop .row4{display:grid;grid-template-columns:64px 1fr;gap:5px 8px}
+  #floatPop .row4 dt{color:var(--ink3)} #floatPop .row4 dd{margin:0;color:var(--ink)}
+  #floatPop .nxt{margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);color:var(--accent2)}
+  #floatPop.tipbox{width:230px;color:var(--ink2)}
+  #floatMenu{position:fixed;z-index:96;display:none}
+
+  /* badges */
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:4px 9px;border-radius:999px;white-space:nowrap}
+  .b-new{color:#cdd6e6;background:var(--new-bg)} .b-building{color:#bcd4ff;background:var(--build-bg)}
+  .b-stable{color:#b6f3cc;background:var(--stable-bg)} .b-honeypot{color:#ffdb9e;background:var(--honey-bg)}
+  .b-tampered{color:#ffc4c4;background:var(--tamper-bg)}
+  .b-feed{color:#b6f3cc;background:var(--stable-bg)} .b-sand{color:#ffc4c4;background:var(--tamper-bg)}
+  .tag-form{font-size:11px;padding:2px 7px;border-radius:6px;font-weight:600}
+  .tag-official{color:#bcd4ff;background:rgba(59,130,246,.16)} .tag-coexist{color:#b6f3cc;background:rgba(34,197,94,.14)}
+  .cs-inactive{color:#cdd6e6;background:var(--new-bg)} .cs-active{color:#b6f3cc;background:var(--stable-bg)}
+  .cs-banned{color:#ffc4c4;background:var(--tamper-bg)} .cs-expired{color:#ffdb9e;background:var(--honey-bg)}
+  .pop-none{color:var(--ink3)} .pop-soft{color:#ffd98a} .pop-login{color:#ff9a9a;font-weight:700} .pop-shadow{color:var(--honey)}
+
+  /* table */
+  .tablewrap{overflow:auto;border-radius:12px;border:1px solid var(--line)}
+  table{width:100%;border-collapse:collapse;font-size:12.6px}
+  table.dev{min-width:1760px} table.cards{min-width:1100px}
+  thead th{position:sticky;top:0;background:#0c1726;text-align:left;padding:10px;color:var(--ink2);font-weight:600;
+    border-bottom:1px solid var(--line);white-space:nowrap;font-size:12px;z-index:1}
+  tbody td{padding:9px 10px;border-bottom:1px solid rgba(30,51,80,.6);vertical-align:middle;white-space:nowrap}
+  tbody tr:hover{background:rgba(79,124,255,.06)}
+  tr.shadow-row{background:rgba(245,158,11,.05)} tr.banned-row{opacity:.5} tr.banned-row .mono{text-decoration:line-through}
+  tr.hi-row{animation:pulseHi 2.4s ease}
+  @keyframes pulseHi{0%,100%{background:transparent}20%,60%{background:rgba(79,124,255,.28)}}
+  .mono{font-family:"SFMono-Regular",Consolas,"Liberation Mono",monospace;font-size:12px}
+  .sub{color:var(--ink3);font-size:11px} .ip{color:var(--ink2)}
+  .info{cursor:help;color:var(--accent2);font-size:10px;border:1px solid var(--line);border-radius:50%;
+    width:13px;height:13px;display:inline-grid;place-items:center;margin-left:3px}
+  .linklike{cursor:pointer;color:var(--accent2);text-decoration:underline dotted;font-size:11.5px}
+
+  .trust{cursor:pointer;min-width:118px}
+  .bar{height:8px;border-radius:999px;background:#0b1626;overflow:hidden;position:relative;border:1px solid var(--line)}
+  .bar > i{display:block;height:100%;border-radius:999px}
+  .bar .passline{position:absolute;top:-3px;bottom:-3px;width:2px;background:#fff;opacity:.55}
+  .trust .num{font-size:11px;margin-top:3px;display:flex;justify-content:space-between;color:var(--ink3)}
+  .trust.fail .num b{color:var(--bad)} .trust.pass .num b{color:var(--stable)}
+  .risk{font-weight:700} .risk.lo{color:var(--ok)} .risk.mid{color:var(--warn)} .risk.hi{color:var(--bad)}
+
+  .actbtn{cursor:pointer;border:1px solid var(--line);background:#0b1626;color:var(--ink2);border-radius:8px;padding:5px 9px;font-size:13px}
+  .actbtn:hover{color:#fff;border-color:var(--accent)}
+  .menu{background:#0c1a2e;border:1px solid var(--line);border-radius:11px;box-shadow:var(--shadow);padding:6px;width:205px}
+  .menu button{display:flex;width:100%;gap:8px;align-items:center;background:none;border:none;color:var(--ink);text-align:left;
+    padding:8px 9px;border-radius:8px;font-size:12.8px;cursor:pointer}
+  .menu button:hover{background:var(--panel2)} .menu button.danger{color:#ff9a9a}
+  .menu .sep{height:1px;background:var(--line);margin:5px 4px} .menu .adm{color:var(--ink3);font-size:10.5px;padding:4px 9px 2px}
+
+  input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
+
+  .batchbar{position:fixed;left:50%;bottom:20px;transform:translateX(-50%) translateY(140%);background:#0c1a2e;border:1px solid var(--accent);
+    border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,.5);padding:10px 14px;display:flex;gap:10px;align-items:center;z-index:60;
+    transition:.22s;flex-wrap:wrap;max-width:94vw}
+  .batchbar.show{transform:translateX(-50%) translateY(0)}
+  .batchbar .cnt{font-weight:700;color:var(--accent2)}
+  .btn{cursor:pointer;border:1px solid var(--line);background:#0b1626;color:var(--ink);border-radius:9px;padding:7px 12px;font-size:12.8px}
+  .btn:hover{border-color:var(--accent)}
+  .btn.primary{background:linear-gradient(135deg,#4f7cff,#3b6bff);border-color:transparent;font-weight:600}
+  .btn.danger{color:#ffc4c4;border-color:rgba(239,68,68,.5)} .btn.danger:hover{background:rgba(239,68,68,.12)}
+  .btn.ghost{background:none}
+
+  /* threshold */
+  .thctl{display:grid;grid-template-columns:1.1fr 1fr;gap:22px;align-items:center}
+  @media(max-width:1100px){.thctl{grid-template-columns:1fr}}
+  .slider-row{display:flex;align-items:center;gap:14px}
+  input[type=range]{flex:1;accent-color:var(--accent);height:6px}
+  .passnum{font-size:30px;font-weight:800;color:var(--accent2);min-width:74px;text-align:center}
+  .passnum small{font-size:13px;color:var(--ink3)}
+  .preview{margin-top:10px;font-size:12.5px;color:var(--ink2)}
+  .commit-note{font-size:11.5px;color:var(--ink3);margin-top:6px}
+  .chart{display:flex;gap:14px;align-items:flex-end;height:150px;padding:6px 4px 0}
+  .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
+  .col .bar2{width:100%;max-width:54px;border-radius:8px 8px 4px 4px;transition:height .18s ease;min-height:4px}
+  .col .cn{font-size:16px;font-weight:800} .col .nm{font-size:11px;color:var(--ink3);text-align:center}
+  .bar2.new{background:linear-gradient(180deg,#9aa8c0,#6b7d99)} .bar2.building{background:linear-gradient(180deg,#60a5fa,#3b82f6)}
+  .bar2.stable{background:linear-gradient(180deg,#4ade80,#22c55e)} .bar2.honeypot{background:linear-gradient(180deg,#fbbf24,#f59e0b)}
+  .bar2.tampered{background:linear-gradient(180deg,#f87171,#ef4444)}
+
+  /* shadow */
+  .collapser{cursor:pointer;user-select:none;display:flex;align-items:center;gap:8px}
+  .collapser .arr{transition:.2s} .collapser.closed .arr{transform:rotate(-90deg)}
+  .shadow-note{font-size:11.5px;color:var(--honey);background:var(--honey-bg);border:1px solid rgba(245,158,11,.3);
+    border-radius:8px;padding:7px 11px;margin-bottom:12px;display:inline-flex;gap:7px;align-items:center}
+
+  /* versions */
+  .vsum{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+  @media(max-width:760px){.vsum{grid-template-columns:1fr}}
+  .vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(252px,1fr));gap:12px}
+  .vcard{background:#0c1a2e;border:1px solid var(--line);border-radius:12px;padding:14px}
+  .vcard h3{margin:0 0 4px;font-size:14px;display:flex;align-items:center;gap:8px}
+  .vcard .meta{font-size:11.5px;color:var(--ink3);margin-bottom:10px}
+  .vchart{display:flex;gap:8px;align-items:flex-end;height:96px}
+  .vchart .col .bar2{max-width:30px} .vchart .col .cn{font-size:13px} .vchart .col .nm{font-size:14px}
+  .vbarline{display:flex;gap:3px;height:8px;border-radius:999px;overflow:hidden;margin-top:4px}
+  .vbarline > span{display:block}
+
+  /* modal */
+  .scrim{position:fixed;inset:0;background:rgba(4,8,16,.66);backdrop-filter:blur(3px);z-index:80;display:none;align-items:center;justify-content:center;padding:20px}
+  .scrim.show{display:flex}
+  .modal{width:460px;max-width:96vw;background:linear-gradient(180deg,#0f1d31,#0c1726);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:20px}
+  .modal h3{margin:0 0 6px;font-size:16px;display:flex;align-items:center;gap:8px}
+  .modal .desc{color:var(--ink2);font-size:13px;margin-bottom:14px}
+  .modal .targets{font-size:12px;color:var(--ink3);background:#0b1626;border:1px solid var(--line);border-radius:9px;padding:8px 11px;margin-bottom:14px;max-height:120px;overflow:auto}
+  .modal label.fld{display:block;font-size:12.5px;color:var(--ink2);margin:0 0 6px}
+  .modal input{width:100%}
+  .audit{display:flex;gap:8px;align-items:flex-start;font-size:12px;color:#ffd98a;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:9px;padding:9px 11px;margin:6px 0 14px}
+  .confirm-check{display:flex;gap:8px;align-items:center;font-size:13px;margin-bottom:16px;color:var(--ink)}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end}
+  .danger-h3{color:#ff9a9a}
+  .tdetail .st{display:grid;grid-template-columns:128px 1fr 48px;gap:10px;align-items:center;margin-bottom:10px}
+  .tdetail .st .nm{font-size:12.5px}
+  .tdetail .total{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);color:var(--ink3);font-size:12.5px;display:flex;justify-content:space-between;align-items:center}
+  .future{font-size:11px;color:var(--ink3);background:#0b1626;border:1px dashed var(--line);border-radius:999px;padding:3px 9px}
+
+  .toasts{position:fixed;right:18px;bottom:18px;z-index:120;display:flex;flex-direction:column;gap:8px}
+  .toast{background:#0c1a2e;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;padding:10px 14px;font-size:12.8px;box-shadow:var(--shadow);animation:slideIn .2s ease;max-width:360px}
+  .toast.ok{border-left-color:var(--ok)} .toast.warn{border-left-color:var(--warn)} .toast.bad{border-left-color:var(--bad)}
+  @keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
+  .hide{display:none!important}
+
+  /* ============ v4 追加：状态点 / 行内展开 / 多轨时间轴 / 手机适配（沿用原 demo 深色变量） ============ */
+  .sdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}
+  .navico{display:inline-block;width:14px;height:14px;border:1.5px solid currentColor;border-radius:4px;opacity:.7;vertical-align:-2px}
+  tr.exp-on{background:rgba(79,124,255,.10)!important}
+  .chev{display:inline-block;transition:transform .18s ease;color:var(--ink3);font-weight:700}
+  tr.exp-on .chev{transform:rotate(90deg);color:var(--accent2)}
+  .exrow > td{padding:0;background:#0a1524;border-bottom:1px solid var(--line)}
+  .detail{padding:14px 16px;border-left:3px solid var(--accent)}
+  .detail-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+  .detail-head h3{font-size:14px;margin:0}
+  .dclose{margin-left:auto;border:1px solid var(--line);background:#0b1626;color:var(--ink2);border-radius:8px;padding:4px 11px;font-size:11.5px;cursor:pointer}
+  .detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+  .dblock{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px}
+  .dblock.span{grid-column:1/-1}
+  .dblock .bt{font-size:12.5px;font-weight:600;color:var(--ink2);margin-bottom:11px}
+  .track{display:grid;grid-template-columns:120px 1fr;gap:9px;align-items:center;margin-bottom:11px}
+  .track .tl{font-size:11.5px;color:var(--ink2)} .track .tl .sub2{display:block;color:var(--ink3);font-size:10.5px}
+  .segbar{display:flex;height:24px;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:#0b1626;position:relative}
+  .segbar .seg{display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--ink3);border-right:1px solid var(--line);position:relative;padding:0 5px;white-space:nowrap;overflow:hidden;min-width:0}
+  .segbar .seg:last-child{border-right:0}
+  .segbar .seg.cur{background:rgba(79,124,255,.20);color:var(--accent2);font-weight:600}
+  .segbar .seg.cur.w{background:rgba(245,158,11,.20);color:#ffd98a} .segbar .seg.cur.b{background:rgba(239,68,68,.20);color:#ffc4c4} .segbar .seg.cur.h{background:rgba(245,158,11,.16);color:#ffd98a}
+  .segbar .mk{position:absolute;top:0;bottom:0;width:2px;background:var(--accent2);z-index:2}
+  .tmeta{font-size:10.5px;color:var(--ink3);margin-top:4px;display:flex;gap:9px;flex-wrap:wrap}
+  .tmeta b{color:var(--ink2)} .grade{font-size:9.5px;border:1px solid var(--line);border-radius:4px;padding:0 4px;color:var(--ink3)}
+  .tl-legend{display:flex;gap:13px;flex-wrap:wrap;font-size:11px;color:var(--ink2);margin-top:4px}
+  .dkv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:12px;margin:0}
+  .dkv dt{color:var(--ink3)} .dkv dd{margin:0;color:var(--ink)}
+  .dops{display:flex;gap:7px;flex-wrap:wrap}
+  @media(max-width:860px){
+    .app{display:block}
+    .side{position:fixed;bottom:0;left:0;right:0;top:auto;height:auto;width:100%;flex:none;display:flex;gap:2px;overflow-x:auto;padding:6px;border-right:0;border-top:1px solid var(--line);z-index:50}
+    .brand,.side-foot,.navsep{display:none}
+    .nav{margin:0;display:flex;gap:2px} .nav a{flex:0 0 auto;margin:0;font-size:11px;padding:7px 10px;white-space:nowrap}
+    .main{padding:14px 12px 76px}
+    .tablewrap{overflow:visible;border:0}
+    table.dev,table.cards{min-width:0}
+    table.dev thead,table.cards thead{display:none}
+    table.dev,table.dev tbody,table.dev tr,table.dev td,
+    table.cards,table.cards tbody,table.cards tr,table.cards td{display:block}
+    table.dev tbody tr,table.cards tbody tr{border:1px solid var(--line);border-radius:12px;margin-bottom:10px;padding:8px 10px;background:var(--panel)}
+    table.dev tbody td,table.cards tbody td{border:0;padding:5px 0;display:flex;justify-content:space-between;gap:10px;white-space:normal;align-items:flex-start}
+    table.dev tbody td::before,table.cards tbody td::before{content:attr(data-label);color:var(--ink3);font-size:10.5px;flex:0 0 88px}
+    table.dev tbody td[data-label=""]::before,table.cards tbody td[data-label=""]::before{display:none}
+    tr.exrow,tr.exrow > td{display:block!important;padding:0}
+    .detail-grid{grid-template-columns:1fr}
+    .thctl{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><div class="logo">盾</div><div><b>防封控制台</b><small>Guard Native · 风控后台</small></div></div>
+    <nav class="nav">
+      <a class="on" data-page="devices"><span class="ico"><span class="navico"></span></span> 设备列表</a>
+      <a data-page="cards"><span class="ico"><span class="navico"></span></span> 卡密列表</a>
+      <a data-page="versions"><span class="ico"><span class="navico"></span></span> 版本状态</a>
+      <div class="navsep"></div>
+      <a data-jump="sec-threshold"><span class="ico"><span class="navico"></span></span> 阈值调节</a>
+      <a data-jump="sec-shadow"><span class="ico"><span class="navico"></span></span> 影子观察</a>
+      <a data-jump="sec-stages"><span class="ico"><span class="navico"></span></span> 阶段说明</a>
+      <a onclick="toast('审计日志为 demo 占位（不落库）','warn')"><span class="ico"><span class="navico"></span></span> 审计日志</a>
+    </nav>
+    <div class="side-foot">纯前端 demo · 假数据<br>不连服务器 · 不动主仓代码<br><span style="color:var(--ink2)">微信 8.0.71 · v4（锚定 SPEC v1）</span></div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <h1>防封授权闸 · 风控总台</h1>
+      <span class="demo-tag">DEMO</span>
+      <div class="grow"></div>
+      <span class="pill"><span class="dot"></span> 在线（模型 Claude Opus 4.8）</span>
+      <span class="pill" id="clock">--:--:--</span>
+    </div>
+    <div class="ribbon"><div><b>给指挥看的样子货（mockup）</b>：全部假数据 + 前端模拟，按钮只弹提示。<b>不连真服务器、不改 miyou-server、不动主仓代码</b>。数值锚定 配方卡_SPEC_v1（影子/宽限 7 天）。</div></div>
+
+    <div class="tabs">
+      <div class="tab on" data-page="devices" onclick="switchPage('devices')">设备列表 <span class="cnt" id="tabc-dev"></span></div>
+      <div class="tab" data-page="cards" onclick="switchPage('cards')">卡密列表 <span class="cnt" id="tabc-card"></span></div>
+      <div class="tab" data-page="versions" onclick="switchPage('versions')">版本状态 <span class="cnt" id="tabc-ver"></span></div>
+    </div>
+
+    <!-- ===== PAGE: devices ===== -->
+    <section class="page" id="page-devices">
+      <div class="kpi" id="dev-kpi"></div>
+      <section class="card" id="sec-devtable">
+        <h2>设备 / 用户列表 <span class="muted">一行一台机 · 点行就地展开详情 · 横向可滚动看全列</span></h2>
+        <div class="filters">
+          <select id="f-release"><option value="">全部 release</option></select>
+          <select id="f-form"><option value="">全部形态</option><option value="official">官替</option><option value="coexist">共存</option></select>
+          <input type="text" id="f-search" placeholder="搜 设备hash / 卡密 / wxid" style="width:210px" />
+          <div class="chips" id="f-stages"></div>
+          <div class="grow"></div>
+          <button class="btn ghost" onclick="resetFilters()">重置</button>
+        </div>
+        <div class="tablewrap">
+          <table class="dev"><thead><tr>
+            <th style="width:34px"><input type="checkbox" id="checkAll" /></th>
+            <th>设备</th><th>卡密</th><th>版本</th><th>渠道</th><th>IP / 地区</th><th>schema</th><th>cert前缀</th>
+            <th>初次登录</th><th>最后心跳</th><th>信任阶段</th><th>信任分</th><th>风险分</th>
+            <th>防封状态</th><th>弹窗状态</th><th>最近异常</th><th>租约剩余</th><th style="width:50px">操作</th>
+          </tr></thead><tbody id="tbody"></tbody></table>
+        </div>
+        <div class="sub" style="margin-top:8px" id="rowcount"></div>
+      </section>
+
+      <section class="card" id="sec-threshold">
+        <h2>全局信任及格线 <span class="muted">拖动实时预览，松手才「落库」（指挥不用算数学）</span></h2>
+        <div class="thctl">
+          <div>
+            <div class="slider-row"><input type="range" id="passSlider" min="0" max="100" value="60" /><div class="passnum"><span id="passVal">60</span><small>%</small></div></div>
+            <div class="preview" id="thPreview"></div>
+            <div class="commit-note">60% 为占位及格线（待 KPI 基线校准）。本 demo 仅前端模拟落库，<b>不写服务器</b>。</div>
+          </div>
+          <div><div class="chart" id="chart"></div><div class="sub" style="text-align:center;margin-top:8px">各阶段设备数（建立信任 ↔ 稳定 随及格线实时变化）</div></div>
+        </div>
+      </section>
+
+      <section class="card" id="sec-shadow">
+        <h2 class="collapser" id="shadowToggle" onclick="toggleShadow()"><span class="arr">▾</span> 影子观察 <span class="muted">蜜罐 / 确认改包 · 默不作声</span></h2>
+        <div id="shadowBody">
+          <div class="shadow-note">仅审计可溯：此区设备<b>不弹 alert、不红闪、不进告警计数</b>，静态呈现供事后追溯。</div>
+          <div class="tablewrap"><table><thead><tr>
+            <th>设备</th><th>版本</th><th>阶段</th><th>风险分</th><th>影子状态</th><th>租约形态（暗号）</th><th>首次命中</th>
+          </tr></thead><tbody id="shadowBodyRows"></tbody></table></div>
+        </div>
+      </section>
+
+      <section class="card" id="sec-stages">
+        <h2>5 阶段徽章 <span class="muted">鼠标悬停看 含义 / 心跳节奏 / 当前租约 / 离下一档差啥</span></h2>
+        <div class="legend" id="legend"></div>
+      </section>
+    </section>
+
+    <!-- ===== PAGE: cards ===== -->
+    <section class="page hide" id="page-cards">
+      <div class="kpi" id="card-kpi"></div>
+      <section class="card">
+        <h2>卡密 / 授权码列表 <span class="muted">一行一张卡 · 关联设备与信任阶段</span></h2>
+        <div class="filters">
+          <select id="cf-status"><option value="">全部状态</option><option value="inactive">未激活</option><option value="active">已激活</option><option value="banned">已封停</option><option value="expired">已过期</option></select>
+          <select id="cf-release"><option value="">全部 release</option></select>
+          <input type="text" id="cf-search" placeholder="搜 卡密 / 客户 / wxid" style="width:210px" />
+          <div class="grow"></div>
+          <button class="btn ghost" onclick="resetCardFilters()">重置</button>
+        </div>
+        <div class="tablewrap">
+          <table class="cards"><thead><tr>
+            <th style="width:34px"><input type="checkbox" id="checkAllCards" /></th>
+            <th>卡密</th><th>客户 · 备注</th><th>状态</th><th>版本</th><th>绑定设备</th><th>绑定 wxid</th>
+            <th>激活时间</th><th>到期时间</th><th>剩余天数</th><th>关联信任阶段</th><th style="width:50px">操作</th>
+          </tr></thead><tbody id="cardBody"></tbody></table>
+        </div>
+        <div class="sub" style="margin-top:8px" id="cardCount"></div>
+      </section>
+    </section>
+
+    <!-- ===== PAGE: versions ===== -->
+    <section class="page hide" id="page-versions">
+      <div class="kpi" id="ver-kpi"></div>
+      <section class="card">
+        <h2>形态汇总 <span class="muted">官替 vs 共存 · 阶段分布</span></h2>
+        <div class="vsum" id="formSummary"></div>
+      </section>
+      <section class="card">
+        <h2>按 release 看阶段分布 <span class="muted"><span class="sdot" style="background:var(--new)"></span>新 <span class="sdot" style="background:var(--build)"></span>建 <span class="sdot" style="background:var(--stable)"></span>稳 <span class="sdot" style="background:var(--honey)"></span>蜜 <span class="sdot" style="background:var(--tamper)"></span>改</span></h2>
+        <div class="vgrid" id="verGrid"></div>
+      </section>
+    </section>
+  </main>
+</div>
+
+<div class="batchbar" id="batchbar">
+  <span class="cnt" id="batchCnt">已选 0 台设备</span>
+  <button class="btn" onclick="batchOp('trust')">设为信任</button>
+  <button class="btn" onclick="batchOp('suspect')">标记可疑/恢复</button>
+  <button class="btn danger" onclick="batchOp('ban')">封停</button>
+  <button class="btn danger" onclick="batchOp('killpopup')">kill 弹窗</button>
+  <button class="btn danger" onclick="batchOp('killdis')">kill 解体</button>
+  <button class="btn ghost" onclick="clearSel()">取消</button>
+</div>
+<div class="batchbar" id="cardBatchbar">
+  <span class="cnt" id="cardBatchCnt">已选 0 张卡</span>
+  <button class="btn" onclick="batchCardOp('cardexpiry')">改到期时间</button>
+  <button class="btn danger" onclick="batchCardOp('cardban')">封卡</button>
+  <button class="btn danger" onclick="batchCardOp('cardunbind')">解绑设备</button>
+  <button class="btn danger" onclick="batchCardOp('cardreissue')">补发</button>
+  <button class="btn ghost" onclick="clearCardSel()">取消</button>
+</div>
+
+<div class="scrim" id="opScrim"><div class="modal" id="opModal"></div></div>
+<div class="scrim" id="tdScrim"><div class="modal tdetail" id="tdModal"></div></div>
+<div id="floatPop"></div>
+<div id="floatMenu"></div>
+<div class="toasts" id="toasts"></div>
+
+<script>
+/* ============================================================ 阶段定义 ============================================================ */
+const STAGES = {
+  new:      {emoji:'<span class="sdot" style="background:var(--new)"></span>',name:'新设备期', cls:'new',     desc:'刚装、信任分低（默认起评 60%）',            hb:'密集 2–3min/次（抓激活，激活即停）', lease:'短租约 · 待累积信任'},
+  building: {emoji:'<span class="sdot" style="background:var(--build)"></span>',name:'建立信任期',cls:'building',desc:'攒分中、信任分往上爬',                      hb:'中频 10–30min/次（带 ± 抖动）',     lease:'短租约 · 逐步升长建信任'},
+  stable:   {emoji:'<span class="sdot" style="background:var(--stable)"></span>',name:'稳定期',   cls:'stable',  desc:'信任分 ≥ 及格线、稳定（后台仍可随时封停）',  hb:'稀疏 1–2h/次（封顶 6h，±15% 抖动）', lease:'长租约 30天 · 可续'},
+  honeypot: {emoji:'<span class="sdot" style="background:var(--honey)"></span>',name:'蜜罐期',   cls:'honeypot',desc:'碰到假诱饵、影子观察中（装死放饵、默不作声）',hb:'升频 10min/次（密集观察）',         lease:'影子期 7天 · 延迟引流'},
+  tampered: {emoji:'<span class="sdot" style="background:var(--tamper)"></span>',name:'确认改包', cls:'tampered',desc:'铁证篡改（重签 / canary）→ 永久标签',        hb:'影子租约期照常',                    lease:'影子租约 7天 · 到期不续命'},
+};
+const NEXT = {
+  new:      d=>`新设备→建立信任：心跳激活成功 且 存活≥6h；当前 age=${d.age}h、激活=${d.seen>0?'已':'未'}`,
+  building: d=>`建立信任→稳定：还需 seen≥3 且 存活≥48h 且 trust≥60；当前 seen=${d.seen}/age=${d.age}h/trust=${d.trust}`,
+  stable:   d=>`已达稳定期 · 维持心跳即自动续长租约（后台可随时封停）`,
+  honeypot: d=>`影子期倒计时中 · 过期转引流；仅审计可溯，不计入告警`,
+  tampered: d=>`永久标签 · 到期不续命（客户端不可自洗白，仅后台强校验可转正）`,
+};
+const CSTAT={inactive:{t:'未激活',cls:'cs-inactive'},active:{t:'已激活',cls:'cs-active'},banned:{t:'已封停',cls:'cs-banned'},expired:{t:'已过期',cls:'cs-expired'}};
+
+/* ============================================================ 假数据 · 设备（18 台，覆盖 5 阶段） ============================================================ */
+let DATA = [
+ {id:'D8A3F1C2',card:'GD-7K2M-QX4',wxid:'wxid_a1b29x',form:'official',release:'r71.4',channel:'直营',region:'广东·深圳',ip:'120.85.12.40',schema:'g_7f3a',cert:'18c867f0',first:'2026-06-23 02:38',hb:'2026-06-23 02:59',stage:'new',authorized:false,age:0.4,seen:0,trust:60,risk:6,a2:'feed',popup:'none',lease:'短租约 7天',leaseLeft:7,anomaly:'—',online:true},
+ {id:'D5E0B7AA',card:'GD-9F4P-LM2',wxid:'wxid_d4e5f6',form:'coexist',release:'r71.4c',channel:'官网',region:'江苏·苏州',ip:'27.18.x.x',schema:'g_91kd',cert:'18c867f0',first:'2026-06-23 01:25',hb:'2026-06-23 02:51',stage:'new',authorized:false,age:1.3,seen:1,trust:60,risk:11,a2:'feed',popup:'soft',lease:'短租约 7天',leaseLeft:7,anomaly:'—',online:true},
+ {id:'C1F94D60',card:'GD-3T8N-PA9',wxid:'wxid_c1f94d',form:'coexist',release:'r71.3c',channel:'代理A',region:'上海',ip:'58.246.x.x',schema:'g_2m8x',cert:'18c867f0',first:'2026-06-22 19:02',hb:'2026-06-23 02:40',stage:'building',authorized:false,age:8,seen:2,trust:48,risk:24,a2:'feed',popup:'login',lease:'短租约 7天（平）',leaseLeft:6,anomaly:'未授权·登录砸门',online:true},
+ {id:'A77B2E13',card:'GD-6Q1V-RK7',wxid:'wxid_a77b2e',form:'official',release:'r71.4',channel:'代理A',region:'江苏·苏州',ip:'101.88.34.7',schema:'g_a4qz',cert:'18c867f0',first:'2026-06-21 19:50',hb:'2026-06-23 02:57',stage:'building',authorized:true,age:31,seen:2,trust:54,risk:14,a2:'feed',popup:'none',lease:'短租约 7天→升14天',leaseLeft:6,anomaly:'时钟回拨（已宽限）',online:true},
+ {id:'B0C3A8F5',card:'GD-2H5K-WZ1',wxid:'wxid_b0c3a8',form:'coexist',release:'r71.3c',channel:'闲鱼',region:'未知（代理）',ip:'223.104.x.x',schema:'g_5h0w',cert:'18c867f0',first:'2026-06-21 23:10',hb:'2026-06-22 22:15',stage:'new',authorized:false,age:26,seen:1,trust:60,risk:42,a2:'sand',popup:'dissolve',lease:'— 已撤',leaseLeft:0,anomaly:'超时未授权·已停供',online:false},
+ {id:'E2D7100C',card:'GD-8M3J-YB6',wxid:'wxid_e2d710',form:'official',release:'r71.3',channel:'直营',region:'福建·厦门',ip:'114.86.55.21',schema:'g_7f3a',cert:'18c867f0',first:'2026-06-17 09:30',hb:'2026-06-23 02:35',stage:'building',authorized:true,age:60,seen:3,trust:58,risk:12,a2:'feed',popup:'none',lease:'短租约 14天',leaseLeft:11,anomaly:'—',online:true},
+ {id:'F9A04B2D',card:'GD-5R7C-TN3',wxid:'wxid_f9a04b',form:'official',release:'r71.3',channel:'直营',region:'浙江·杭州',ip:'112.10.66.88',schema:'g_91kd',cert:'18c867f0',first:'2026-06-15 14:20',hb:'2026-06-23 02:58',stage:'stable',authorized:true,age:140,seen:9,trust:71,risk:7,a2:'feed',popup:'none',lease:'长租约 30天',leaseLeft:23,anomaly:'—',online:true},
+ {id:'AA12CF80',card:'GD-1B9D-EH5',wxid:'wxid_aa12cf',form:'official',release:'r71.4',channel:'直营',region:'北京',ip:'124.79.x.x',schema:'g_a4qz',cert:'18c867f0',first:'2026-06-01 10:05',hb:'2026-06-23 02:49',stage:'stable',authorized:true,age:520,seen:30,trust:88,risk:4,a2:'feed',popup:'none',paid:true,lease:'长租约 30天 · 付费（断网宽限7天）',leaseLeft:30,anomaly:'—',online:true},
+ {id:'90BE7F44',card:'GD-4W6L-QC2',wxid:'wxid_90be7f',form:'official',release:'r71.3',channel:'代理B',region:'四川·成都',ip:'39.144.x.x',schema:'g_2m8x',cert:'18c867f0',first:'2026-06-19 16:40',hb:'2026-06-23 02:20',stage:'honeypot',authorized:false,age:50,seen:4,trust:33,risk:66,a2:'feed',popup:'shadow',shadowState:'影子期 · 装死放饵（不弹）',hitAt:'2026-06-21 11:08',lease:'影子期 7天',leaseLeft:5,anomaly:'canary 命中',online:true},
+ {id:'7C5520E9',card:'GD-0X2F-MD8',wxid:'wxid_7c5520',form:'coexist',release:'r71.3c',channel:'分销C',region:'海外·香港',ip:'42.88.x.x',schema:'g_5h0w',cert:'9b2e44a1',first:'2026-06-14 08:12',hb:'2026-06-23 01:58',stage:'tampered',authorized:false,age:90,seen:6,trust:18,risk:93,a2:'feed',popup:'shadow',shadowState:'确认改包（重签+canary）· 默不作声',hitAt:'2026-06-20 22:41',lease:'影子租约 7天（从不升长）· 到期不续命',leaseLeft:4,anomaly:'签名不符·重打包',online:true},
+ {id:'3F8A11B7',card:'GD-2K8D-VR0',wxid:'wxid_3f8a11',form:'coexist',release:'r71.4c',channel:'代理A',region:'浙江·杭州',ip:'115.60.x.x',schema:'g_91kd',cert:'18c867f0',first:'2026-06-10 11:00',hb:'2026-06-23 02:44',stage:'stable',authorized:true,age:300,seen:18,trust:66,risk:6,a2:'feed',popup:'none',lease:'长租约 30天',leaseLeft:21,anomaly:'—',online:true},
+ {id:'6D2C90E4',card:'GD-7J1A-W8M',wxid:'wxid_6d2c90',form:'official',release:'r71.4',channel:'官网',region:'广东·广州',ip:'113.118.x.x',schema:'g_7f3a',cert:'18c867f0',first:'2026-06-22 08:15',hb:'2026-06-23 02:30',stage:'building',authorized:false,age:18,seen:2,trust:51,risk:20,a2:'feed',popup:'login',lease:'短租约 7天',leaseLeft:6,anomaly:'未授权·登录砸门',online:true},
+ {id:'22E7C5A0',card:'GD-9P4Q-XL3',wxid:'wxid_22e7c5',form:'official',release:'r71.3',channel:'直营',region:'湖北·武汉',ip:'59.172.x.x',schema:'g_a4qz',cert:'18c867f0',first:'2026-06-23 00:10',hb:'2026-06-23 02:48',stage:'new',authorized:false,age:2.6,seen:1,trust:60,risk:13,a2:'feed',popup:'login',lease:'短租约 7天',leaseLeft:7,anomaly:'—',online:true},
+ {id:'9A0F3D8C',card:'GD-3M6V-KD7',wxid:'wxid_9a0f3d',form:'coexist',release:'r71.3c',channel:'代理B',region:'山东·青岛',ip:'112.250.x.x',schema:'g_2m8x',cert:'18c867f0',first:'2026-06-08 17:25',hb:'2026-06-23 02:12',stage:'stable',authorized:true,age:330,seen:21,trust:63,risk:9,a2:'feed',popup:'none',lease:'长租约 30天',leaseLeft:17,anomaly:'版本漂移 8.0.70→已纠正',online:true},
+ {id:'B7E14C29',card:'GD-5T2N-PH1',wxid:'wxid_b7e14c',form:'coexist',release:'r71.4c',channel:'分销C',region:'海外·新加坡',ip:'160.22.x.x',schema:'g_5h0w',cert:'18c867f0',first:'2026-06-21 20:40',hb:'2026-06-23 01:40',stage:'building',authorized:false,age:30,seen:2,trust:46,risk:28,a2:'feed',popup:'login',lease:'短租约 7天（平）',leaseLeft:5,anomaly:'代理IP频繁切换',online:false},
+ {id:'4C99A2F1',card:'GD-8H3K-QM9',wxid:'wxid_4c99a2',form:'coexist',release:'r71.4c',channel:'闲鱼',region:'海外·香港',ip:'103.90.x.x',schema:'g_91kd',cert:'18c867f0',first:'2026-06-18 13:05',hb:'2026-06-23 02:05',stage:'honeypot',authorized:false,age:62,seen:5,trust:29,risk:71,a2:'feed',popup:'shadow',shadowState:'假开关诱饵命中 · 装死放饵',hitAt:'2026-06-22 09:33',lease:'影子期 7天',leaseLeft:4,anomaly:'假开关诱饵命中',online:true},
+ {id:'E5B3770D',card:'GD-1W9C-RB4',wxid:'wxid_e5b377',form:'official',release:'r71.4',channel:'直营',region:'广东·深圳',ip:'120.85.66.10',schema:'g_a4qz',cert:'18c867f0',first:'2026-06-05 09:50',hb:'2026-06-23 02:55',stage:'stable',authorized:true,age:430,seen:26,trust:91,risk:3,a2:'feed',popup:'none',paid:true,lease:'长租约 30天 · 付费',leaseLeft:3,anomaly:'—',online:true},
+ {id:'1A6F8B22',card:'GD-6N2D-TK8',wxid:'wxid_1a6f8b',form:'coexist',release:'r71.3c',channel:'官网',region:'河南·郑州',ip:'171.8.x.x',schema:'g_7f3a',cert:'18c867f0',first:'2026-06-22 21:30',hb:'2026-06-23 02:33',stage:'new',authorized:false,age:5,seen:1,trust:60,risk:10,a2:'feed',popup:'soft',lease:'短租约 7天',leaseLeft:7,anomaly:'—',online:true},
+];
+
+/* ============================================================ 假数据 · 卡密（14 张，覆盖各状态） ============================================================ */
+let CARDS = [
+ {id:'K-1B9D-****',customer:'李总 · 北京',note:'年付VIP',status:'active',form:'official',release:'r71.4',boundCount:1,boundMax:1,boundWxid:'wxid_aa12cf',activate:'2026-06-01 10:05',expiry:'2026-07-25',remaining:32,stage:'stable',boundDevices:['AA12CF80']},
+ {id:'K-5R7C-****',customer:'王经理 · 杭州',note:'季付',status:'active',form:'official',release:'r71.3',boundCount:1,boundMax:1,boundWxid:'wxid_f9a04b',activate:'2026-06-15 14:20',expiry:'2026-07-15',remaining:22,stage:'stable',boundDevices:['F9A04B2D']},
+ {id:'K-6Q1V-****',customer:'赵老板 · 苏州',note:'可绑2台',status:'active',form:'official',release:'r71.4',boundCount:1,boundMax:2,boundWxid:'wxid_a77b2e',activate:'2026-06-21 19:50',expiry:'2026-06-28',remaining:5,stage:'building',boundDevices:['A77B2E13']},
+ {id:'K-8M3J-****',customer:'陈生 · 厦门',note:'今日激活',status:'active',form:'official',release:'r71.3',boundCount:1,boundMax:1,boundWxid:'wxid_e2d710',activate:'2026-06-23 09:12',expiry:'2026-08-01',remaining:39,stage:'building',boundDevices:['E2D7100C']},
+ {id:'K-2K8D-****',customer:'刘工 · 杭州',note:'共存版',status:'active',form:'coexist',release:'r71.4c',boundCount:1,boundMax:1,boundWxid:'wxid_3f8a11',activate:'2026-06-10 11:00',expiry:'2026-07-12',remaining:19,stage:'stable',boundDevices:['3F8A11B7']},
+ {id:'K-3M6V-****',customer:'周姐 · 青岛',note:'共存版',status:'active',form:'coexist',release:'r71.3c',boundCount:1,boundMax:1,boundWxid:'wxid_9a0f3d',activate:'2026-06-08 17:25',expiry:'2026-07-10',remaining:17,stage:'stable',boundDevices:['9A0F3D8C']},
+ {id:'K-1W9C-****',customer:'孙总 · 深圳',note:'续费提醒',status:'active',form:'official',release:'r71.4',boundCount:1,boundMax:1,boundWxid:'wxid_e5b377',activate:'2026-06-05 09:50',expiry:'2026-06-26',remaining:3,stage:'stable',boundDevices:['E5B3770D']},
+ {id:'K-2H5K-****',customer:'官网下单 · 待激活',note:'未使用',status:'inactive',form:'coexist',release:'r71.3c',boundCount:0,boundMax:1,boundWxid:'—',activate:'—',expiry:'—',remaining:'—',stage:'—',boundDevices:[]},
+ {id:'K-9F4P-****',customer:'代理A批量 · 待发',note:'批次#0623',status:'inactive',form:'official',release:'r71.4',boundCount:0,boundMax:1,boundWxid:'—',activate:'—',expiry:'—',remaining:'—',stage:'—',boundDevices:[]},
+ {id:'K-3T8N-****',customer:'闲鱼散单 · 待激活',note:'未使用',status:'inactive',form:'coexist',release:'r71.4c',boundCount:0,boundMax:1,boundWxid:'—',activate:'—',expiry:'—',remaining:'—',stage:'—',boundDevices:[]},
+ {id:'K-7H2A-****',customer:'老客 · 过期未续',note:'到期未续费',status:'expired',form:'official',release:'r71.3',boundCount:1,boundMax:1,boundWxid:'wxid_22e7c5',activate:'2026-04-01 10:00',expiry:'2026-06-10',remaining:-13,stage:'—',boundDevices:['22E7C5A0']},
+ {id:'K-1Q9Z-****',customer:'试用 · 已过期',note:'7天试用',status:'expired',form:'coexist',release:'r71.3c',boundCount:1,boundMax:1,boundWxid:'wxid_1a6f8b',activate:'2026-06-01 12:00',expiry:'2026-06-20',remaining:-3,stage:'—',boundDevices:['1A6F8B22']},
+ {id:'K-0X2F-****',customer:'疑似盗用 · 已封',note:'重打包·确认改包',status:'banned',form:'coexist',release:'r71.3c',boundCount:1,boundMax:1,boundWxid:'wxid_7c5520',activate:'2026-06-14 08:12',expiry:'2026-07-14',remaining:'—',stage:'tampered',boundDevices:['7C5520E9']},
+ {id:'K-8H3K-****',customer:'多设备超限 · 已封',note:'共享转卖嫌疑',status:'banned',form:'coexist',release:'r71.4c',boundCount:1,boundMax:1,boundWxid:'wxid_4c99a2',activate:'2026-06-18 13:05',expiry:'2026-07-18',remaining:'—',stage:'honeypot',boundDevices:['4C99A2F1']},
+];
+
+/* ============================================================ 状态 ============================================================ */
+let passLine=60, currentPage='devices';
+let activeStages=new Set(), selected=new Set(), selectedCards=new Set();
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const SHADOW_STAGES=['honeypot','tampered'];
+function riskCls(r){return r>=70?'hi':r>=35?'mid':'lo';}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function effStage(d){if(d.stage==='building'||d.stage==='stable')return d.trust>=passLine?'stable':'building';return d.stage;}
+function activated(d){return d.seen>0||d.authorized;}
+function popupLabel(p){return {none:'<span class="pop-none">— 无</span>',soft:'<span class="pop-soft">软引流 · 可关</span>',
+  login:'<span class="pop-login">登录砸门 · 关不掉</span>',dissolve:'<span class="pop-none">—（已停供）</span>',
+  shadow:'<span class="pop-shadow">影子期 · 不弹</span>'}[p]||'—';}
+function statCard(k,v,s,cls){return `<div class="stat ${cls||''}"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s||''}</div></div>`;}
+function ttime(s){if(!s||s==='—')return '<span class="sub">—</span>';const p=s.split(' ');return `${p[0].slice(5)}<div class="sub">${p[1]||''}</div>`;}
+
+/* ============================================================ 设备 KPI ============================================================ */
+function renderDevKpi(){
+  const sc={new:0,building:0,stable:0,honeypot:0,tampered:0}; DATA.forEach(d=>sc[effStage(d)]++);
+  const online=DATA.filter(d=>d.online&&!d.banned).length;
+  const official=DATA.filter(d=>d.form==='official').length, coexist=DATA.length-official;
+  const act=DATA.filter(activated).length, actRate=Math.round(act/DATA.length*100);
+  const ano=DATA.filter(d=>d.anomaly&&d.anomaly!=='—').length, anoRate=Math.round(ano/DATA.length*100);
+  const todayNew=DATA.filter(d=>d.first.startsWith('2026-06-23')).length;
+  $('#dev-kpi').innerHTML=[
+    statCard('设备总数',DATA.length,`官替 ${official} · 共存 ${coexist}`,'accent'),
+    statCard('在线',online,`占 ${Math.round(online/DATA.length*100)}%`,'v-ok'),
+    statCard('<span class="sdot" style="background:var(--new)"></span>新设备期',sc.new,'首装抓激活','v-new'),
+    statCard('<span class="sdot" style="background:var(--build)"></span>建立信任期',sc.building,`及格线 ${passLine}%`,'v-build'),
+    statCard('<span class="sdot" style="background:var(--stable)"></span>稳定期',sc.stable,'长租约','v-stable'),
+    statCard('<span class="sdot" style="background:var(--honey)"></span>蜜罐期',sc.honeypot,'影子观察','v-shadow'),
+    statCard('<span class="sdot" style="background:var(--tamper)"></span>确认改包',sc.tampered,'永久标签','v-bad'),
+    statCard('激活率',actRate+'%',`${act}/${DATA.length} 台已激活`,''),
+    statCard('异常率',anoRate+'%',`${ano} 台有异常`, anoRate>=25?'v-warn':''),
+    statCard('今日新增',todayNew,'2026-06-23',''),
+  ].join('');
+}
+
+/* ============================================================ 设备筛选 + 表 ============================================================ */
+function renderFilters(){
+  const rels=[...new Set(DATA.map(d=>d.release))].sort();
+  $('#f-release').innerHTML='<option value="">全部 release</option>'+rels.map(r=>`<option value="${r}">${r}</option>`).join('');
+  $('#f-stages').innerHTML=Object.entries(STAGES).map(([k,s])=>`<span class="chip" data-s="${k}" onclick="toggleStage('${k}')">${s.emoji} ${s.name}</span>`).join('');
+  syncChips();
+}
+function syncChips(){$$('#f-stages .chip').forEach(c=>c.classList.toggle('on',activeStages.has(c.dataset.s)));}
+function toggleStage(k){activeStages.has(k)?activeStages.delete(k):activeStages.add(k);syncChips();renderTable();}
+function resetFilters(){activeStages.clear();$('#f-release').value='';$('#f-form').value='';$('#f-search').value='';syncChips();renderTable();}
+function filtered(){
+  const rel=$('#f-release').value, form=$('#f-form').value, q=$('#f-search').value.trim().toLowerCase();
+  return DATA.filter(d=>{
+    if(rel&&d.release!==rel)return false;
+    if(form&&d.form!==form)return false;
+    if(activeStages.size&&!activeStages.has(effStage(d)))return false;
+    if(q&&!(`${d.id} ${d.card} ${d.wxid} ${d.release} ${d.channel}`.toLowerCase().includes(q)))return false;
+    return true;
+  });
+}
+function renderTable(){
+  const rows=filtered();
+  $('#tbody').innerHTML=rows.map(d=>{
+    const st=effStage(d), sm=STAGES[st], pass=d.trust>=passLine, isShadow=SHADOW_STAGES.includes(d.stage), ex=expandedId===d.id;
+    return `<tr class="${isShadow?'shadow-row':''} ${d.banned?'banned-row':''} ${ex?'exp-on':''}" data-id="${d.id}" onclick="toggleExpand('${d.id}')">
+      <td data-label="" onclick="event.stopPropagation()"><input type="checkbox" ${selected.has(d.id)?'checked':''} onchange="toggleSel('${d.id}',this.checked)"></td>
+      <td data-label="设备"><span class="mono">${d.id}</span><div class="sub">${esc(d.wxid)}</div></td>
+      <td data-label="卡密"><span class="mono">${esc(d.card)}</span></td>
+      <td data-label="版本"><span class="tag-form ${d.form==='official'?'tag-official':'tag-coexist'}">${d.form==='official'?'官替':'共存'}</span><div class="sub">${d.release}</div></td>
+      <td data-label="渠道">${esc(d.channel)}</td>
+      <td data-label="IP·地区"><span class="mono ip">${d.ip}</span><div class="sub">${esc(d.region)}<span class="info" onclick="event.stopPropagation()" onmouseenter="showTip(event,'部分地区防火墙不稳 · 代理IP地区仅供参考，不作风控依据')" onmouseleave="hidePop()">i</span></div></td>
+      <td data-label="schema"><span class="mono sub">${d.schema}</span></td>
+      <td data-label="cert"><span class="mono" style="color:${d.cert==='18c867f0'?'var(--ink2)':'var(--bad)'}">${d.cert}</span>${d.cert!=='18c867f0'?'<div class="sub" style="color:var(--bad)">不符</div>':''}</td>
+      <td data-label="初次登录">${ttime(d.first)}</td>
+      <td data-label="最后心跳">${ttime(d.hb)}${d.online?'':'<div class="sub" style="color:var(--ink3)">离线</div>'}</td>
+      <td data-label="信任阶段"><span class="badge b-${sm.cls}" style="cursor:help" onclick="event.stopPropagation()" onmouseenter="showStageCard(event,'${d.id}')" onmouseleave="hidePop()">${sm.emoji}${sm.name}${d.banned?' · 已封停':''}</span></td>
+      <td data-label="信任分"><div class="trust ${pass?'pass':'fail'}" title="展开看每阶段明细">
+        <div class="bar"><i style="width:${Math.max(2,Math.min(100,d.trust))}%;background:${pass?'var(--stable)':'var(--warn)'}"></i><span class="passline" style="left:${passLine}%"></span></div>
+        <div class="num"><span>信任 <b>${d.trust}</b></span><span>线 ${passLine}</span></div></div></td>
+      <td data-label="风险"><span class="risk ${riskCls(d.risk)}">${d.risk}</span></td>
+      <td data-label="防封"><span class="badge b-${d.a2==='feed'?'feed':'sand'}">${d.a2==='feed'?'给料':'散沙'}</span><div class="sub">A2 ${d.a2==='feed'?'开':'关'}</div></td>
+      <td data-label="弹窗">${popupLabel(d.popup)}</td>
+      <td data-label="异常">${d.anomaly==='—'?'<span class="sub">—</span>':`<span style="color:${/不符|停供|解体/.test(d.anomaly)?'var(--bad)':'var(--warn)'};font-size:11.5px">${esc(d.anomaly)}</span>`}</td>
+      <td data-label="租约">${d.leaseLeft<=0?'<span class="sub">—</span>':`<b style="color:${d.leaseLeft<7?'var(--bad)':'var(--ink)'}">${d.leaseLeft}天</b>`}</td>
+      <td data-label="" style="text-align:center" onclick="event.stopPropagation()"><button class="actbtn" title="${ex?'收起':'展开详情'}" onclick="toggleExpand('${d.id}')"><span class="chev">›</span></button></td>
+    </tr>${ex?`<tr class="exrow"><td colspan="18" data-label=""><div class="detail">${buildDetail(d)}</div></td></tr>`:''}`;}).join('');
+  const fset=activeStages.size||$('#f-release').value||$('#f-form').value||$('#f-search').value;
+  $('#rowcount').textContent=`显示 ${rows.length} / ${DATA.length} 台${fset?'（已筛选）':''}`;
+  $('#checkAll').checked=rows.length>0&&rows.every(d=>selected.has(d.id));
+  $('#tabc-dev').textContent=DATA.length;
+}
+
+/* ============================================================ 浮层：行菜单 / 阶段卡 / 提示 ============================================================ */
+function placeNear(el,rect){el.style.display='block';const pad=8,w=el.offsetWidth,h=el.offsetHeight;
+  let left=Math.max(pad,Math.min(rect.left,innerWidth-w-pad)),top=rect.bottom+6;
+  if(top+h>innerHeight-pad)top=rect.top-h-6; if(top<pad)top=pad; el.style.left=left+'px'; el.style.top=top+'px';}
+function showStageCard(e,id){const d=DATA.find(x=>x.id===id);if(!d)return;const st=effStage(d),sm=STAGES[st],p=$('#floatPop');
+  p.className='';p.innerHTML=`<h4>${sm.emoji} ${sm.name}</h4><dl class="row4"><dt>含义</dt><dd>${sm.desc}</dd><dt>心跳节奏</dt><dd>${sm.hb}</dd><dt>当前租约</dt><dd>${esc(d.lease)}</dd></dl><div class="nxt">${NEXT[st](d)}</div>`;
+  placeNear(p,e.currentTarget.getBoundingClientRect());}
+function showTip(e,txt){const p=$('#floatPop');p.className='tipbox';p.innerHTML=esc(txt);placeNear(p,e.currentTarget.getBoundingClientRect());}
+function hidePop(){$('#floatPop').style.display='none';}
+/* 设备行操作已内联到「行内展开详情」（仅 6 项），原 showMenu 浮动菜单已移除 */
+function showCardMenu(e,id){e.stopPropagation();const c=CARDS.find(x=>x.id===id);if(!c)return;const m=$('#floatMenu');
+  m.innerHTML=`<div class="menu">
+    <button onclick="cardRowOp('view','${c.id}')">查看绑定设备</button>
+    <button onclick="cardRowOp('cardexpiry','${c.id}')">改到期时间</button>
+    <div class="sep"></div>
+    <button class="danger" onclick="cardRowOp('cardban','${c.id}')">封卡</button>
+    <button class="danger" onclick="cardRowOp('cardunbind','${c.id}')">解绑设备</button>
+    <button class="danger" onclick="cardRowOp('cardreissue','${c.id}')">补发</button></div>`;
+  m.style.display='block';const r=e.currentTarget.getBoundingClientRect(),w=m.offsetWidth,h=m.offsetHeight,pad=8;
+  let left=Math.max(pad,Math.min(r.right-w,innerWidth-w-pad)),top=r.bottom+6; if(top+h>innerHeight-pad)top=r.top-h-6; if(top<pad)top=pad;
+  m.style.left=left+'px';m.style.top=top+'px';}
+function hideMenu(){$('#floatMenu').style.display='none';}
+document.addEventListener('click',hideMenu);
+addEventListener('scroll',()=>{hideMenu();hidePop();},true);
+addEventListener('resize',()=>{hideMenu();hidePop();});
+
+/* ============================================================ 选择 / 批量 ============================================================ */
+function toggleSel(id,on){on?selected.add(id):selected.delete(id);syncBatch();$('#checkAll').checked=filtered().every(d=>selected.has(d.id));}
+function clearSel(){selected.clear();syncBatch();renderTable();}
+function toggleCardSel(id,on){on?selectedCards.add(id):selectedCards.delete(id);syncBatch();$('#checkAllCards').checked=filteredCards().every(c=>selectedCards.has(c.id));}
+function clearCardSel(){selectedCards.clear();syncBatch();renderCards();}
+function syncBatch(){
+  $('#batchCnt').textContent=`已选 ${selected.size} 台设备`;
+  $('#batchbar').classList.toggle('show',currentPage==='devices'&&selected.size>0);
+  $('#cardBatchCnt').textContent=`已选 ${selectedCards.size} 张卡`;
+  $('#cardBatchbar').classList.toggle('show',currentPage==='cards'&&selectedCards.size>0);
+}
+function batchOp(op){if(!selected.size){toast('请先勾选设备','warn');return;}openOp(op,[...selected],'device');}
+function rowOp(op,id){hideMenu();openOp(op,[id],'device');}
+function batchCardOp(op){if(!selectedCards.size){toast('请先勾选卡密','warn');return;}openOp(op,[...selectedCards],'card');}
+function cardRowOp(op,id){hideMenu();if(op==='view'){viewBoundDevices(id);return;}openOp(op,[id],'card');}
+
+/* ============================================================ 操作弹窗 ============================================================ */
+const OPS={
+  trust:{t:'设为信任（稳定期 + 长租约）',danger:false,audit:false,needs:null,desc:'将所选设备置为稳定期、发放长租约（30天）。'},
+  suspect:{t:'标记可疑 / 恢复正常',danger:false,audit:false,needs:null,desc:'切换可疑标记（仅影响风险展示，不动 A2 给料）。'},
+  authtime:{t:'修改授权到期时间',danger:false,audit:true,needs:'datetime',desc:'手动调整授权到期时间（影响 isAntiBanReady 的「曾授权」分支）。'},
+  ban:{t:'封停设备',danger:true,audit:true,needs:'confirm2',desc:'封停后撤销 A2（散沙）→ 宿主读到非官方身份。模块不自爆、不删用户数据。'},
+  killpopup:{t:'kill 弹窗',danger:true,audit:true,needs:'confirm2',desc:'下发指令关闭目标设备上的引流/砸门弹窗（用于误触排障）。'},
+  killdis:{t:'kill 解体',danger:true,audit:true,needs:'release_id',desc:'强制解体：撤 A2 + 标记不续命。需输入对应 release_id 二次确认，防误伤。'},
+};
+const COPS={
+  cardexpiry:{t:'修改卡密到期时间',danger:false,audit:true,needs:'datetime',desc:'调整卡密到期时间（影响剩余天数与续约）。'},
+  cardban:{t:'封卡',danger:true,audit:true,needs:'confirm2',desc:'封停卡密 → 绑定设备失去授权（A2 走时间闸散沙）。不删数据。'},
+  cardunbind:{t:'解绑设备',danger:true,audit:true,needs:'confirm2',desc:'解除该卡密的设备绑定（换机/换号客服流程）。仅管理员。'},
+  cardreissue:{t:'补发',danger:true,audit:true,needs:'confirm2',desc:'作废旧卡、补发同权限新卡（客户丢卡/纠纷）。'},
+};
+let pendingOp=null;
+function openOp(op,ids,kind){
+  const cfg=(kind==='card'?COPS:OPS)[op]; if(!cfg)return; pendingOp={op,ids,kind};
+  const src=kind==='card'?CARDS:DATA;
+  const list=ids.map(id=>{const d=src.find(x=>x.id===id);return kind==='card'?`${d.id} · ${esc(d.customer)} · ${d.release}`:`${d.id} · ${d.form==='official'?'官替':'共存'} ${d.release}`;}).join('<br>');
+  let extra='';
+  if(cfg.needs==='release_id'){const hint=ids.length===1?DATA.find(x=>x.id===ids[0]).release:'（批量：输入任一所选 release_id）';
+    extra=`<label class="fld">输入 release_id 确认（目标：<b>${esc(hint)}</b>）</label><input type="text" id="opInput" placeholder="例如 ${esc(ids.length===1?DATA.find(x=>x.id===ids[0]).release:'r71.4')}" />`;}
+  else if(cfg.needs==='datetime'){extra=`<label class="fld">新到期时间</label><input type="datetime-local" id="opInput" />`;}
+  else if(cfg.needs==='confirm2'){extra=`<label class="confirm-check"><input type="checkbox" id="opChk"> 我已确认对以上 ${ids.length} 项执行此高危操作</label>`;}
+  else if(cfg.needs==='admin'){extra=`<label class="confirm-check"><input type="checkbox" id="opChk"> 我具备管理员权限，确认解绑</label>`;}
+  $('#opModal').innerHTML=`<h3 class="${cfg.danger?'danger-h3':''}">${cfg.t}</h3>
+    <div class="desc">${cfg.desc}</div>
+    <div class="targets">目标（${ids.length}）：<br>${list}</div>
+    ${cfg.audit?`<div class="audit"><div>高危操作 · 将记入<b>审计日志</b>（demo 不落库）。封停 / kill 解体 / 封卡均可事后追溯。</div></div>`:''}
+    ${extra}
+    <div class="modal-actions"><button class="btn ghost" onclick="closeOp()">取消</button>
+    <button class="btn ${cfg.danger?'danger':'primary'}" onclick="commitOp()">${cfg.danger?'确认执行':'确定'}</button></div>`;
+  $('#opScrim').classList.add('show');
+}
+function closeOp(){$('#opScrim').classList.remove('show');pendingOp=null;}
+function commitOp(){
+  const {op,ids,kind}=pendingOp, cfg=(kind==='card'?COPS:OPS)[op];
+  if(cfg.needs==='confirm2'||cfg.needs==='admin'){if(!$('#opChk').checked){toast('请先勾选确认框','warn');return;}}
+  let extra=null;
+  if(cfg.needs==='release_id'){extra=$('#opInput').value.trim();
+    const ok=ids.length===1?extra===DATA.find(x=>x.id===ids[0]).release:ids.some(id=>DATA.find(x=>x.id===id).release===extra);
+    if(!ok){toast('release_id 不匹配，已拦截（防误伤）','bad');return;}}
+  if(cfg.needs==='datetime'){extra=$('#opInput').value;if(!extra){toast('请选择时间','warn');return;}}
+  kind==='card'?applyCardOp(op,ids,extra):applyOp(op,ids,extra);
+  closeOp();
+}
+function applyOp(op,ids,extra){
+  ids.forEach(id=>{const d=DATA.find(x=>x.id===id);if(!d)return;
+    if(op==='trust'){d.stage='stable';d.authorized=true;d.trust=Math.max(d.trust,82);d.risk=Math.max(2,d.risk-20);d.a2='feed';d.popup='none';d.suspect=false;d.lease='长租约 30天';d.leaseLeft=30;}
+    if(op==='suspect'){d.suspect=!d.suspect;d.risk=Math.min(100,Math.max(0,d.risk+(d.suspect?18:-18)));}
+    if(op==='ban'){d.banned=true;d.a2='sand';d.popup='none';d.anomaly='管理员封停';}
+    if(op==='killpopup'){d.popup='none';}
+    if(op==='authtime'){d.authorized=true;}
+  });
+  if(op==='killdis'){DATA=DATA.filter(d=>!ids.includes(d.id));ids.forEach(i=>selected.delete(i));if(ids.includes(expandedId))expandedId=null;}
+  const m={trust:'已设为信任（稳定+长租）',suspect:'可疑标记已切换',ban:'已封停 → A2 散沙',killpopup:'已下发 kill 弹窗指令',killdis:'已解体（撤 A2 + 不续命）',authtime:'授权时间已更新',unbind:'已解绑（wxid+device）'};
+  toast(`（demo 模拟）${m[op]}：${ids.length} 台`,op==='trust'?'ok':OPS[op].danger?'bad':'ok');
+  syncBatch();renderAll();
+}
+function applyCardOp(op,ids,extra){
+  ids.forEach(id=>{const c=CARDS.find(x=>x.id===id);if(!c)return;
+    if(op==='cardban'){c.status='banned';c.remaining='—';}
+    if(op==='cardexpiry'){c.expiry=extra.slice(0,10);c.remaining=Math.ceil((new Date(extra)-new Date())/86400000);if(c.status==='expired'&&c.remaining>0)c.status='active';}
+    if(op==='cardunbind'){c.boundCount=0;c.boundDevices=[];c.boundWxid='—';c.stage='—';}
+    if(op==='cardreissue'){c.note=(c.note||'')+' · 已补发';}
+  });
+  const m={cardban:'已封卡',cardexpiry:'到期时间已更新',cardunbind:'已解绑设备',cardreissue:'已补发新卡'};
+  toast(`（demo 模拟）${m[op]}：${ids.length} 张卡`,COPS[op].danger?'bad':'ok');
+  selectedCards.clear();syncBatch();renderAll();
+}
+
+/* ============================================================ 信任分明细 ============================================================ */
+let expandedId=null;
+function toggleExpand(id){expandedId=(expandedId===id?null:id);renderTable();}
+function collapse(){expandedId=null;renderTable();}
+function gate(d){
+  if(d.banned)return {key:'banned',label:'已封停',ready:false,cls:'b'};
+  if(d.popup==='dissolve'||(!d.authorized&&!d.paid&&d.age>=24&&!SHADOW_STAGES.includes(d.stage)))return {key:'dissolve',label:'超时·停供官方身份',ready:false,cls:'b'};
+  if(SHADOW_STAGES.includes(d.stage))return {key:'shadow',label:'影子期·默不作声',ready:true,cls:'h'};
+  if(d.authorized)return {key:'authorized',label:'已授权·长期开',ready:true,cls:''};
+  if(d.paid&&!d.online)return {key:'paid',label:'付费断网宽限',ready:true,cls:''};
+  if(d.age<1)return {key:'fresh',label:'首装宽限',ready:true,cls:''};
+  if(d.age<2)return {key:'soft',label:'软引流·可关',ready:true,cls:'w'};
+  return {key:'login',label:'登录砸门·关不掉',ready:true,cls:'w'};
+}
+function hbPhase(d){return ({new:['密集','2–3min'],building:['回落','10–30min'],stable:['稳定','1–2h(封顶6h)'],honeypot:['嫌疑','10min'],tampered:['嫌疑','10min']})[d.stage]||['—','—'];}
+function conn(d){return (0.10+(d.seen%5)*0.03+(SHADOW_STAGES.includes(d.stage)?0.12:0)).toFixed(2);}
+function leaseTotal(d){const m=d.lease&&d.lease.match(/(\d+)\s*天/);return m?+m[1]:(d.lease&&d.lease.indexOf('30')>=0?30:7);}
+function seg(flex,txt,cls,mk){return `<div class="seg ${cls||''}" style="flex:${flex}">${txt}${mk!=null?`<span class="mk" style="left:${mk}%"></span>`:''}</div>`;}
+function track(label,sub,segs,meta){return `<div class="track"><div class="tl">${label}${sub?`<span class="sub2">${sub}</span>`:''}</div><div><div class="segbar">${segs}</div><div class="tmeta">${meta}</div></div></div>`;}
+function gateTrack(d){
+  const g=gate(d);
+  /* 状态1：已授权 / 付费 → 长期开，不走时间闸、不倒计时 */
+  if(g.key==='authorized'||g.key==='paid'){
+    return track('防封授权闸 A2','按状态·非倒计时',
+      seg(1,'长期租约 · 长期开（已授权 / 付费 · 维持心跳自动续长租）','cur'),
+      `isAntiBanReady=<b style="color:var(--stable)">true</b> · 不受时间闸 · 租约逐步升长 ＝ 信任正常 <span class="grade">设计only</span>`);
+  }
+  /* 状态3：被标记（篡改/蜜罐）→ 租约暗号：永远短租·从不升长；服务器默不作声、无明面开关；到期不续命（不画"解体倒计时"） */
+  if(g.key==='shadow'){
+    return track('防封授权闸 A2','租约暗号 / 非倒计时',
+      seg(2,'短租7天','h')+seg(2,'短租7天','cur h')+seg(2,'短租7天','h')+seg(3,'<span style="opacity:.45">长租约30天 · 永不发放</span>',''),
+      `永远<b>短租·从不升长</b>（租约暗号）· SO 据租约形态<b>本地自悟被改</b> · 无明面 isBanned 可 hook/可删 · 到期<b>不续命</b> → 散沙 → 秋后算账 · 服务器默不作声仅审计 <span class="grade">设计only · DESIGN §4A.6</span>`);
+  }
+  /* 状态2：白嫖未授权 → 时间闸（措辞不用"解体/自爆"：超时＝停供官方身份 → 宿主判非官方 → 平台封） */
+  const a=Math.min(d.age,26),ci=a<1?0:a<2?1:a<24?2:3,lohi=[[0,1],[1,2],[2,24],[24,26]],p=Math.max(0,Math.min(100,((a-lohi[ci][0])/(lohi[ci][1]-lohi[ci][0]))*100));
+  const lbl=['0–1h 首装(开)','1–2h 软引流(可关)','2–24h 登录砸门(关不掉·A2仍开)','超时·停供官方身份'],cc=['','w','w','b'];
+  const segs=[1,1,11,2].map((f,i)=>seg(f,lbl[i],i===ci?'cur '+cc[i]:'',i===ci?p:null)).join('');
+  const near=g.key==='fresh'?`距软引流 ${Math.max(0,Math.round((1-d.age)*60))}m · A2开`:g.key==='soft'?`距登录砸门 ${Math.max(0,Math.round((2-d.age)*60))}m · A2开`:g.key==='login'?`距停供 ${Math.max(0,Math.round(24-d.age))}h · A2仍开`:`已停供官方身份 → 宿主判非官方 → 平台封（模块不自爆，由宿主侧判定）`;
+  const ready=g.key==='dissolve'?'<b style="color:var(--bad)">false</b>':'<b style="color:var(--stable)">true</b>';
+  return track('防封授权闸 A2','白嫖时间闸',segs,`当前 age≈<b>${d.age}h</b> · ${near} · isAntiBanReady=${ready} <span class="grade">设计only</span>`);
+}
+function buildDetail(d){
+  const g=gate(d),sm=STAGES[effStage(d)],ph=hbPhase(d),sig=d.cert==='18c867f0';
+  const lt=leaseTotal(d),lp=d.leaseLeft>0?Math.max(0,Math.min(100,(lt-d.leaseLeft)/lt*100)):100;
+  const privUsed=d.online?6:38,privP=Math.min(100,privUsed/72*100),isSh=SHADOW_STAGES.includes(d.stage);
+  const score=[['新设备期（激活）',Math.min(100,d.seen>0?78:40)],['建立信任期（连续）',Math.min(100,Math.round(d.age*1.6))],['稳定期（存活）',Math.min(100,Math.round(d.age/2))]];
+  return `
+  <div class="detail-head">
+    <span class="badge b-${sm.cls}">${sm.emoji}${sm.name}</span>
+    <h3 class="mono">${d.id}</h3>
+    <span class="tag-form ${d.form==='official'?'tag-official':'tag-coexist'}">${d.form==='official'?'官替':'共存'} ${d.release}</span>
+    <span class="sub">${esc(d.wxid)} · ${esc(d.region)} · cert ${d.cert}${sig?'':' · 不符'}</span>
+    <button class="dclose" onclick="event.stopPropagation();collapse()">收起 ×</button>
+  </div>
+  <div class="detail-grid">
+    <div class="dblock span">
+      <div class="bt">多轨时间轴 — 每段进度 / 剩余 / 状态（锚定 配方卡_SPEC_v1）</div>
+      ${gateTrack(d)}
+      ${track('隐私离线宽限','独立闸·不连坐',seg(1,'72h 离线宽限（会话/通讯录/朋友圈/搜索）','cur',privP),`已用 <b>${privUsed}h</b> / 剩 <b>${72-privUsed}h</b> · 在功能界面弹 · 与 A2 各自计时 <span class="grade">L2 已实现</span>`)}
+      ${track('心跳',null,seg(2,'密集2–3m',d.stage==='new'?'cur':'')+seg(4,'回落10–30m',d.stage==='building'?'cur':'')+seg(5,'稳定1–2h(封顶6h)',d.stage==='stable'?'cur':'')+seg(2,'嫌疑10m',isSh?'cur w':''),`相位 <b>${ph[0]}</b> · 节奏 ${ph[1]} · 上次 ${esc((d.hb||'').slice(11))} · CONN <b>${conn(d)}</b>(&lt;0.5) <span class="grade">设计only/L2</span>`)}
+      ${track('租约',null,seg(4,'短租约 7天',lt<=7?'cur':'',lt<=7?lp:null)+seg(6,'长租约 30天',lt>7?'cur':'',lt>7?lp:null),`${esc(d.lease)} · 剩 <b>${d.leaseLeft>0?d.leaseLeft+'天':'—'}</b> · 升档差 seen≥3/存活≥48h/trust≥60 <span class="grade">服务器判·红线#1</span>`)}
+      ${isSh?track('影子期','7天不续命',seg(1,(d.stage==='tampered'?'触发线C 红线·永久标签':'触发线A 蜜罐')+' → 到期不续命','cur h',Math.max(0,Math.min(100,(7-d.leaseLeft)/7*100))),`命中 ${esc(d.hitAt||'—')} · 剩 <b>${d.leaseLeft}天</b> · 暗记+影子租约+到期不续命 · 默不作声仅审计 <span class="grade">设计only</span>`):track('影子期','未命中',seg(1,'未进入（触发线A蜜罐/C红线命中时出现 · 7天不续命）',''),`正常 · 未触发 <span class="grade">—</span>`)}
+      ${d.paid?track('付费断网宽限','曾授权',seg(1,'7天（断网不误杀付费用户）','cur',d.online?6:60),`${d.online?'在线 · 未启用':'断网中 · 计时'} <span class="grade">设计only</span>`):''}
+      <div class="tl-legend"><span><span class="sdot" style="background:var(--accent2)"></span>当前段</span><span><span class="sdot" style="background:var(--honey)"></span>需注意/影子</span><span><span class="sdot" style="background:var(--bad)"></span>停供/改包</span></div>
+    </div>
+    <div class="dblock">
+      <div class="bt">信任 / 评分明细 — 服务器算分（红线#1，客户端只上报）</div>
+      ${score.map(s=>`<div class="track" style="grid-template-columns:130px 1fr;margin-bottom:8px"><div class="tl">${s[0]}</div><div><div class="segbar" style="height:15px"><div class="seg cur ${s[1]>=60?'':'w'}" style="flex:1">${s[1]}</div><span class="mk" style="left:60%;background:#fff;opacity:.5"></span></div></div></div>`).join('')}
+      <dl class="dkv" style="margin-top:8px"><dt>信任分</dt><dd>${d.trust} / 及格线 ${passLine}%（占位·待 KPI 基线 F-22）</dd><dt>风险分</dt><dd><span class="risk ${riskCls(d.risk)}">${d.risk}</span></dd><dt>存活</dt><dd>${d.age}h · seen ${d.seen}</dd><dt>首装/心跳</dt><dd class="mono sub">${d.first} / ${d.hb}</dd></dl>
+    </div>
+    <div class="dblock span">
+      <div class="bt">操作 — 仅 6 项（封停 / kill 弹窗 / kill 解体 二次确认 + 审计 · demo 不落库）</div>
+      <div class="dops">
+        <button class="btn" onclick="event.stopPropagation();rowOp('trust','${d.id}')">设为信任</button>
+        <button class="btn" onclick="event.stopPropagation();rowOp('suspect','${d.id}')">${d.suspect?'恢复正常':'标可疑'}</button>
+        <button class="btn" onclick="event.stopPropagation();rowOp('authtime','${d.id}')">改授权时间</button>
+        <button class="btn danger" onclick="event.stopPropagation();rowOp('ban','${d.id}')">封停</button>
+        <button class="btn danger" onclick="event.stopPropagation();rowOp('killpopup','${d.id}')">kill 弹窗</button>
+        <button class="btn danger" onclick="event.stopPropagation();rowOp('killdis','${d.id}')">kill 解体</button>
+      </div>
+    </div>
+  </div>`;
+}
+$('#tdScrim').addEventListener('click',e=>{if(e.target.id==='tdScrim')e.currentTarget.classList.remove('show');});
+$('#opScrim').addEventListener('click',e=>{if(e.target.id==='opScrim')closeOp();});
+
+/* ============================================================ 阈值滑块 + 柱状 ============================================================ */
+function distribution(p){const c={new:0,building:0,stable:0,honeypot:0,tampered:0};
+  DATA.forEach(d=>{let st=d.stage;if(st==='building'||st==='stable')st=d.trust>=p?'stable':'building';c[st]++;});return c;}
+function chartCol(k,s,count,max){return `<div class="col"><div class="cn" style="color:var(--${s.cls==='new'?'new':s.cls==='building'?'build':s.cls==='stable'?'stable':s.cls==='honeypot'?'honey':'tamper'})">${count}</div><div class="bar2 ${s.cls}" style="height:${(count/max*100)||2}%"></div><div class="nm">${s.emoji}<br>${s.name}</div></div>`;}
+function renderChart(p,commit){const c=distribution(p),max=Math.max(1,...Object.values(c));
+  $('#chart').innerHTML=Object.entries(STAGES).map(([k,s])=>chartCol(k,s,c[k],max)).join('');
+  $('#thPreview').innerHTML=`及格线 = <b>${p}%</b> → 稳定期 <b style="color:var(--stable)">${c.stable}</b> 台 · 建立信任期 <b style="color:var(--build)">${c.building}</b> 台`+(commit?' · <span style="color:var(--stable)">已落库</span>':' <span class="sub">（拖动预览，松手落库）</span>');}
+$('#passSlider').addEventListener('input',e=>{const p=+e.target.value;$('#passVal').textContent=p;renderChart(p,false);});
+$('#passSlider').addEventListener('change',e=>{passLine=+e.target.value;renderDevKpi();renderTable();renderShadow();renderVersions();renderChart(passLine,true);toast(`（demo 模拟）及格线 ${passLine}% 已落库 — 仅前端，不写服务器`,'ok');});
+
+/* ============================================================ 影子观察 ============================================================ */
+function renderShadow(){const rows=DATA.filter(d=>SHADOW_STAGES.includes(d.stage));
+  $('#shadowBodyRows').innerHTML=rows.length?rows.map(d=>{const sm=STAGES[d.stage];
+    return `<tr><td><span class="mono">${d.id}</span><div class="sub">${esc(d.wxid)}</div></td>
+      <td><span class="tag-form ${d.form==='official'?'tag-official':'tag-coexist'}">${d.form==='official'?'官替':'共存'}</span> <span class="sub">${d.release}</span></td>
+      <td><span class="badge b-${sm.cls}">${sm.emoji} ${sm.name}</span></td>
+      <td><span class="risk ${riskCls(d.risk)}">${d.risk}</span></td>
+      <td>${esc(d.shadowState||'—')}</td><td class="sub">${esc(d.lease)}</td><td class="sub">${esc(d.hitAt||'—')}</td></tr>`;}).join(''):`<tr><td colspan="7" class="sub" style="text-align:center;padding:18px">暂无影子设备</td></tr>`;}
+let shadowOpen=true;
+function toggleShadow(){shadowOpen=!shadowOpen;$('#shadowBody').classList.toggle('hide',!shadowOpen);$('#shadowToggle').classList.toggle('closed',!shadowOpen);}
+
+/* ============================================================ 阶段图例 ============================================================ */
+function renderLegend(){$('#legend').innerHTML=Object.entries(STAGES).map(([k,s])=>`<div class="lg"><span class="badge b-${s.cls}">${s.emoji} ${s.name}</span>
+  <div class="hovercard"><h4>${s.emoji} ${s.name}</h4><dl class="row4"><dt>含义</dt><dd>${s.desc}</dd><dt>心跳节奏</dt><dd>${s.hb}</dd><dt>典型租约</dt><dd>${s.lease}</dd></dl>
+  <div class="nxt">${k==='new'?'激活 + 存活 → 进建立信任期':k==='building'?'seen≥3 · 存活≥48h · trust≥60 → 稳定期':k==='stable'?'维持心跳即续长租约':k==='honeypot'?'影子期过期 → 转引流（不告警）':'永久标签 · 到期不续命（仅后台可转正）'}</div></div></div>`).join('');}
+
+/* ============================================================ 卡密 KPI / 筛选 / 表 ============================================================ */
+function renderCardKpi(){
+  const by=s=>CARDS.filter(c=>c.status===s).length;
+  const active=by('active'), total=CARDS.length, actRate=Math.round(active/total*100);
+  const soon=CARDS.filter(c=>typeof c.remaining==='number'&&c.remaining>0&&c.remaining<7).length;
+  const todayAct=CARDS.filter(c=>typeof c.activate==='string'&&c.activate.startsWith('2026-06-23')).length;
+  $('#card-kpi').innerHTML=[
+    statCard('卡密总数',total,'全部批次','accent'),
+    statCard('未激活',by('inactive'),'待发/待用','v-new'),
+    statCard('已激活',active,`占 ${actRate}%`,'v-ok'),
+    statCard('已封停',by('banned'),'盗用/超限','v-bad'),
+    statCard('已过期',by('expired'),'待续费','v-warn'),
+    statCard('激活率',actRate+'%',`${active}/${total}`,''),
+    statCard('7天内到期',soon,'需提醒续费',soon>0?'v-warn':''),
+    statCard('今日激活',todayAct,'2026-06-23','v-ok'),
+  ].join('');
+}
+function renderCardFilters(){const rels=[...new Set(CARDS.map(c=>c.release))].sort();
+  $('#cf-release').innerHTML='<option value="">全部 release</option>'+rels.map(r=>`<option value="${r}">${r}</option>`).join('');}
+function resetCardFilters(){$('#cf-status').value='';$('#cf-release').value='';$('#cf-search').value='';renderCards();}
+function filteredCards(){const st=$('#cf-status').value,rel=$('#cf-release').value,q=$('#cf-search').value.trim().toLowerCase();
+  return CARDS.filter(c=>{if(st&&c.status!==st)return false;if(rel&&c.release!==rel)return false;
+    if(q&&!(`${c.id} ${c.customer} ${c.note} ${c.boundWxid} ${c.release}`.toLowerCase().includes(q)))return false;return true;});}
+function renderCards(){
+  const rows=filteredCards();
+  $('#cardBody').innerHTML=rows.map(c=>{const cs=CSTAT[c.status];const sm=STAGES[c.stage];
+    const rem=typeof c.remaining==='number'?(c.remaining<=0?`<span class="badge cs-expired">已过期</span>`:`<b style="color:${c.remaining<7?'var(--bad)':'var(--ink)'}">${c.remaining}天</b>`):'<span class="sub">—</span>';
+    return `<tr data-cid="${c.id}">
+      <td data-label=""><input type="checkbox" ${selectedCards.has(c.id)?'checked':''} onchange="toggleCardSel('${c.id}',this.checked)"></td>
+      <td data-label="卡密"><span class="mono">${esc(c.id)}</span></td>
+      <td data-label="客户">${esc(c.customer)}<div class="sub">${esc(c.note||'')}</div></td>
+      <td data-label="状态"><span class="badge ${cs.cls}">${cs.t}</span></td>
+      <td data-label="版本"><span class="tag-form ${c.form==='official'?'tag-official':'tag-coexist'}">${c.form==='official'?'官替':'共存'}</span><div class="sub">${c.release}</div></td>
+      <td data-label="绑定">${c.boundCount}/${c.boundMax}${c.boundCount>0?` <span class="linklike" onclick="viewBoundDevices('${c.id}')">查看</span>`:''}</td>
+      <td data-label="wxid"><span class="mono sub">${esc(c.boundWxid)}</span></td>
+      <td data-label="激活">${ttime(c.activate)}</td>
+      <td data-label="到期">${c.expiry==='—'?'<span class="sub">—</span>':c.expiry}</td>
+      <td data-label="剩余">${rem}</td>
+      <td data-label="阶段">${sm?`<span class="badge b-${sm.cls}">${sm.emoji}${sm.name}</span>`:'<span class="sub">—</span>'}</td>
+      <td data-label="" style="text-align:center"><button class="actbtn" onclick="showCardMenu(event,'${c.id}')">⋯</button></td>
+    </tr>`;}).join('');
+  const fset=$('#cf-status').value||$('#cf-release').value||$('#cf-search').value;
+  $('#cardCount').textContent=`显示 ${rows.length} / ${CARDS.length} 张卡${fset?'（已筛选）':''}`;
+  $('#checkAllCards').checked=rows.length>0&&rows.every(c=>selectedCards.has(c.id));
+  $('#tabc-card').textContent=CARDS.length;
+}
+function viewBoundDevices(cardId){const c=CARDS.find(x=>x.id===cardId);if(!c)return;hideMenu();
+  const ids=c.boundDevices||[];if(!ids.length){toast('该卡密未绑定设备','warn');return;}
+  switchPage('devices');resetFilters();
+  requestAnimationFrame(()=>{let first=null;ids.forEach(id=>{const tr=document.querySelector(`#tbody tr[data-id="${id}"]`);if(tr){tr.classList.add('hi-row');if(!first)first=tr;}});
+    first&&first.scrollIntoView({behavior:'smooth',block:'center'});
+    setTimeout(()=>ids.forEach(id=>{const tr=document.querySelector(`#tbody tr[data-id="${id}"]`);tr&&tr.classList.remove('hi-row');}),2600);});
+  toast(`已定位 ${ids.length} 台绑定设备（高亮）`,'ok');}
+
+/* ============================================================ 版本状态 ============================================================ */
+function relDist(rel){const c={new:0,building:0,stable:0,honeypot:0,tampered:0};DATA.filter(d=>d.release===rel).forEach(d=>c[effStage(d)]++);return c;}
+function formDist(form){const c={new:0,building:0,stable:0,honeypot:0,tampered:0};DATA.filter(d=>d.form===form).forEach(d=>c[effStage(d)]++);return c;}
+function distBarLine(c){const tot=Object.values(c).reduce((a,b)=>a+b,0)||1;
+  return `<div class="vbarline">${Object.entries(STAGES).map(([k,s])=>c[k]?`<span class="bar2 ${s.cls}" style="width:${c[k]/tot*100}%" title="${s.name} ${c[k]}"></span>`:'').join('')}</div>`;}
+function renderVerKpi(){
+  const rels=[...new Set(DATA.map(d=>d.release))];
+  const off=DATA.filter(d=>d.form==='official').length, co=DATA.length-off;
+  const ano=DATA.filter(d=>d.anomaly&&d.anomaly!=='—').length;
+  $('#ver-kpi').innerHTML=[
+    statCard('release 数',rels.length,'官替+共存','accent'),
+    statCard('官替设备',off,'占 '+Math.round(off/DATA.length*100)+'%','v-build'),
+    statCard('共存设备',co,'占 '+Math.round(co/DATA.length*100)+'%','v-stable'),
+    statCard('总设备',DATA.length,'全 release',''),
+    statCard('异常设备',ano,'跨 release','v-warn'),
+  ].join('');
+}
+function renderVersions(){
+  renderVerKpi();
+  // 形态汇总
+  $('#formSummary').innerHTML=[['official','官替','tag-official'],['coexist','共存','tag-coexist']].map(([f,label,tg])=>{
+    const c=formDist(f),tot=DATA.filter(d=>d.form===f).length;
+    return `<div class="vcard"><h3><span class="tag-form ${tg}">${label}</span> <span class="sub">${tot} 台</span></h3>
+      <div class="meta">阶段分布</div>${distBarLine(c)}
+      <div class="vchart" style="margin-top:10px">${Object.entries(STAGES).map(([k,s])=>chartCol(k,s,c[k],Math.max(1,...Object.values(c)))).join('')}</div></div>`;}).join('');
+  // 按 release
+  const rels=[...new Set(DATA.map(d=>d.release))].sort();
+  $('#verGrid').innerHTML=rels.map(r=>{const ds=DATA.filter(d=>d.release===r),c=relDist(r),form=ds[0].form;
+    const act=ds.filter(activated).length,ano=ds.filter(d=>d.anomaly&&d.anomaly!=='—').length;
+    return `<div class="vcard"><h3>${r} <span class="tag-form ${form==='official'?'tag-official':'tag-coexist'}">${form==='official'?'官替':'共存'}</span></h3>
+      <div class="meta">${ds.length} 台 · 激活率 ${Math.round(act/ds.length*100)}% · 异常 ${ano}</div>
+      ${distBarLine(c)}
+      <div class="vchart" style="margin-top:10px">${Object.entries(STAGES).map(([k,s])=>chartCol(k,s,c[k],Math.max(1,...Object.values(c)))).join('')}</div></div>`;}).join('');
+  $('#tabc-ver').textContent=[...new Set(DATA.map(d=>d.release))].length;
+}
+
+/* ============================================================ 页切换 / 导航 / 时钟 ============================================================ */
+function switchPage(p){currentPage=p;
+  $$('.tab').forEach(t=>t.classList.toggle('on',t.dataset.page===p));
+  $$('.nav a[data-page]').forEach(a=>a.classList.toggle('on',a.dataset.page===p));
+  ['devices','cards','versions'].forEach(x=>$('#page-'+x).classList.toggle('hide',x!==p));
+  hideMenu();hidePop();syncBatch();window.scrollTo({top:0,behavior:'smooth'});}
+$$('.nav a[data-page]').forEach(a=>a.addEventListener('click',()=>switchPage(a.dataset.page)));
+$$('.nav a[data-jump]').forEach(a=>a.addEventListener('click',()=>{switchPage('devices');setTimeout(()=>document.getElementById(a.dataset.jump)?.scrollIntoView({behavior:'smooth',block:'start'}),60);}));
+$('#checkAll').addEventListener('change',e=>{const on=e.target.checked;filtered().forEach(d=>on?selected.add(d.id):selected.delete(d.id));syncBatch();renderTable();});
+$('#checkAllCards').addEventListener('change',e=>{const on=e.target.checked;filteredCards().forEach(c=>on?selectedCards.add(c.id):selectedCards.delete(c.id));syncBatch();renderCards();});
+['f-release','f-form'].forEach(id=>$('#'+id).addEventListener('change',()=>{selected.clear();syncBatch();renderTable();}));
+$('#f-search').addEventListener('input',renderTable);
+['cf-status','cf-release'].forEach(id=>$('#'+id).addEventListener('change',()=>{selectedCards.clear();syncBatch();renderCards();}));
+$('#cf-search').addEventListener('input',renderCards);
+
+function clock(){$('#clock').textContent=new Date().toLocaleTimeString('zh-CN',{hour12:false});}
+setInterval(clock,1000);clock();
+function toast(msg,type='ok'){const el=document.createElement('div');el.className='toast '+type;el.innerHTML=msg;$('#toasts').appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transform='translateX(20px)';setTimeout(()=>el.remove(),250);},3200);}
+
+function renderAll(){renderDevKpi();renderTable();renderChart(passLine,false);renderShadow();renderCardKpi();renderCards();renderVersions();syncBatch();}
+function boot(){renderFilters();renderCardFilters();renderLegend();renderAll();switchPage('devices');}
+boot();
+</script>
+</body>
+</html>

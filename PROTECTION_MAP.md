@@ -149,7 +149,7 @@
 - [x] miyou-server 心跳端点：授权码 → token → Ed25519 signed envelope；字段伪装 `K2i_m` / `k,n` 下发；**当前 `android_8071` 已用 `prod_server_lock` 把服务器 `S_rel` 折进 `registry_cipher`，线上 unwrap 后 `recipeOk=true`，见 §10.6**
 - [x] release 严格模式下 `isActive()` 依赖「配方解开成功」：`StateMachine.isActive()` 已叠加 `GuardRuntime.isSensitiveConfigReady()`；无有效 server seed / registry scatter 时敏感隐藏链静默失效（debug/dev 仍保留诊断 fallback）。
 - [ ] **离线宽限实测**：拔网后正版在宽限期内正常；超期才降级；重连自愈
-- [ ] **付费客户不误伤实测**：飞行模式 24/72h 内不出现关不掉弹窗
+- [ ] **付费客户不误伤实测**：飞行模式 7天（付费断网宽限）内不出现关不掉弹窗
 - [ ] KPI：装 SO 前后跑 `frida_stats`，对比 `verifiedbootstate` 等无超红线
 
 ### Phase 2（补组合拳+漏斗）
@@ -219,7 +219,7 @@ StateMachine.isActive()                // 取中央总闸
 ```
 
 - **黑名单（碰到就停）**：每功能自造小配方/小网关/小授权；新功能 hook 类名另建 `xxx_pack`（只准往 `registry_pack` 补字段）；Java 侧散落 `decrypt_config`/schema/key/risk 分支；多份弹窗策略；遍地写 if 判风险。
-- registry 现就 **4 条大动脉**：`conv.list` / `moments.feed` / `contact.address` / `search.gateway`，不是每个小功能一条。删 fallback 时**整条核账整条删，不抠碎**。
+- registry 现就 **4 条大动脉**：`conv.list` / `moments.feed` / `contact.address` / `search.gateway`，不是每个小功能一条。删 fallback 时**整条核账整条删，不抠碎**；脆锚点（如 `search.gateway` 搜索框）靠多锚点冗余 + L1 复验稳住，加密只防搜名、稳不住锚点。
 
 ### 10.2 kill↔funnel 拆两个独立闸（拍板）
 
@@ -256,6 +256,8 @@ StateMachine.isActive()                // 取中央总闸
 - **更根本**：`derive_registry_key()` 全程离线可推（key 三段常量在 SO + cert SHA-256，无服务器材料）→ 动态 dump / 自跑 key 仍可全取，删明文只挡 jadx 静态、挡不住动态。真锁＝服务器信封（Phase 1D-server）。
 
 → 与 §10.1「拆大动脉、不碎拆」/「够用就停」一致：**A close = 冻结**，待 v2 全字段 registry 化 + 真锁一并兑现；`registry_8071.json` 的 contact_fields/l1_methods/e56 等「债」同期补。
+
+> **设计思路（非铁律 · 防接手 AI 误读「没全加密 = 漏做」）**：配方**不全加密是有意取舍，不是漏做**。① 真锁价值在锁**大动脉**（4 条：conv/moments/contact/search.gateway）+ 服务器种子，**不是「加密了几个类名」**（§10.1 粗粒度）。② **除粒度外，有些 hook 点本身很脆，故意留明文 / 不迁**——典型 = **搜索框（SearchFilter）**：真锚点随官方包版本漂移、强迁 registry 极易踩死路径（见安全官 skill「ss4.p 教训」）→ 留明文是**降风险**的设计选择。判「真锁完成度」看大动脉 + 服务器种子 + fail-closed，**别数明文类名个数**。
 
 ---
 

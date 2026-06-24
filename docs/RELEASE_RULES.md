@@ -4,7 +4,7 @@
 
 ## 危险通告 / 一键停用（安全兜底）
 
-**触发场景**：封号潮 / 检测密度暴增 / 新版微信未适配 → 必须能远程拔插
+**触发场景**：大面积账号异常 / 检测密度暴增 / 新版微信未适配 → 必须能远程拔插
 **机制**：
 - 客户端启动拉 miyou-server `cs_url` 的危险通告接口
 - 接口返回字段 `kill_switch: true|false`
@@ -21,7 +21,7 @@
 
 ## 商业模式（v2 接入）
 
-- **小众高端客户** + 隐私优先 + **不要求量大**（避免泛滥触发封号阈值）
+- **小众高端客户** + 隐私优先 + **不要求量大**（避免泛滥触发账号异常阈值）
 - **每客户独立 seed/签名**（蜜罐溯源 + 反聚类）
 - **未授权引导**：校验未通过 → 提示独家功能 → 引导至官方购买渠道
 - **授权按时间**（miyou-server `cs_url` + `shop_url` + 设备邀请码现成）
@@ -108,7 +108,7 @@ python tools/gen_registry_cipher.py --recipe release/secrets/<release_id>.json
 ```
 
 3. 编对应 flavor：官替编 official，共存编 coexist。
-4. LSPatch 注入对应宿主 APK：官替用原版微信 APK，共存用已改包名克隆 APK。
+4. LSPatch 重新打包进对应宿主 APK：官替用原版微信 APK，共存用已改包名克隆 APK。
 
 **C. 服务器上传配方 / 登记发行线**
 
@@ -205,7 +205,7 @@ cert_sha256_source: 从 keystore/签名自动读取，不手写
 
 | 参数 | 作用 |
 |------|------|
-| `guardWxPkg` | 注入 C++ `GUARD_EXPECTED_PACKAGE`，供 anti_tamper 判断宿主包 |
+| `guardWxPkg` | 写入 C++ `GUARD_EXPECTED_PACKAGE`，供 anti_tamper 判断宿主包 |
 | Java 宿主包白名单 | `ModuleMain` 必须识别目标包名和 `:push` 进程 |
 | Xposed scope | 独立模块模式下 scope 必须指向目标宿主包 |
 | `release_id` | 服务端发行线区分官替 / 共存 |
@@ -216,7 +216,7 @@ cert_sha256_source: 从 keystore/签名自动读取，不手写
 
 - C++ 包名注入已预留：`-PguardWxPkg=...`（CMake `-DGUARD_WX_PKG` → `GUARD_EXPECTED_PACKAGE`）。
 - Java 宿主包白名单已随 `BuildConfig.GUARD_WX_PKG` 区分 official/coexist；共存版进程识别不再写死 `com.tencent.mm`。
-- ⚠️ `GUARD_RELEASE_ID` 仍在 `AppConfig` 硬编码为 `android_8071`，尚未随 flavor 注入。因此当前共存版即使宿主包名是 `com.tencent.mn`，客户端仍会上报 `android_8071`，不会真正走 `android_8071_coexist` 发行线。
+- ⚠️ `GUARD_RELEASE_ID` 仍在 `AppConfig` 硬编码为 `android_8071`，尚未随 flavor 写入。因此当前共存版即使宿主包名是 `com.tencent.mn`，客户端仍会上报 `android_8071`，不会真正走 `android_8071_coexist` 发行线。
 - **下次新版本发版前第一步**：先把 `GUARD_RELEASE_ID` 改成 `BuildConfig.GUARD_RELEASE_ID`，并在 official/coexist flavor 分别注入自己的 release_id；否则服务器版本总账会继续按 `android_8071` 聚合。
 - 共存版如果由 MT 管理器等工具改包名，仍必须把最终包名同步给模块构建链；下一步还必须同步 `GUARD_RELEASE_ID`，不能只改 C++ / 宿主包名。
 
@@ -288,7 +288,7 @@ scatter 排查顺序：
 1. 选择版本线：`官替版` 或 `共存版`。
 2. AI 读取对应包档案，确认 `packageName`、keystore、`versionCode`、`release_id`。
 3. AI 自动读取签名证书 SHA-256，重新生成 encrypted registry。
-4. AI 注入宿主包名到 Java / scope / C++。
+4. AI 写入宿主包名到 Java / scope / C++。
 5. AI 构建并使用对应 keystore 签名 APK。
 6. AI 装机或交给用户装机验证。
 7. 必须抓到以下日志后才算发布候选：
@@ -314,7 +314,7 @@ scatter 排查顺序：
 **B. 出包（每条发行线各编一次）**
 4. 官替版：`./gradlew :assembleOfficialDebug`（`GUARD_WX_PKG=com.tencent.mm`）。
 5. 共存版：`./gradlew :assembleCoexistDebug`（`GUARD_WX_PKG=com.tencent.mn`）。
-6. LSPatch 注入：`java -jar 02_tools_工具/lspatch.jar <宿主APK> -m <对应flavor模块APK> -l 2 -k signing/guard-native-debug.keystore android androiddebugkey android -o 02_tools_工具/lspatch_out -f`
+6. LSPatch 重新打包：`java -jar 02_tools_工具/lspatch.jar <宿主APK> -m <对应flavor模块APK> -l 2 -k signing/guard-native-debug.keystore android androiddebugkey android -o 02_tools_工具/lspatch_out -f`
    - 官替宿主 = 微信原版 APK；共存宿主 = 改好包名的克隆 APK（`com.tencent.mn`）。
    - 模块签名证书（guardFixed）= registry 的 `_CERT_SHA256`；LSPatch 外层签名不影响 registry 解密（`bindSigningCert` 读模块自身证书）。
    - 校验：日志 `Embedding modules - com.ghost.assist`；可拆包比对内嵌 `libguardcore.so` 哈希 = 重编模块 SO。

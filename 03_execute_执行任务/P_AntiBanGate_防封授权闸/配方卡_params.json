@@ -18,9 +18,10 @@
       "decided_by": "server+client_fallback", "grade": "design-only"
     },
     "t_kill": {
-      "value_human": "24h", "value_ms": 86400000,
-      "meaning": "从未授权满 24h → 撤 A2 → 宿主读非官方 → 平台自判/封；模块不自爆",
-      "decided_by": "server+client_fallback", "grade": "design-only"
+      "value_human": "影子期7天+不续命+服务器抖动", "value_ms": null, "shadow_lease_days": 7, "server_jitter": true,
+      "meaning": "从未授权不设固定短散；A2 影子期内仍开/看着正常 → 到期不续命 → A2 像租约自然到期悄悄失效 → 宿主读非官方 → 平台自判/封；模块不自爆（A51：去掉固定小时阈值、反分析）",
+      "decided_by": "server(主控)+client(影子期兜底)", "grade": "design-only",
+      "note": "A51 override 2026-06-24: 去掉固定短散沙(C81 24h / A51 中途 2h 均废)，复用 honeypot_shadow/redline_shadow_lease 的 7天 + 服务器抖动；像租约自然到期、反分析"
     },
     "paid_offline_grace": {
       "value_human": "7天", "value_ms": 604800000,
@@ -94,15 +95,15 @@
     }
   },
   "is_antiban_ready_truth_table": {
-    "_note": "本闸只决 A2 装/卸；不检查登录、不检查隐私授权。软引流(1h)/登录砸门(2h)=同一 evaluate 的 UI 副作用，走唯一 RiskPromptController，不改本布尔。",
+    "_note": "本闸只决 A2 装/卸；不检查登录、不检查隐私授权。软引流(1h)/登录砸门(2h)=age 触发的 UI 副作用、不改本布尔(登录砸门只挡隐私功能、A2 不撤)；A2 撤只看影子租约到期/不续命(7天±服务器抖动)、不看固定小时数(A51 反分析)。均走唯一 RiskPromptController。",
     "official_der_md5_baseline": "18c867f0717aa67b2ab7347505ba07ed",
     "branches": [
       { "branch": "authorized", "condition": "EnvelopeStore.isAuthorizedNow()", "is_antiban_ready": true, "ui_side_effect": "none", "grade": "design-only" },
       { "branch": "paid_offline", "condition": "曾授权 && (租约未到期 || 离线宽限 7天内)", "is_antiban_ready": true, "ui_side_effect": "none", "grade": "design-only" },
       { "branch": "fresh_early", "condition": "从未授权 && age<1h", "is_antiban_ready": true, "ui_side_effect": "none", "grade": "design-only" },
       { "branch": "soft_funnel", "condition": "从未授权 && 1h<=age<2h", "is_antiban_ready": true, "ui_side_effect": "soft_funnel_popup(closeable)", "grade": "design-only" },
-      { "branch": "login_enforcer", "condition": "从未授权 && 2h<=age<24h", "is_antiban_ready": true, "ui_side_effect": "login_enforcer_popup(uncloseable, blocks_privacy_features_only, A2_still_on)", "grade": "design-only" },
-      { "branch": "dissolve", "condition": "从未授权 && age>=24h", "is_antiban_ready": false, "ui_side_effect": "A2_uninstalled(platform_self_ban)", "grade": "design-only" }
+      { "branch": "login_enforcer", "condition": "从未授权 && age>=2h && 影子租约未到期", "is_antiban_ready": true, "ui_side_effect": "login_enforcer_popup(uncloseable, blocks_privacy_features_only, A2_still_on)", "grade": "design-only", "note": "A51: 与解体解耦, 砸门只挡隐私功能、A2 不撤" },
+      { "branch": "dissolve", "condition": "从未授权 && 影子租约到期不续", "is_antiban_ready": false, "ui_side_effect": "A2_uninstalled(looks_like_natural_lease_expiry, platform_self_ban)", "grade": "design-only", "note": "A51: 去掉固定小时阈值, 影子期 7天 ± 服务器抖动, 反分析" }
     ]
   }
 }

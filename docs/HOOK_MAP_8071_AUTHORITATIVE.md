@@ -37,7 +37,7 @@
 
 ### 1. 伪装订位（虚拟定位 / 伪造位置）
 
-> 代号「伪装订位」（避敏感词，§6.8）。E2 装b 模块；按阶段铁律属 v2/v3，本条为**调研结论存档**（注入点 L1 已验，未实装成模块）。
+> 代号「伪装订位」（避敏感词，§6.8）。E2 装b 模块按阶段铁律属 v2/v3，但**注入点 + 选点 UI 已实装装机验证（2026-06-07，见下表 ✅）**。
 
 | 项 | 内容 |
 |------|------|
@@ -52,7 +52,7 @@
 | **LBS SDK（运行时实证存在）** | `com.tencent.map.geolocation.sapp.TencentLocation / TencentLocationListener / TencentLocationManager`；`requestLocationUpdates/onLocationChanged` 本轮未触发（走缓存/分发链，非 SDK 回调）；`getLastKnownLocation()` 已 hook 未命中 |
 | **证伪（旁路，禁重试）** | 消息层坐标候选全部动态证伪：`wy4.a.E/F`、`q2.F`、Intent `kwebmap_slat/lng`（getDoubleExtra 返回默认 -1000=键不存在）。8.0.71 发位置坐标**不走消息层** |
 | **存储（实装时）** | MMKV：开关 + 经纬度（键名 seed 化，§6.7） |
-| **UX 设计（待实装）** | 复用微信原生选点页 `RedirectUI` 选点 → 拦截右上角"发送/保存"读 LatLng 存 MMKV、不发消息（仿 A2/A3 复用原生 UI）；右上角确认方法 + 选中坐标捕获点待补探针 |
+| **UX 设计（已实装）** | 复用微信原生选点页 `RedirectUI` 选点 → 拦截右上角"发送/保存"读 LatLng 存 MMKV、不发消息（仿 A2/A3 复用原生 UI），2026-06-07 装机验证 |
 | **混淆名警告** | `pz0.h` / `n83.g` / `lt5.*` 为 8.0.71 专属混淆名，升版必经 classmap 重查 |
 | **探针** | `tools/probe_loc_send_8071.js`(v1) / `probe_loc_sdk_8071.js`(v2) / `probe_loc_src_8071.js`(v3 栈) / `probe_loc_inject_8071.js`(v4 契约) / `probe_loc_poc_8071.js`(PoC 注入) |
 | **历史竞品锚点（8.0.66 参考）** | `MainEntry.hookLocation` → `MyLocation.getLocation`；`ckSetLocation`；目标类 `lbssdk.service.TencentLocation`；address 反射字段 `r/d/t/u/g/f`；来源 `HOOK_IMPLEMENTATION_ANALYSIS.md` §2.8 |
@@ -283,7 +283,7 @@
 | 3 | 添加密友 UI | ✅ 已完成（ContactImportGuard.launchSelectContact 原生 SelectContactUI，预选+增删一体，与密群同套路） |
 | 8b | 全局搜索联系人 / 群聊密群 / 聊天记录关键词场景 | ✅ P20 收口（`f0.getView` afterHook 主路径，`tz2.p0/u1/s1` 共用；聊天记录经最终渲染层 id 折叠） |
 
-### 需要探针 / Frida 验证（1 项）
+### 已 L1 验证（原「需要探针」· 升版需复验探针）（2 项）
 
 | # | 功能 | 缺什么 |
 |:-:|------|------|
@@ -317,6 +317,6 @@
 | `docs/archive/wechat_8066/HOOK_POINTS.md` | 8066 历史伪代码（仅 diff） |
 | `docs/archive/wechat_8066/HOOK_MAP_V1.md` | v1 规划 DEPRECATED |
 | `refs/FEATURE_MATRIX.md` | 功能 × 状态 × 失败档案矩阵 |
-| `FAILURE_LOG.md` | F-01 ~ F-38 禁止方案铁律（F-36 来电拦截 6 证伪、F-37 防撤回 a2.b→jy0.t.f、F-38 伪装订位坐标候选证伪） |
+| `FAILURE_LOG.md` | F-01 ~ F-41 禁止方案铁律（F-38 伪装订位坐标候选证伪、F-39 CLH getMethod 命中父类误 finish、F-40 重装顶爆假种子 recipeOk=false、F-41 后台标记正常不重置 tier/risk） |
 | `02_tools_工具/dynamic_crawler_动态爬虫/README.md` | 动态探针工具集 |
 | `03_execute_执行任务/P*/result.md` | 14 份 P 任务装机实证 |
