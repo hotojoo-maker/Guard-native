@@ -1,7 +1,7 @@
 // log_limiter.cpp — Rate-limited logcat output.
 //
 // Each (tag, msg) pair may fire at most once per window_seconds.
-// In release builds (GUARD_DEBUG not defined) this entire file is a no-op,
+// In release builds (GUARD_DEV_LOG not defined) this entire file is a no-op,
 // so zero overhead and zero logcat exposure in production.
 //
 // Note: state_machine.cpp includes this file directly for Phase 1 simplicity.
@@ -9,7 +9,7 @@
 
 #include "guard_core.h"
 
-#ifdef GUARD_DEBUG
+#ifdef GUARD_DEV_LOG
 
 #include <android/log.h>
 #include <unordered_map>
@@ -47,10 +47,10 @@ void log_limited(const char* tag, const char* msg, int window_seconds) {
 
 }  // namespace guard
 
-#else  // !GUARD_DEBUG — production: completely silent
+#else  // !GUARD_DEV_LOG — production: completely silent
 
 namespace guard {
     void log_limited(const char*, const char*, int) {}
 }
 
-#endif  // GUARD_DEBUG
+#endif  // GUARD_DEV_LOG

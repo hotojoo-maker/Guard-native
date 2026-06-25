@@ -33,12 +33,10 @@ android {
         externalNativeBuild {
             cmake {
                 abiFilters "arm64-v8a", "armeabi-v7a"
-                // Enable debug logging in debug builds only.
-                // Release builds: GUARD_DEBUG not set → LogLimiter is a no-op.
-                buildTypes {
-                    debug   { cppFlags "-DGUARD_DEBUG" }
-                    release { cppFlags "" }
-                }
+                // Debug-only native macros (GUARD_DEV_LOG / GUARD_DEV_SELFTEST) are
+                // defined in native_core/CMakeLists.txt via CMAKE_BUILD_TYPE — NOT
+                // via cppFlags here (the old buildTypes{debug/release} block was
+                // ineffective and leaked -DGUARD_DEBUG into release SO).
             }
         }
     }
