@@ -260,7 +260,7 @@ StateMachine.isActive()                // 取中央总闸
 
 ## 10.6 Phase 1D-server（S2 服务器真锁）解冻 + 现状盘点（2026-06-11，用户拍板②）
 
-> §10.3 的「Phase 1D-server 冻结」已在 2026-06-11 由用户解除。当前已从 dormant 骨架推进到 **v1.1 商业授权最小闭环 + S4 Ed25519 验签 + S3b-A/B LeaseClock 授时/设置页 72h 离线强验**（均 2026-06-11 装机 PASS）：授权码 → token → envelope → 客户端 AuthGate；但仍不是服务器真锁全部完成。本节为 S2/S3a/S3b/S4 的**唯一权威现状**。
+> §10.3 的「Phase 1D-server 冻结」已在 2026-06-11 由用户解除。当前已从 dormant 骨架推进到 **商业授权最小闭环（2026-06-11 装机 PASS）+ S4 Ed25519 验签 + S3b-A/B LeaseClock 授时/设置页 72h 离线强验**：授权码 → token → envelope → 客户端 AuthGate；**客户端产品版本 pv 现 `v1.3`**（`build.gradle` `GUARD_PRODUCT_VERSION`，L2 2026-06-25 回正）。但仍不是服务器真锁全部完成。本节为 S2/S3a/S3b/S4 的**唯一权威现状**。
 
 ### 已建（`net/` 包，L2 代码核查）
 - `net/EnvelopeClient`：HTTPS 出站。`activate(卡密)→token`、`fetchEnvelope(token)→签名信封`；按 `AppConfig.guardServerList()` 主备 fallback；强制 https、连不上 / 证书错 = fail-closed。
@@ -268,7 +268,7 @@ StateMachine.isActive()                // 取中央总闸
 - `net/EnvelopeStore`：token / 信封 / license 到期 / 产品版本 `pv` / 更新通知 `up` 本地缓存；不存用户密友数据。
 - `net/GuardHeartbeat`：低频心跳 + 冷启动有 token 时启动；遇 `CARD_BANNED / CARD_DISABLED / CARD_EXPIRED / DEVICE_BANNED / TOKEN_INVALID` 清 token/envelope，网络失败不清，避免断网误杀。
 - `net/GuardActivation`：设置页授权码激活入口；token 后必须立刻拉 envelope 成功才算激活成功。
-- `core/AppConfig`：`GUARD_SERVER_PRIMARY=https://zxmqq.shop`、`GUARD_SERVER_BACKUP=""`（备机槽留 `miyou.lol`）、`GUARD_PRODUCT_ID=quantum_wechat`、`GUARD_PRODUCT_VERSION=v1.1`、`GUARD_RELEASE_ID=android_8071`。
+- `core/AppConfig`：`GUARD_SERVER_PRIMARY=https://zxmqq.shop`、`GUARD_SERVER_BACKUP=""`（备机槽留 `miyou.lol`）、`GUARD_PRODUCT_ID=quantum_wechat`、`GUARD_PRODUCT_VERSION=v1.3`（`BuildConfig.GUARD_PRODUCT_VERSION`，`build.gradle`）、`GUARD_RELEASE_ID=android_8071`（硬编码，共存 flavor 未分线，见 R3 G4）。
 - `StateMachine.isVipAuthorized()`：已从 v1 stub 改为 `EnvelopeStore.isAuthorizedNow()`（token + verified envelope + license 未过期）。Filter 仍只读 `StateMachine.isActive()`，未直接接触服务器/风控。
 - `I:\miyou-server`：主节点 `zxmqq.shop` 已部署 `/api/v1/activate`、`/api/v1/guard/envelope`、后台卡密/设备封停、渠道/release 定向更新通知下发；备节点 8080 已部署，`miyou.lol` HTTPS 反代仍待办。
 
@@ -285,7 +285,7 @@ StateMachine.isActive()                // 取中央总闸
 5. 更新通知 `up` 已下发并被客户端消费，但属于运营提示，不是强制升级/真锁。
 
 ### 口径
-当前 = 「**v1.1 商业授权最小闭环 + 当前 `android_8071` 发行线 prod_server_lock（server seed 解 registry）+ S4 Ed25519 信封验签 + S3b-A/B LeaseClock 授时与设置页 72h 离线强验（均 2026-06-11 装机 PASS）**」。可对内称“授权码→token→envelope→客户端 AuthGate 已通；信封已 Ed25519 防伪造/防篡改；当前发行线无有效 server seed 时 registry scatter；到期判定不信手机时间（trustedNow）；断网>72h 进设置页强制重验、失败撤销且可自愈”；**不得**对外或在文档里宣称「服务器真锁终局完成」（删 Filter fallback / V3 发行线发版流程 / RiskState 真降级仍未完成）。
+当前 = 「**商业授权最小闭环（客户端 pv **v1.3**）+ 当前 `android_8071` 发行线 prod_server_lock（server seed 解 registry）+ S4 Ed25519 信封验签 + S3b-A/B LeaseClock 授时与设置页 72h 离线强验（均 2026-06-11 装机 PASS）**」。可对内称“授权码→token→envelope→客户端 AuthGate 已通；信封已 Ed25519 防伪造/防篡改；当前发行线无有效 server seed 时 registry scatter；到期判定不信手机时间（trustedNow）；断网>72h 进设置页强制重验、失败撤销且可自愈”；**不得**对外或在文档里宣称「服务器真锁终局完成」（删 Filter fallback / V3 发行线发版流程 / RiskState 真降级仍未完成）。⚠️ 服务器 envelope 全局 `pv` 常量是否已跟注册表对齐 = **L4 待验**（接点①，见 LeanCloseout 任务卡 §8）。
 
 ### 发包分发边界（避免误读）
 - **服务器真锁 ≠ 服务器打包 / 服务器分发 APK**。
@@ -318,23 +318,21 @@ StateMachine.isActive()                // 取中央总闸
 | `guard_p1a_key!` 被误判为 Ed25519 公钥 | L2 | 错误；它是 AES-GCM 自测 key |
 | Ed25519 验签被直接破 | L4 | 未证实；当前只看到客户端公钥，私钥仍在服务器 |
 | 只 hook `nativeIsAuthorized()` 就能全开 | L2 | 不完整；不能让 `GuardRuntime.getRecipe()` 产出真实 recipe |
-| 写 `tk/bl/le` 可骗过 `EnvelopeStore.isAuthorizedNow()` | L2 | 成立；当前本地缓存门过薄 |
+| 写 `tk/bl/le` 可骗过 `EnvelopeStore.isAuthorizedNow()` | L2 | **部分已修（2026-06-12+）**：`getVerifiedCachedEnvelope()` 每次对 blob 重跑 Ed25519+device sanity（`EnvelopeStore:152-168`）；**负向 L1（手写 tk/bl/le）仍待补** |
 | Java fallback 可被抄成本地 recipe map，绕开 SO 解密链 | L2 | 成立；这是当前 P0 薄弱点 |
 | 捕获一次合法 `k/n` 后尝试重放给 SO | L3 | 有风险；SO 只 unwrap，签名/过期在 Java 层 |
 
 #### P0（立即做，V1.2 正式发版前）
 
-1. **Release/PROD 删明文 fallback。**
-   - 涉及：`ConvFilter`、`SearchFilter`、`ContactFilter`、`MomentsFilter`。
-   - 规则：`GuardRuntime.getRecipe()` 返回空 ⇒ 不安装该敏感 hook / 该功能不可用。
-   - 禁止：release 包继续用 Java 字面量类名、方法名、字段名保持功能可用。
-2. **授权门不再信裸 `tk/bl/le`。**
-   - `EnvelopeStore.isAuthorizedNow()` 不能只看 token / blob / lease 本地缓存。
-   - 必须把 cached envelope 重新验签、校验 device / wxid / release / version / expire 后才算授权。
-   - `le` 只能是缓存结果，不是授权事实源；手写 `9999999999` 不得生效。
-3. **业务总闸绑定 registry ready。**
-   - `StateMachine.isActive()` / 敏感功能门必须同时满足授权有效 + `GuardRuntime.isConfigReady()` + 必需 gateway recipeOk。
-   - 没有 server seed / S_rel 时，即使 UI 显示授权，也不得安装敏感 hook。
+1. **Release/PROD 删明文 fallback。** 🟡 **C5a 部分落地（2026-06-25 L1）**
+   - ✅ 22 个 `RegistryFallback` 常量 release 全 `""`（`gen_registry_fallback.py` + 装机 `fallbackSelfTest=ok`×4）。
+   - ⬜ 仍剩 **5 处内联**（ContactDiscoveryHook `MvvmList`、ContactLabelHideGuard `fc5.g/z3`、MomentsFilter Like/Comment）+ D8 未删净 → 见 LeanCloseout worklog §③。
+   - 规则不变：`GuardRuntime.getRecipe()` 返回空 ⇒ 不安装该敏感 hook。
+2. **授权门不再信裸 `tk/bl/le`。** 🟡 **部分落地**
+   - ✅ `EnvelopeStore.isAuthorizedNow()` → `getVerifiedCachedEnvelope()` 每次对 cached blob 重验 Ed25519 + device/schema sanity（`EnvelopeStore:152-168`）。
+   - ⬜ **负向验收仍缺 L1**：人为写 `tk/bl/le` 后须 `isAuthorizedNow=false`；手写 `9999999999` lease 不得生效。
+3. **业务总闸绑定 registry ready。** ✅ **已落地（L2）**
+   - `StateMachine.isActive()` 链含 `GuardRuntime.isSensitiveConfigReady()`（release 须 `isConfigReady()`）；见 `StateMachine:93-97`。
 4. **删路线图式 release 暴露。**
    - release 包清理或伪装 `record-only`、`Phase 1/2/3`、`cp-auth/cp-recipe`、真实 gateway 名、`recipeOk` 明文比较日志。
    - Debug 面板资源不进客户 release，或改成诱饵 / 空壳。
@@ -367,7 +365,7 @@ StateMachine.isActive()                // 取中央总闸
 当前可称：**S3a 线上 envelope → server seed → registry 解密链已装机通过**。
 但在 P0 完成前，不得称：**服务器真锁终局完成**。
 
-原因：`tk/bl/le` 本地缓存门 + Java fallback map 仍可让攻击者绕过核心链的一部分。
+原因：`tk/bl/le` 负向验收未闭 + release 内联 fallback（C5b 5 处）+ Java `RegistryFallback` 虽 release 已空但 D8 未删净，仍可让攻击者绕过核心链的一部分。
 
 ### 10.8 蜜罐弹窗模式 + 引流链接兜底混淆（2026-06-12）
 

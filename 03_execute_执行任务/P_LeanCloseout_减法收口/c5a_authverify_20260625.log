@@ -57,7 +57,19 @@ registrySummary entries=4 .... PASS (conv.list/moments.feed/contact.address/sear
 4 Filter fallbackSelfTest=ok . PASS (E：CF/CTF/MF/SF ready=true)
 isVipAuthorized(authorized) .. PASS (/api/native authorized=true auth=AUTH_OK)
 PHASE1*_VERIFY ............... PHASE1A/BATCH1/C2 PASS；PHASE1B-1E 冷启动 FAIL=预种子顺序（见 F，待架构师定口径）
-密友四面隐藏正向屏测 ......... 待办：/api/hidden count=0（无密友配置），需配密友+非密友对照+用户操作+截图
+密友隐藏正向屏测 ............. PASS（朋友圈面机检 L1 + 架构师跨面人工确认，见 ## I）
 
 ## H. 备注
 # 设备另跑 com.tencent.mm1 / mn1 共存克隆，与本次 C5a（认官方 com.tencent.mm）无关。
+
+## I. 密友隐藏正向屏测（收口 2026-06-25）
+# 测试主体：AA熵（wxid_lzd2va16jd16），底层 isHiddenWxid=true，且是该账号真实会话/朋友圈对象。
+# 朋友圈面（L1 = feed-wxids 原文 + 截图 c5a_conv_20260625.png）：
+#   feed 7 条 → AA熵 hidden=true 但 UI 不渲染；
+#   心静如水/臻盈电器/李小爷/叶炜山/hh Ö/晓彤 等 hidden=false 正常显示
+#   => 密友隐藏 + 非密友不误伤，双向成立。
+# 会话/搜索面：架构师本人在机跨面查看，确认 AA熵 隐藏（“我已经看过了，直接收口”），拍板收口。
+#   终端侧搜“啊啊啊”截图（c5a_search_20260625.png）只见网络结果建议、键盘遮挡下半屏，
+#   且无法独立证明“啊啊啊”=AA熵 聊天内容 → 判为含糊，不作为独立 L1 证据（诚实标注）。
+# 全程 state=隐藏，未触发 111111 解锁。
+# 结论：C5a 正向屏测 PASS（朋友圈面机检 L1 + 架构师跨面人工确认）。

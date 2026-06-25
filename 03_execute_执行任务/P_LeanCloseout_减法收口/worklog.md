@@ -57,3 +57,53 @@
 ### 置信度
 - ✅ L1：编译、recipes fallbackSelfTest、release 扫描、装机 logcat 原文（见 `c5a_install_20260625.log`）。
 - ✅ 已验（2026-06-25）：recipeOk=true 完整链 + 密友隐藏屏测（log `c5a_recipeok_20260625`）。
+
+## C7 删8（2026-06-25）
+
+**任务**：删 registry_8071.json 8 个挂空键（无 getRecipe 读、无 Filter 引 fallback 常量）——3 JDK名(l4_notify/2×list_addall) + 3 死/冗余键(actor_class z15.e56/actor_wxid_field/contact_class storage.l4) + 2 描述串(policy/unlock_entry)。纯减法，不动 Filter/KDF/状态机/授权/回调体。
+
+**双审**：安全官改前+改后 PASS；授权检查官 9 项 PASS（Entry/Auth/State/Risk/分层全✅）。git 快照 `c2ddd65`。
+
+**改动**：registry_8071.json 37→29 键；regen `gen_registry_fallback.py`(29 常量) + `gen_registry_cipher.py --recipe`(.inc 4 gateway·prod_server_lock·server seed folded)；`:assembleOfficialDebug` BUILD SUCCESSFUL 24s（双 ABI）。storage.l4 删前三证（仅注释 ConvFilter:36 + 生成常量；MomentsRedDot 的 l4 是另一类 plugin.sns.model.l4）。
+
+**装机回归（✅ L1，小米9/609b4b18，进程 9191，log `c7del8_recipeok_20260625`）**：
+- `available=true` · `role=1 MAIN` · `BATCH1_VERIFY PASS`；`cached envelope seed=ok`
+- 种子前 `scatter`/`PHASE1B~1E FAIL`（预期）→ 种子后 `entries=4 [conv/moments/contact/search] recipeOk=true` · `tier=0` · `risk=CLEAN` · `registry=ready`
+- **`[CF:L4] cleaned=4`** = 4 密友会话实测隐藏（hide 链无回归，强于 C5a 的 cleaned=0）
+
+## C5a 授权全链收口 · 终端 worker 复跑（2026-06-25 09:2x，装机 L1）
+
+> 与上节 line 54 的 recipeOk 记录（进程 6226 / `c5a_recipeok_20260625`）是**两次独立运行**：本节 = 本会话终端 worker（进程 30513 热 / 4703 冷，tier=1）。两边结论一致（recipeOk=true / entries=4 / 授权通 / 密友隐）。完整原文见 `c5a_authverify_20260625.log` + 截图 `c5a_conv_20260625.png` / `c5a_search_20260625.png`。
+
+### 服务器侧解卡（架构师拍板：删并重建，免 SSH）— 本节独有
+- 首激活被拒 `{"ok":false,"msg":"设备数量已达上限"}` (HTTP 400)。查 live zxmqq.shop：DEVTEST-3AB7ED max_devices=1 / used_count=1，唯一占槽 = 假设备 `devtest-c88`（devauth_c88.py 建卡时用假 device_id 占的），非真机。
+- 走官方 `/admin/api`：`/cards/delete`（deleted cards1/activations1/devices1/events1）→ `/cards` 重建（mode=pro / release=android_8071 / expire=2027-12-31 / **max_devices=2**）。VERIFY：max_devices=2 / used_count=0。卡号不变，tmp_activate.json 仍有效。现 used_count=1（真机占 1），余 1 槽。
+
+### 机器链 + 屏测（L1）
+- `POST /api/activate` → `{"ok":true}`；`/api/native`：authorized=true / auth=AUTH_OK / recipeOk=true / entries=4 / registryAfterSeed=ok / risk=正常 / funnel=false / kill=false。
+- 朋友圈面机检 L1（feed-wxids + 截图）：AA熵（wxid_lzd2va16jd16，hidden=true）UI 不渲染；6 个非密友（心静如水/臻盈电器/李小爷/叶炜山/hh Ö/晓彤）正常显示 → 隐密友 + 不误伤双向成立。会话/搜索面由架构师在机跨面亲查确认，拍板收口（终端搜“啊啊啊”截图含糊、未采信，已诚实标注）。
+
+### PHASE1*_VERIFY 口径（L2 核码，留架构师定）
+- 冷启动 PHASE1A / BATCH1 / C2 **PASS**；**PHASE1B–E FAIL = 预种子顺序**：`runNativeBridgeVerification` 在 ModuleMain step0、`applyCachedEnvelopeSeed` 在 step2，验证那刻 registry=scatter，`registrySelfTest()` 解的是“服务器种子门控”的真注册表 → 必 FAIL；随后 `seed=ok` 拉成 ready。**非 C5a 回归、非授权问题**（未授权那轮同 FAIL）。是否把验证改到 seed 之后跑 = 改码线决策（铁律27 边界）。
+
+### 遗留 housekeeping
+- `logs/` 子目录被遗留句柄锁定（读/写均 permission denied），本轮日志改写到 P 任务根目录。
+
+## KDF 向量对账 + GUARD_DEBUG 泄漏修复（2026-06-25）
+
+**起因**：用户问"加密设计直观/好维护/好接手吗"。盘出三处可维护性洞 → 本轮修：① registry self_test 漂移（json 已裁字段但 self_test 仍硬断言已删的 `l4_notify`/`actor_wxid_field`/`unlock_entry`）② 三端钥匙派生靠手抄镜像、无自动对账（F-31 隐患）③ `GUARD_DEBUG` 经 build.gradle 失效块泄漏进 release SO。
+
+**提交（分支 full-restore，本地未推）**：
+- `0ffd5eb` ① **registry 单一真源收口**：删 `registry_self_test()` 对已删字段的断言，actor 改查 `actor_field_names` 含 `f435583d`；脚本对账 self_test==当前 json = PASS。装机：`cached envelope seed=ok` → `registry after seed entries=4 recipeOk=true`（log `logs/sec1_selftest_install_20260625.log`）。
+- `64d7af1` ② **KDF 向量自动对账**：`tools/kdf_common.py` = Python derive 单一来源（`gen_registry_cipher`/`gen_bootstrap_cipher` 改复用，删各自内联拷贝，derive 输出逐字节不变已校）；`gen_kdf_vectors.py` → `native_core/src/kdf_vectors.inc`（固定输入→期望 key）；`guard::kdf_self_test()`（`GUARD_DEV_SELFTEST` 门控，存档/还原全局）断言 C++ derive==向量 + registry≠bootstrap 域分离；接 `test_config_crypto.cpp` + `run_native_tests.ps1`（NDK→设备构建期门控）；`registry_loader.cpp` 加 `registry_requires_server_seed()` 让 server-lock 无种子时 registry 自测 SKIP；in-app `NativeBridge.kdfSelfTest` + `ModuleMain` 打 `KDF_VECTOR_VERIFY`（`BuildConfig.DEBUG` gated）。
+- `850c0ac` ③ **GUARD_DEBUG 泄漏根因**：删 `build.gradle` 失效的 `cppFlags buildTypes{debug/release}` 块；`log_limiter.cpp` `#ifdef GUARD_DEBUG` → `GUARD_DEV_LOG`。Debug-only 宏统一由 `CMakeLists.txt` 按 `CMAKE_BUILD_TYPE=Debug` 定义。
+
+**证据（L1）**：
+- `run_native_tests.ps1`（NDK → 真机 609b4b18 arm64）：`kdf_self_test=PASS` / `ALL=PASS`；**负向测试**改坏 1 个向量字节 → `kdf_self_test=FAIL`，重生成还原 → `PASS`（证闸能真抓漂移、非摆设）。
+- 装机：`[native] KDF_VECTOR_VERIFY PASS`（与 `PHASE1A`/`BATCH1`/`C2` 同块，log `logs/kdf_vector_verify_20260625.log`）。
+- GUARD_DEBUG 泄漏实锤：修前 `.cxx/RelWithDebInfo` compile_commands 同时含 `-DGUARD_DEBUG`+`-DNDEBUG`；修后干净重编 release compile_commands `GUARD_DEBUG=0` / `GUARD_DEV_*=0`。
+- **发版第 8 条 PASS**（log `guarddebug_verify_20260625.log`）：release `.so` `nativeKdfSelfTest` ABSENT、`nativeRegistrySelfTest` PRESENT（对照）；debug `.so` `nativeKdfSelfTest` PRESENT。
+
+**未碰**：registry KDF 派生算法本身 / 状态机 / 授权 / registry 内容 / 已验证 hook 回调体；`GuardRuntime.java`、`EncryptedConfigLoader.java`（另一线 WIP）未纳入本轮任一提交。
+
+**置信度**：✅ L1（run_native_tests 原文 + 装机 logcat 原文 + 干净重编 compile_commands + `nm -D` 符号对照）。

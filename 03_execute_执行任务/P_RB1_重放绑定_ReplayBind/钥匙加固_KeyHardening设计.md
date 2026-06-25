@@ -8,11 +8,11 @@
 
 ---
 
-## 0. 一句话 + 5 颗牙全景
+## 0. 一句话 + 4 颗钥匙牙 + 外围 3 道
 
 **钥匙加固 = 给 registry 钥匙再焊 2 颗牙（设备 + 防重放），让「抽一台 SO 通杀」「录个旧信封重放」都失效。**
 
-registry 钥匙（`derive_registry_key`）= 多颗牙咬合的**与门**，缺一即散沙：
+registry 钥匙（`derive_registry_key`）= 4 颗钥匙牙咬合的**与门**，缺一即散沙：
 
 | # | 牙（折进钥匙的材料）| 状态 | 治什么 |
 |---|---|---|---|
@@ -21,8 +21,8 @@ registry 钥匙（`derive_registry_key`）= 多颗牙咬合的**与门**，缺�
 | ③ | 设备指纹（W 一机一密）| ⬜ 本稿补 | 抽一台 SO 通杀所有机 |
 | ④ | 信封摘要（重放绑定）| ⬜ 本稿补 | 录个旧/过期信封重放 |
 
-> 钥匙**外面**另有 3 道独立牙（已落地，不在本稿）：Ed25519 验签 · 弹窗 canary · 蜜罐 canary。
-> 现役 = 2 颗咬合 + 外围 3 道 = 5 道；满配 = 4 颗咬一把 + 外围 3 道 = 7 道。
+> 钥匙**外面**另有 3 道独立牙（已落地/规划落点不在本稿）：Ed25519 验签 · 弹窗 canary · 蜜罐 canary。
+> 现役 = 2 颗钥匙牙 + 外围 3 道 = 5 道；满配 = 4 颗钥匙牙 + 外围 3 道 = 7 道。
 
 ---
 
@@ -58,6 +58,7 @@ for i in 0..15:
 **红线**：
 - 🔴 服务器 `dm` 自校验基准 = **`dm[:16 hex] == device_id`**，**禁用 `payload.d`**（不同源：`device_id = computeDeviceHash = SHA-256(ANDROID_ID)[:8]`；`payload.d = SHA-256(deviceId)[:32]`。按 `payload.d` 比会把所有正版 `dm` 判伪造 → 全员激活失败）。
 - `dm` 进信封签名覆盖范围，双保险防 MITM。
+- **与 A2 同盘隔离**：`D_mat` 必须来自 `AuthManager.rawAndroidId(ctx)` 的真值缓存；`computeDeviceHash`(8B) 与 `computeDeviceMaterial`(32B) 共用这个唯一读点。A2 灌给官方包的官方 SSAID **不得**进入 `D_mat`。冷启动顺序固定为 `rawAndroidId` 预热 → `setDeviceMaterial` → unwrap → A2 install；预热失败则不装 A2，宁可防封能力不开，也不污染设备材料。
 - **边界（诚实）**：A 只治「跨机分发 / 转卖」，**不治**「设备主人自己那台机自用」「运行时动态注入」。完成后仍**不得**称「真锁终局」。
 
 ---
@@ -68,7 +69,7 @@ for i in 0..15:
 
 **四处联动（缺一不可）**：① 服务器确保 `expire_at`/`device`/`release`/digest 进 Ed25519 签名 → ② Java `AuthEnvelopeVerifier` 验签后把已验签摘要下推 SO → ③ SO `derive_registry_key` 折入该摘要 → ④ `gen_registry_cipher.py` 镜像派生、重生成 `registry_cipher.inc`、全发行线重出。
 
-**优先级 P1（不紧急）**：转卖已被「信封设备绑定」堵死（A 机信封到 B 机散沙），本牙是加固非救火。
+**优先级 P1（必做，不再写“不紧急”）**：Java 层 `payload.d` 校验可被破解客户端跳过；只有把已验签摘要折进 `derive_registry_key`，旧/过期信封才会在 SO 钥匙层自然散沙。牙③先堵「跨机通杀」，牙④再堵「旧信封永久重放」；二者都落地前，不能宣称短租约在 SO 层真正有牙。
 
 ---
 
@@ -128,7 +129,8 @@ for i in 0..15:
 5. 分步装机回归（每步先验正版 `recipeOk=true` + 密友隐藏不挂）。
 6. JNI 新方法 keep 不混淆。
 7. `wseg_a/b/c` 与 `seg_a/b/c` 域分离向量必过。
-8. 完成前**不得**宣称「真锁终局完成」。
+8. A2 同源隔离自检通过：全仓裸读 `Settings.Secure...ANDROID_ID` 只剩 `rawAndroidId` 一处；两机 `D_mat` / `W_dev` / envelope `d` 均不同；官方包侧仍读官方 SSAID。
+9. 完成前**不得**宣称「真锁终局完成」。
 
 ---
 

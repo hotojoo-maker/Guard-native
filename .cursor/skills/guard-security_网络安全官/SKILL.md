@@ -247,7 +247,7 @@ StateMachine.isActive()
 
 1. **防封授权闸 `isAntiBanReady()`（时间闸，只门控 A2 防封，不碰隐私功能）**：首装宽限内授权 → 防封开；从未授权 + 超阈值 → **防封散沙（卸 A2）→ 官方包判非官方 → 号被平台封**。用「被封」反制白嫖，模块不自爆、不留痕、不删数据（红线#5/#6）。闸**不是客户端布尔**（红线#1），吊 `EnvelopeStore` + `LeaseClock`（红线#3，不信墙钟）。⚠️ 阈值以配方卡为准：T_soft=1h 软引流 / T_login=2h 登录砸门（只挡隐私、A2 不撤）/ T_kill=影子期7天+不续命+服务器抖动（A51 去固定短散）。
 2. **A2 料锁进加密 registry（防破解 = 防封同一把锁）**：official DER / SSAID 参数 / 官方包名进 `registry_pack`，只有服务器种子 + 验签信封 + `decrypt_config()` 成功才解得出；盗版无种子 → 解不出 → 防封自动散沙（fail-closed，不回退明文）。
-3. **载荷弹窗 canary（删弹窗自反噬）**：引流弹窗**稳定核心段** hash 掺进 A2 料 key 派生（USE 不 COMPARE，仿 `CompatProbe.BASELINE`）→ 删/改弹窗 → key 错 → 防封散沙 → 被封。想白嫖就得留着弹窗。坑：每版改弹窗须同源重生成加密料（同 §A.5 共享常量禁区），只把稳定段算进 hash。
+3. **载荷弹窗 canary（删弹窗自反噬）**：引流弹窗**稳定核心段**只做 COMPARE 绊线，命中后 `markTampered` → 影子期 → 不续命 / 引流；**禁止折进 A2 key（禁 USE）**。原因：防封是逆序线，USE 误判会让正版 A2 料直接解不开，账号异常风险不可逆；COMPARE + 影子期保留服务器转正/恢复缓冲。想白嫖仍要留弹窗，否则被标记后用不久、传不开。坑：每版改弹窗稳定段须同步重算 canary 基线；URL / 引流地址永不进 key。
 
 边界（诚实）：客户端 APK 防不住被反编译/改（视为预期威胁）；真锁是服务器种子 + 短命租约 + 设备绑定，上面三道是「让白嫖代价 = 被封 + 删弹窗自废」的加固，非无敌。隐私功能走原有 DRM（`isConfigReady`/`isActive` + registry 加密），**不进**这个时间闸——两闸独立、各管各能力，只共用 RiskState/弹窗。
 
@@ -569,7 +569,7 @@ GuardRuntime.getActiveRegistry()
 4. ✅ Phase 1B Registry 抽取：核心 hook 配方抽成 registry，明文跑通。（PHASE1B_VERIFY PASS）
 5. ✅ Phase 1C Encrypted Registry：`registry_8071.json` 单一源 → `registry_cipher.inc`，SO 解密 registry，失败散沙；搜索收敛 `search.gateway`；另含 1D-local 派生 key（去明文 key 常量）+ A-step2 证书绑定。（PHASE1C/1D_VERIFY PASS）
 6. 🟡 **Phase 1C.5 Filter 读 registry（消明文双份，任务名 `P1E_Filter读Registry`）**：让 ContactFilter/MomentsFilter/ConvFilter 真从 registry 读类名（取件口 `GuardRuntime.getRecipe`+`nativeGetRecipe`），conv.list 漂移债已结案；现为 registry+fallback 双份，**删 fallback 未做**（每个 Filter 删前要先核账 registry 完整性）。SearchFilter 暂未迁。⚠️ 注意：这里的任务名 P1E ≠ 下面第 8 条的 Phase 1E。
-7. ✅/🟡 **Phase 1D-server（S2/S3a/S4/S3b，2026-06-11）**：miyou-server 已下发 Ed25519 signed envelope；客户端 `EnvelopeClient` / `AuthEnvelopeVerifier` / `EnvelopeStore` / `GuardHeartbeat` / `GuardActivation` 已形成 v1.1 授权闭环。当前 `android_8071` 已切 `prod_server_lock`：`registry_cipher.inc` 为 `GUARD_REGISTRY_REQUIRES_SERVER_SEED=1`，线上 envelope `k/n` unwrap 后 `recipeOk=true`。现状权威 + 下一受控步骤见 `PROTECTION_MAP.md` §10.6。
+7. ✅/🟡 **Phase 1D-server（S2/S3a/S4/S3b，2026-06-11）**：miyou-server 已下发 Ed25519 signed envelope；客户端 `EnvelopeClient` / `AuthEnvelopeVerifier` / `EnvelopeStore` / `GuardHeartbeat` / `GuardActivation` 已形成商业授权闭环（**客户端 pv 现 v1.3**，见 `build.gradle`）。当前 `android_8071` 已切 `prod_server_lock`：`registry_cipher.inc` 为 `GUARD_REGISTRY_REQUIRES_SERVER_SEED=1`，线上 envelope `k/n` unwrap 后 `recipeOk=true`。现状权威 + 下一受控步骤见 `PROTECTION_MAP.md` §10.6。
 8. 🟡 **Phase 1E LeaseClock + RiskState（P1F 本地一刀 + 两闸，S3b 已推进）**：`LeaseClock` 已接信封授时并用于到期判定；设置页断网 >72h 强制重验，失败撤销授权但保留 token 自愈；`RiskState` 主链仍偏 record-only，但来电拦截已接 `RiskState.isTamperDegraded()` 单点散沙例外；全链路散沙降级与正版恢复闭环仍未完成。
 9. 📄 **Phase 1F W 一机一密（`P_RB1_重放绑定_ReplayBind/钥匙加固_KeyHardening设计.md`，仅设计未落地）**：wrapping key W 从「全局静态明文 `g_wk_lo`/`g_wk_hi`」改为 `W_dev = KDF(本地三段 wseg + 设备材料 SHA-256(ANDROID_ID))`，服务器按设备上报 `dm` 逐设备 wrap `S_rel`。收「抽一把 W 离线通杀所有设备信封」。必走 3 步灰度（双试 → 按设备切 → 删全局 W），缺迁移方案即全量正版散沙。落地受「三端钥匙派生镜像对账」铁律约束。
 10. 📄 **Phase 1G 重放绑定 P_RB1（`P_RB1_重放绑定_ReplayBind/钥匙加固_KeyHardening设计.md`，仅设计未落地）**：把已 Ed25519 验签的 envelope 摘要（expire_at / device / release / digest）折进 `derive_registry_key`，让过期 / 重放的旧 `k/n` 推出错 key → 散沙，短租约在 SO 层才真正有牙。优先级 P1（设备绑定已堵转卖，本项属加固）。
@@ -610,7 +610,7 @@ SO 只管“验真 + 解密 + 关键风险信号”；弹窗、影子期倒计�
 - 生成 cipher 时的签名证书 SHA-256 必须等于运行时 binding material；官替版/共存版签名不同就必须分别生成，不得混用。
 - Java 白名单、Xposed scope、C++ `GUARD_EXPECTED_PACKAGE`、服务器 `release_id` 必须来自同一包档案；不能只改 C++。
 - 业务 hook 仍生效但 `PHASE1D/1E` 失败时，可能只是 fallback 在兜底；禁止宣称加密链路通过。
-- 当前可宣称“v1.1 商业授权闭环 + Ed25519 防伪造信封 + 当前发行线 server seed 解 registry 已接入”；删 fallback / V3 发行线 / RiskState 真降级完成前，禁止宣称“授权无法破解”或“服务器真锁终局完成”。
+- 当前可宣称“商业授权闭环（客户端 pv v1.3）+ Ed25519 防伪造信封 + 当前发行线 server seed 解 registry 已接入”；删 fallback / V3 发行线 / RiskState 真降级完成前，禁止宣称“授权无法破解”或“服务器真锁终局完成”。
 
 ## 安全任务收尾铁律
 

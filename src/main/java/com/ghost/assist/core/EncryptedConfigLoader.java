@@ -17,8 +17,10 @@ public final class EncryptedConfigLoader {
 
     /**
      * Return true only when libguardcore is loaded and the encrypted registry
-     * decrypts to a non-scatter registry. No server lease is wired yet; that
-     * belongs to the later LeaseClock/RiskState phase.
+     * decrypts to a non-scatter registry. With prod_server_lock, that requires
+     * a valid server seed (S_rel) applied via EnvelopeStore → NativeBridge
+     * before decrypt; without seed, summary stays "scatter" (fail-closed).
+     * LeaseClock/RiskState scatter-on-tamper is still TODO in GuardRuntime.
      */
     public static boolean isConfigReady() {
         ensureChecked();

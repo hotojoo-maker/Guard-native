@@ -25,8 +25,9 @@ import com.ghost.assist.BuildConfig;
  *   • Filters may consume recipes, but hide/show decisions still belong to
  *     StateMachine.isActive() + the hidden-id lists.
  *
- * TODO Phase 1D-server: fold LeaseClock + RiskState into
- *   EncryptedConfigLoader so expired/tampered envelopes degrade to scatter.
+ * Server seed (S_rel) is applied before registry decrypt via EnvelopeStore;
+ * TODO: fold LeaseClock + RiskState into EncryptedConfigLoader so
+ *   expired/tampered envelopes degrade to scatter.
  */
 public final class GuardRuntime {
 

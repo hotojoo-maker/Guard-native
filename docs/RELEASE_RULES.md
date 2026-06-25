@@ -262,6 +262,7 @@ native_core/registry_8071.json
 5. `registry_loader.cpp::registry_self_test()` 必须通过；它会验证 schema、核心 4 条 registry、tamper cipher、wrong key、miss gateway/field。
 6. standalone 测试如果调用 `registry_self_test()`，必须先设置和生成端一致的 binding material；否则 scatter 是正确结果，不是误报。
 7. 装机日志必须看到 `PHASE1C_VERIFY PASS`、`PHASE1D_VERIFY PASS`、`PHASE1E_VERIFY PASS`，才说明 encrypted registry、证书绑定、recipe 出口都通。
+8. **release SO 不得残留调试宏/符号（发版前必查）**：2026-06-25 曾实测 `build.gradle` 的 `defaultConfig.externalNativeBuild.cmake.buildTypes{debug/release}` **失效**，`-DGUARD_DEBUG` 泄漏进 release SO。**已修（2026-06-25）**：删 Gradle `cppFlags`；可剖代码改 `GUARD_DEV_SELFTEST` + `GUARD_DEV_LOG`（`CMakeLists.txt` 仅 `CMAKE_BUILD_TYPE=Debug` 定义）。**发版前仍必查两条**：① release 的 `compile_commands.json` 不含 `-DGUARD_DEBUG` / `GUARD_DEV_*`；② release `.so` 的 `nm -D` 中 `nativeKdfSelfTest` **absent**（对照 `nativeRegistrySelfTest` 仍在）。
 
 scatter 排查顺序：
 

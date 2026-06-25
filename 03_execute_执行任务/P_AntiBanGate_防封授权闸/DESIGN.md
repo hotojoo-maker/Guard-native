@@ -29,6 +29,14 @@
 - **硬信号只有一个**：破解者要白嫖必须改包重签 → **签名/canary 删即自爆**。其余（root/解锁/环境）= 服务器侧软风险分，客户端不碰。
 - **第一步**：建 `GuardRuntime.isAntiBanReady()`（§7 S1）。现状：全仓无此函数，需新建。
 
+**给后续执行 AI 的硬顺序（照抄执行，不自创路线）**：
+
+1. **P0 先补 E9/W_dev 同盘隔离**：`rawAndroidId` memoize 预热 → `computeDeviceMaterial` 只吃真设备材料 → `setDeviceMaterial` 早于 A2 install；否则 A2 一开会把设备材料污染成官方 SSAID，W_dev 全机塌同值。
+2. **P1 接 A2 三轴**：签名 / android_id / 包名路径只在官方检测咽喉灌官方值；A2 只受 `isAntiBanReady()` 门控，不连坐隐私 `isActive()`。
+3. **P1 必补重放绑定**：旧信封不能永久解 registry；已验签摘要必须折进 key 派生，短租约才有牙。
+4. **最后删 release 明文 fallback**：删前逐个 Filter 核账 registry 完整性 + 装机回归，禁止一口气删已验证 hook 的明文兜底。
+5. **永远禁止**：root/解锁/`ro.boot.*` 作为本地散沙触发器；没有 L1/L2 证据的结论写成已证。
+
 ---
 
 ## 1. 统一引擎（一个风险机 + 一个弹窗 + 一个闸出口）
@@ -122,8 +130,27 @@
 | 包名/路径 | `getPackageInfo`/`getApplicationInfo(self)`（仅 `normsg`/`bu5` caller，**不碰 `getPackageName`**/363 处会崩） | `packageName`/`sourceDir` → 官方 | — |
 
 - **安装条件**：`isAntiBanReady() == true` 才装；否则散沙。
-- **device×A2 同源必修**：device id 与 A2 android_id 轴同一 API；A2 接主线时必须把 android_id hook 限定**仅 `.mm` caller**，否则 device id 全塌缩成官方值、设备绑定全废（决策#11）。
+- **device×A2 同源必修（执行口径 2026-06-25 收敛）**：device id / W_dev 与 A2 android_id 轴同读 `ANDROID_ID`，但吃的是两种值：
+  - **我方真设备材料**：`AuthManager.rawAndroidId(ctx)` 先 memoize 真值，`computeDeviceHash`(8B) / `computeDeviceMaterial`(32B) 都只吃缓存真值。
+  - **灌给官方包的 SSAID**：A2 `Settings.Secure.getString(..., "android_id")` 只给官方检测路径返回「官方签名对应 SSAID」。
+  - **落码 gate**：A2 install 前必须完成 `rawAndroidId` 预热 + `setDeviceMaterial`；未缓存真值则不装 A2。若 L1 发现官方包另走 `ContentResolver.query` / native 读取，再补 caller-scope 兜底；禁止无条件污染我方读点。
 - **发版红线**：出包前过 `tools/gate_three_axis.js` 自检门（k33/k49/k18 全官方才放行）。
+
+### 4.1 三轴·借眼睛可行性核账（2026-06-25，三轴不等价）
+
+> 触发：架构师问「root 能不能借官方眼睛 → 影子模式」「android_id 算法已逆出怎么喂」。核账后**三轴借眼睛能力不等价**，记此防重复挖。详细证据 = `recon/ROOT_UNLOCK_DETECT_证据_20260625.md` + 防封线 `证据/SSAID_ANDROID_ID_ALGO_20260619.md`。
+
+- **签名轴 ✅ 借得到（L1）**：c$p 经 Java `getPackageInfo` 读自身签名、**有 Java 返回点** → afterHook 喂官方 DER 后 `c$p.ad` 实读 `18c867f0`（L1）。**非 root 可喂**，是当前唯一稳的硬轴。
+- **root / 解锁轴 ❌ 借不到官方「现成判定」（L1/L2）**：解锁（verifiedbootstate/vbmeta/flash.locked…）= 纯 native `__system_property_get`、明文不出 native、直接加密进 `field3`，**Java 边界无结果点**；root 工具（Magisk 包/无障碍/logcat）虽走 Java，但微信**只采原始输入、不给 `isRooted` 成品布尔**，判定沉 native/服务端。→ **借不到微信的 root 判定**；自判 root = 自读环境 = 踩铁律5、增检测面。**故 root 只当服务器侧弱信号，客户端不读、不本地触发**（与 §0 / §1.1 表一致；现实校准：本机 root+unlocked 冷启 6 分钟+登录未 kill，root 非即时封因）。
+- **android_id 轴 🟡 喂得了动作、缺得了值（L1+L3）**：hook `Settings.Secure.getString("android_id")` 喂动作可做；但要喂的「官方 SSAID」= `HMAC(user_key, BE32(len)||官方DER)[:8]`，**`user_key` 在 `settings_ssaid.xml`、root-only**（OS 沙箱+SELinux，**C++/native 同 UID 一样读不到**，是权限墙非语言问题）。**非 root 客户拿不到 user_key → 算不出官方 SSAID → 喂不了**。封号权重存疑（L3）：**微信服务器自身也无 user_key、无法重算 SSAID 比对** → android_id↔签名一致性 server 端难直接验，**可能光喂签名即足够保号**（待 L4 证）。
+
+**C++ 边界澄清（写死）**：C++/native **不比 Java 多一分权限**；`user_key`/环境读取是 OS 权限墙（root-only），下沉 C++ **破不了**。C++ 该下沉的是「咽喉 hook + 判定 + 灌值 + key 派生 + 防篡改」黑盒化（§5.3），不是去读权限墙后的东西。
+
+**L4 待验清单（未实验，先记，勿写成结论）**：
+1. **只喂签名（不动 android_id）会不会被封？**（最根本；含「server 能否核 SSAID」角度）→ recon 待补。
+2. **A2 咽喉在当前 8.0.71 + 小米9 能抓能骑？** → 实验中，`recon/A2_RIDE_TEST_20260625.md` 待补 L1。
+3. **非 root 有无侧信道拿 user_key / 官方 SSAID？** → 现证据 = root-only；待查。
+4. **root → 影子模式**：因「借不到官方判定 + 自判破防封 + 前提（root 即时封）缺 L1」**暂不做**；除非第 1 条证实「只喂签名不够、必须 android_id 自洽」才重议（届时只能限 root 机或服务器侧软分）。
 
 ---
 
@@ -204,7 +231,7 @@ isAntiBanReady():                  # 只门控 A2;不读登录(登录砸门是�
 
 ### 阶段二 · 接 A2 防封（~3-5 人天）
 - **S5 A2 本体接主线**：`A2SignatureSpoof`（签名料/android_id 料/包名料 喂官方）接 `ModuleMain.handleLoadPackage`(L61)：`if(isAntiBanReady()) A2SignatureSpoof.install(lpp)`；`bindSigningCert`(L280) 扩 getPackageInfo afterHook 喂官方 DER；A2 料进加密 registry（§5.1）。
-- **S6 device×A2 scope 隔离（必修）**：A2 android_id hook 限定仅 `.mm` caller，放过我方 `computeDeviceHash` 读真值。验收：A2 开后各机 device id 仍各异、envelope `d` 不塌。
+- **S6 device×A2 同盘隔离（必修）**：`rawAndroidId` 唯一读点 + memoize 预热；`computeDeviceHash` / `computeDeviceMaterial` 只读缓存真值；`setDeviceMaterial` 早于 A2 install。验收：A2 开后各机 device id / `D_mat` / envelope `d` 仍各异，官方包侧 android_id 仍为官方 SSAID。
 - **S7 KPI 出包前体检**：官方包跑 `frida_stats.js` 建参考 → 装 A2 后对照（环境类零读取达标、密度类异常才查，§8）；**并补 libilink2 `/proc/self/maps` L1 验**（残留 L4 / 决策#18）。
 
 ### 阶段三 · 后期
