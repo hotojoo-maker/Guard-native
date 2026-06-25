@@ -7,10 +7,8 @@
       "mvvmlist_class": "com.tencent.mm.plugin.mvvmlist.MvvmList",
       "adapter_class": "kc5.v0",
       "item_class": "kc5.y",
-      "contact_class": "com.tencent.mm.storage.l4",
       "l1_methods": "n,m",
       "l2_method": "s",
-      "l4_notify": "notifyDataSetChanged",
       "contact_fields": "d,e,f,a,b,c",
       "wxid_getters": "C0,h1,j1,i1,k1,getUsername,getUserName"
     },
@@ -21,11 +19,8 @@
       "wxid_field": "field_userName",
       "inner_field": "d",
       "sns_getter": "h1",
-      "list_addall": "ArrayList.addAll,LinkedList.addAll",
       "like_list": "LikeUserList",
       "comment_list": "CommentUserList",
-      "actor_class": "z15.e56",
-      "actor_wxid_field": "f435583d",
       "actor_field_names": "d,f435583d,username,field_userName"
     },
     "contact.address": {
@@ -36,17 +31,14 @@
       "contact_class": "com.tencent.mm.storage.z3",
       "contact_field": "d",
       "type_field": "e",
-      "wxid_getter": "c1",
-      "list_addall": "ArrayList.addAll"
+      "wxid_getter": "c1"
     },
     "search.gateway": {
       "gateway": "fts_result_view",
       "adapter_family": "q2,f0",
       "render_hook": "getView",
-      "policy": "hide_if_target_in_hidden_union",
       "extractor_profile": "wechat8071_fts_mixed",
-      "scope": "result_render_only",
-      "unlock_entry": "excluded_search_unlock_111111"
+      "scope": "result_render_only"
     }
   }
 }

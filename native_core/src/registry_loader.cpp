@@ -290,9 +290,7 @@ std::string registry_dump_summary() {
     for (const auto& e : r.entries) {
         s += " [" + e.id;
         const std::string* adapter = find_field(e, "adapter_class");
-        const std::string* notify = find_field(e, "l4_notify");
         if (adapter != nullptr) s += " adapter=" + *adapter;
-        if (notify != nullptr) s += " l4=" + *notify;
         s += "]";
     }
     return s;
@@ -311,7 +309,6 @@ bool registry_self_test() {
     if (!field_eq(r, "conv.list", "mvvmlist_class",
                   "com.tencent.mm.plugin.mvvmlist.MvvmList")) return false;
     if (!field_eq(r, "conv.list", "adapter_class", "kc5.v0")) return false;
-    if (!field_eq(r, "conv.list", "l4_notify", "notifyDataSetChanged")) return false;
     {
         const RegistryEntry* e = find_entry(r, "conv.list");
         const std::string* getters = (e != nullptr) ? find_field(*e, "wxid_getters") : nullptr;
@@ -321,7 +318,11 @@ bool registry_self_test() {
     // moments.feed (MomentsFilter.java)
     if (!field_eq(r, "moments.feed", "item_friend", "na4.b")) return false;
     if (!field_eq(r, "moments.feed", "adapter_class", "e2")) return false;
-    if (!field_eq(r, "moments.feed", "actor_wxid_field", "f435583d")) return false;
+    {
+        const RegistryEntry* e = find_entry(r, "moments.feed");
+        const std::string* actors = (e != nullptr) ? find_field(*e, "actor_field_names") : nullptr;
+        if (actors == nullptr || actors->find("f435583d") == std::string::npos) return false;
+    }
 
     // contact.address (ContactFilter.java)
     if (!field_eq(r, "contact.address", "item_class", "fc5.g")) return false;
@@ -330,12 +331,11 @@ bool registry_self_test() {
 
     // search.gateway — coarse-grained capability entry (search is a huge filter
     // covering friends/recent/groups/chat-history; we express a render gateway +
-    // extractor profile, NOT one capability per result class). EntryGate (111111
-    // unlock) is explicitly excluded here.
+    // extractor profile, NOT one capability per result class). The 111111 unlock
+    // (EntryGate) is intentionally out of scope for this gateway.
     if (!field_eq(r, "search.gateway", "gateway", "fts_result_view")) return false;
     if (!field_eq(r, "search.gateway", "render_hook", "getView")) return false;
     if (!field_eq(r, "search.gateway", "extractor_profile", "wechat8071_fts_mixed")) return false;
-    if (!field_eq(r, "search.gateway", "unlock_entry", "excluded_search_unlock_111111")) return false;
     {
         const RegistryEntry* e = find_entry(r, "search.gateway");
         const std::string* fam = (e != nullptr) ? find_field(*e, "adapter_family") : nullptr;

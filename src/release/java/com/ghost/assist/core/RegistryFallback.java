@@ -16,10 +16,8 @@ public final class RegistryFallback {
     public static final String CONV_LIST__MVVMLIST_CLASS = "";
     public static final String CONV_LIST__ADAPTER_CLASS = "";
     public static final String CONV_LIST__ITEM_CLASS = "";
-    public static final String CONV_LIST__CONTACT_CLASS = "";
     public static final String CONV_LIST__L1_METHODS = "";
     public static final String CONV_LIST__L2_METHOD = "";
-    public static final String CONV_LIST__L4_NOTIFY = "";
     public static final String CONV_LIST__CONTACT_FIELDS = "";
     public static final String CONV_LIST__WXID_GETTERS = "";
 
@@ -30,11 +28,8 @@ public final class RegistryFallback {
     public static final String MOMENTS_FEED__WXID_FIELD = "";
     public static final String MOMENTS_FEED__INNER_FIELD = "";
     public static final String MOMENTS_FEED__SNS_GETTER = "";
-    public static final String MOMENTS_FEED__LIST_ADDALL = "";
     public static final String MOMENTS_FEED__LIKE_LIST = "";
     public static final String MOMENTS_FEED__COMMENT_LIST = "";
-    public static final String MOMENTS_FEED__ACTOR_CLASS = "";
-    public static final String MOMENTS_FEED__ACTOR_WXID_FIELD = "";
     public static final String MOMENTS_FEED__ACTOR_FIELD_NAMES = "";
 
     // -- contact.address --
@@ -46,14 +41,11 @@ public final class RegistryFallback {
     public static final String CONTACT_ADDRESS__CONTACT_FIELD = "";
     public static final String CONTACT_ADDRESS__TYPE_FIELD = "";
     public static final String CONTACT_ADDRESS__WXID_GETTER = "";
-    public static final String CONTACT_ADDRESS__LIST_ADDALL = "";
 
     // -- search.gateway --
     public static final String SEARCH_GATEWAY__GATEWAY = "";
     public static final String SEARCH_GATEWAY__ADAPTER_FAMILY = "";
     public static final String SEARCH_GATEWAY__RENDER_HOOK = "";
-    public static final String SEARCH_GATEWAY__POLICY = "";
     public static final String SEARCH_GATEWAY__EXTRACTOR_PROFILE = "";
     public static final String SEARCH_GATEWAY__SCOPE = "";
-    public static final String SEARCH_GATEWAY__UNLOCK_ENTRY = "";
 }

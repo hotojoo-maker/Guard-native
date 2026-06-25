@@ -16,10 +16,8 @@ public final class RegistryFallback {
     public static final String CONV_LIST__MVVMLIST_CLASS = "com.tencent.mm.plugin.mvvmlist.MvvmList";
     public static final String CONV_LIST__ADAPTER_CLASS = "kc5.v0";
     public static final String CONV_LIST__ITEM_CLASS = "kc5.y";
-    public static final String CONV_LIST__CONTACT_CLASS = "com.tencent.mm.storage.l4";
     public static final String CONV_LIST__L1_METHODS = "n,m";
     public static final String CONV_LIST__L2_METHOD = "s";
-    public static final String CONV_LIST__L4_NOTIFY = "notifyDataSetChanged";
     public static final String CONV_LIST__CONTACT_FIELDS = "d,e,f,a,b,c";
     public static final String CONV_LIST__WXID_GETTERS = "C0,h1,j1,i1,k1,getUsername,getUserName";
 
@@ -30,11 +28,8 @@ public final class RegistryFallback {
     public static final String MOMENTS_FEED__WXID_FIELD = "field_userName";
     public static final String MOMENTS_FEED__INNER_FIELD = "d";
     public static final String MOMENTS_FEED__SNS_GETTER = "h1";
-    public static final String MOMENTS_FEED__LIST_ADDALL = "ArrayList.addAll,LinkedList.addAll";
     public static final String MOMENTS_FEED__LIKE_LIST = "LikeUserList";
     public static final String MOMENTS_FEED__COMMENT_LIST = "CommentUserList";
-    public static final String MOMENTS_FEED__ACTOR_CLASS = "z15.e56";
-    public static final String MOMENTS_FEED__ACTOR_WXID_FIELD = "f435583d";
     public static final String MOMENTS_FEED__ACTOR_FIELD_NAMES = "d,f435583d,username,field_userName";
 
     // -- contact.address --
@@ -46,14 +41,11 @@ public final class RegistryFallback {
     public static final String CONTACT_ADDRESS__CONTACT_FIELD = "d";
     public static final String CONTACT_ADDRESS__TYPE_FIELD = "e";
     public static final String CONTACT_ADDRESS__WXID_GETTER = "c1";
-    public static final String CONTACT_ADDRESS__LIST_ADDALL = "ArrayList.addAll";
 
     // -- search.gateway --
     public static final String SEARCH_GATEWAY__GATEWAY = "fts_result_view";
     public static final String SEARCH_GATEWAY__ADAPTER_FAMILY = "q2,f0";
     public static final String SEARCH_GATEWAY__RENDER_HOOK = "getView";
-    public static final String SEARCH_GATEWAY__POLICY = "hide_if_target_in_hidden_union";
     public static final String SEARCH_GATEWAY__EXTRACTOR_PROFILE = "wechat8071_fts_mixed";
     public static final String SEARCH_GATEWAY__SCOPE = "result_render_only";
-    public static final String SEARCH_GATEWAY__UNLOCK_ENTRY = "excluded_search_unlock_111111";
 }
