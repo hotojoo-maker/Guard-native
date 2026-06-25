@@ -51,9 +51,9 @@
 
 ### 收口口径
 - **已验（L1/L2）**：① debug fallback 生效（fallbackSelfTest=ok ×4）；③ release C5a 明文已清（10 absent）；双 ABI BUILD SUCCESSFUL；release fail-closed（兜底空）。
-- **留待（服务器测试卡完整链验）**：`recipeOk=true` / `registrySummary entries=4` / 密友隐藏正向屏幕实测 —— 需开发机带 server seed 授权后跑。②（dev_cert_only 验 recipeOk）本轮按用户决定 **跳过**，不碰 `.inc`。
+- **已验（L1，2026-06-25 完整链）**：`recipeOk=true` · `entries=4`（conv/moments/contact/search）· `tier=0`/`risk=CLEAN`/`registry=ready` · 密友隐藏屏测 PASS（`cached envelope seed=ok`，进程 6226，log `c5a_recipeok_20260625`）。②（dev_cert_only 验 recipeOk）本轮按用户决定 **跳过**，不碰 `.inc`。
 - **残留 C5b/D8**：上列 5 处内联明文（ContactDiscoveryHook / ContactLabelHideGuard / MomentsFilter `*Count`），归 C5b 后续。
 
 ### 置信度
 - ✅ L1：编译、recipes fallbackSelfTest、release 扫描、装机 logcat 原文（见 `c5a_install_20260625.log`）。
-- 🔬 待验：密友隐藏正向屏幕实测（授权后）+ recipeOk=true 完整链。
+- ✅ 已验（2026-06-25）：recipeOk=true 完整链 + 密友隐藏屏测（log `c5a_recipeok_20260625`）。
