@@ -37,6 +37,14 @@ target_include_directories(guardcore PRIVATE include)
 # 把期望包名灌成编译期宏，guard_core.h 的 EXPECTED_PACKAGE 取它。
 target_compile_definitions(guardcore PRIVATE GUARD_EXPECTED_PACKAGE="${GUARD_WX_PKG}")
 
+# DEBUG-only hooks: logging + KDF self-test. Defined ONLY when CMAKE_BUILD_TYPE
+# is Debug (AGP: debug→Debug, release→RelWithDebInfo). Never use -DGUARD_DEBUG
+# via Gradle cppFlags — the old defaultConfig.buildTypes block was ineffective
+# and leaked into release (2026-06-25 fixed).
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_definitions(guardcore PRIVATE GUARD_DEV_SELFTEST GUARD_DEV_LOG)
+endif()
+
 # Android log for LogLimiter (release build LogLimiter is no-op via macro)
 find_library(log-lib log)
 target_link_libraries(guardcore ${log-lib})

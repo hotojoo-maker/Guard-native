@@ -245,6 +245,19 @@ Java_com_ghost_assist_core_NativeBridge_nativeRegistrySelfTest(
     return guard::registry_self_test() ? JNI_TRUE : JNI_FALSE;
 }
 
+#ifdef GUARD_DEV_SELFTEST
+// Debug-config-only KDF cross-check (guard::derive_* vs Python kdf_common
+// vectors). GUARD_DEV_SELFTEST is defined ONLY for CMAKE_BUILD_TYPE=Debug (see
+// CMakeLists.txt) — NOT GUARD_DEBUG, which leaks into release. Excluded from the
+// release SO entirely; the Java caller is BuildConfig.DEBUG gated too, so release
+// never references this symbol. Strippable by design.
+JNIEXPORT jboolean JNICALL
+Java_com_ghost_assist_core_NativeBridge_nativeKdfSelfTest(
+        JNIEnv*, jclass) {
+    return guard::kdf_self_test() ? JNI_TRUE : JNI_FALSE;
+}
+#endif
+
 JNIEXPORT jstring JNICALL
 Java_com_ghost_assist_core_NativeBridge_nativeRegistrySummary(
         JNIEnv* env, jclass) {

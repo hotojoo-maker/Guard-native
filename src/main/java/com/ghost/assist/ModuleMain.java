@@ -391,6 +391,15 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
             Log.i(TAG, "[native] registrySelfTest=" + registrySelfTest + " (expect true)");
             Log.i(TAG, "[native] registrySummary=" + NativeBridge.registrySummary());
 
+            // (12b) DEBUG-only KDF vector cross-check (guard::derive_* vs the
+            //       Python kdf_common vectors). BuildConfig.DEBUG-gated so the
+            //       release build never references nativeKdfSelfTest (which is
+            //       compiled out of the release SO) — easy to strip at ship time.
+            if (BuildConfig.DEBUG) {
+                Log.i(TAG, "[native] KDF_VECTOR_VERIFY "
+                        + (NativeBridge.kdfSelfTest() ? "PASS" : "FAIL"));
+            }
+
             // Summary line for quick grep
             boolean allPass = ok && role == NativeBridge.ROLE_MAIN && hidden
                     && !hiddenAfterFalse && testWxidTrue && !testWxidFalse && cfgVer == 1

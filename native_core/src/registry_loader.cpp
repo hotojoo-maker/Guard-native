@@ -205,6 +205,14 @@ ConfigRegistry registry_load_embedded() {
     return registry_parse(dec.plaintext);
 }
 
+bool registry_requires_server_seed() {
+    // True for prod_server_lock cipher blobs (generated with a server seed). When
+    // true and no seed is loaded, registry_load_embedded() intentionally scatters
+    // — that is the lock working, NOT a drift failure. Lets the build-time gate
+    // (test_config_crypto) skip registry_self_test cleanly without a real S_rel.
+    return GUARD_REGISTRY_REQUIRES_SERVER_SEED != 0;
+}
+
 namespace {
 const std::string* find_field(const RegistryEntry& e, const std::string& key) {
     for (const auto& kv : e.fields) {

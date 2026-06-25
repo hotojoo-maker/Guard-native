@@ -13,10 +13,10 @@ native_core/src/config_crypto.cpp. The nonce is randomized per build (stored in
 the .inc) to avoid GCM nonce reuse across builds.
 
 A-step2 (anti-repackage): the derivation also folds in the module signing-cert
-SHA-256 (_CERT_SHA256 below). At runtime Java reads the installed module's cert
-and pushes it via NativeBridge.setBindingMaterial(); a re-signed / repackaged
-APK has a different cert → wrong key → scatter. _CERT_SHA256 MUST equal the
-fixed keystore's cert SHA-256. Regenerate it with:
+SHA-256 (kdf_common.CERT_SHA256). At runtime Java reads the installed module's
+cert and pushes it via NativeBridge.setBindingMaterial(); a re-signed /
+repackaged APK has a different cert → wrong key → scatter. kdf_common.CERT_SHA256
+MUST equal the fixed keystore's cert SHA-256. Regenerate it with:
     keytool -list -v -keystore signing/guard-native-debug.keystore \
         -storepass android -alias androiddebugkey   (read the SHA256: line)
 
@@ -43,61 +43,19 @@ OUT = os.path.join(ROOT, "native_core", "src", "registry_cipher.inc")
 MODE_DEV_CERT_ONLY = "dev_cert_only"
 MODE_PROD_SERVER_LOCK = "prod_server_lock"
 
-# Phase 1D-local: scattered key segments + non-linear mix. MUST match
-# guard::derive_registry_key() in native_core/src/config_crypto.cpp byte-for-byte.
-_SEG_A = bytes([
-    0x3f, 0xa1, 0x08, 0xd4, 0x77, 0x1c, 0xe9, 0x52,
-    0x8b, 0x60, 0xbd, 0x14, 0xc6, 0x2a, 0x9f, 0x73,
-])
-_SEG_B = bytes([
-    0x5e, 0x02, 0xab, 0x6d, 0xf1, 0x37, 0x80, 0xc4,
-    0x19, 0xae, 0x4b, 0xd2, 0x66, 0x8f, 0x33, 0xe7,
-])
-_SEG_C = bytes([
-    0x11, 0x9c, 0x4d, 0x70, 0x23, 0xba, 0x5f, 0x06,
-    0xe1, 0x38, 0x7a, 0xcd, 0x90, 0x42, 0xfb, 0x85,
-])
-
-# A-step2 binding material = fixed keystore cert SHA-256 (signing/guard-native-
-# debug.keystore, alias androiddebugkey). Runtime Java pushes the installed
-# module's cert SHA-256 via setBindingMaterial(); must equal this for the
-# registry to decrypt. See module docstring for the keytool regen command.
-_CERT_SHA256 = bytes([
-    0xca, 0x42, 0x1e, 0xc3, 0xa3, 0x37, 0x08, 0xce,
-    0xb3, 0xf7, 0x0c, 0x37, 0xf4, 0x61, 0x67, 0x51,
-    0x09, 0x47, 0x36, 0xc4, 0x96, 0xfe, 0x21, 0xb3,
-    0xb0, 0xe2, 0xce, 0xa4, 0x80, 0xcd, 0xb6, 0xa0,
-])
-
-
-def _rotl8(x, r):
-    r &= 7
-    if r == 0:
-        return x
-    return ((x << r) | (x >> (8 - r))) & 0xff
+# Phase 1D-local: the scattered key segments, cert binding, rotl8 and derive
+# routine live in ONE place now — tools/kdf_common.py — so this generator, the
+# bootstrap generator and the KDF self-test vectors can never drift apart.
+# kdf_common.derive_registry_key MUST stay byte-for-byte identical to
+# guard::derive_registry_key() in native_core/src/config_crypto.cpp; the KDF
+# vector cross-check (gen_kdf_vectors.py + guard::kdf_self_test) enforces it.
+from kdf_common import CERT_SHA256, derive_registry_key as _kdf_derive_registry_key
 
 
 def derive_registry_key(server_seed=b""):
-    out = bytearray(16)
-    blen = len(_CERT_SHA256)
-    slen = len(server_seed)
-    for i in range(16):
-        t = _SEG_A[i] ^ _SEG_B[(i * 5 + 3) & 15]
-        t = _rotl8(t, (i % 7) + 1)
-        t ^= _SEG_C[i]
-        t = (t + i * 37) & 0xff
-        if blen > 0:
-            t ^= _CERT_SHA256[(i * 2) % blen]
-            t = _rotl8(t, _CERT_SHA256[(i * 2 + 1) % blen] & 7)
-            t ^= _CERT_SHA256[(i + 7) % blen]
-        # Phase 1D-server (S3a): fold server seed S_rel. MUST mirror
-        # guard::derive_registry_key() in config_crypto.cpp byte-for-byte.
-        if slen > 0:
-            t ^= server_seed[(i * 3) % slen]
-            t = _rotl8(t, server_seed[(i * 3 + 1) % slen] & 7)
-            t ^= server_seed[(i + 11) % slen]
-        out[i] = t
-    return bytes(out)
+    # A-step2: the fixed keystore cert SHA-256 is always folded as binding here
+    # (blen=32); runtime Java pushes the same cert via setBindingMaterial().
+    return _kdf_derive_registry_key(CERT_SHA256, server_seed)
 
 
 def parse_args():

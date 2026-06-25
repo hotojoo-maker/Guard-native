@@ -27,12 +27,18 @@ $srcs = @(
 )
 $inc = Join-Path $repo "native_core\include"
 $cipher = Join-Path $repo "native_core\src\registry_cipher.inc"
+$kdfvec = Join-Path $repo "native_core\src\kdf_vectors.inc"
 
-foreach ($f in ($srcs + $cipher + $inc)) {
+foreach ($f in ($srcs + $cipher + $kdfvec + $inc)) {
     if (-not (Test-Path $f)) { Write-Error "missing required path: $f"; exit 2 }
 }
 
-$cflags = @("-std=c++17", "-fno-rtti", "-fno-exceptions", "-I", $inc)
+# -DGUARD_DEV_SELFTEST compiles in guard::kdf_self_test() + the embedded KDF
+# vectors (kdf_vectors.inc). Without it kdf_self_test() is a no-op stub returning
+# true, so the runner MUST define it for the KDF cross-check to be real. (This is
+# the same macro the Debug CMake config defines; NOT GUARD_DEBUG, which leaks into
+# release — see native_core/CMakeLists.txt.)
+$cflags = @("-std=c++17", "-fno-rtti", "-fno-exceptions", "-DGUARD_DEV_SELFTEST", "-I", $inc)
 
 function Find-HostCxx {
     foreach ($c in @("clang++", "g++")) {

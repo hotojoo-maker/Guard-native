@@ -265,6 +265,20 @@ public final class NativeBridge {
         return nativeRegistrySummary();
     }
 
+    /**
+     * DEBUG-only KDF cross-check: verifies guard::derive_registry_key /
+     * derive_bootstrap_key match the Python kdf_common vectors embedded in the
+     * debug SO (native_core/src/kdf_vectors.inc) — catches F-31 derive drift.
+     * The native symbol exists ONLY in Debug-config SO builds (GUARD_DEV_SELFTEST,
+     * see CMakeLists.txt — NOT GUARD_DEBUG, which leaks into release), so callers
+     * MUST guard with BuildConfig.DEBUG; release never links it. Release SO's
+     * guard::kdf_self_test() is a no-op stub anyway.
+     */
+    public static boolean kdfSelfTest() {
+        if (!sAvailable) return false;
+        return nativeKdfSelfTest();
+    }
+
     // ── Phase 1E Step1: single recipe getter (read-only SO→Java channel) ─
 
     /**
@@ -361,6 +375,10 @@ public final class NativeBridge {
                                                       byte[] ciphertext, byte[] tag);
     private static native boolean nativeRegistrySelfTest();
     private static native String  nativeRegistrySummary();
+    // DEBUG-only: bound only in Debug-config SO builds (GUARD_DEV_SELFTEST, see
+    // guard_core.cpp). Call exclusively under BuildConfig.DEBUG so release never
+    // links this symbol.
+    private static native boolean nativeKdfSelfTest();
     private static native void    nativeSetBindingMaterial(byte[] certSha256);
     private static native boolean nativeUnwrapServerSeed(byte[] k, byte[] nonce);
     private static native String  nativeGetRecipe(String gateway, String key);

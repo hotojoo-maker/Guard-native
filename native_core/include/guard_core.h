@@ -206,6 +206,15 @@ void derive_bootstrap_key(uint8_t out[16]);
 /// Java smoke-test helper: returns a test registry after an in-native AES-GCM roundtrip.
 std::string decrypt_config_test_registry();
 
+/// DEBUG-only KDF cross-check. Derives the registry (cert-only + cert+seed) and
+/// bootstrap keys for the fixed vectors in native_core/src/kdf_vectors.inc
+/// (generated from tools/kdf_common.py by tools/gen_kdf_vectors.py) and asserts
+/// they match AND that the registry / bootstrap keys are domain-separated. Catches
+/// C++/Python derive_*() drift (F-31) at build time via tools/run_native_tests.ps1.
+/// Saves/restores the live binding + server-seed state, so it is safe to call at
+/// any time. Release builds (no GUARD_DEV_SELFTEST): returns true (vectors not embedded).
+bool kdf_self_test();
+
 // ── Module: ConfigRegistry (Phase 1B) ─────────────────────────
 //
 // Plaintext hook-config registry prototype. Parses a registry JSON into
@@ -231,6 +240,11 @@ ConfigRegistry registry_parse(const std::string& json);
 
 /// Load the SO-embedded plaintext registry (mirror of registry_8071.json).
 ConfigRegistry registry_load_embedded();
+
+/// True when the embedded cipher is prod_server_lock (needs a server seed before
+/// it can decrypt). When true and no seed is loaded, registry scatter is the lock
+/// working, not drift — the build-time gate uses this to skip registry_self_test.
+bool registry_requires_server_seed();
 
 /// One-line human-readable summary of the embedded registry (for verify log).
 std::string registry_dump_summary();

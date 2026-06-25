@@ -513,6 +513,67 @@ void derive_bootstrap_key(uint8_t out[16]) {
     }
 }
 
+#ifdef GUARD_DEV_SELFTEST
+// KDF cross-check vectors (fixed inputs → expected derive_* output), generated
+// from tools/kdf_common.py by tools/gen_kdf_vectors.py. Debug-config only
+// (GUARD_DEV_SELFTEST, see CMakeLists.txt): never embedded in the release SO.
+// NOTE: do not use GUARD_DEBUG — it leaks into release (build.gradle bug).
+#include "kdf_vectors.inc"
+#endif
+
+bool kdf_self_test() {
+#ifdef GUARD_DEV_SELFTEST
+    // Cross-check that guard::derive_* match the Python kdf_common output pinned
+    // in kdf_vectors.inc. A single divergent byte → registry scatters silently on
+    // real devices (F-31); this fails the build-time gate instead.
+    // Live key state is saved and restored so calling this never corrupts a
+    // running module's derivation inputs.
+    uint8_t saved_binding[sizeof(g_binding)];
+    std::memcpy(saved_binding, g_binding, sizeof(g_binding));
+    size_t saved_binding_len = g_binding_len;
+    uint8_t saved_seed[sizeof(g_server_seed)];
+    std::memcpy(saved_seed, g_server_seed, sizeof(g_server_seed));
+    size_t saved_seed_len = g_server_seed_len;
+
+    bool ok = true;
+    uint8_t k[16];
+
+    // (1) registry key, cert-only (binding set, no server seed).
+    std::memcpy(g_binding, kKdfTestBinding, sizeof(g_binding));
+    g_binding_len = sizeof(g_binding);
+    g_server_seed_len = 0;
+    derive_registry_key(k);
+    if (std::memcmp(k, kKdfVecRegistryCertOnly, 16) != 0) ok = false;
+    uint8_t reg_certonly[16];
+    std::memcpy(reg_certonly, k, 16);
+
+    // (2) registry key, cert + server seed (exercises the S_rel fold index math).
+    std::memcpy(g_server_seed, kKdfTestSeed, sizeof(g_server_seed));
+    g_server_seed_len = sizeof(g_server_seed);
+    derive_registry_key(k);
+    if (std::memcmp(k, kKdfVecRegistryCertSeed, 16) != 0) ok = false;
+
+    // (3) bootstrap key (cert binding, seed ignored, + domain tag).
+    uint8_t b[16];
+    derive_bootstrap_key(b);
+    if (std::memcmp(b, kKdfVecBootstrap, 16) != 0) ok = false;
+
+    // (4) domain separation: registry cert-only key must differ from bootstrap.
+    if (std::memcmp(reg_certonly, b, 16) == 0) ok = false;
+
+    // Restore live key state.
+    std::memcpy(g_binding, saved_binding, sizeof(g_binding));
+    g_binding_len = saved_binding_len;
+    std::memcpy(g_server_seed, saved_seed, sizeof(g_server_seed));
+    g_server_seed_len = saved_seed_len;
+    return ok;
+#else
+    // Release SO: vectors are not embedded; KDF drift is caught in debug/CI
+    // (tools/run_native_tests.ps1) before release. No-op here.
+    return true;
+#endif
+}
+
 bool decrypt_config_self_test() {
     // AES-128 block sanity: E(0,0) reference vector
     uint8_t zero_key[16] = {};
