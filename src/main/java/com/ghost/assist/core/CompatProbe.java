@@ -89,6 +89,43 @@ public final class CompatProbe {
         }
     }
 
+    /**
+     * A2 防封安装门（仅 cert 硬轴 · 逆序线 fail-open）。D-018 / 用户 2026-06-26：
+     * A2 防封惠及所有「未被重签」的副本——首装 / 断网 / 未授权都保号；只有【读到模块证书
+     * 且确证 ≠ 预期 EXPECTED_CERT】= 被重打包重签 → 返回 false 让 A2 散沙。证书读不到 /
+     * 相符 / 读取异常 → 返回 true（保护优先，不误杀正版：误判 = 账号异常不可逆）。
+     *
+     * ⚠️ canary（诱饵 BASELINE）刻意【不进】本门——canary 吊编译期基线，改诱饵漏重算会
+     * 让正版整片误判 → 直接撤 A2 = 逆序线误封灾难；canary 仍只走 check()→markTampered→
+     * 影子期引流（不变）。改包必重签 → cert 已覆盖重打包场景。
+     *
+     * 与 checkSignature 的区别：checkSignature 命中即 markTampered（喂 RiskState 影子期）；
+     * 本方法【纯查询、零副作用】，只回「A2 该不该装」。读点同 checkSignature（模块自身 APK）。
+     */
+    public static boolean isIntegrityIntact(Context ctx, String modulePath) {
+        if (ctx == null || modulePath == null || modulePath.isEmpty()) {
+            return true;   // 读不到模块路径 → 不判篡改（保护优先）
+        }
+        try {
+            PackageManager pm = ctx.getPackageManager();
+            @SuppressWarnings("deprecation")
+            PackageInfo pi = pm.getPackageArchiveInfo(modulePath, PackageManager.GET_SIGNATURES);
+            if (pi == null || pi.signatures == null || pi.signatures.length == 0) {
+                return true;   // 证书读不到 → 不判篡改（保护优先）
+            }
+            byte[] der = pi.signatures[0].toByteArray();
+            byte[] dig = MessageDigest.getInstance("SHA-256").digest(der);
+            boolean match = toHex(dig).equalsIgnoreCase(EXPECTED_CERT);
+            if (!match) {
+                Log.i(TAG, "[cp] A2 gate: cert mismatch → scatter");
+            }
+            return match;  // 仅「确证不符」才 false
+        } catch (Throwable t) {
+            Log.w(TAG, "[cp] A2 gate probe err: " + t.getClass().getSimpleName());
+            return true;   // 异常 → 不判篡改（逆序线 fail-open，保护优先）
+        }
+    }
+
     private static String toHex(byte[] b) {
         StringBuilder sb = new StringBuilder(b.length * 2);
         for (byte x : b) sb.append(Character.forDigit((x >> 4) & 0xF, 16))

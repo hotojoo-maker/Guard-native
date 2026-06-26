@@ -1,6 +1,6 @@
 # P_AntiBanGate 防封授权闸（重构·版本轴）— worklog
 
-> 2026-06-23 建档 · 底座 微信 8.0.71 · 状态：**设计only 进行中**（落代码待安全官共审）
+> 2026-06-23 建档 · 底座 微信 8.0.71 · 状态：**A2 Route B（D-018）码已落 + 装机回归 Test1 首装未授权防住 / Test2 隐藏不连坐 L1 PASS（E99，2026-06-26）；Test3 重签散沙收《红队压测验证任务书》；本轮 commit（A2 范围）**。Route B 已取代 A2-1 的「registry server-seed 门控」——DER 改本地常量 `OFFICIAL_DER_HEX`、闸吊 `CompatProbe.isIntegrityIntact`（cert-only）。详见 2026-06-26b/c/d 三节 + `DECISION_LOG.md` D-018。
 
 ---
 
@@ -77,9 +77,137 @@
 
 ---
 
+## 2026-06-25 · A2-1 签名轴落码 + 改后双审 + 账实回正（执行/架构师视角 · Vchat guard_native-D68）
+
+> 本节为账实回正：此前 worklog/TASK_BOARD/PROJECT_INDEX 均写「设计only·未动代码」，与工作区实况背离。代码事实经源码 + git 核实（L1/L2）。
+
+### 落码事实（L1 git / L2 源码）
+- A2-1 签名轴代码已落工作区，**未提交**，在快照 `5dd0a52 snapshot(pre-A2-1)` 之上（改前 git 快照已做）：
+  - `core/A2SignatureSpoof.java`（新，untracked）：afterHook `ApplicationPackageManager.getPackageInfo(self)`，灌官方 DER 到 `signatures[]` + `signingInfo` 两路径（对齐设计稿 §3 硬要求）；只动自身包、独立新类、fail-closed。
+  - `core/GuardRuntime.java`（改）：新增 `isAntiBanReady() = isAuthorizedNow() && isConfigReady() && hasRecipe("a2.sig","official_der")` + 常量 `A2_SIG_GATEWAY`/`A2_SIG_OFFICIAL_DER` + `antiBanGateSelfTest`（DEBUG-only）。
+  - `ModuleMain.java`（改）：6.6 self-test（DEBUG）+ 6.7 门控安装（`isAntiBanReady()` 真才装，否则记 `[A2SIG] not installed: scatter`）。
+- 与 `A2接入设计稿_签名轴_20260625.md` §5「本期最小真闸」**逐字一致**；完整时间闸（T_soft/T_login/T_kill/影子期）= A2-4 后补（设计稿 §1/§21）。
+
+### 改前双审（2026-06-23 已完成，本次复核确认）
+- 授权检查官 9 项：架构 WARN（4 落地修正 + 2 watch，见 2026-06-23 节）。
+- 安全官 `落码前安全共审清单_v0.md`：go/no-go 门齐。
+
+### 改后双审（2026-06-25 本次补做，针对已落代码）
+- **授权检查官 9 项 → WARN**：架构/边界/红线全过 —— 独立新类、单出口 `isAntiBanReady`(GuardRuntime)、**不连坐 `isActive()`**、不进已验证 hook、不写 StateMachine、纯主进程 Java。5 门：Entry ✅ / Auth ✅(吊 isAuthorizedNow 非裸布尔) / State ✅(不连坐) / Risk ✅(本期不接) / 分层 ✅。WARN 项 = 流程（改后审 + worklog/ledger 此前缺位，本次补）+ watch（`isConfigReady` 现不因过期/篡改信封散沙 = GuardRuntime 既有 TODO 债，非 A2 新增）。
+- **安全官 改后审 10 项 → WARN**：红线 #1/#5/#6/#7 全守（闸吊 envelope+recipe、不清数据、不破坏官方包、不进已验证 hook）；fail-closed ✅（料缺→不装、release 无明文 DER）。WARN：① **闸空转**（见下）；② official_der 的「锁」强度受 registry **W 全局静态债（E9）** 封顶 —— W 一机一密前「抽一把 W 离线解任意设备信封」对 official_der 同样成立，A2 反白嫖强度 ≤ E9。
+- **A2-1 不碰 device 材料/android_id**（那是 A2-3），故 `落码前清单` 最重的 **G-A2 同源**（computeDeviceHash 被官方 SSAID 污染→误杀正版/跨机重放）**本期不适用**；`EnvelopeStore`/`LeaseClock`/`Bridge` 本期**未改**。
+
+### 闸现状（最关键，L2）
+- `registry_8071.json` 仅 4 entry（conv.list / moments.feed / contact.address / search.gateway），**无 `a2.sig`/`official_der`**。
+- 故 `hasRecipe("a2.sig","official_der")=""` → `isAntiBanReady()` 恒 false → A2 **从不安装** = 当前**死码、无线上行为**（fail-closed 正确，功能未生效）。
+
+### 账实回正（本次，仅文档，UTF-8）
+- 本 worklog 头部状态：设计only → 码已落(未提交)·双审 WARN·闸空转待料；本节新增。
+- `TASK_BOARD.md` P_AntiBanGate 行 + `PROJECT_INDEX.md §零` 行：「设计only·未动代码」→「A2-1 码已落(未提交)·双审 WARN·闸空转待 official_der」。
+- 未改 `DESIGN.md`/`配方卡`（设计真源不动，仅状态回正；守安全官收尾铁律：只更新本任务 worklog + 总览一行）。
+
+### 下一步（需用户点头 + S0 快照 + 三端对账 + per-release regen 方可执行；动 registry/SO）
+1. official_der（`md5=18c867f0…`, len 751）进 `registry_8071.json` 新 gateway `a2.sig` / key `official_der`（hex）。
+2. `tools/gen_registry_cipher.py` 重生成 `registry_cipher.inc`（官替/共存各发行线各自 regen；KDF 测试向量三端对账过 = 安全官铁律）。
+3. 装机 L1（DoD 见设计稿 §9）：`isAntiBanReady=true`→A2 装；`c$p.ad`/`bu5.a.a` 读官方 `18c867f0`、NON-OFFICIAL 残留 0；无 seed→散沙不装；密友隐藏不挂；KPI≈0。
+4. 绿 → A2-1 作为干净 commit 落地（worklog 补 L1 + PASS 日志落盘）。
+
+## 2026-06-25b · official_der 落料（Plan A，用户拍板放宽红线7）
+
+> 用户决策（Vchat guard_native-D68）：**Plan A** —— DER 直接写进 `registry_8071.json`；**明确放宽红线7**（理由：私库代码不外泄）。本节记此例外 + 落料 + 校验。
+
+- **红线7 例外（登记）**：设计稿 §红线7「官方 DER 原文不进 git 明文」本次**经用户同意放宽**（私库前提）。若日后仓库可能外泄/转交，应改 Plan B（DER 进非 git 秘密 recipe + gen merge）。
+- **料来源 + 校验（L1）**：`防封_反检测线/脚本/official_der.hex` → `python` 校验 `len=751` / `md5=18c867f0717aa67b2ab7347505ba07ed` = **MATCH**（与设计稿 §4 / dimcollect baseline 一致）。
+- **落点（L2）**：`native_core/registry_8071.json` 新增 `entries["a2.sig"]["official_der"]=<751B hex>`（取件口 `getRecipe("a2.sig","official_der")` = `GuardRuntime.A2_SIG_GATEWAY/A2_SIG_OFFICIAL_DER`，与代码逐字对齐）。
+- **校验（L1）**：`JSON_OK entries=[conv.list, moments.feed, contact.address, search.gateway, a2.sig]`；`gen_registry_cipher.py --dry-run`（dev_cert_only）→ `schema entries` 含 `a2.sig`、`pt_len 2555`、**未写 `.inc`**（dry-run）。
+- **未做（待 S_rel + 装机，运行时才生效）**：
+  - `registry_cipher.inc` **per-release regen**（官替/共存各自 `--recipe release/secrets/<release_id>.json` = prod_server_lock + 该线 S_rel + 该线 cert）；当前**未 regen**（无 S_rel，dry-run only）。
+  - 装机 L1（设计稿 §9）：种子后 `isAntiBanReady=true`→A2 装；`c$p.ad`/`bu5.a.a` 读官方 `18c867f0`、NON-OFFICIAL 残留 0；无 seed→散沙不装；密友隐藏不挂；KPI≈0。
+- **回退路径**：未提交；`git checkout -- native_core/registry_8071.json` 可还原到快照 `5dd0a52`（`registry_cipher.inc` 本就未动）。
+- **注**：只加 entry = data 变更，**不改 `derive_registry_key`** → KDF 三端测试向量不变（区别于「改 KDF=全线对账」）；但每发行线仍须各自 regen `.inc` + 验 `recipeOk` 含 a2.sig。
+
+## 2026-06-25c · 签名轴「两半」账实区分（防混记，用户 2026-06-25 指出）
+
+> 触发：用户指出「签名轴抓破解已实现」。核对代码 + PROTECTION_MAP §10.9 后**确认用户对**，记此区分，免与 A2-1 混账（呼应本轮 D1 账实教训）。
+
+签名轴有**两半、两个文件、两个机制、目标互补**：
+
+| 半 | 文件 | 干什么 | 状态 |
+|---|---|---|---|
+| **灌官方值（保号）** | `core/A2SignatureSpoof.java`（A2-1，本轮落） | `getPackageInfo` afterHook 喂官方 DER → 官方包自检「是官方」→ 号不被判账号异常 | 🟡 码已落·料已进明文源·**运行时空转**待 `.inc` per-release regen + 装机 |
+| **抓破解（防白嫖）** | `core/CompatProbe.java`（`checkSignature` + `check`） | 读**我们自己模块 APK** 签名证书，≠ 预期 `ca421ec3…`（=被重签=改过码）→ `RiskState.markTampered`→影子期7天→散沙+引流；并查诱饵 `PromoConfig` 绊线 | ✅ **装机 PASS**（PROTECTION_MAP §10.9，2026-06-12） |
+
+- 二者**不连坐、不同源、不同文件**：A2 灌值受 `isAntiBanReady` 闸；CompatProbe 抓破解走 `RiskState`（record-only 主链 + `markTampered`）。
+- 研究线另证 L1「能抓」：`getPackageInfo`/`c$p` 咽喉能观察签名、分 `18c867f0`(官方) vs `e89b158e`(非官方)（`recon/A2_RIDE_TEST`、防封线 `A2_CSP_JAVA_CALLER`）；`DESIGN §0` 收录「借眼睛抓破解」打法。
+- **互补非重复**：CompatProbe 抓「我们模块被重签」；A2 在咽喉「灌官方值」。「在 `getPackageInfo` afterHook 顺手读宿主原签名比对」那条目前**未单独实现**，但抓破解目标已由 CompatProbe 覆盖 = **非缺口**（日后若要，仅 `A2SignatureSpoof` 内加一段读-比对，非新文件）。
+- 修正：本轮对话中曾把「借眼睛抓破解」说成「留给签名轴(未来)」= **口径偏轻**；实况 = 抓破解已装机（CompatProbe），此处更正。
+
+---
+
+## 2026-06-26 · 官方授时源定位 + 写入主线（架构/安全官视角 · Vchat guard_native-E57）
+
+> 触发：用户问「有了官方授时是不是更稳」+「写入主线」。复稿 `DESIGN`/`配方卡` 时间模型后确认更稳，并定位官方授时源已在手。
+
+- **结论：更稳 ✅**——反白嫖命门 = 时间必须前进；当前仅我方服务器 `sn` 单源，盗版「屏蔽我方服务器 + 反复重启（`elapsedRealtime` 归零）」可冻住 `trustedNow` → 影子期永不到期 → 白嫖不死。官方授时独立于我方服务器，堵此洞。
+- **官方授时源已定位（L2 + 复用 L1）**：`ConvFilter.extractConvTime(item)` 读 `field_conversationTime`（每会话最近消息服务器盖戳时间，epoch ms；**Frida L1 实证 2026-05-29**，P_CF3 排序本就在用）。打开会话列表即有，零新增 hook / 零新增检测面（借官方眼睛）。
+- **接法（待落码 · 需点头 + 授权检查官）**：会话列表处理取 `max(extractConvTime)` → 新增 `LeaseClock.noteOfficialTime(ms)`（只抬 `max_trusted`、绝不降 + 未来上限兜底）；不动 ConvFilter 已验证过滤逻辑（铁律29）。`trustedNow = max(我方sn, 官方createTime) + elapsed`。
+- **写入主线**：本 worklog + `A2接入设计稿_签名轴 §5`（找授时点 待定→已定）+ `DESIGN.md §6`（双授时源防冻结）。设备 `609b4b18` + frida 在线（可选 L1 复证一条实值）。
+
+## 2026-06-26b · A2 防封闸改吊本地完整性（Route B）— 任务启动 + 改前审查（执行/安全官/授权检查官 · Vchat guard_native-E87）
+
+> 触发：用户 2026-06-26 拍板 —— A2 防封改吊「本地完整性（签名 cert/canary 未被改）」，**不再吊授权/server seed**；官方 DER 本地化（公开值）。首装/断网/未授权都防封；被改/重签→散沙。隐私 `isActive`/`isConfigReady` 不动（仍 server-seed），两闸独立。实现走 **Route B（本地常量 + 完整查，减法版）**。
+
+- **本节状态（零代码改动）**：已读 CLAUDE.md / DESIGN.md §5.1·§6 / A2接入设计稿 §5·§6 / 安全官 skill「防封能力反白嫖」+ 硬红线 / 授权检查官 §九 / 代码（A2SignatureSpoof · GuardRuntime.isAntiBanReady · ModuleMain §6.6-6.7 · CompatProbe · RiskState · PromoConfig · registry_8071.json a2.sig）。**仅出改前审查 + 「精确改哪几行」施工单**，待用户点头 + S0 快照后才动手。
+- **关键账实（L2 源码）**：当前 A2 运行时仍空转（`registry_cipher.inc` 未含 `a2.sig` → `hasRecipe` 空 → `isAntiBanReady` 恒 false → A2 从不安装，见 2026-06-25 节）。Route B 改完后 A2 **首次具备实装条件**（本地完整即装、无需 server seed）。official_der 明文已在 `registry_8071.json:44`（751B / md5 `18c867f0`，公开值，红线7 已于 2026-06-25 经用户放宽）。
+- **⚠️ 与既有锁定决策的张力（已在改前审查标红、待用户确认）**：本改**反转** DESIGN「反白嫖三道锁 #1 / 附录A 决策 #1/#2/#3/#28」—— 原 `isAntiBanReady` 吊授权、白嫖到期撤 A2（以「号被封」反制白嫖）；新口径 = 防封惠及**所有未破解副本**（含白嫖/断网/未授权），只在 cert/canary 篡改时散沙（**保留反破解杠杆、放弃反白嫖杠杆**；隐私付费门 `isActive` 不动仍是主变现闸）。落码后 DESIGN/安全官 skill 文档将与代码不一致，文档收敛属 AI-2 线 / 需另行用户同意（G5），本任务不碰文档减法。
+
+## 2026-06-26c · Route B 落码（4 文件 · 未提交 · 装机待跑 · E87）
+
+> 用户拍 A/B(强化)/C 后落码。**B 强化（必做）**：A2 安装门只认 cert，canary 不进门（见下）。
+
+**S0 快照**：`snap/A2-routeB-S0/20260626-1900`（stash，在 `snap/A2gate/20260626-1848` 之上；工作树 44 项改动前后一致、零丢失）。
+
+**改的 4 文件（L2）**：
+1. `core/CompatProbe.java` — 新增纯查询 `isIntegrityIntact(ctx, modulePath)`：**仅 cert**——读到证书且确证 ≠ `EXPECTED_CERT` → false（散沙）；读不到/相符/异常 → true（保护优先，逆序线 fail-open）。**既有 `check()`/`checkSignature()` 一行未动**（铁律29，仍喂 RiskState 影子期）。**canary 刻意不进本门**（吊编译期 `BASELINE`、漏重算会整片误封）。
+2. `core/GuardRuntime.java` — `isAntiBanReady()` → `isAntiBanReady(Context, String)` = `CompatProbe.isIntegrityIntact`；删无用 `EnvelopeStore` import、加 `Context` import；`antiBanGateSelfTest` 改打 cert 子信号；注释更新为 Route B/D-018；常量 `A2_SIG_*` 保留（代码不再读）。
+3. `core/A2SignatureSpoof.java` — `resolveOfficialDer()` 改读本地常量 `OFFICIAL_DER_HEX`（751B，**逐字校验 = `registry_8071.json` a2.sig**，md5 `18c867f0717aa67b2ab7347505ba07ed` MATCH）；类/install 注释更新（不再走 registry，fail-open）。
+4. `ModuleMain.java` — §6.6/§6.7 两调用点传 `(app, sModulePath)` + 注释更新。
+
+**自检（L1/L2）**：ReadLints 四文件**零错误**；`DER_EMBED_MATCH True`（embed hex ⊆ json 源）；grep 无遗留 no-arg `isAntiBanReady()` / `antiBanGateSelfTest(TAG)` / `getRecipe(A2_SIG)` 调用；`EnvelopeStore` 在 `GuardRuntime` 仅余注释（import 已删、lint 净；`ModuleMain` 自身心跳仍用 `EnvelopeStore`，未动）。
+
+**未做（需设备 / 待跑）**：装机回归三件 —— ① 首装未授权冷启 → A2 装 · `isAntiBanReady=true` · 读官方 `18c867f0` · NON-OFFICIAL 残留 0；② 正版 `level=正常` · 密友隐藏照常（不连坐 isActive）；③ 重签包 → `isIntegrityIntact=false` → A2 不装。**绿后**：本 worklog 补 PASS + 翻 STATUS 行 + commit。
+
+## 2026-06-26d · 装机回归 Test 1+2 PASS + test3 收红队（执行/终端 · Vchat guard_native-E99）
+
+> 用户选 B：1+2 装机绿 + test3（重签散沙）静态已证、收进《红队压测验证任务书_20260626.md》→ 落 worklog + commit。设备 `609b4b18`（MI 9 / cepheus）· build `assembleOfficialDebug` → BUILD SUCCESSFUL · `adb install -r` Success（固定签名 `guardFixed`，无签名冲突）。
+
+### Test 1 首装未授权冷启 — ✅ PASS（L1 原文 · 见本节内联；原始 logcat 本地 transient 未入库）
+- `[auth] NO_LICENSE → not bound yet` + `[native] setAuthState=4` + `[auth] evaluate=4 (record-only, not gating)` = 设备**当场就是未授权态**。
+- `[ANTIBAN-GATE] ready=true certIntegrityIntact=true (gate=local-cert; D-018: unpaid/offline also protected)`。
+- `[A2SIG] installed (self=com.tencent.mm, der=751B)` + `[hb] registry ... [a2.sig] recipeOk=true` + `[risk] level=正常`。
+- 崩溃扫描 = 0。**结论**：未授权（NO_LICENSE）下 A2 仍装、der=751B、level=正常 → Route B「未付费也保号」+ 两闸独立（A2 起 ↔ 授权倒）当场 L1 坐实。
+
+### Test 2 隐藏不连坐 — ✅ PASS（L1 原文 · 见本节内联；原始 logcat 本地 transient 未入库）
+- `state=H` + `[CF:clean] start ids=1 src=BUS-H mvvm=MvvmConvList` + `[CF] L4collect removed wxid=wxid_lzd2va16jd1622` + `[CF:clean] removed=2 src=BUS-H` + `level=正常`；用户目测密友隐藏、微信运行正常。
+- 崩溃扫描 = 0。**结论**：A2 改后隐藏路照常（不连坐）。诚实注：设备当前未授权态、隐藏仍生效（v1 授权 record-only），恰证 A2 改未碰隐藏路。
+
+### P1 静态重验（兼 AI-2 掉线那份 · 全绿 · 只读）
+- DER：`len=751` / `md5=18c867f0717aa67b2ab7347505ba07ed` / `registry_contains_same_hex=True`（`OFFICIAL_DER_HEX` 逐字节 = `registry_8071.json` 源）。
+- `CompatProbe` diff = **37 增 0 删** → `check()`/`checkSignature()`/`BASELINE` 一行未动（additive-only）。
+- `PromoConfig.java` 未改 + 06-12 以来零提交 → canary 三值仍平 `BASELINE`（正版 canary 不误报）；`FunnelPrompt`/`RiskPromptController` 06-12 以来零提交 → 引流链不变。
+- B 加强坐实：canary 不进 A2 闸 → 逆序线误封风险 = 0。
+- 4 文件 ReadLints 零错（本会话亲验）；`ModuleMain` L209 绊线 / L221 selftest / L229 闸 三调用点均已传 `(app, sModulePath)`。
+
+### Test 3 重签散沙 — 收红队（未现场跑）
+- 按用户决策收进《红队压测验证任务书_20260626.md》（重签/破解本属红蓝对抗）。静态已证（L2）：`CompatProbe.isIntegrityIntact` 仅在 cert SHA-256 == `EXPECTED_CERT` 时返 true、差签即 false（确定性死逻辑）；live 重签散沙留红队。
+
+### 本轮落地
+- 本 worklog（本节）+ `STATUS_防封加密线.md` 验证列翻新 + `DECISION_LOG.md` D-018 状态 → 装机 1+2 PASS。
+- commit：4 文件 Route B + 三 .md（worklog/STATUS/DECISION_LOG）。**只提交 A2 范围**（RB1 / LeanCloseout / skill / 其它线 WIP 不动）。
+
 ## 待办（落代码前必过）
 
-- ⬜ **安全官共审**：改 `GuardRuntime` / `EnvelopeStore` / `LeaseClock` / `Bridge`（首装时间键）前，与网络安全官共审（机制本体 + 真锁）。
+- 🟡 **安全官共审**：A2-1 只动 `GuardRuntime`(isAntiBanReady) + `ModuleMain` + 新类 `A2SignatureSpoof` → 改前(2026-06-23) + 改后(2026-06-25) 双审已过(WARN，见 2026-06-25 节)；`EnvelopeStore` / `LeaseClock` / `Bridge`（首装时间键 / device 同源）本期**未改**，留 A2-3/A2-4 再共审。
 - ⬜ **MD5 方案落地**：扩 `tools/gate_three_axis.js` 发版门 + `release_manifest` 后台存（运行时自校验归阶段⑤ P32，本方案不加运行时代码，待指挥审）。
 - ⬜ **P18 KPI 基线**：官方包跑 `frida_stats.js` 建零点（F-22），校准 60% 信任分 / 心跳频率。
 - ⬜ step③ android_id 同源硬测（D1）：A2 接后两机 envelope `d` 仍各异。

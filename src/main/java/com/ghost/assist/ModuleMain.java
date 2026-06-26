@@ -215,21 +215,21 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         }
 
         // 6.6. A2 防封授权闸（isAntiBanReady）self-test — DEBUG-only。
-        //      与 6.5 引流闸独立：只读闸出口 + 三个子信号（ANTIBAN-GATE tag），
-        //      不门控、不改 isActive。
+        //      Route B/D-018：闸 = 本地模块证书完整性；只读闸出口 + cert 子信号
+        //      （ANTIBAN-GATE tag），不门控、不改 isActive。
         if (BuildConfig.DEBUG) {
-            com.ghost.assist.core.GuardRuntime.antiBanGateSelfTest(TAG);
+            com.ghost.assist.core.GuardRuntime.antiBanGateSelfTest(TAG, app, sModulePath);
         }
 
-        // 6.7. A2 防封签名轴安装（设计稿 §3/§5）：门控在 EnvelopeStore/registry
-        //      就绪之后（step 2 已 init）——只有 isAntiBanReady()（授权信封 +
-        //      registry 解开 + 官方 DER 料）才装；否则散沙（fail-closed，红线#1/#4）。
+        // 6.7. A2 防封签名轴安装（Route B / D-018）：门控 = 本地模块证书完整性
+        //      isAntiBanReady(app, sModulePath)——未被重签（首装/断网/未授权）即装、保号；
+        //      读到证书且确证不符（被重打包重签）→ 散沙。逆序线 fail-open（证书读不到=装）。
         //      A2 是独立加法，只动自身包签名返回，不连坐隐私 isActive()、不进已验证 hook。
         try {
-            if (com.ghost.assist.core.GuardRuntime.isAntiBanReady()) {
+            if (com.ghost.assist.core.GuardRuntime.isAntiBanReady(app, sModulePath)) {
                 com.ghost.assist.core.A2SignatureSpoof.install(lpparam);
             } else {
-                Log.i(TAG, "[A2SIG] not installed: isAntiBanReady=false (scatter)");
+                Log.i(TAG, "[A2SIG] not installed: cert mismatch (re-signed → scatter)");
             }
         } catch (Throwable t) {
             Log.w(TAG, "[A2SIG] gate/install crash: " + t.getClass().getSimpleName());

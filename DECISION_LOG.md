@@ -143,6 +143,17 @@
 - **依据**：指挥拍板（2026-06-23，Vchat C81）；授权检查官独立审 = 架构 WARN（设计only干净，4 落地修正 + 2 watch）；研究线《防封权威账》§0/§八/§十（A2 签名轴 L1 已证）。
 - **影响**：① 解 step③「A2 接主线」的时机 BLOCK；② `P_AntiBanGate` 进看板登记；③ 配方卡以 **JSON 存配方** + 包名/打包 **MD5 校验**（避免混乱，对齐 `tools/gate_three_axis.js` 自检门）；④ 分线推进：网络安全官（共审+真锁机制）、服务器运维（miyou-server / 管理版重构，安卓线）。
 
+### D-018：A2 防封闸改吊「本地完整性 + 本地 DER」（取代 D-017 的「授权 + 服务器种子」门控口径）（2026-06-26）
+
+- **决策**：A2 防封 `isAntiBanReady()` 改吊**本地完整性**（模块签名 cert / canary 未被改），**不再吊授权 / `isConfigReady` / server seed**；官方 DER 改**本地可解**（公开值，cert 钥匙锁或本地常量 + 完整性门控）。隐私 `isActive()` / `isConfigReady()` **仍 server-seed-gated，不动**——两闸独立、互不连坐。
+- **依据**：首装未授权 = 重打包包最危险窗口（第一次撞官方 `c$p` 自检）；靠服务器种子门控 → 首装裸奔（D-017/早上工作把 A2 料锁进 server-seed registry，致首装/断网/未授权不防封 = 理解偏差源）。官方 DER 本是公开证书（可从官方包抠），锁进 server seed = 锁「功能开关」非锁「秘密」，且误把正版首装锁在外。能抓能骑 L1（`recon/A2_RIDE_TEST_20260625.md`）。
+- **取舍（已认）**：防封对「完整但未付费」者免费——丢「白嫖→撤防封→封」这根棍；但防封单独低价值（隐私仍授权锁），防重打包/换壳靠 cert（重签→散沙），减法划算。
+- **实现**：B（本地常量 + 完整查，减法版，先上）/ A（cert 钥匙锁，更牢，后续配 SO 下沉）。
+- **落地细化（2026-06-26 E87）**：A2 安装门**只认 cert**（`CompatProbe.isIntegrityIntact`：读到证书且确证 ≠ `EXPECTED_CERT` 才散沙；读不到 / 相符 / 异常 = 装，逆序线 fail-open）。**canary 不进 A2 门**（吊编译期 `BASELINE`、漏重算会整片误封），canary 仍走 `CompatProbe.check`→`markTampered`→影子期引流（不变）。改包必重签 → cert 已覆盖重打包场景。官方 DER = `A2SignatureSpoof.OFFICIAL_DER_HEX` 本地常量。
+- **状态**：🟢 码已落 + **装机 L1 PASS（E99 2026-06-26）**：Test1 首装未授权 ready=true/der=751B/level=正常、Test2 隐藏不连坐(removed wxid)/0 崩溃；Test3 重签散沙收《红队压测验证任务书_20260626》。lint 净·DER 校验过(751B/md5 `18c867f0`)·改前审查 PASS〔Vchat E87 · 安全官+授权检查官 WARN〕·S0 快照 `snap/A2-routeB-S0/20260626-1900`（在 `snap/A2gate/20260626-1848` 之上）·本轮 commit（A2 范围）。机制真源 = `DESIGN.md §5.1/§6`（DESIGN/skill 文档同步归主控）；规则 = 安全官 skill §防封反白嫖（旧 lock#1/#2 被本条取代）。状态页 = `STATUS_防封加密线.md`；落码细节 = `P_AntiBanGate/worklog.md` 2026-06-26c+d。
+- **上线前门控**：红蓝对抗（重签包→散沙 / 首装未授权→防住 / 抽本地 DER 或掐完整查→拿不到隐私 / 正版不误伤）。
+- **撤回**：不撤 D-017 全条（版本轴 / 同 keystore / 后台统计仍有效）；仅取代其中「A2 料只进 server-seed registry + `isAntiBanReady` 吊授权」的门控口径。
+
 ---
 
 ## 决策模板

@@ -1,7 +1,8 @@
 package com.ghost.assist.core;
 
+import android.content.Context;
+
 import com.ghost.assist.BuildConfig;
-import com.ghost.assist.net.EnvelopeStore;
 
 /**
  * GuardRuntime — single entry point for hook recipes (class/field names).
@@ -109,44 +110,40 @@ public final class GuardRuntime {
         return v != null && !v.isEmpty();
     }
 
-    // ── A2 防封授权闸（Phase A2-1 · 签名轴）─────────────────────
+    // ── A2 防封授权闸（Route B · 本地完整性轴）─────────────────────
     //
     // isAntiBanReady() 是 A2 防封能力（喂官方签名）的唯一闸出口，与隐私
-    // isActive() / isConfigReady() 两闸独立、互不连坐（设计稿 §5 / DESIGN §1 /
-    // 授权检查官 §九）。隐私功能仍走 isActive()，本闸只门控 A2，不读 StateMachine。
+    // isActive() / isConfigReady() 两闸独立、互不连坐（DESIGN §1 / 授权检查官 §九）。
+    // 隐私功能仍走 isActive()（server-seed 不动），本闸只门控 A2，不读 StateMachine。
     //
-    // 本期最小真闸（设计稿 §5；安全官红线 #1「不是裸客户端布尔」）：
-    //   有效授权信封 + registry 解开 + 官方 DER 料解得出 → 才装 A2。
-    // 盗版无 server seed → 官方 DER 料解不出 → recipeOk=false → 闸 false → A2 散沙
-    // （fail-closed，设计稿 §4/§9）。完整时间闸（T_soft/T_login/T_kill/影子期）=
-    // A2-4 后补；本期到期宽限沿用授权链（isAuthorizedNow 内部已用 LeaseClock 防回拨
-    // 判到期），不在此引入墙钟时间逻辑（红线 #3）。
+    // D-018（用户 2026-06-26 拍板）：A2 防封改吊【本地完整性】，不再吊授权 / server seed。
+    //   防封惠及所有「未被重签」的副本——首装 / 断网 / 未授权都保号；只有 CompatProbe
+    //   读到模块证书且确证 ≠ 预期（= 被重打包重签）→ isIntegrityIntact=false → A2 散沙。
+    //   逆序线 fail-open：证书读不到 / 相符 → 装 A2（保护优先，误判 = 账号异常不可逆）。
+    //   canary 刻意不进本门（吊编译期基线、漏算会整片误封），仍走 CompatProbe.check→
+    //   markTampered→影子期引流（不变）。放弃「白嫖到期撤 A2」反白嫖杠杆，变现靠隐私付费门。
+    //   官方 DER 已本地化（公开值，见 A2SignatureSpoof.OFFICIAL_DER_HEX）。
 
-    /** A2 签名轴官方 DER 取件口（registry gateway/field；料缺即闸 false 散沙）。 */
+    /** A2 官方 DER registry 取件口（D-018 起代码不再读；registry entry 保留、料已常量化）。 */
     public static final String A2_SIG_GATEWAY      = "a2.sig";
     public static final String A2_SIG_OFFICIAL_DER = "official_der";
 
-    public static boolean isAntiBanReady() {
-        return EnvelopeStore.isAuthorizedNow()
-                && isConfigReady()
-                && hasRecipe(A2_SIG_GATEWAY, A2_SIG_OFFICIAL_DER);
+    public static boolean isAntiBanReady(Context ctx, String modulePath) {
+        return CompatProbe.isIntegrityIntact(ctx, modulePath);
     }
 
     /**
      * DEBUG-only cold-start self-test for the A2 anti-ban gate. Logs the final
-     * gate decision plus its three sub-signals so the active branch
-     * (authorized / unauthorized / DER-material-missing) is readable in logcat
-     * under the {@code ANTIBAN-GATE} marker. No JUnit harness exists in this
-     * repo; this mirrors the existing native KDF / registry self-tests and is
-     * gated by BuildConfig.DEBUG at the call site so release never logs it.
+     * gate decision plus the cert-integrity sub-signal under the
+     * {@code ANTIBAN-GATE} marker (Route B / D-018: gate = local module-cert
+     * integrity, not authorization). No JUnit harness exists in this repo; this
+     * mirrors the existing native KDF / registry self-tests and is gated by
+     * BuildConfig.DEBUG at the call site so release never logs it.
      */
-    public static void antiBanGateSelfTest(String tag) {
-        boolean auth   = EnvelopeStore.isAuthorizedNow();
-        boolean cfg    = isConfigReady();
-        boolean recipe = hasRecipe(A2_SIG_GATEWAY, A2_SIG_OFFICIAL_DER);
-        android.util.Log.i(tag, "[ANTIBAN-GATE] ready=" + isAntiBanReady()
-                + " authorizedNow=" + auth
-                + " configReady=" + cfg
-                + " a2RecipeOk=" + recipe);
+    public static void antiBanGateSelfTest(String tag, Context ctx, String modulePath) {
+        boolean integrity = CompatProbe.isIntegrityIntact(ctx, modulePath);
+        android.util.Log.i(tag, "[ANTIBAN-GATE] ready=" + isAntiBanReady(ctx, modulePath)
+                + " certIntegrityIntact=" + integrity
+                + " (gate=local-cert; D-018: unpaid/offline also protected)");
     }
 }

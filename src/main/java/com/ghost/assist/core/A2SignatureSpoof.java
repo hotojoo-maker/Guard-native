@@ -22,15 +22,14 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
  * 边界（设计稿 §3/§7 红线）：
  *   • 只动自身包 BuildConfig.GUARD_WX_PKG 的返回；他包原样返回（红线#1）。
  *   • 不全局 hook Signature.toByteArray / getPackageName（红线#2）。
- *   • 官方 DER 取自加密 registry（getRecipe a2.sig/official_der）；料解不出
- *     → 不装 hook（fail-closed，红线#4）；release 无明文 DER。
+ *   • 官方 DER = 本地常量 OFFICIAL_DER_HEX（公开值；Route B/D-018，不再走加密
+ *     registry）；hex 解不出（不应发生）→ 不装 hook（防御性兜底）。
  *   • 零环境读取（不读 ro.boot.*、不枚举包）（红线#3）。
  *   • 独立新类，不进任何已验证隐私 hook 回调体（红线#5）。
  *
- * 安装：由 ModuleMain 在 EnvelopeStore/registry 就绪后、且
- * GuardRuntime.isAntiBanReady() 为 true 时调用（设计稿 §3/§5）。实现对齐研究线
- * 已 L1 验证的 dimcollect SPOOF 路径（spoofSigningInfo / replaceSignatureArrays），
- * 不另发明。
+ * 安装：由 ModuleMain 在 GuardRuntime.isAntiBanReady(ctx, modulePath) 为 true 时
+ * 调用（Route B：闸 = 本地模块证书完整性）。实现对齐研究线已 L1 验证的 dimcollect
+ * SPOOF 路径（spoofSigningInfo / replaceSignatureArrays），不另发明。
  */
 public final class A2SignatureSpoof {
 
@@ -38,14 +37,28 @@ public final class A2SignatureSpoof {
     private static final int GET_SIGNATURES = 0x40;
     private static final int GET_SIGNING_CERTIFICATES = 0x08000000;
 
+    // A2-x 借官方眼睛（弱信号）：官方自身在 c$p.aa 链路用 getPackageInfo 查 RE/提权工具包
+    // （防封权威账 §169）。本 hook 本就在官方那次调用里，afterHook 命中「他包 + 已装」时折一个
+    // 弱信号位回传服务器（非封因，仅服务器侧弱权重）。我方不发起任何枚举（守红线#3）、零 ro.boot
+    // （守#5）、零 native（守铁律23）。包名只存 SHA-256[:16] 哈希，不写明文/敏感词（兼反逆向）。
+    private static volatile int sBorrowedEnv = 0;
+    private static final String[] BORROW_HASH = {
+            "1d61da52b0cccbc4", "1df24c805ec076c7", "bf49dde2b81210bd", // 提权框架主线 / 变体
+            "74e305e64c319375",                                          // RE 文件工具
+    };
+    private static final int[] BORROW_BIT = { 0x1, 0x1, 0x1, 0x2 };
+
+    /** 「借官方眼睛」弱信号位（0=未观测到）；服务器作弱权重、非封因。回传走 EnvelopeClient `re`。 */
+    public static int getBorrowedEnvSignal() { return sBorrowedEnv; }
+
     private A2SignatureSpoof() {}
 
     /**
      * Install the signature-axis spoof. The caller (ModuleMain) MUST gate this
-     * with GuardRuntime.isAntiBanReady(); we still re-resolve the official DER
-     * from the encrypted registry here and bail (fail-closed) when it is
-     * unavailable — pirated builds without a server seed scatter the DER, so the
-     * hook is never installed.
+     * with GuardRuntime.isAntiBanReady(ctx, modulePath) (Route B: local
+     * module-cert integrity). The official DER is now a local constant
+     * (OFFICIAL_DER_HEX, a public value); the null guard below is purely
+     * defensive (a malformed hex would skip install rather than crash).
      */
     public static void install(XC_LoadPackage.LoadPackageParam lpparam) {
         final byte[] der = resolveOfficialDer();
@@ -61,6 +74,10 @@ public final class A2SignatureSpoof {
                     new XC_MethodHook() {
                         @Override
                         protected void afterHookedMethod(MethodHookParam param) {
+                            try {
+                                observeBorrowed(param, self);   // 借官方眼睛：被动观测，绝不改他包返回
+                            } catch (Throwable ignored) {
+                            }
                             try {
                                 feedOfficial(param, self, der);
                             } catch (Throwable ignored) {
@@ -100,10 +117,18 @@ public final class A2SignatureSpoof {
         }
     }
 
+    /**
+     * 官方签名 DER（公开值：官方客户端证书，谁都能从官方包抽取）。Route B / D-018：
+     * 本地常量化，A2 不再依赖 server seed 解 registry —— 防封惠及所有未被重签的副本。
+     * len=751B / md5=18c867f0717aa67b2ab7347505ba07ed（与 registry_8071.json a2.sig
+     * / 研究线 dimcollect baseline 同源，落码时已校验）。红线7 经用户 2026-06-25 放宽
+     * （私库 + 公开值），故允许本地明文常量。
+     */
+    private static final String OFFICIAL_DER_HEX =
+            "308202eb30820254a00302010202044d36f7a4300d06092a864886f70d01010505003081b9310b300906035504061302383631123010060355040813094775616e67646f6e673111300f060355040713085368656e7a68656e31353033060355040a132c54656e63656e7420546563686e6f6c6f6779285368656e7a68656e2920436f6d70616e79204c696d69746564313a3038060355040b133154656e63656e74204775616e677a686f7520526573656172636820616e6420446576656c6f706d656e742043656e7465723110300e0603550403130754656e63656e74301e170d3131303131393134333933325a170d3431303131313134333933325a3081b9310b300906035504061302383631123010060355040813094775616e67646f6e673111300f060355040713085368656e7a68656e31353033060355040a132c54656e63656e7420546563686e6f6c6f6779285368656e7a68656e2920436f6d70616e79204c696d69746564313a3038060355040b133154656e63656e74204775616e677a686f7520526573656172636820616e6420446576656c6f706d656e742043656e7465723110300e0603550403130754656e63656e7430819f300d06092a864886f70d010101050003818d0030818902818100c05f34b231b083fb1323670bfbe7bdab40c0c0a6efc87ef2072a1ff0d60cc67c8edb0d0847f210bea6cbfaa241be70c86daf56be08b723c859e52428a064555d80db448cdcacc1aea2501eba06f8bad12a4fa49d85cacd7abeb68945a5cb5e061629b52e3254c373550ee4e40cb7c8ae6f7a8151ccd8df582d446f39ae0c5e930203010001300d06092a864886f70d0101050500038181009c8d9d7f2f908c42081b4c764c377109a8b2c70582422125ce545842d5f520aea69550b6bd8bfd94e987b75a3077eb04ad341f481aac266e89d3864456e69fba13df018acdc168b9a19dfd7ad9d9cc6f6ace57c746515f71234df3a053e33ba93ece5cd0fc15f3e389a3f365588a9fcb439e069d3629cd7732a13fff7b891499";
+
     private static byte[] resolveOfficialDer() {
-        String hex = GuardRuntime.getRecipe(
-                GuardRuntime.A2_SIG_GATEWAY, GuardRuntime.A2_SIG_OFFICIAL_DER);
-        return hexToBytes(hex);
+        return hexToBytes(OFFICIAL_DER_HEX);
     }
 
     /**
@@ -139,6 +164,41 @@ public final class A2SignatureSpoof {
             Field f = obj.getClass().getDeclaredField(name);
             f.setAccessible(true);
             return f.get(obj);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /**
+     * 借官方眼睛（被动观测）：绝不修改他包返回（守红线#1），不发起任何枚举（守红线#3）。
+     * 官方自身在 c$p.aa 链路调 getPackageInfo 查 RE/提权工具包（防封权威账 §169）；本 hook 本就
+     * 在官方那次调用里，afterHook 命中「他包 + result 非空(=该包已装)」且哈希匹配时折一个弱信号位。
+     * 零 ro.boot、零 native、零我方枚举；提权/环境为非封因，仅供服务器侧弱权重。
+     */
+    private static void observeBorrowed(XC_MethodHook.MethodHookParam param, String self) {
+        if (param.args == null || param.args.length < 1) return;
+        Object pkgArg = param.args[0];
+        if (pkgArg == null) return;
+        String pkg = pkgArg.toString();
+        if (self.equals(pkg)) return;                              // 自身包不算
+        if (!(param.getResult() instanceof PackageInfo)) return;   // result 非空 = 该他包已装
+        String h = sha256Prefix16(pkg);
+        if (h == null) return;
+        for (int i = 0; i < BORROW_HASH.length; i++) {
+            if (BORROW_HASH[i].equals(h)) {
+                sBorrowedEnv |= BORROW_BIT[i];
+                return;
+            }
+        }
+    }
+
+    private static String sha256Prefix16(String s) {
+        try {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] d = md.digest(s.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder(16);
+            for (int i = 0; i < 8; i++) sb.append(String.format("%02x", d[i] & 0xff));
+            return sb.toString();
         } catch (Throwable t) {
             return null;
         }
