@@ -48,6 +48,11 @@ int main() {
     bool kdf_ok = guard::kdf_self_test();
     printf("kdf_self_test=%s\n", kdf_ok ? "PASS" : "FAIL");
 
+    // 牙④ a案 重放/过期绑定: assert the seed_expired() predicate + 不误伤 guards
+    // (set_envelope_expiry → unwrap 过期散沙). Catches >=/>0 drift before it 误伤正版.
+    bool expiry_ok = guard::envelope_expiry_self_test();
+    printf("envelope_expiry_self_test=%s\n", expiry_ok ? "PASS" : "FAIL");
+
     // Mirror build-time key derivation (cert-only, no server seed).
     guard::clear_server_seed();
     guard::set_binding_material(kCertSha256, sizeof(kCertSha256));
@@ -69,7 +74,7 @@ int main() {
     std::string reg = guard::decrypt_config_test_registry();
     printf("registry=%s\n", reg.c_str());
 
-    bool all_ok = crypto_ok && kdf_ok && registry_ok;
+    bool all_ok = crypto_ok && kdf_ok && expiry_ok && registry_ok;
     printf("ALL=%s\n", all_ok ? "PASS" : "FAIL");
     return all_ok ? 0 : 1;
 }

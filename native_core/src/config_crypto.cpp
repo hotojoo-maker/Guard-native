@@ -686,6 +686,28 @@ bool kdf_self_test() {
 #endif
 }
 
+// 牙④ a案 重放/过期绑定: 验 seed_expired() 判定 + set_envelope_expiry 的两个「不误伤」
+// 关阀 (hard_expire 或 trusted_now 为 0 → 不判过期)。改 unwrap 过期逻辑前先过本测 (防
+// 误把 >= 写成 > 或漏 >0 守卫 → 误伤正版断网用户)。Debug-config only; release no-op stub。
+bool envelope_expiry_self_test() {
+#ifdef GUARD_DEV_SELFTEST
+    uint64_t saved_he = g_seed_hard_expire;
+    uint64_t saved_tn = g_seed_trusted_now;
+    bool ok = true;
+    set_envelope_expiry(0, 0);          ok = ok && !seed_expired();  // 未下推 → 不过期(不误伤)
+    set_envelope_expiry(1000, 999);     ok = ok && !seed_expired();  // 未到期
+    set_envelope_expiry(1000, 1000);    ok = ok &&  seed_expired();  // 到期(>=) → 散沙
+    set_envelope_expiry(1000, 2000);    ok = ok &&  seed_expired();  // 已过期 → 散沙
+    set_envelope_expiry(0, 2000);       ok = ok && !seed_expired();  // hard_expire=0 关检查(不误伤)
+    set_envelope_expiry(1000, 0);       ok = ok && !seed_expired();  // trusted_now=0 关检查
+    g_seed_hard_expire = saved_he;
+    g_seed_trusted_now = saved_tn;
+    return ok;
+#else
+    return true;
+#endif
+}
+
 bool decrypt_config_self_test() {
     // AES-128 block sanity: E(0,0) reference vector
     uint8_t zero_key[16] = {};

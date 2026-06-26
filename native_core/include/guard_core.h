@@ -235,6 +235,12 @@ std::string decrypt_config_test_registry();
 /// any time. Release builds (no GUARD_DEV_SELFTEST): returns true (vectors not embedded).
 bool kdf_self_test();
 
+/// Phase 1G (牙④ a案): assert seed_expired() (set_envelope_expiry → unwrap 过期散沙)
+/// incl. the two 不误伤 guards (hard_expire/trusted_now==0 → never expired). Catches
+/// drift (>= → > / missing >0 guard) before it 误伤 offline 正版. Saves/restores live
+/// state. Release builds (no GUARD_DEV_SELFTEST): returns true.
+bool envelope_expiry_self_test();
+
 // ── Module: ConfigRegistry (Phase 1B) ─────────────────────────
 //
 // Plaintext hook-config registry prototype. Parses a registry JSON into
