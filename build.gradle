@@ -46,6 +46,7 @@ android {
         official {
             dimension "releaseLine"
             buildConfigField "String", "GUARD_WX_PKG", "\"com.tencent.mm\""
+            buildConfigField "String", "GUARD_RELEASE_ID", "\"android_8071\""
             externalNativeBuild {
                 cmake {
                     arguments "-DGUARD_WX_PKG=com.tencent.mm"
@@ -55,6 +56,10 @@ android {
         coexist {
             dimension "releaseLine"
             buildConfigField "String", "GUARD_WX_PKG", "\"com.tencent.mn\""
+            // 共存发行线 ID = android_8071_mn（呼应 mn 包后缀，便于追溯）。
+            // ⚠️ 发版前必须：服务器 release_lines 登记 android_8071_mn + 配 S_rel/W/registry_cipher/卡密 同源，
+            //    否则共存包 registry 解不开 → 散沙（缺迁移=全量散）。最终值待发版官确认。
+            buildConfigField "String", "GUARD_RELEASE_ID", "\"android_8071_mn\""
             externalNativeBuild {
                 cmake {
                     arguments "-DGUARD_WX_PKG=com.tencent.mn"

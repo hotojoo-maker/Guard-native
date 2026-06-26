@@ -154,6 +154,14 @@
 - **上线前门控**：红蓝对抗（重签包→散沙 / 首装未授权→防住 / 抽本地 DER 或掐完整查→拿不到隐私 / 正版不误伤）。
 - **撤回**：不撤 D-017 全条（版本轴 / 同 keystore / 后台统计仍有效）；仅取代其中「A2 料只进 server-seed registry + `isAntiBanReady` 吊授权」的门控口径。
 
+### D-019：RiskState 篡改散沙 = 单向不可逆（无客户端洗白/恢复路）（2026-06-27）
+
+- **决策**：RiskState 篡改链（confirmed tamper → 影子期 → TAMPER_FUNNEL 散沙）**不做正版恢复/洗白闭环**——删未接线的 `serverRiskReset()` 死桩，不接 envelope `risk_reset`/`rr`。篡改散沙是单向门：进得去、出不来。
+- **依据**：正版签名 cert 确定性不变 → `isConfirmedTamper` 对正版恒 false → 正版**根本不会被误判进影子期**，不需恢复路；反之任何客户端恢复路 = 给盗版送「反复重置影子期、永不降级」的洗白口。减法更安全。（用户拍板 2026-06-27 · Vchat guard_native-F69）
+- **前提（必须守住）**：`isConfirmedTamper` 零误报 —— 异常 fail-open ✅、只认显式 SO 码（PACKAGE_MISMATCH/CONFIG_TAMPERED/PIRATE/AUTH_TAMPERED）；唯一残留风险 = SO 早启动/未 init 完**不得**返回 tamper 码（否则因无恢复 → 永久误杀），须保证 markTampered 只在 init 后跑。
+- **影响**：① 删 `RiskState.serverRiskReset()`（无 caller 死码）；② 文档「正版恢复闭环未完」口径改「不做·设计决策（无洗白）」，散见各处指向本条（G10）；③ 离线/license 链仍可联网自恢复（自然降回 CLEAN，非洗白），不受本条影响。
+- **撤回**：取代各文档（安全官 skill / PROTECTION_MAP §10.6 / S3a0 / RELEASE_RULES 等）「RiskState 正版恢复闭环」为待办项的口径；篡改散沙降级（杂项四链）本身不变。
+
 ---
 
 ## 决策模板

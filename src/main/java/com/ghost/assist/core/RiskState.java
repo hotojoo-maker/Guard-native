@@ -34,7 +34,7 @@ public final class RiskState {
         TIME_SUSPICIOUS(2, "时间异常"),
         DEGRADED(3, "降级"),
         // 离线超宽限(>144h) / license 真过期 → 引流，但【可恢复】：联网验证授权
-        // 正常即自动降回 CLEAN（不像篡改链要服务器 risk_reset）。
+        // 正常即自动降回 CLEAN（离线/license 链可自恢复；篡改链单向不可逆、无洗白，见 D-019）。
         OFFLINE_FUNNEL(53, "离线引流"),
         TAMPER_SHADOW(4, "蜜罐影子期"),
         TAMPER_FUNNEL(5, "篡改引流"),
@@ -158,15 +158,10 @@ public final class RiskState {
         evaluate(ctx);
     }
 
-    /**
-     * 转正/解封：仅在服务器签名强校验通过后调用（Phase 1D-server）。
-     * 本地按钮 / 清缓存 / 改时间 / 删文件**不得**调用此方法自洗白。
-     */
-    public static synchronized void serverRiskReset(Context ctx) {
-        Bridge.getInstance().putLong(KEY_TAMPER_FIRST_SEEN, 0L);
-        Log.i(TAG, "[risk] server risk_reset accepted");
-        evaluate(ctx);
-    }
+    // 篡改散沙 = 单向不可逆（无客户端洗白/恢复路）—— D-019（2026-06-27）。
+    // 正版 cert 确定性不变 → isConfirmedTamper 对正版恒 false → 正版不会被误判进影子期，
+    // 故不需要恢复路；任何客户端恢复路 = 给盗版送「反复重置影子期永不降级」的洗白口。
+    // 原 serverRiskReset() 死桩（无 caller）已删。离线/license 链仍可联网自恢复（非洗白）。
 
     // ── 内部 ─────────────────────────────────────────────────
 
