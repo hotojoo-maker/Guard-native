@@ -123,12 +123,19 @@ public final class GuardRuntime {
     //   canary 刻意不进本门（吊编译期基线、漏算会整片误封），仍走 CompatProbe.check→
     //   markTampered→影子期引流（不变）。放弃「白嫖到期撤 A2」反白嫖杠杆，变现靠隐私付费门。
     //   官方 DER 已本地化（公开值，见 A2SignatureSpoof.OFFICIAL_DER_HEX）。
+    //
+    // 退款例外（场景#6 / SPEC §4）：isAntiBanReady = isIntegrityIntact && !EnvelopeStore.isRefunded()。
+    //   退款是【唯一】连坐 A2 的非篡改场景（用户明确不想用了）；信号源 = 服务器(块A)下发信封 rf 位
+    //   → EnvelopeStore.markRefunded() 落持久标志。其余场景（首装/断网/未授权/到期）A2 永不因时间撤。
 
     /** A2 官方 DER registry 取件口（D-018 起代码不再读；registry entry 保留、料已常量化）。 */
     public static final String A2_SIG_GATEWAY      = "a2.sig";
     public static final String A2_SIG_OFFICIAL_DER = "official_der";
 
     public static boolean isAntiBanReady(Context ctx, String modulePath) {
+        // 退款（场景#6 / SPEC §4）= 唯一连坐 A2 的非篡改场景：用户明确不想用了 → 立刻撤 A2。
+        // 其余（首装/断网/未授权/到期）永不因时间撤 A2（D-018）。
+        if (com.ghost.assist.net.EnvelopeStore.isRefunded()) return false;
         return CompatProbe.isIntegrityIntact(ctx, modulePath);
     }
 
@@ -142,8 +149,10 @@ public final class GuardRuntime {
      */
     public static void antiBanGateSelfTest(String tag, Context ctx, String modulePath) {
         boolean integrity = CompatProbe.isIntegrityIntact(ctx, modulePath);
+        boolean refunded = com.ghost.assist.net.EnvelopeStore.isRefunded();
         android.util.Log.i(tag, "[ANTIBAN-GATE] ready=" + isAntiBanReady(ctx, modulePath)
                 + " certIntegrityIntact=" + integrity
-                + " (gate=local-cert; D-018: unpaid/offline also protected)");
+                + " refunded=" + refunded
+                + " (gate=local-cert && !refunded; D-018: unpaid/offline also protected)");
     }
 }

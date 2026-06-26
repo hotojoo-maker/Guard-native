@@ -7,6 +7,7 @@ import android.util.Log;
 import android.widget.TextView;
 
 import com.ghost.assist.core.Bridge;
+import com.ghost.assist.core.RiskState;
 import com.ghost.assist.core.StateMachine;
 
 import de.robv.android.xposed.XC_MethodHook;
@@ -198,6 +199,9 @@ public class AntiRecall {
                         try {
                             if (!StateMachine.getInstance().isVipAuthorized()) return;
                             if (!Bridge.getInstance().isAntiRecallEnabled()) return;
+                            // 散沙扩面（杂项·块B）：确认篡改超影子期 → 防撤回失效（盗版功能散沙）。
+                            // 正版包永不 degrade → 行为不变（不误伤，铁律29）。
+                            if (RiskState.isTamperDegraded()) return;
 
                             String talker = (param.args[0] instanceof String) ? (String) param.args[0] : null;
                             long svrMsgId = (param.args[1] instanceof Number)

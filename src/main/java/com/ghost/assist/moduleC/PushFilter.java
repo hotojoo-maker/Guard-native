@@ -10,6 +10,7 @@ import android.util.Log;
 
 import com.ghost.assist.core.Bridge;
 import com.ghost.assist.core.NativeBridge;
+import com.ghost.assist.core.RiskState;
 import com.ghost.assist.core.StateMachine;
 
 import java.lang.reflect.Field;
@@ -64,6 +65,16 @@ public class PushFilter {
     private static final int PUSH_SEEN_LIMIT = 80;
     private static final java.util.Set<String> sPushSeenClasses =
             Collections.synchronizedSet(new java.util.HashSet<String>());
+
+    /**
+     * 主进程通知/未读拦截总闸 = isActive() 外加【tamper 散沙】（块B 扩面，对齐 CallGuard.active()）。
+     * 确认篡改超影子期 → RiskState.isTamperDegraded()=true → active()=false → 通知/未读拦截全短路 →
+     * 盗版的「密友通知屏蔽 / 未读扣除」失效。正版包永不 degrade → 行为与原来逐字一致（不误伤，铁律29）。
+     * 注：:push 子集仍走 NativeBridge.isHidden()（铁律30，:push 无 RiskState/Bridge），不在本闸内。
+     */
+    private static boolean active() {
+        return StateMachine.getInstance().isActive() && !RiskState.isTamperDegraded();
+    }
 
     // =========================================================================
     // Entry points
@@ -137,7 +148,7 @@ public class PushFilter {
                     Log.i(TAG, "[PF:L1] LL.add NotificationItem talker=" + talker
                             + " active=" + StateMachine.getInstance().isActive());
 
-                    if (!StateMachine.getInstance().isActive()) return;
+                    if (!active()) return;
                     if (talker == null || talker.isEmpty()) return;
                     if (!Bridge.getInstance().shouldHideId(talker)) return;
 
@@ -258,7 +269,7 @@ public class PushFilter {
 
                             boolean hidden = pushProcess
                                     ? NativeBridge.isHidden()
-                                    : StateMachine.getInstance().isActive();
+                                    : active();
                             if (!hidden) return;
 
                             // VoIP call notification → CallGuard handles (cancel + armPending)
@@ -315,7 +326,7 @@ public class PushFilter {
                         @Override
                         protected void afterHookedMethod(MethodHookParam param) {
                             try {
-                                if (!StateMachine.getInstance().isActive()) return;
+                                if (!active()) return;
                                 String talker = readMsgTalker(param);
                                 if (talker == null) return;
                                 if (!Bridge.getInstance().shouldHideId(talker)) return;
@@ -378,7 +389,7 @@ public class PushFilter {
                                 if (data == null) return;
                                 String talker = data.getString(NOTIFY_TALKER_KEY);
                                 if (talker == null || talker.isEmpty()) return;
-                                if (!StateMachine.getInstance().isActive()) return;
+                                if (!active()) return;
                                 if (!Bridge.getInstance().shouldHideId(talker)) return;
 
                                 // 命中密友/密群 → 武装前台叮声静音窗口（OFF 档也武装：静默也要掐原生叮）
@@ -427,7 +438,7 @@ public class PushFilter {
                         protected void beforeHookedMethod(MethodHookParam param) {
                             // 我们自己 SOUND 档播放的自定义铃声 → 放行
                             if (NotifyRouter.sOurSound) return;
-                            if (!StateMachine.getInstance().isActive()) return;
+                            if (!active()) return;
                             long now = System.currentTimeMillis();
                             if (now >= sFgDingSuppressUntil) return;  // 不在密友消息窗口 → 放行（普通好友照响）
                             sFgDingSuppressUntil = 0;                 // 消费：一条消息只压一声叮
@@ -462,7 +473,7 @@ public class PushFilter {
                                     + (param.args.length > 0 ? String.valueOf(param.args[0]) : "?")
                                     + " active=" + StateMachine.getInstance().isActive()
                                     + " h=" + com.ghost.assist.moduleD.ConvFilter.getHiddenUnread());
-                            if (!StateMachine.getInstance().isActive()) return;
+                            if (!active()) return;
                             // 用户开「显示密友未读消息数」→ 不扣，密友未读照常计入
                             if (Bridge.getInstance().isShowHiddenUnread()) return;
                             int h = com.ghost.assist.moduleD.ConvFilter.getHiddenUnread();
@@ -494,7 +505,7 @@ public class PushFilter {
                                     + (param.args.length > 0 ? String.valueOf(param.args[0]) : "?")
                                     + "\" active=" + StateMachine.getInstance().isActive()
                                     + " h=" + com.ghost.assist.moduleD.ConvFilter.getHiddenUnread());
-                            if (!StateMachine.getInstance().isActive()) return;
+                            if (!active()) return;
                             // 用户开「显示密友未读消息数」→ 不扣，密友未读照常计入
                             if (Bridge.getInstance().isShowHiddenUnread()) return;
                             int h = com.ghost.assist.moduleD.ConvFilter.getHiddenUnread();

@@ -1397,10 +1397,12 @@ public class SettingsEntry {
                     ViewGroup.LayoutParams.MATCH_PARENT));
             panel.requestFocus();
             sOverlayActive = true;  // P_SE5: 让 TriggerGuard 各 enterHidden 跳过
-            if (!isActivationReady(activity)) {
-                showActivationDialog(activity, null, "settings-overlay");
-            } else {
+            // 未授权(SPEC §3 #1 首装/白嫖) = 零弹：不强弹激活框，密友设置页可看
+            //   （per-row 门控已禁用付费动作 + 显"请先完成授权"，引导付费靠页面本身；
+            //    用户点「授权状态」行可手动拉起激活框）。授权后才跑：更新/续费预警/断网>72h 重验。
+            if (isActivationReady(activity)) {
                 showUpdateNoticeIfNeeded(activity);
+                showRenewReminderIfNeeded(activity);   // #3 到期前 7 天每天功能页预警续费
                 // S3b-B：进设置页 = 算账检查点。断网 >72h 强制重验，失败→撤销+提示。
                 maybeStaleReverify(activity, decor);
             }
@@ -1743,6 +1745,48 @@ public class SettingsEntry {
             sOverlayActive = false;  // P_SE5: 解除 enterHidden 抑制
             Log.i(TAG, "[SET:overlay] dismissed");
         }
+    }
+
+    private static final int RENEW_WARN_DAYS = 7;   // #3 到期前 N 天起每天功能页预警续费
+
+    /**
+     * #3 续费预警：授权到期前 RENEW_WARN_DAYS 天起，进功能页每天弹一次提醒续费——他进来就看到，
+     * 赶在到期前续，自然不被「到期失效」暴露。客户端自己算（手里有到期时间），用可信时间防改墙钟刷弹、
+     * 按天去重。文案 / 续费链接走默认（SHOP_URL）；服务器侧文案 / 开关 / 天数下发为后续（保留服务器控制）。
+     * 注意：隐私侧到期当场失效、无到期后宽限（EnvelopeStore.isLicenseExpired 硬判 exp<=trustedNow）；
+     * 本弹窗是「到期前」预警，与配方卡「到期后 A2 多开 7 天宽限」是两回事，别混。
+     */
+    private static void showRenewReminderIfNeeded(final Activity activity) {
+        if (activity == null) return;
+        if (!EnvelopeStore.isAuthorizedNow()) return;                 // 未授权走激活框，不在此
+        long secs = EnvelopeStore.secondsToLicenseExpiry();
+        if (secs <= 0 || secs >= RENEW_WARN_DAYS * 86400L) return;    // 已到期 / 还早 → 不提醒
+        long today = EnvelopeStore.trustedDay();
+        if (today > 0 && EnvelopeStore.getRenewNoticeDay() == today) return;   // 今天已弹
+        EnvelopeStore.setRenewNoticeDay(today);
+        long daysLeft = (secs + 86399L) / 86400L;                    // 向上取整
+        final String url = com.ghost.assist.core.AppConfig.SHOP_URL;
+        String msg = "授权将在 " + daysLeft + " 天内到期。到期后密友功能会停用，请及时续费，避免使用中断。";
+        try {
+            AlertDialog.Builder b = new AlertDialog.Builder(activity)
+                    .setTitle("续费提醒")
+                    .setMessage(msg)
+                    .setNegativeButton("稍后", null);
+            if (url != null && !url.isEmpty()) {
+                b.setPositiveButton("去续费", new android.content.DialogInterface.OnClickListener() {
+                    @Override public void onClick(android.content.DialogInterface d, int w) {
+                        try {
+                            activity.startActivity(new android.content.Intent(
+                                    android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
+                                    .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK));
+                        } catch (Throwable ignored) {}
+                    }
+                });
+            } else {
+                b.setPositiveButton("我知道了", null);
+            }
+            b.show();
+        } catch (Throwable ignored) {}
     }
 
     private static void showUpdateNoticeIfNeeded(final Activity activity) {
@@ -2217,7 +2261,10 @@ public class SettingsEntry {
         final AlertDialog dialog = new AlertDialog.Builder(activity)
                 .setView(box)
                 .create();
-        dialog.setCancelable(false);
+        // 未授权零弹（SPEC §3 #1）：激活框可取消（BACK 键退出），不再强制堵屏——
+        //   用户只在主动点「授权状态」行时才弹，且能随时退出回设置页。
+        //   ←（authBack）按钮仍同时收激活框 + overlay；touch-outside 保持 false（防误触误关）。
+        dialog.setCancelable(true);
         dialog.setCanceledOnTouchOutside(false);
         authBack.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {

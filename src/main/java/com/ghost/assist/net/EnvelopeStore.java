@@ -43,6 +43,8 @@ public final class EnvelopeStore {
     private static final String K_UP_T    = "ut";    // 更新标题
     private static final String K_UP_D    = "ud";    // 更新文案
     private static final String K_UP_U    = "uu";    // 更新链接
+    private static final String K_RN_DAY  = "rd";    // #3 续费预警上次弹出日（可信 epoch day，按天去重）
+    private static final String K_REFUNDED = "rf";   // #6 退款撤闸：首见退款的可信时间戳(ms)，0=未退款（SPEC §4）
 
     private static volatile SharedPreferences sPrefs;
     private static volatile Context sAppCtx;
@@ -100,6 +102,9 @@ public final class EnvelopeStore {
                 .putString(K_UP_U, e.updateUrl == null ? "" : e.updateUrl)
                 .remove(K_ERR)
                 .apply();
+        // #6 服务器下发退款位 → 落持久退款标志（幂等，只记首见）。其余字段照存，
+        // 但 isAuthorizedNow/isAntiBanReady 会因 isRefunded() 立刻断闸。
+        if (e.refunded == 1) markRefunded();
         resetVerifiedCache();
     }
 
@@ -139,9 +144,73 @@ public final class EnvelopeStore {
     }
 
     public static boolean isAuthorizedNow() {
+        if (isRefunded()) return false;   // #6 退款 → 立刻撤隐私（isVipAuthorized=false → isActive 四层断），与 A2 一起死
         if (!hasToken()) return false;
         AuthEnvelopeVerifier.Envelope e = getVerifiedCachedEnvelope();
         return e != null && !isLicenseExpired(e.licenseExpire);
+    }
+
+    // ── #3 续费预警（到期前提醒；隐私侧到期当场失效、无到期后宽限）──
+
+    /** 距授权到期的秒数；<=0 = 已到期，Long.MAX_VALUE = 无到期信息。用可信时间，改墙钟无效。 */
+    public static long secondsToLicenseExpiry() {
+        long exp = getLicenseExpireSec();
+        if (exp <= 0) return Long.MAX_VALUE;
+        return exp - LeaseClock.trustedNow() / 1000L;
+    }
+
+    /** 当前可信时间的 epoch 天（预警按天去重用；墙钟改不动）。 */
+    public static long trustedDay() { return LeaseClock.trustedNow() / 86400000L; }
+
+    public static long getRenewNoticeDay() { return sPrefs == null ? 0 : sPrefs.getLong(K_RN_DAY, 0); }
+    public static void setRenewNoticeDay(long day) {
+        if (sPrefs != null) sPrefs.edit().putLong(K_RN_DAY, day).apply();
+    }
+
+    // ── #6 退款撤闸（SPEC §4：唯一连坐 A2+隐私 的非篡改场景）────────────────
+    //
+    // 信号源 = 服务器（块A）push 的信封 `rf` 位（暂缓未建，字段先约定）。客户端职责：
+    //   • 收到 refunded 信封 → markRefunded() 落持久标志（可信时间戳）。
+    //   • isRefunded()=true → isAuthorizedNow()=false（撤隐私）+ isAntiBanReady()=false（撤 A2）。
+    // 与 revokeKeepToken 的区别：那是离线/到期【可自愈】（保留 token 重连恢复）；退款【不自愈】
+    //   —— markRefunded 故意不入 revokeKeepToken 的清单，重连/换 token 都不会抹掉退款态。
+    // 不清用户数据（密友名单/密码）——安全官红线#5。本地解除只能靠服务器（块A）或 clear() 全重置。
+
+    /** 是否已退款（持久标志 > 0）。 */
+    public static boolean isRefunded() {
+        return getRefundedAt() > 0L;
+    }
+
+    /** 首见退款的可信时间戳(ms)；0=未退款。 */
+    public static long getRefundedAt() {
+        return sPrefs == null ? 0L : sPrefs.getLong(K_REFUNDED, 0L);
+    }
+
+    /**
+     * 标记退款（块A server push / 信封 rf 位驱动）。幂等：只记首见时间，重复调不覆盖。
+     * 用可信时间（防墙钟改），落盘后立刻使两闸断开。
+     */
+    public static void markRefunded() {
+        if (sPrefs == null) return;
+        if (getRefundedAt() > 0L) return;                 // 幂等：保留首见时间
+        sPrefs.edit().putLong(K_REFUNDED, LeaseClock.trustedNow()).apply();
+        resetVerifiedCache();
+        Log.i(TAG, "[env] refunded marked → revoke A2+privacy");
+    }
+
+    /**
+     * DEBUG-only 退款撞闸自测（装机 L1 验「退款立刻散」用；release BuildConfig.DEBUG=false → 空操作）。
+     * on=true 置退款、on=false 清退款（仅供反复测试复位；release 永不可达）。
+     */
+    public static void debugSetRefunded(boolean on) {
+        if (!com.ghost.assist.BuildConfig.DEBUG || sPrefs == null) return;
+        if (on) {
+            sPrefs.edit().putLong(K_REFUNDED, LeaseClock.trustedNow()).apply();
+        } else {
+            sPrefs.edit().remove(K_REFUNDED).apply();
+        }
+        resetVerifiedCache();
+        Log.i(TAG, "[env] DEBUG setRefunded=" + on + " (debug-only)");
     }
 
     /**

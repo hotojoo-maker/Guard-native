@@ -122,6 +122,10 @@ public final class RiskState {
         if (licenseExpired && severity(result) < severity(Level.OFFLINE_FUNNEL)) {
             result = Level.OFFLINE_FUNNEL;
         }
+        // 未授权(观望/白嫖) = 零弹（SPEC §3 #1 / D-018 + 架构师-F17 推翻 SPEC §4 T_soft）：
+        //   不抬 OFFLINE_FUNNEL、不软引流、不撤 A2。隐私本就因未授权 isActive=false 放行；
+        //   引导付费靠设置页本身（per-row 门控 + "请先完成授权"），不弹窗。
+        //   退款另走 isRefunded 撤闸（场景#6，唯一连坐 A2+隐私），不在此软引流。
         sLevel = result;
         Log.i(TAG, "[risk] evaluate level=" + result.label
                 + " (tamper=" + tamperLevel.label + " offline=" + offlineLevel.label

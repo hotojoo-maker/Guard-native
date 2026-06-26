@@ -12,6 +12,7 @@ import android.widget.Toast;
 
 import com.ghost.assist.BuildConfig;
 import com.ghost.assist.core.Bridge;
+import com.ghost.assist.core.RiskState;
 import com.ghost.assist.core.StateMachine;
 
 import de.robv.android.xposed.XC_MethodHook;
@@ -45,7 +46,7 @@ public final class FakeLocation {
 
     // 原生选点页 + 结果载体
     // 启动目标包名 = 宿主包（官替=com.tencent.mm / 共存=com.tencent.mn），随 flavor 自动注入。
-    // 写死会让共存版跨包拉官方微信选点页被系统拦截 → 伪装定位选点拉不起来。
+    // 写死会让共存版跨包拉官方包选点页被系统拦截 → 伪装定位选点拉不起来。
     private static final String WECHAT_PKG   = BuildConfig.GUARD_WX_PKG;
     private static final String REDIRECT_UI  = "com.tencent.mm.plugin.location.ui.RedirectUI";
     private static final String EX_KLOCATION = "KLocationIntent";
@@ -142,6 +143,13 @@ public final class FakeLocation {
                             try {
                                 Bridge br = Bridge.getInstance();
                                 if (!br.isFakeLocationEnabled() || !br.hasFakeLocation()) return;
+                                // 授权门（块B / SPEC §3）：定位是付费杂项功能 → 未授权/到期/退款一律白嫖不了。
+                                //   isVipAuthorized() = EnvelopeStore.isAuthorizedNow()，已覆盖三者
+                                //   （退款 isRefunded → isAuthorizedNow=false），故折掉单独 isRefunded() 判断。
+                                if (!StateMachine.getInstance().isVipAuthorized()) return;
+                                // 散沙扩面（杂项·块B）：确认篡改超影子期 → 伪装定位失效（盗版功能散沙）。
+                                //   对正版未篡改恒为 false → 注入行为不变（不误伤，铁律29）。
+                                if (RiskState.isTamperDegraded()) return;
                                 param.args[1] = Boolean.TRUE;          // ok=true（即便真 GPS 失败也报有效）
                                 param.args[2] = Double.valueOf(br.getFakeLat()); // 纬度
                                 param.args[3] = Double.valueOf(br.getFakeLng()); // 经度
