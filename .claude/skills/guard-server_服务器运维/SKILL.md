@@ -89,6 +89,46 @@ description: Guard Native 服务器运维与发行线接手。Use when the user 
 - 代理后台：代理只能看自己渠道开的卡和设备；管理员看全量。
 - 更新通知：可按 `all`、channel、release 下发；它是运营提示，不是热更新配方。
 
+## Batch 2 · W_dev 逐设备 wrap（牙③ 一机一密 · 当前前沿）
+
+> 设计真源 = `03_execute_执行任务/P_RB1_重放绑定_ReplayBind/钥匙加固_KeyHardening设计.md` §2/§5 + 同目录施工卡；KDF 镜像对账铁律真源 = 安全官 skill「三端钥匙派生镜像对账」。本节只列服务器侧落点 + 排错，不复写算法（单一真源）。
+>
+> 现状（L2，2026-06-26）：客户端 Batch 0/1 已落（SO `derive_wrap_key` / `setDeviceMaterial` + 灰度①双试装机 `recipeOk=true`、密友隐藏不挂）；**服务器侧 = 代码已落（2026-06-26 本地改完 + 自测绿，未部署远端 / 未改后审 / 未真机）**——`db.py`+`crypto_utils.py`+`server.py`：三类请求收 `dm` + 自校验 + 回填 `guard_device_state.dm`；`build_guard_envelope_payload` 对带自校验 `dm` 的设备用 `derive_wrap_key(dm)` 包 `S_rel`，其余回退 `w_b64` **全局 W**（绝不停发，Batch 3 才删）。Batch 2 = 把服务器从「全局 W」推到「按设备 W_dev」（灰度第②步）。
+
+### 服务器要做的（落点）
+
+- **收 `dm` 并回填入库**：`activate` / `guard/envelope` / `guard/health`(心跳) 三类请求 body 读 32B `dm`（hex），自校验过即写进 `guard_device_state.dm`（新列，先过 `SCHEMA.md` + 备份 `auth.db`）。**每次请求都回填**（不只激活），看板才数得准。心跳实际打 `/api/v1/guard/health`（L2：`EnvelopeClient.reportHealth`），不是 `/verify`。无 `dm` = 老客户端 → 走全局 W，向后兼容。
+- **`dm` 自校验基准 = `dm[:16 hex] == device_id`**（🔴 禁用 `payload.d`：`device_id = SHA-256(ANDROID_ID)[:8]` = 16 hex，`payload.d = SHA-256(deviceId)[:32]` **不同源**；按 `payload.d` 比会把全体正版 `dm` 判伪造 → 全员激活失败）。不符 → 不回填、记健康事件、该机仍发全局 W。
+- **逐设备派生 W_dev 包 `S_rel`**：服务器用 `derive_wrap_key(dm)` 算该机 W_dev，AES-128-GCM 包 `S_rel`→`k/n`（取代 `w16` 全局 W 那段）。⚠️ **服务器的 `derive_wrap_key` 必须与 SO `config_crypto.cpp` / `tools/kdf_common.py` 逐字节一致**——服务器是镜像对账的一端，先过 KDF 测试向量再上；不一致 = 正版机 unwrap 失败 → registry 散沙 → 静默全挂（F-31）。
+- **`dm` + 信封摘要进 Ed25519 签名覆盖**：防 MITM 篡 `dm` / `k`。
+- **判定切信封（请求式·无歧义）**：判定基准 = **本次请求里自校验过的 `dm`**；因每次请求都回填入库，「请求带 `dm`」与「库里已回填」等价。带自校验 `dm` 的设备发 **W_dev 信封**；其余继续全局 W（这就是灰度②）。
+- **看板加 `dm` 回填进度核账**：按 release 看「活跃设备里已回填 `dm` 占比」——切 Batch 3（删全局 W）的前置门槛。
+
+### 红线对齐（沿用本 skill 既有红线）
+
+- 灰度 3 步（设计 §5）：① 双试铺路（客户端已做）→ **② 按设备切 W_dev（= Batch 2，本节）** → ③ 收口删全局 W。**Batch 2 绝不删全局 W**（那是 Batch 3）。
+- fail-closed：错 / 无 `dm`、错 W_dev → 该信封解不开 = 散沙，不崩、不全开、不删数据、不伤旧线（红线#4/#7/#8）。
+- 改 `crypto_utils.py` envelope / 新增 `guard_device_state` 列前：先备份 `auth.db`（红线#9）、只展示指纹（红线#1/#2）。
+- 完成 Batch 2 ≠ 真锁终局；牙③ 真生效还要 Batch 3 收口（删全局 W）。对外口径不得升级（不得称「真锁终局」）。
+
+### 排错补充（接 §排错口径）
+
+- **正版 `recipeOk=false` 且该机已回填 `dm`**：八成服务器 `derive_wrap_key` 与 SO 不一致（KDF 漂移）→ 先跑三端 KDF 测试向量对账，**别先动客户端**。
+- **回填 `dm` 后仍走全局 W**：查自校验 `dm[:16]==device_id` 是否过、是否误用 `payload.d` 作基准。
+
+## 退款重购 / 查史 / 审计日志（块A·待建 · 需求权威在场景矩阵 spec）
+
+> 需求权威（单一真源）= `03_execute_执行任务/P_AntiBanGate_防封授权闸/授权风险场景矩阵_SPEC.md` §7 + §4。本节只放指针 + 服务器侧落点，不复写细节（守 G10）。用户 E99 拍板（2026-06-26），块A 暂缓未建。
+
+服务器要加的客服运维 4 能力（详见 spec §7）：
+
+1. **DB 存** `device_id → [授权码历史 + 退款/封停状态]`（新表/列，先过 `SCHEMA.md` + 备份 `auth.db`）。
+2. **激活判重**：第 2 个码激活 → 查同 `device_id` 已绑 → 返回「已绑定」让客户端**拒绝叠加**（客户端不本地换绑，只显示结论 + 设备短码）。
+3. **查史接口（客服后台）**：按卡密/`device_id` 拉当前绑定 + 历史授权码。客户端永远不碰。
+4. **审计日志搜索（客服后台）**：激活/判重拒绝/退款/封停事件落日志（卡密+device_id+时间+原因）→ 客服输「提示重复」的卡密 → 搜到原因。
+
+场景对齐（见 spec §3）：**退款 = A2+隐私立刻散沙**（唯一连 A2 都撤的非篡改场景）；**封停(无退款) = 72h 宽限 → 复用离线渐进阶梯软失效**。`device_id` = 内部主键，用户对外只报卡密/淘宝订单。
+
 ## 发行线规则
 
 `release_id` 是服务器与客户端的主索引。新增版本时必须保持这些同源：
