@@ -169,11 +169,11 @@ public final class GuardHeartbeat {
     }
 
     private static String authErrorText(String code) {
-        if ("CARD_EXPIRED".equals(code)) return "授权已到期，请联系售后";
-        if ("CARD_BANNED".equals(code) || "CARD_DISABLED".equals(code)) return "授权码已停用，请联系售后";
-        if ("DEVICE_BANNED".equals(code)) return "设备已封停，请联系售后";
+        if ("CARD_EXPIRED".equals(code)) return "授权已到期，请联系客服";
+        if ("CARD_BANNED".equals(code) || "CARD_DISABLED".equals(code)) return "授权码已停用，请联系客服";
+        if ("DEVICE_BANNED".equals(code)) return "设备已封停，请联系客服";
         if ("TOKEN_INVALID".equals(code)) return "授权已失效，请重新激活";
-        return "授权异常，请联系售后";
+        return "授权异常，请联系客服";
     }
 
     private static void reportHealth(String token, String deviceId, String certHex,

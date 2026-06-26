@@ -1690,13 +1690,18 @@ public class SettingsEntry {
         // ===== 授权 =====
         content.addView(buildSectionHeader(activity, "\u6388\u6743"));
         final TextView[] authStatusOut = new TextView[1];
+        // 授权码行：授权后把「输入 / 激活」换成绿色「已授权」色块（激活成功面板会整块重建，
+        // 故只需按 isAuthorizedNow 在建行时渲染，无需单独刷新引用）。
+        final boolean authedNow = EnvelopeStore.isAuthorizedNow();
+        final TextView[] authCodeOut = new TextView[1];
         content.addView(buildButtonRow(activity, "\u6388\u6743\u7801",
-                "\u8f93\u5165 / \u6fc0\u6d3b",
+                authedNow ? "\u5df2\u6388\u6743" : "\u8f93\u5165 / \u6fc0\u6d3b",
                 new View.OnClickListener() {
                     @Override public void onClick(View v) {
                         showActivationDialog(activity, authStatusOut[0], "settings-row");
                     }
-                }));
+                }, authCodeOut));
+        if (authedNow) styleAuthorizedPill(activity, authCodeOut[0]);
         content.addView(buildButtonRow(activity, "\u6388\u6743\u72b6\u6001",
                 activationStatusText(activity),
                 new View.OnClickListener() {
@@ -2033,6 +2038,19 @@ public class SettingsEntry {
         return row;
     }
 
+    /** 已授权态：把行尾值 TextView 渲染成微信绿「已授权」圆角色块（去掉 ›，白字绿底）。 */
+    private static void styleAuthorizedPill(Context ctx, TextView tv) {
+        if (tv == null) return;
+        tv.setText("\u5df2\u6388\u6743"); // 已授权
+        tv.setTextColor(Color.WHITE);
+        tv.setTextSize(13f);
+        GradientDrawable pill = new GradientDrawable();
+        pill.setColor(Color.parseColor("#07A85C")); // 微信绿（与确认按钮一致）
+        pill.setCornerRadius(dp(ctx, 12));
+        tv.setBackground(pill);
+        tv.setPadding(dp(ctx, 12), dp(ctx, 4), dp(ctx, 12), dp(ctx, 4));
+    }
+
     private static String currentPasswordLabel(StateMachine sm) {
         String pwd = sm.getPassword();
         if (pwd == null || pwd.isEmpty()) return StateMachine.getDefaultPassword();
@@ -2122,18 +2140,22 @@ public class SettingsEntry {
     }
 
     private static String activationExpireText(Context ctx) {
+        // 未授权(退款/到期/未激活/未同步/异常)一律回 Unix 纪元(1970-01-01)——看着像未初始化
+        // 默认值，不暴露真到期、不暴露残留缓存、不给破解者"未授权"触发点(掩人耳目)。仅授权态显真到期。
+        long exp = 0L;
         try {
             if (ctx != null) EnvelopeStore.init(ctx.getApplicationContext());
-            long exp = EnvelopeStore.getLicenseExpireSec();
-            if (exp <= 0) exp = EnvelopeStore.getLeaseExpireSec();
-            if (exp <= 0) return "\u672a\u540c\u6b65"; // 未同步
-            long now = System.currentTimeMillis() / 1000L;
-            if (exp <= now) return "\u5df2\u5230\u671f"; // 已到期
-            return new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.US)
-                    .format(new java.util.Date(exp * 1000L));
+            if (EnvelopeStore.isAuthorizedNow()) {
+                exp = EnvelopeStore.getLicenseExpireSec();
+                if (exp <= 0) exp = EnvelopeStore.getLeaseExpireSec();
+                long now = System.currentTimeMillis() / 1000L;
+                if (exp <= now) exp = 0L;
+            }
         } catch (Throwable ignored) {
-            return "\u672a\u540c\u6b65";
+            exp = 0L;
         }
+        return new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.US)
+                .format(new java.util.Date(exp * 1000L));
     }
 
     private static void showActivationDialog(final Activity activity, final TextView statusView,
@@ -2167,14 +2189,19 @@ public class SettingsEntry {
         topBar.addView(authBack, backLp);
 
         TextView badge = new TextView(activity);
-        badge.setText("\u672a\u6388\u6743"); // 未授权
-        badge.setTextColor(Color.parseColor("#07A85C"));
+        badge.setText(requireActivation ? "\u672a\u6388\u6743" : "\u5df2\u6388\u6743"); // 未授权 / 已授权
         badge.setTextSize(12f);
         badge.setGravity(Gravity.CENTER);
         badge.getPaint().setFakeBoldText(true);
         GradientDrawable badgeBg = new GradientDrawable();
-        badgeBg.setColor(Color.parseColor("#E8F7EE"));
         badgeBg.setCornerRadius(dp(activity, 10));
+        if (requireActivation) {
+            badge.setTextColor(Color.parseColor("#07A85C"));
+            badgeBg.setColor(Color.parseColor("#E8F7EE")); // 浅绿底 + 绿字
+        } else {
+            badge.setTextColor(Color.WHITE);
+            badgeBg.setColor(Color.parseColor("#07A85C")); // 已授权：实心绿 + 白字（与授权码行色块一致）
+        }
         badge.setBackground(badgeBg);
         FrameLayout.LayoutParams badgeLp = new FrameLayout.LayoutParams(
                 dp(activity, 58), dp(activity, 22));
@@ -2193,7 +2220,11 @@ public class SettingsEntry {
         box.addView(title, titleLp);
 
         TextView hint = new TextView(activity);
-        hint.setText("\u8f93\u5165\u6388\u6743\u7801\u540e\uff0c\u7ed1\u5b9a\u5f53\u524d\u5fae\u4fe1\u4e0e\u8bbe\u5907\u3002");
+        hint.setText(requireActivation
+                ? "\u8f93\u5165\u6388\u6743\u7801\u540e\uff0c\u7ed1\u5b9a\u5f53\u524d\u5fae\u4fe1\u4e0e\u8bbe\u5907\u3002"
+                : ("\u5f53\u524d\u5fae\u4fe1\u4e0e\u8bbe\u5907\u5df2\u6388\u6743\u3002\u5230\u671f\uff1a"
+                        + activationExpireText(activity)
+                        + "\u3002\u5982\u9700\u7eed\u671f\u6216\u6362\u7801\uff0c\u53ef\u91cd\u65b0\u8f93\u5165\u6388\u6743\u7801\u3002"));
         hint.setTextColor(Color.parseColor("#666666"));
         hint.setTextSize(13f);
         hint.setGravity(Gravity.CENTER);
@@ -2321,7 +2352,7 @@ public class SettingsEntry {
                                         showActivationError(error, box,
                                                 result.message != null && result.message.length() > 0
                                                         ? result.message
-                                                        : "\u6388\u6743\u5f02\u5e38\uff0c\u8bf7\u8054\u7cfb\u552e\u540e");
+                                                        : "\u6388\u6743\u5f02\u5e38\uff0c\u8bf7\u8054\u7cfb\u5ba2\u670d");
                                         Log.w(TAG, "[SET:auth] activation failed source=" + source
                                                 + " msg=" + result.message);
                                     }

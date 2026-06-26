@@ -61,7 +61,7 @@ public final class GuardActivation {
         int tier = GuardHeartbeat.syncOnce(deviceId, certHex, appVersion);
         if (tier < 0) {
             EnvelopeStore.clear();
-            EnvelopeStore.saveAuthError("授权异常，请联系售后");
+            EnvelopeStore.saveAuthError("授权异常，请联系客服");
             Log.w(TAG, "[act] envelope sync failed after token");
             return new Result(false, "envelope failed");
         }
@@ -70,11 +70,15 @@ public final class GuardActivation {
     }
 
     private static String authErrorText(String code) {
-        if ("CARD_EXPIRED".equals(code)) return "授权已到期，请联系售后";
-        if ("CARD_BANNED".equals(code) || "CARD_DISABLED".equals(code)) return "授权码已停用，请联系售后";
-        if ("DEVICE_BANNED".equals(code)) return "设备已封停，请联系售后";
-        if ("DEVICE_LIMIT".equals(code)) return "设备数量已达上限，请联系售后";
+        if ("CARD_EXPIRED".equals(code)) return "授权已到期，请联系客服";
+        if ("CARD_BANNED".equals(code) || "CARD_DISABLED".equals(code)) return "授权码已停用，请联系客服";
+        if ("REFUNDED".equals(code)) return "该授权码已退款失效，请联系客服";
+        if ("DEVICE_BANNED".equals(code)) return "设备已封停，请联系客服";
+        if ("DEVICE_ALREADY_BOUND".equals(code)) return "此设备已绑定其他授权码，请联系客服";
+        if ("DEVICE_LIMIT".equals(code)) return "设备数量已达上限，请联系客服";
+        if ("RELEASE_KILLED".equals(code)) return "该版本已停用，请联系客服";
+        if ("RELEASE_PAUSED".equals(code)) return "该版本暂停新激活，请联系客服";
         if ("TOKEN_INVALID".equals(code)) return "授权已失效，请重新激活";
-        return "授权异常，请联系售后";
+        return "授权异常，请联系客服";
     }
 }
