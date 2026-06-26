@@ -45,6 +45,23 @@ public final class EnvelopeClient {
     public static String getLastErrorCode() { return sLastErrorCode; }
 
     /**
+     * 授权错误码 → 用户可见文案（合一：原 GuardActivation/GuardHeartbeat 各有一份私有副本，
+     * 收敛到产错误码的本类单一出口，防漂移）。覆盖全部码（激活态超集）；未知码回落通用文案。
+     */
+    public static String authErrorText(String code) {
+        if ("CARD_EXPIRED".equals(code)) return "授权已到期，请联系客服";
+        if ("CARD_BANNED".equals(code) || "CARD_DISABLED".equals(code)) return "授权码已停用，请联系客服";
+        if ("REFUNDED".equals(code)) return "该授权码已退款失效，请联系客服";
+        if ("DEVICE_BANNED".equals(code)) return "设备已封停，请联系客服";
+        if ("DEVICE_ALREADY_BOUND".equals(code)) return "此设备已绑定其他授权码，请联系客服";
+        if ("DEVICE_LIMIT".equals(code)) return "设备数量已达上限，请联系客服";
+        if ("RELEASE_KILLED".equals(code)) return "该版本已停用，请联系客服";
+        if ("RELEASE_PAUSED".equals(code)) return "该版本暂停新激活，请联系客服";
+        if ("TOKEN_INVALID".equals(code)) return "授权已失效，请重新激活";
+        return "授权异常，请联系客服";
+    }
+
+    /**
      * dm = hex(SHA-256(ANDROID_ID)) 32B（牙③ 灰度①：服务器逐设备 wrap S_rel 的依据）。
      * 服务器 Batch 2 前忽略此字段 → 向后兼容。取值走 AuthManager 单一读点
      * （rawAndroidId memoize），不新增读点；A2 灌给官方包的官方 SSAID 不进此值（A2 同源隔离）。

@@ -205,6 +205,43 @@
 - 本 worklog（本节）+ `STATUS_防封加密线.md` 验证列翻新 + `DECISION_LOG.md` D-018 状态 → 装机 1+2 PASS。
 - commit：4 文件 Route B + 三 .md（worklog/STATUS/DECISION_LOG）。**只提交 A2 范围**（RB1 / LeanCloseout / skill / 其它线 WIP 不动）。
 
+## 2026-06-26e · 块B 防封反盗版闭环补全（③退款 + ②散沙扩面 + ①T_soft + ④续费债）— 落码完·装机待跑（执行/安全官/授权检查官 · Vchat 本地开发ai-1·F22）
+
+> ⚠️ **账实更正（2026-06-27 · F86 · 以代码为准 G8）**：本节 ①「T_soft 软引流」**已被架构师-F17 推翻并回退**（D-018：未授权 = 零弹，不抬 `OFFLINE_FUNNEL`、不软引流、不撤 A2）。现 `core/RiskState.java` **无** `T_SOFT_MS`/`KEY_INSTALL_SEEN`/`isPastSoftGrace()`，`evaluate()` 仅对 license 真过期抬 `OFFLINE_FUNNEL`（见 `RiskState.java:126` 注释）。下方 ① 段（含「改文件 8」「待验 #3」）为**历史记录、不代表现状**。②散沙扩面 / ③退款撚闸 仍在码、有效。
+
+> 触发：架构师（E99/块0 SPEC §4·§6）拍死块B 四决策。改前已报矛盾（配方卡 vs D-018）→ 架构师全拍：① 时间闸只 T_soft（T_login 降 v2、未授权永不撤 A2 除退款）② 散沙只杂项（防撤回/定位/通知/未读，密友四链绝不进 RiskState 散沙）③ 退款撤闸字段 `isAntiBanReady = isIntegrityIntact && !isRefunded`（唯一例外）④ 续费弹窗保留现状只记红线#9 债。
+
+**S0 快照**：`stash@{0}` = `snap/blockB-pre/20260626-2242`（含本轮前工作树全状态，`git stash apply --index` 已复原、零丢失）。
+
+**改的 8 文件（L2 · ReadLints 全零错）**：
+
+③ 退款撤闸（信号源 server push 留块A，本轮只落客户端字段+撞闸）
+1. `net/AuthEnvelopeVerifier.java` — `Envelope` 加 `refunded` 位（`rf`，`p.optInt("rf",0)`；服务器签名覆盖整 payload，伪造该位需私钥）。
+2. `net/EnvelopeStore.java` — 加 `K_REFUNDED`(可信时间戳) + `isRefunded()`/`getRefundedAt()`/`markRefunded()`(幂等,记首见,`LeaseClock.trustedNow()`) + `debugSetRefunded(bool)`(DEBUG-only)；`isAuthorizedNow()` 顶部加 `if(isRefunded())return false`（→ 隐私 isActive 四层断）；`saveEnvelope` 收到 `e.refunded==1` → `markRefunded()`；`revokeKeepToken` **不**清 refund（退款不自愈，区别于离线/到期）。
+3. `core/GuardRuntime.java` — `isAntiBanReady = !EnvelopeStore.isRefunded() && CompatProbe.isIntegrityIntact`（退款=唯一连坐 A2 的非篡改场景）；selftest 打 `refunded=`。
+4. `debug/DebugServer.java` — 加 `/api/forcerefund`(POST `{on}`)→`apiForceRefund`→`EnvelopeStore.debugSetRefunded`（装机验「退款立刻散」；release `BuildConfig.DEBUG=false` 空操作）。
+
+② 散沙扩面（只杂项，复用 `RiskState.isTamperDegraded()`=确认篡改超影子期；正版恒 false → 行为逐字不变，不误伤·铁律29）
+5. `moduleC/AntiRecall.java` — 防撤回 hook 在 `isVipAuthorized && isAntiRecallEnabled` 后加 `if(isTamperDegraded())return`。
+6. `moduleE/FakeLocation.java` — 定位注入器加 `if(isTamperDegraded() || EnvelopeStore.isRefunded())return`。⚠️**额外**：定位注入器原本只吊 Bridge 开关、不 auth-gate，退款不会自动关它 → 我加了 `isRefunded` 让「退款隐私一起死」对定位也成立（narrow,只影响退款者,正版/未授权恒 false）。**请架构师确认保留**（超 ③ 字面但合 SPEC #6「隐私立刻 die」精神）。
+7. `moduleC/PushFilter.java` — 加私有 `active()=isActive()&&!isTamperDegraded()`，主进程 6 个闸（L1/NM主支/MSGALERT/NEWMSG/FGMUTE/UNREADFIX×2）由 `isActive()` 换 `active()`。**:push 子集不动**（铁律30 无 RiskState/Bridge，仍 NativeBridge.isHidden；与 CallGuard :push 子集一致）→ 限制：主进程被杀仅 :push 收消息那条边缘路径暂不随 tamper 散沙（罕见，记此）。
+
+① T_soft 软引流（只 RiskState）
+8. `core/RiskState.java` — 加 `T_SOFT_MS=1h` + `KEY_INSTALL_SEEN`(首装可信时间基准) + `isPastSoftGrace()`；`evaluate()` 加分支：`!isAuthorizedNow() && !isRefunded() && isPastSoftGrace() && 当前<OFFLINE_FUNNEL` → 抬 `OFFLINE_FUNNEL`（软弹窗·可关·引导付费，复用现有 RiskPromptController 软文案）。**不撤 A2**（D-018）、**不连坐隐私四链**（未授权本就 isActive=false 放行）。触发节奏 = 冷启/心跳 evaluate（与到期/篡改 funnel 同款，不新增 onResume re-evaluate，守铁律29）。
+
+④ 续费弹窗 = **现状保留**（`SettingsEntry.showRenewReminderIfNeeded`，7天窗+可信日去重，已实现），**未动码**；记债：走自有 AlertDialog 未走 `RiskPromptController` → 撞安全官红线#9（单一弹窗源）→ **块D 收口统一**（SPEC §4 已钉）。
+
+**改后审查（执行兼安全官+授权检查官 · 结论 PASS）**：
+- 安全官：真锁未削弱（refund 是本地标志、不碰 server seed/registry/Ed25519）；不清用户数据（markRefunded/散沙只早退）；散沙走 isTamperDegraded（过影子期）+ 软引流走软文案可关；RiskState 仍唯一等级、RiskPromptController 仍唯一弹窗（续费债块D 收）。
+- 授权检查官：未乱接状态机（散沙=只读 isTamperDegraded）；退款/未授权均**收紧**非放开；:push 仍 NativeBridge（铁律30 守住）；保护区(GuardRuntime/EnvelopeStore/RiskState/DebugServer)改动经 E99 拍板 + 本审；模块边界清晰、无需拆码。门控 Entry✅/Auth✅(收紧)/Config✅(未动)/State✅(未动)/Risk✅(扩面)。
+- 一处需架构师拍：FakeLocation 退款散沙（见 6 ⚠️）。
+
+**🔬 待验证（需设备 609b4b18 装机 L1，绿后补 PASS + 翻 STATUS + commit）**：
+1. 退款立刻散：`/api/forcerefund {on:true}` → 冷启/回前台 → `[ANTIBAN-GATE] ready=false refunded=true`（A2 不装）+ 密友重新可见（isActive 断）+ 0 崩溃；`{on:false}` 复位恢复。
+2. 散沙扩面：DEBUG `forcefunnel`(进 TAMPER_FUNNEL) → 防撤回/定位/通知/未读失效；密友隐藏四链**仍生效**（不连坐）。
+3. T_soft：未授权冷启 → 首装记基准（首次不弹）；>1h 后冷启 → `unpaidSoft=true` `level=离线引流` → 软弹窗可关；A2 仍 `ready=true`。
+4. 不误伤正版：授权态 `level=正常`、四链+杂项全常态、无引流弹窗、0 崩溃。
+
 ## 待办（落代码前必过）
 
 - 🟡 **安全官共审**：A2-1 只动 `GuardRuntime`(isAntiBanReady) + `ModuleMain` + 新类 `A2SignatureSpoof` → 改前(2026-06-23) + 改后(2026-06-25) 双审已过(WARN，见 2026-06-25 节)；`EnvelopeStore` / `LeaseClock` / `Bridge`（首装时间键 / device 同源）本期**未改**，留 A2-3/A2-4 再共审。

@@ -93,7 +93,7 @@ public final class GuardHeartbeat {
             if (e == null) {
                 if (isHardAuthError(EnvelopeClient.getLastErrorCode())) {
                     EnvelopeStore.clear();
-                    EnvelopeStore.saveAuthError(authErrorText(EnvelopeClient.getLastErrorCode()));
+                    EnvelopeStore.saveAuthError(EnvelopeClient.authErrorText(EnvelopeClient.getLastErrorCode()));
                     Log.w(TAG, "[hb] hard auth error — token cleared");
                 }
                 Log.w(TAG, "[hb] envelope invalid — fail-closed");
@@ -167,14 +167,6 @@ public final class GuardHeartbeat {
                 || "CARD_EXPIRED".equals(code)
                 || "DEVICE_BANNED".equals(code)
                 || "TOKEN_INVALID".equals(code);
-    }
-
-    private static String authErrorText(String code) {
-        if ("CARD_EXPIRED".equals(code)) return "授权已到期，请联系客服";
-        if ("CARD_BANNED".equals(code) || "CARD_DISABLED".equals(code)) return "授权码已停用，请联系客服";
-        if ("DEVICE_BANNED".equals(code)) return "设备已封停，请联系客服";
-        if ("TOKEN_INVALID".equals(code)) return "授权已失效，请重新激活";
-        return "授权异常，请联系客服";
     }
 
     private static void reportHealth(String token, String deviceId, String certHex,

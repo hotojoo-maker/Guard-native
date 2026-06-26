@@ -47,7 +47,7 @@ public final class GuardActivation {
         String deviceId = AuthManager.computeDeviceHash(ctx);
         String token = EnvelopeClient.activate(cardKey.trim(), deviceId);
         if (token == null || token.isEmpty()) {
-            String msg = authErrorText(EnvelopeClient.getLastErrorCode());
+            String msg = EnvelopeClient.authErrorText(EnvelopeClient.getLastErrorCode());
             EnvelopeStore.saveAuthError(msg);
             Log.w(TAG, "[act] activate rejected (bad card / network)");
             return new Result(false, msg);
@@ -67,18 +67,5 @@ public final class GuardActivation {
         }
         GuardHeartbeat.start(deviceId, certHex, appVersion);
         return new Result(true, "activated");
-    }
-
-    private static String authErrorText(String code) {
-        if ("CARD_EXPIRED".equals(code)) return "授权已到期，请联系客服";
-        if ("CARD_BANNED".equals(code) || "CARD_DISABLED".equals(code)) return "授权码已停用，请联系客服";
-        if ("REFUNDED".equals(code)) return "该授权码已退款失效，请联系客服";
-        if ("DEVICE_BANNED".equals(code)) return "设备已封停，请联系客服";
-        if ("DEVICE_ALREADY_BOUND".equals(code)) return "此设备已绑定其他授权码，请联系客服";
-        if ("DEVICE_LIMIT".equals(code)) return "设备数量已达上限，请联系客服";
-        if ("RELEASE_KILLED".equals(code)) return "该版本已停用，请联系客服";
-        if ("RELEASE_PAUSED".equals(code)) return "该版本暂停新激活，请联系客服";
-        if ("TOKEN_INVALID".equals(code)) return "授权已失效，请重新激活";
-        return "授权异常，请联系客服";
     }
 }
