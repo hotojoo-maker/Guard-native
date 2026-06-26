@@ -357,6 +357,19 @@ public final class NativeBridge {
         return ok;
     }
 
+    /**
+     * Phase 1G (牙④ a案 重放/过期绑定): push the envelope hard-expire + trusted
+     * time into the SO BEFORE {@link #unwrapServerSeed}. {@code hardExpireSec} =
+     * leaseExpire + 7天断网宽限 (配方卡 SPEC A.付费断网宽限); {@code trustedNowSec}
+     * = {@code LeaseClock.trustedNow()}/1000 (官方授时 floor 防冻结). The SO refuses
+     * an expired/replayed envelope (scatter) without folding it into the static key.
+     * Pass 0 to disable the check (no envelope expiry info → never 误伤正版).
+     */
+    public static void setEnvelopeExpiry(long hardExpireSec, long trustedNowSec) {
+        if (!sAvailable) return;
+        nativeSetEnvelopeExpiry(hardExpireSec, trustedNowSec);
+    }
+
     // TODO Batch 2: nativeGetNotifyMode()
     // TODO Batch 2: nativeShouldShowSecretUnreadCount()
     // TODO Batch 2: nativeShouldNotifySecret(String wxid)
@@ -393,6 +406,7 @@ public final class NativeBridge {
     private static native void    nativeSetBindingMaterial(byte[] certSha256);
     private static native void    nativeSetDeviceMaterial(byte[] deviceMaterial);
     private static native boolean nativeUnwrapServerSeed(byte[] k, byte[] nonce);
+    private static native void    nativeSetEnvelopeExpiry(long hardExpireSec, long trustedNowSec);
     private static native String  nativeGetRecipe(String gateway, String key);
     private static native String  nativeGetEndpoint(String key);
 }

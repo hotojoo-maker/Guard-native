@@ -190,6 +190,12 @@ bool unwrap_server_seed(const uint8_t* k, size_t k_len,
 /// Clear the runtime server seed (logout / lease expired → registry scatters).
 void clear_server_seed();
 
+/// Phase 1G (牙④ a案 重放/过期绑定): Java 验签后下推信封硬过期点
+/// hard_expire = leaseExpire + 7天断网宽限 (配方卡 SPEC A.付费断网宽限) + 可信时间
+/// trusted_now (LeaseClock 官方授时 floor)，都 epoch 秒。unwrap_server_seed 比
+/// trusted_now >= hard_expire → 旧/过期信封散沙 (不折静态 key)。传 0 = 关闭检查。
+void set_envelope_expiry(uint64_t hard_expire, uint64_t trusted_now);
+
 /// True after a valid envelope k has unwrapped a 32-byte runtime server seed.
 bool server_seed_ready();
 

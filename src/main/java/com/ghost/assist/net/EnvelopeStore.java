@@ -46,6 +46,10 @@ public final class EnvelopeStore {
     private static final String K_RN_DAY  = "rd";    // #3 续费预警上次弹出日（可信 epoch day，按天去重）
     private static final String K_REFUNDED = "rf";   // #6 退款撤闸：首见退款的可信时间戳(ms)，0=未退款（SPEC §4）
 
+    // 牙④ a案 重放/过期绑定: crypto 种子硬过期宽限 = 配方卡 SPEC A.付费断网宽限 = 7 天(秒)。
+    // 硬过期点 = leaseExpire + 本宽限。与隐私 72h 离线宽限(独立闸)不是一回事，别混。
+    private static final long Y4_PAID_OFFLINE_GRACE_SEC = 7L * 24L * 3600L;
+
     private static volatile SharedPreferences sPrefs;
     private static volatile Context sAppCtx;
     private static volatile String sVerifiedBlob = "";
@@ -241,7 +245,21 @@ public final class EnvelopeStore {
     public static boolean applyCachedEnvelopeSeed() {
         AuthEnvelopeVerifier.Envelope e = getVerifiedCachedEnvelope();
         if (e == null || isLicenseExpired(e.licenseExpire)) return false;
+        pushSeedExpiryToNative(e);   // 牙④: 先下推硬过期点，过期信封 unwrap 即散沙
         return NativeBridge.applyServerSeedAndReset(e.keyMaterial, e.keyNonce);
+    }
+
+    /**
+     * 牙④ a案: 把「硬过期点 + 可信时间」下推 SO，供 unwrap_server_seed 拒旧/过期信封。
+     * hard_expire = leaseExpire + 7天断网宽限 (配方卡 SPEC A.付费断网宽限)；leaseExpire<=0
+     * (无租约信息) → 推 0 = 关闭检查 (不误伤正版)。trusted_now 吊 LeaseClock 官方授时
+     * floor 防冻结。不折静态 registry key (续约不自锁)。
+     */
+    public static void pushSeedExpiryToNative(AuthEnvelopeVerifier.Envelope e) {
+        if (e == null) return;
+        long hardExpire = e.leaseExpire > 0 ? e.leaseExpire + Y4_PAID_OFFLINE_GRACE_SEC : 0L;
+        long trustedNowSec = LeaseClock.trustedNow() / 1000L;
+        NativeBridge.setEnvelopeExpiry(hardExpire, trustedNowSec);
     }
 
     public static void saveAuthError(String message) {

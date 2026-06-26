@@ -102,6 +102,7 @@ public final class GuardHeartbeat {
                         "unknown", null);
                 return -1;
             }
+            EnvelopeStore.pushSeedExpiryToNative(e);   // 牙④: 先下推硬过期点 (lease+7天), 过期信封 unwrap 即散沙
             if (!NativeBridge.applyServerSeedAndReset(e.keyMaterial, e.keyNonce)) {
                 Log.w(TAG, "[hb] server seed unwrap failed — keep cached, fail-closed");
                 reportHealth(token, deviceId, certHex, appVersion,

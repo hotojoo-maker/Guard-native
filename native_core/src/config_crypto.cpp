@@ -352,6 +352,13 @@ size_t  g_binding_len = 0;
 uint8_t g_server_seed[32];
 size_t  g_server_seed_len = 0;
 
+// Phase 1G (牙④ a案 重放/过期绑定): 信封硬过期点 + 可信时间, 由 Java 下推
+// (set_envelope_expiry)。unwrap_server_seed 成功路径比 trusted_now >= hard_expire
+// → 旧/过期信封重放 → 散沙 (不折静态 key, 避免续约自锁; trusted_now 吊 LeaseClock
+// 官方授时 floor 防冻结)。0 = 未下推 → 不做过期检查 (向后兼容 / 不误伤正版)。
+uint64_t g_seed_hard_expire = 0;
+uint64_t g_seed_trusted_now = 0;
+
 // Phase 1F (牙③ W_dev): per-device material D_mat = SHA-256(ANDROID_ID) full 32B,
 // pushed down by Java (set_device_material). Batch 0: stored only — NOT yet wired
 // into unwrap_server_seed (Batch 1 double-try). Folded into derive_wrap_key().
@@ -375,6 +382,13 @@ static bool is_scatter_failure(const ConfigDecryptResult& result) {
     return !result.ok &&
            result.plaintext.find("scatter") != std::string::npos &&
            result.plaintext.find("kc5.v0") == std::string::npos;
+}
+
+// 牙④ a案: 信封是否已过硬过期点 (hard_expire = leaseExpire + 7天断网宽限, Java 下推)。
+// hard_expire / trusted_now 任一为 0 = 未下推 → 不判过期 (向后兼容、不误伤正版)。
+static bool seed_expired() {
+    return g_seed_hard_expire > 0 && g_seed_trusted_now > 0
+        && g_seed_trusted_now >= g_seed_hard_expire;
 }
 
 }  // namespace
@@ -427,6 +441,14 @@ void clear_server_seed() {
     g_server_seed_len = 0;
 }
 
+// 牙④ a案: Java 验签后下推「硬过期点 hard_expire = leaseExpire + 7天断网宽限」+
+// 「可信时间 trusted_now」(都 epoch 秒)。unwrap_server_seed 据此拒旧/过期信封。
+// 不折静态 registry key (续约不自锁); 传 0 = 关闭过期检查 (不误伤)。
+void set_envelope_expiry(uint64_t hard_expire, uint64_t trusted_now) {
+    g_seed_hard_expire = hard_expire;
+    g_seed_trusted_now = trusted_now;
+}
+
 bool server_seed_ready() {
     return g_server_seed_len == 32;
 }
@@ -442,6 +464,9 @@ bool unwrap_server_seed(const uint8_t* k, size_t k_len,
     g_server_seed_len = 0;
     if (k == nullptr || nonce == nullptr) return false;
     if (k_len != 48 || nonce_len < 12) return false;
+    // 牙④ (a案): 旧/过期信封 (租约到期 + 7天断网宽限耗尽) → 散沙, 不折静态 key。
+    // trusted_now 由 Java(LeaseClock 官方授时 floor 防冻结)下推; 未下推(=0)则跳过。
+    if (seed_expired()) return false;
 
     std::vector<uint8_t> seed;
 

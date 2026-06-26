@@ -324,6 +324,18 @@ Java_com_ghost_assist_core_NativeBridge_nativeUnwrapServerSeed(
             ? JNI_TRUE : JNI_FALSE;
 }
 
+// ── Phase 1G (牙④ a案): push envelope hard-expire + trusted_now ─
+// Java 验签后下推 (hard_expire = leaseExpire + 7天断网宽限, trusted_now = LeaseClock).
+// unwrap_server_seed 据此拒旧/过期信封 (不折静态 key)。0 = 关闭检查。
+
+JNIEXPORT void JNICALL
+Java_com_ghost_assist_core_NativeBridge_nativeSetEnvelopeExpiry(
+        JNIEnv*, jclass, jlong hardExpireSec, jlong trustedNowSec) {
+    guard::set_envelope_expiry(
+            hardExpireSec > 0 ? static_cast<uint64_t>(hardExpireSec) : 0,
+            trustedNowSec > 0 ? static_cast<uint64_t>(trustedNowSec) : 0);
+}
+
 // ── Batch 2 / 3 stubs (compile-only, not connected) ──────────
 //
 // TODO Batch 2: nativeGetNotifyMode()
