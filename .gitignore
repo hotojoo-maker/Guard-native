@@ -34,6 +34,10 @@ tools/frida_build/
 **/anr_latest.txt
 **/b1_shake_*.log
 **/b4_back_*.log
+# P 任务调研/自测/抓取大 log（E99 监督架构师 A1：防 git add -A 跨线脏 commit；
+# 证据按 worklog 内联引用即可，原始大 log 不入库。已跟踪的历史 log 不受影响）
+03_execute_执行任务/**/*.log
+lspatch_*.log
 
 # 反编译输出（大，可重生成）
 tools/re_8071/

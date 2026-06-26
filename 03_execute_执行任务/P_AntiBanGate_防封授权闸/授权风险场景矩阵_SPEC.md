@@ -75,8 +75,12 @@
 - ✅ **退款重购·服务器 = `device_id` 内部主键**(E99 拍)：device_id 自动认「同一台手机」关联历史；用户对外**只报卡密/淘宝订单**(不用知道 device_id)；换机重装(device_id 变)退而用淘宝订单/旺旺ID 人工核。服务器后台 4 能力见 §7。
 - ✅ **时间闸 = v1 只 T_soft 软引流**(E99 拍)：未授权走现有 `OFFLINE_FUNNEL` 软弹窗 + 临到期续费提醒；**登录砸门 T_login 降 v2**(无 Activity 锚点 + 与 D-018 软调性冲突)。**未授权永不撤 A2**(除退款)，§3 #1 = 只软引流引导付费。
 - ✅ **散沙扩面 = 只杂项功能**(防撤回/定位/通知/未读)(E99 架构师拍死)：**密友隐藏四链(会话/朋友圈/通讯录/搜索)绝不进 RiskState 散沙**——它们 record-only 是故意(铁律29 + GUARD_GATE_TRUTH §4 防误伤正版)；篡改时密友隐藏的散沙靠 **registry 重签覆盖**，不靠 RiskState。
-- ✅ **退款撤闸字段**(E99 批)：`EnvelopeStore.K_REFUNDED`(可信时间戳) + 信封 `refunded` 位 + `markRefunded()` → `isAntiBanReady = isIntegrityIntact && !isRefunded`(唯一例外)；信号源(server push)留块A。
+- ✅ **退款撤闸字段 = 信封 `rf`**(E99 批 · 块A L2 锁定)：**字段不用猜** —— 客户端 `AuthEnvelopeVerifier` **已在读** `rf`(JSON key `rf` → `e.refunded = p.optInt("rf",0)`，L2 实证)。契约 = 服务器照发 `rf=1` 即可。
+  - **信号链(块A 已落+自测 25/25)**：后台退款 → `cards.refunded_at` → 心跳 `verify_token.refunded` → 信封签名 `rf=1` **+ 散沙(垃圾种子)** → 客户端读 `rf` → `markRefunded()` → 撤 A2+隐私 → `K_REFUNDED` 可信时间戳**离线永久 latch**。**双保险**：客户端 latch + 服务器侧散沙(隐私也死)。
+  - **客户端块B 待落**：`markRefunded()` + `K_REFUNDED` prefs + `isRefunded()` + `isAntiBanReady = isIntegrityIntact && !isRefunded`(唯一例外) + 收 `rf=1` 撤隐私。
+  - ⚠️ **安全官复审 gate**：`rf` 进 Ed25519 签名覆盖(不可剥离) + 散沙复用 decoy = 唯一碰加密链的改动 → **部署前必过安全官复审**(块A 暂缓部署，复审随部署)。
 - 🟡 **封停 72h 宽限后"悄悄失效"的渐进时长 = 默认复用现有离线渐进阶梯**(到期同款，不另造) —— 用户可调。
+- ⚠️ **边缘(已知)**：license 已过期 + 退款 → `s=0` 客户端提前废包读不到 `rf`(概率低；块B `K_REFUNDED` latch 一次即永久缓解)。
 
 ---
 
