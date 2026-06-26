@@ -299,6 +299,7 @@ StateMachine.isActive()                // 取中央总闸
 3. ~~**S4**：Ed25519 验签（客户端只放公钥）~~ ✅ **已完成（2026-06-11 装机 PASS）**：服务器 `crypto_utils.sign_guard_envelope` 切 Ed25519；客户端 `AuthEnvelopeVerifier` 内置公钥验签 fail-closed；主/备节点已部署。证据：本地 `JAVA_EDDSA_VERIFY=PASS`/`TAMPER_REJECT=PASS`、线上直连 `alg=Ed25519` 公钥验签 PASS、真机 `[hb] synced`+`AUTH_OK` 无 `signature verify failed`。
 4. **备机**：完成 `miyou.lol` HTTPS 反代后，客户端再打开 `GUARD_SERVER_BACKUP`。
 5. **运营**：更新通知弹窗已通，后续补“强制升级 / 版本灰度 / 下载包托管”再单独审。
+6. **LeaseClock 主时钟源 → 借官方可信时间（减法 · L4 待侦察，排在真锁牙之后）**：日常计时（租约倒计时 / 影子期发作）改读官方包进程内已同步的可信服务器时间，替代/降级我方 `GuardHeartbeat` 自有心跳授时。收益：① 严格强于手机墙钟（用户回拨无效，官方时间跟它服务器对）；② 减我方自有网络面 = KPI 加分（少一条自有连接 / 行为）；③ 合「借官方眼睛 / 我方零环境读取」（读进程内已有值，非读 `ro.boot.*` 环境，不新增检测面）。**边界（诚实）**：官方时间在同进程可被 hook → 只作「日常对表」、不作密码学锚；不可逆 / 值钱判定 + 钥匙的牙（服务器种子 / 设备 / 防重放）锚仍是 Ed25519 签名信封；保留 `elapsedRealtime` 单调 + `max_trusted_now` 水位线（授权只进不退）。**前置**：派只读侦察在 8.0.71 jadx/Frida 定位稳定时间锚点（类 / 字段，出 L2/L1）+ 评漂移（脆锚点，随官方版本搬家、每版复验）；无证据不落码。**不改第一优先**——`W` 明文（牙③ 一机一密）仍是 P0，本条排其后。
 
 ### 10.7 DeepSeek 压测复盘 + S3b-C 优先级（2026-06-12）
 
@@ -343,9 +344,9 @@ StateMachine.isActive()                // 取中央总闸
 
 #### P1（下一轮安全加固）
 
-1. **把 envelope 摘要折进 SO 侧能力。**
-   - Java 验签后，把 signed payload digest、`expire_at`、device / wxid / release / cert 摘要传给 SO。
-   - SO 派生 registry key 时折入这些已验签摘要，降低合法 `k/n` 离线重放价值。
+1. **重放 / 过期绑定（牙④ a 案 · 不折静态 key）。** ⬜ 未落码
+   - 牙③ 设备材料 `dm` 已落（`caf2142`）；牙④ = Java 验签后把 `expire_at` 下推 SO（`setEnvelopeExpiry`）。
+   - SO `unwrap_server_seed` 成功后比 `expire_at <= trusted_now`（官方授时 floor 防冻结）→ 过期散沙；**不折进静态 registry key**（续约会自锁，见 `钥匙加固_KeyHardening设计.md §3` a 案）。
 2. **`EncryptedConfigLoader` 接入 LeaseClock / RiskState。**
    - 过期、篡改、包名 / 证书不符、风险态确认后 scatter。
    - 不再只靠 UI、日志或设置页检查点。

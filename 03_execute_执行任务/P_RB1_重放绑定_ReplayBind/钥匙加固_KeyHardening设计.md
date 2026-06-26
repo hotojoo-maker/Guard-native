@@ -1,7 +1,7 @@
 # 钥匙加固设计（W 一机一密 + 重放绑定）
 
 > **定位**：registry 钥匙派生加固的**单一真源**。本稿**合并并取代** `W_DERIVE_DESIGN`（W 一机一密）+ `P_RB1/DESIGN`（重放绑定）+ `S3a0`（服务器种子折 key 机制），三者 2026-06-24 减法删除、核心已并入本稿；S3a0 的「S_rel 三方同源」发版铁律不在本稿，见 服务器运维 skill（`release_id` 同源）+ 安全官 skill「发布/共存版加密铁律」，完整配方 = `docs/RELEASE_RECIPE契约.md`；**更早版本见 git history**。
-> **状态**：⬜ 设计 only，未动代码。落码前双官审（授权检查官 + 安全官）+ git 快照 + 分步装机回归。
+> **状态**：🟡 牙③ W_dev batch0/1 已落码+装机 L1（commit `caf2142`：`derive_wrap_key`/`setDeviceMaterial`/双试 unwrap；全局 W 仍作回退、Batch2/3 未做）；牙④ a 案（§3）⬜ 未落码。落码前双官审（授权检查官 + 安全官）+ git 快照 + 分步装机回归。
 > **上层总图**：`../P_AntiBanGate_防封授权闸/DESIGN.md`（统一风控引擎）。本稿是其 §5「A2 料进加密链 / 钥匙加密」的下钻。
 > **规则铁律**：三端对账 / Key 来源准则 / fail-closed 散沙 等**铁律真源 = 安全官 skill**（本稿引用、不复写）。
 > **命名规约**：官方包 / 原版 / 灌官方值（不写品牌名，详 `CLAUDE.md` 词表）。
@@ -18,7 +18,7 @@ registry 钥匙（`derive_registry_key`）= 4 颗钥匙牙咬合的**与门**，
 |---|---|---|---|
 | ① | 模块签名证书 SHA-256 | ✅ 现役（A-step2）| 重打包重签 → 钥匙错 |
 | ② | 服务器种子 S_rel | ✅ 现役（prod_server_lock）| 没服务器种子 → 解不出 |
-| ③ | 设备指纹（W 一机一密）| ⬜ 本稿补 | 抽一台 SO 通杀所有机 |
+| ③ | 设备指纹（W 一机一密）| 🟡 batch0/1 已落（`caf2142`）；Batch2/3 待 | 抽一台 SO 通杀所有机 |
 | ④ | 信封摘要（重放绑定）| ⬜ 本稿补 | 录个旧/过期信封重放 |
 
 > 钥匙**外面**另有 3 道独立牙（已落地/规划落点不在本稿）：Ed25519 验签 · 弹窗 canary · 蜜罐 canary。
@@ -63,13 +63,19 @@ for i in 0..15:
 
 ---
 
-## 3. 牙④ — 重放绑定
+## 3. 牙④ — 重放 / 过期绑定（2026-06-26 修正：不折静态 key · a 案）
 
-**思路**：把**已 Ed25519 验签的信封摘要**（`expire_at` + `device` + `release` + payload digest）折进 `derive_registry_key`。过期 / 重放的旧 `k/n` → 推出错 key → registry 散沙；**短租约在 SO 层才真有牙**。
+> ⚠️ **修正（评审逮到的自锁坑）**：`registry_cipher.inc` 是 build 静态物、key 编译期定死；`expire_at` 每续约变。**把 expire 折进 `derive_registry_key` = 正版一续约就解不开、把自己锁死**。故 expire / 重放**绝不进静态 registry key**（原“折摘要进 key”方案作废）。
 
-**四处联动（缺一不可）**：① 服务器确保 `expire_at`/`device`/`release`/digest 进 Ed25519 签名 → ② Java `AuthEnvelopeVerifier` 验签后把已验签摘要下推 SO → ③ SO `derive_registry_key` 折入该摘要 → ④ `gen_registry_cipher.py` 镜像派生、重生成 `registry_cipher.inc`、全发行线重出。
+**最终形（a 案）**：
 
-**优先级 P1（必做，不再写“不紧急”）**：Java 层 `payload.d` 校验可被破解客户端跳过；只有把已验签摘要折进 `derive_registry_key`，旧/过期信封才会在 SO 钥匙层自然散沙。牙③先堵「跨机通杀」，牙④再堵「旧信封永久重放」；二者都落地前，不能宣称短租约在 SO 层真正有牙。
+- **静态 registry key 只折稳定料**：`cert + S_rel + device(牙③) + release`（随发行线 / 设备稳定，不随续约变）。续约不动 key、不重生 `registry_cipher.inc`。
+- **expire / 重放在 SO 层用可信时间检查**：`unwrap_server_seed` 成功后，SO 比 `expire_at <= trusted_now`（`LeaseClock.trustedNow()`，**已接官方授时 floor 防冻结**，见 `P_AntiBanGate/DESIGN §6` 双授时源）→ 过期则不应用种子 / 散沙。`trusted_now` 抗冻是这条有牙的前提：否则冻住时钟就永不过期。
+- 重放：过期 `k` 被上面拒；有效期内重放同一 `k` = 仍有效、无害（**不需 nonce 账本**）。
+
+**联动（缺一不可）**：① 服务器 `expire_at` 进 Ed25519 签名 → ② Java 验签后把 `expire_at` 下推 SO（`setEnvelopeExpiry`）→ ③ SO unwrap 后比 `trusted_now` floor，过期散沙。**不动静态 registry key、不重生 cipher**（续约只换 `k`）。
+
+**优先级 P1**：牙③ 先堵「跨机通杀」；牙④（本案）堵「旧 / 过期信封重放」，吊官方授时防冻的 `trusted_now`。**诚实**：(a) 是 SO 层布尔检查（比折 key 略弱、理论可在 SO 内 NOP），但在黑盒 SO + 牙③ 设备绑定 + 官方授时防冻下，对本威胁模型够用（项目口径「不追求破不了」）。
 
 ---
 
@@ -77,7 +83,7 @@ for i in 0..15:
 
 > **不在此重写**——「三端钥匙派生镜像对账」是 F-31 静默翻车重灾区，**铁律真源 = 安全官 skill §「三端钥匙派生镜像对账」**（三端逐字节一致 + KDF 测试向量自动对账 + 改派生先过向量再装机、向量不过即 BLOCK）。本稿不复写，避免两份漂移（违 skill 自身「单一真源」）。
 >
-> **与本稿的关系**：牙③（W_dev）/ 牙④（摘要折入）都属「改 key 派生」，**落地全程受该铁律约束**——先出测试向量、三端（SO `config_crypto.cpp` / 生成脚本 `gen_*_cipher.py` /（如有）Java）对齐，向量不过禁止动 `unwrap` / `derive`。
+> **与本稿的关系**：牙③（W_dev，改 key 派生）落地全程受该铁律约束——先出测试向量、三端（SO `config_crypto.cpp` / 生成脚本 `gen_*_cipher.py` /（如有）Java）对齐，向量不过禁止动 `unwrap` / `derive`。牙④ = a 案（§3：SO 层比 `expire_at`、**不折静态 key**），**不改 key 派生、不受三端向量约束**（勿照旧「摘要折入」口径）。
 >
 > 一句话：**钥匙加固 = 给钥匙加牙；加牙必过三端对账（规则看 skill），否则正版机静默散沙。**
 
@@ -116,9 +122,9 @@ for i in 0..15:
 ## 7. 涉及文件 + 实施前置
 
 **文件（实施时逐个再过改前审查）**：
-- SO：`native_core/src/config_crypto.cpp`（`unwrap_server_seed` 用 W_dev + `derive_registry_key` 折信封摘要；新增 `g_device_mat` + `wseg_a/b/c`）、`guard_core.cpp` + `include/guard_core.h`（新 JNI `setDeviceMaterial` / `setEnvelopeDigest`）。
+- SO：`native_core/src/config_crypto.cpp`（牙③ ✅已落 `caf2142`：`unwrap_server_seed` 用 W_dev + `g_device_mat` + `wseg_a/b/c`；牙④ a 案 ⬜未落：unwrap 后比 `expire_at <= trusted_now`、**不折 key**）、`guard_core.cpp` + `include/guard_core.h`（JNI `setDeviceMaterial` ✅已落 / 牙④ `setEnvelopeExpiry` ⬜未落，**非** `setEnvelopeDigest`）。
 - Java：`core/NativeBridge.java`（新 native，**keep 不混淆**）、`core/AuthManager.java`（`computeDeviceMaterial` 全 32B，与现 8B `computeDeviceHash` 并存）、`net/AuthEnvelopeVerifier.java` + `net/EnvelopeStore.java`（下推 `dm` / 已验签摘要）、`ModuleMain.java`（冷启动时序：`bindSigningCert` → `setDeviceMaterial` → unwrap）、`net/GuardActivation.java`/`EnvelopeClient.java`/`GuardHeartbeat.java`（三类请求带 `dm`）。
-- 工具：`tools/gen_registry_cipher.py`（镜像派生）+ 新 `tools/wk_derive_ref.py`（W_dev 参考实现 + 测试向量）。
+- 工具：`tools/gen_registry_cipher.py`（镜像派生）+ `tools/kdf_common.py`（W_dev 参考实现 `derive_wrap_key` + 向量；**2026-06-26 已并入此处，未单独建 `wk_derive_ref.py`**——三端镜像直接以 `kdf_common.py` 为 Python 真源，禁止另起一份重写）。
 - 服务器：`I:\miyou-server`（逐设备 wrap + `dm` 自校验 + 摘要进签名）。
 
 **前置（缺一 BLOCK）**：
@@ -136,7 +142,7 @@ for i in 0..15:
 
 ## 8. 验收（负向为主）
 
-- 正向：正版激活上报 `dm` → 服务器按 `dm` wrap → SO `setDeviceMaterial` → `k` unwrap 成功 → `registrySummary ... entries=4` → `recipeOk=true` → `[CTF:addAll] removed`（密友照常隐藏，不误伤）。
+- 正向：正版激活上报 `dm` → 服务器按 `dm` wrap → SO `setDeviceMaterial` → `k` unwrap 成功 → `registrySummary ... entries=5`（**A2-1 a2.sig 进 registry 后为 5**；`registry_self_test` 已同步硬要求 `==5`，照旧写 4 会让自测 fail） → `recipeOk=true` → `[CTF:addAll] removed`（密友照常隐藏，不误伤）。
 - 负向①（牙③）：A 机信封 `k/n` 搬到 B 机（不同 ANDROID_ID）→ 不同 `W_dev` → unwrap 失败 → `registrySummary=scatter` / `isConfigReady=false` / 敏感 hook 不装。
 - 负向②（牙④）：过期 `k/n` 喂 SO → 散沙。
 - 三端 KDF / round-trip / 域分离 向量全 PASS。
