@@ -173,6 +173,12 @@ bool decrypt_config_self_test();
 /// clears it (key reverts to the unbound A-step1 derivation → also wrong key).
 void set_binding_material(const uint8_t* data, size_t len);
 
+/// Phase 1F (牙③ W_dev): set the per-device material D_mat = SHA-256(ANDROID_ID)
+/// (full 32B), pushed down by Java. Batch 0: stored only — NOT yet wired into
+/// unwrap_server_seed (Batch 1 double-try). MUST be the real device ANDROID_ID,
+/// never the official SSAID that A2 feeds the host (A2 同源隔离). null/0 clears it.
+void set_device_material(const uint8_t* data, size_t len);
+
 /// Phase 1D-server (S3a): unwrap the envelope's k field into the runtime server
 /// seed S_rel. k = ct(32)||tag(16) of AES-128-GCM(S_rel, key=W[:16], nonce=n[:12]).
 /// Must be called BEFORE the embedded registry is decrypted. Returns false and
@@ -202,6 +208,14 @@ void derive_registry_key(uint8_t out[16]);
 /// differs from the registry key. tools/gen_bootstrap_cipher.py MUST mirror it.
 /// [GUARD-TRAP] See docs/HONEYPOT_蜜罐设计.md §4.
 void derive_bootstrap_key(uint8_t out[16]);
+
+/// Phase 1F (牙③ W_dev): derive the per-device wrapping key W_dev from
+/// domain-separated in-SO segments (wseg_*, MUST differ from derive_registry_key's
+/// seg_*) + the device material (set_device_material). tools/kdf_common.py::
+/// derive_wrap_key() MUST mirror this byte-for-byte. Batch 0: NOT yet used to
+/// unwrap k (still global W); see 施工提示词 Batch 1 double-try.
+/// [GUARD-TRAP] Do not replace with a literal key; keep domain-separated from seg_*.
+void derive_wrap_key(uint8_t out[16]);
 
 /// Java smoke-test helper: returns a test registry after an in-native AES-GCM roundtrip.
 std::string decrypt_config_test_registry();

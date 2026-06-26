@@ -302,6 +302,17 @@ Java_com_ghost_assist_core_NativeBridge_nativeSetBindingMaterial(
     guard::set_binding_material(material.data(), material.size());
 }
 
+// ── Phase 1F (牙③ W_dev): per-device material for the wrap key ─
+// Batch 0: SO stores it only (not yet used to unwrap k). MUST be the real device
+// ANDROID_ID, never the official SSAID A2 feeds the host (A2 同源隔离).
+
+JNIEXPORT void JNICALL
+Java_com_ghost_assist_core_NativeBridge_nativeSetDeviceMaterial(
+        JNIEnv* env, jclass, jbyteArray jMaterial) {
+    const std::vector<uint8_t> material = jbytes(env, jMaterial);
+    guard::set_device_material(material.data(), material.size());
+}
+
 // ── Phase 1D-server (S3a): unwrap envelope k → server seed ────
 
 JNIEXPORT jboolean JNICALL

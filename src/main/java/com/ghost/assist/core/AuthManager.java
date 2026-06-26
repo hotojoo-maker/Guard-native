@@ -100,12 +100,30 @@ public class AuthManager {
         }
     }
 
-    /** SHA-256(ANDROID_ID) 取前 8 字节十六进制 */
+    // 设备材料唯一读点（memoize）。A2 同源隔离：A2-3 的 android_id spoof 只 hook
+    // getPackageInfo/SSAID 读取者，绝不污染本读点；computeDeviceHash/Material 都走这里。
+    private static volatile String sRawAndroidId;
+
+    /** 真 ANDROID_ID 唯一读点（memoize；取不到返回 ""）。 */
+    public static String rawAndroidId(Context ctx) {
+        String v = sRawAndroidId;
+        if (v != null) return v;
+        try {
+            String id = Settings.Secure.getString(
+                    ctx.getContentResolver(), Settings.Secure.ANDROID_ID);
+            v = (id == null) ? "" : id;
+        } catch (Throwable t) {
+            v = "";
+        }
+        sRawAndroidId = v;
+        return v;
+    }
+
+    /** SHA-256(ANDROID_ID) 取前 8 字节十六进制（device_id；= dm 前 8B）。 */
     public static String computeDeviceHash(Context ctx) {
         try {
-            String androidId = Settings.Secure.getString(
-                    ctx.getContentResolver(), Settings.Secure.ANDROID_ID);
-            if (androidId == null || androidId.isEmpty()) return "unknown";
+            String androidId = rawAndroidId(ctx);
+            if (androidId.isEmpty()) return "unknown";
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             byte[] hash = md.digest(androidId.getBytes("UTF-8"));
             StringBuilder sb = new StringBuilder(16);
@@ -114,6 +132,36 @@ public class AuthManager {
         } catch (Throwable t) {
             return "unknown";
         }
+    }
+
+    /**
+     * 牙③ W_dev 设备材料 D_mat = SHA-256(ANDROID_ID) 全 32 字节（前 8B == device_id，
+     * 服务器 Batch 2 自校验基准 dm[:16]==device_id）。与 computeDeviceHash 共用 rawAndroidId
+     * 唯一读点；推给 SO set_device_material 折进 W_dev。取不到 → null（不设 dm，双试自动
+     * 回退全局 W，不阻塞正版）。
+     */
+    public static byte[] computeDeviceMaterial(Context ctx) {
+        try {
+            String androidId = rawAndroidId(ctx);
+            if (androidId.isEmpty()) return null;
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            return md.digest(androidId.getBytes("UTF-8")); // 32B
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /**
+     * dm = hex(SHA-256(ANDROID_ID)) 全 32B → 64 hex（出站请求字段，牙③ 服务器逐设备 wrap 依据）。
+     * 前 16 hex == computeDeviceHash（服务器 Batch 2 自校验基准 dm[:16]==device_id）。
+     * 走 computeDeviceMaterial → rawAndroidId 单一读点；取不到 → ""（不带 dm，双试回退全局 W，不阻塞正版）。
+     */
+    public static String computeDeviceMaterialHex(Context ctx) {
+        byte[] dm = computeDeviceMaterial(ctx);
+        if (dm == null) return "";
+        StringBuilder sb = new StringBuilder(dm.length * 2);
+        for (byte b : dm) sb.append(String.format("%02x", b));
+        return sb.toString();
     }
 
     /** 日志脱敏：只显示前4位 + *** */

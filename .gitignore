@@ -100,3 +100,10 @@ tools/b56_static_index/
 **/gi_dump.txt
 **/gi_album.txt
 **/m6a_shot.png
+
+# 一次性手机拉取产物 + 临时脚本（大体积二进制 / 设备授权 / scratch，绝不入库）
+tmp_phone_pull/
+tmp_*.json
+tmp_ssh_*.py
+# Python 字节码缓存（可重生成）
+**/__pycache__/

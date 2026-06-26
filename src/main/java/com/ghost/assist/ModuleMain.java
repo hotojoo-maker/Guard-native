@@ -150,6 +150,18 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         //     registry is decrypted (anti-repackage). Must run before step 0.
         bindSigningCert(app);
 
+        // 0b. Batch 1 (牙③ W_dev): push per-device material D_mat = SHA-256(ANDROID_ID)
+        //     to the SO BEFORE the seed is unwrapped (step 2), so unwrap_server_seed can
+        //     try the per-device wrap key. null (android_id missing) → not set → the
+        //     double-try falls back to global W (no block). A2 同源隔离: only reads
+        //     AuthManager.rawAndroidId, never the official SSAID A2 feeds the host.
+        try {
+            byte[] dmat = com.ghost.assist.core.AuthManager.computeDeviceMaterial(app);
+            if (dmat != null) NativeBridge.setDeviceMaterial(dmat);
+        } catch (Throwable t) {
+            Log.w(TAG, "[init] setDeviceMaterial skip: " + t.getClass().getSimpleName());
+        }
+
         // 0. NativeBridge — Batch 1 Phase 1 verification (before any hook registration)
         //    Iron rule 27: nativeInit must complete before business hooks.
         runNativeBridgeVerification(lpparam.processName);
@@ -200,6 +212,27 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
             RiskPromptController.maybeShow(app, "cold-start");
         } catch (Throwable t) {
             Log.e(TAG, "[auth] wire crash: " + t);
+        }
+
+        // 6.6. A2 防封授权闸（isAntiBanReady）self-test — DEBUG-only。
+        //      与 6.5 引流闸独立：只读闸出口 + 三个子信号（ANTIBAN-GATE tag），
+        //      不门控、不改 isActive。
+        if (BuildConfig.DEBUG) {
+            com.ghost.assist.core.GuardRuntime.antiBanGateSelfTest(TAG);
+        }
+
+        // 6.7. A2 防封签名轴安装（设计稿 §3/§5）：门控在 EnvelopeStore/registry
+        //      就绪之后（step 2 已 init）——只有 isAntiBanReady()（授权信封 +
+        //      registry 解开 + 官方 DER 料）才装；否则散沙（fail-closed，红线#1/#4）。
+        //      A2 是独立加法，只动自身包签名返回，不连坐隐私 isActive()、不进已验证 hook。
+        try {
+            if (com.ghost.assist.core.GuardRuntime.isAntiBanReady()) {
+                com.ghost.assist.core.A2SignatureSpoof.install(lpparam);
+            } else {
+                Log.i(TAG, "[A2SIG] not installed: isAntiBanReady=false (scatter)");
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "[A2SIG] gate/install crash: " + t.getClass().getSimpleName());
         }
 
         // 7. Install module hooks

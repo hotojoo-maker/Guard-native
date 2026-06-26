@@ -29,16 +29,25 @@ OUT = os.path.join(ROOT, "native_core", "src", "kdf_vectors.inc")
 # index math (the real S_rel is server-side and per-release, never embedded).
 TEST_BINDING = kc.CERT_SHA256
 TEST_SEED = bytes((0xA0 + i) & 0xff for i in range(32))
+# Phase 1F (牙③ W_dev): fixed 32-byte device material to exercise derive_wrap_key's
+# fold index math. Distinct from TEST_SEED so a wrap/registry collision is visible.
+TEST_DEVICE = bytes((0x10 + i) & 0xff for i in range(32))
 
 VEC_REGISTRY_CERT_ONLY = kc.derive_registry_key(TEST_BINDING, b"")
 VEC_REGISTRY_CERT_SEED = kc.derive_registry_key(TEST_BINDING, TEST_SEED)
 VEC_BOOTSTRAP = kc.derive_bootstrap_key(TEST_BINDING)
+VEC_WRAP = kc.derive_wrap_key(TEST_DEVICE)
 
 # Domain separation invariant the C++ side also asserts: the registry cert-only
 # key must differ from the bootstrap key (same binding, no seed). Fail loudly here
 # too so a botched DOM tag can't even generate a "passing" vector file.
 if VEC_REGISTRY_CERT_ONLY == VEC_BOOTSTRAP:
     raise SystemExit("ERROR: domain separation broken — registry key == bootstrap key")
+# 牙③ domain separation: derive_wrap_key(X) must differ from derive_registry_key
+# (cert-only, server_seed=X) — same fold math, different base segments. Equality
+# means WSEG_* == SEG_* (domain separation broken). Fail loudly at gen time too.
+if VEC_WRAP == kc.derive_registry_key(b"", TEST_DEVICE):
+    raise SystemExit("ERROR: 牙③ domain separation broken — wrap key == registry key (WSEG==SEG?)")
 
 
 def carr(name, b):
@@ -55,9 +64,11 @@ lines = [
     "// after ANY KDF change: python tools/gen_kdf_vectors.py\n",
     carr("kKdfTestBinding", TEST_BINDING),
     carr("kKdfTestSeed", TEST_SEED),
+    carr("kKdfTestDevice", TEST_DEVICE),
     carr("kKdfVecRegistryCertOnly", VEC_REGISTRY_CERT_ONLY),
     carr("kKdfVecRegistryCertSeed", VEC_REGISTRY_CERT_SEED),
     carr("kKdfVecBootstrap", VEC_BOOTSTRAP),
+    carr("kKdfVecWrap", VEC_WRAP),
 ]
 
 with open(OUT, "w", encoding="utf-8", newline="\n") as f:
@@ -67,3 +78,4 @@ print("wrote", os.path.relpath(OUT, ROOT))
 print("reg_certonly", VEC_REGISTRY_CERT_ONLY.hex())
 print("reg_certseed", VEC_REGISTRY_CERT_SEED.hex())
 print("bootstrap   ", VEC_BOOTSTRAP.hex())
+print("wrap        ", VEC_WRAP.hex())

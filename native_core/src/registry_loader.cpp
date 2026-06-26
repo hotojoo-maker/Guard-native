@@ -306,12 +306,13 @@ std::string registry_dump_summary() {
 
 bool registry_self_test() {
     // (1) Embedded registry parses and matches the Filter-layer anchors
-    //     (conv/moments/contact/search — L2-confirmed in moduleD/moduleB).
+    //     (conv/moments/contact/search + a2.sig — L2-confirmed in moduleD/moduleB
+    //      + A2SignatureSpoof).
     ConfigRegistry r = registry_load_embedded();
     if (!r.ok) return false;
     if (r.schema_id != "r8071_v1") return false;
     if (r.wechat_version != "8.0.71") return false;
-    if (r.entries.size() != 4) return false;
+    if (r.entries.size() != 5) return false;  // conv/moments/contact/search + a2.sig (A2-1)
 
     // conv.list (ConvFilter.java)
     if (!field_eq(r, "conv.list", "mvvmlist_class",
@@ -350,6 +351,14 @@ bool registry_self_test() {
         if (fam == nullptr) return false;
         if (fam->find("q2") == std::string::npos) return false;
         if (fam->find("f0") == std::string::npos) return false;
+    }
+
+    // a2.sig (A2SignatureSpoof anti-ban official DER; entry #5, added with A2-1)
+    {
+        const RegistryEntry* e = find_entry(r, "a2.sig");
+        const std::string* der = (e != nullptr) ? find_field(*e, "official_der") : nullptr;
+        if (der == nullptr) return false;
+        if (der->rfind("308202eb", 0) != 0) return false;  // official cert DER header (751B hex)
     }
 
     // (1c) Encrypted-path integrity: a tampered cipher byte must fail the GCM

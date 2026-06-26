@@ -3,6 +3,7 @@ package com.ghost.assist.net;
 import android.util.Log;
 
 import com.ghost.assist.core.AppConfig;
+import com.ghost.assist.core.AuthManager;
 
 import org.json.JSONObject;
 
@@ -43,6 +44,21 @@ public final class EnvelopeClient {
     public static String getLastErrorCode() { return sLastErrorCode; }
 
     /**
+     * dm = hex(SHA-256(ANDROID_ID)) 32B（牙③ 灰度①：服务器逐设备 wrap S_rel 的依据）。
+     * 服务器 Batch 2 前忽略此字段 → 向后兼容。取值走 AuthManager 单一读点
+     * （rawAndroidId memoize），不新增读点；A2 灌给官方包的官方 SSAID 不进此值（A2 同源隔离）。
+     * 取不到（无 ctx / android_id 空）→ ""，不阻塞正版（SO 双试自动回退全局 W）。
+     */
+    private static String deviceMaterialHex() {
+        try {
+            android.content.Context ctx = AppConfig.getInstance().getAppContext();
+            return ctx == null ? "" : AuthManager.computeDeviceMaterialHex(ctx);
+        } catch (Throwable t) {
+            return "";
+        }
+    }
+
+    /**
      * 卡密激活 → 拿 token。
      *
      * @param cardKey  用户输入的激活码
@@ -55,6 +71,7 @@ public final class EnvelopeClient {
             body.put("card_key", cardKey == null ? "" : cardKey);
             body.put("product_id", AppConfig.GUARD_PRODUCT_ID);
             body.put("device_id", deviceId == null ? "" : deviceId);
+            body.put("dm", deviceMaterialHex());
             body.put("release_id", AppConfig.GUARD_RELEASE_ID);
         } catch (Throwable t) {
             return null;
@@ -90,6 +107,7 @@ public final class EnvelopeClient {
         try {
             body.put("token", token == null ? "" : token);
             body.put("device_id", deviceId == null ? "" : deviceId);
+            body.put("dm", deviceMaterialHex());
             body.put("product_id", AppConfig.GUARD_PRODUCT_ID);
             body.put("release_id", AppConfig.GUARD_RELEASE_ID);
             JSONObject client = new JSONObject();
@@ -131,6 +149,7 @@ public final class EnvelopeClient {
         try {
             body.put("token", token == null ? "" : token);
             body.put("device_id", deviceId == null ? "" : deviceId);
+            body.put("dm", deviceMaterialHex());
             body.put("product_id", AppConfig.GUARD_PRODUCT_ID);
             body.put("release_id", AppConfig.GUARD_RELEASE_ID);
 

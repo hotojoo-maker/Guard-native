@@ -352,6 +352,13 @@ size_t  g_binding_len = 0;
 uint8_t g_server_seed[32];
 size_t  g_server_seed_len = 0;
 
+// Phase 1F (牙③ W_dev): per-device material D_mat = SHA-256(ANDROID_ID) full 32B,
+// pushed down by Java (set_device_material). Batch 0: stored only — NOT yet wired
+// into unwrap_server_seed (Batch 1 double-try). Folded into derive_wrap_key().
+// MUST be the real device ANDROID_ID, never the official SSAID A2 feeds the host.
+uint8_t g_device_mat[32];
+size_t  g_device_mat_len = 0;
+
 // Per-release wrapping key W[:16] — the AES-128 key that decrypts k → S_rel.
 // Scattered into two halves (miyou-server config holds the same 16 bytes),
 // reassembled only at use.
@@ -405,6 +412,17 @@ void set_binding_material(const uint8_t* data, size_t len) {
     g_binding_len = len;
 }
 
+void set_device_material(const uint8_t* data, size_t len) {
+    // Phase 1F (牙③ W_dev). Batch 0: store only; not yet read by any unwrap path.
+    if (data == nullptr || len == 0) {
+        g_device_mat_len = 0;
+        return;
+    }
+    if (len > sizeof(g_device_mat)) len = sizeof(g_device_mat);
+    std::memcpy(g_device_mat, data, len);
+    g_device_mat_len = len;
+}
+
 void clear_server_seed() {
     g_server_seed_len = 0;
 }
@@ -416,21 +434,39 @@ bool server_seed_ready() {
 bool unwrap_server_seed(const uint8_t* k, size_t k_len,
                         const uint8_t* nonce, size_t nonce_len) {
     // k = ct(32) || tag(16). Decrypt AES-128-GCM(key=W[:16], nonce=n[:12]) → S_rel(32).
+    // Batch 1 (牙③ 灰度①双试): try the per-device wrap key W_dev first, then fall back
+    // to the global W. The server still ships global-W-wrapped k, so the fallback keeps
+    // current 正版 working (backward-compatible); W_dev only succeeds once the server
+    // re-wraps per device (Batch 2). Global W stays until Batch 3.
     // Any failure → clear seed (registry scatters = fail-closed, real lock).
     g_server_seed_len = 0;
     if (k == nullptr || nonce == nullptr) return false;
     if (k_len != 48 || nonce_len < 12) return false;
 
+    std::vector<uint8_t> seed;
+
+    // ① W_dev (per-device) — only when device material D_mat is loaded.
+    if (g_device_mat_len == 32) {
+        uint8_t wkd[16];
+        derive_wrap_key(wkd);
+        if (gcm_decrypt(wkd, nonce, 12, k, 32, k + 32, 16, seed) && seed.size() == 32) {
+            std::memcpy(g_server_seed, seed.data(), 32);
+            g_server_seed_len = 32;
+            return true;
+        }
+        seed.clear();
+    }
+
+    // ② fall back to global W (g_wk_lo||g_wk_hi) — unchanged legacy path (current server).
     uint8_t wk[16];
     std::memcpy(wk, g_wk_lo, 8);
     std::memcpy(wk + 8, g_wk_hi, 8);
-
-    std::vector<uint8_t> seed;
-    bool ok = gcm_decrypt(wk, nonce, 12, k, 32, k + 32, 16, seed);
-    if (!ok || seed.size() != 32) return false;
-    std::memcpy(g_server_seed, seed.data(), 32);
-    g_server_seed_len = 32;
-    return true;
+    if (gcm_decrypt(wk, nonce, 12, k, 32, k + 32, 16, seed) && seed.size() == 32) {
+        std::memcpy(g_server_seed, seed.data(), 32);
+        g_server_seed_len = 32;
+        return true;
+    }
+    return false;
 }
 
 void derive_registry_key(uint8_t out[16]) {
@@ -513,6 +549,36 @@ void derive_bootstrap_key(uint8_t out[16]) {
     }
 }
 
+void derive_wrap_key(uint8_t out[16]) {
+    // [GUARD-TRAP] 牙③ W_dev (per-device wrapping key). Mirror
+    // tools/kdf_common.py::derive_wrap_key() byte-for-byte. Domain-separated
+    // wseg_* (MUST differ from derive_registry_key's seg_*) + the device material
+    // fold (g_device_mat = SHA-256(ANDROID_ID), set by set_device_material).
+    // Batch 0: NOT yet used by unwrap_server_seed (still global W); see
+    // 施工提示词_SO黑盒钥匙加固 Batch 1 double-try.
+    static const uint8_t wseg_a[16] = {
+        0x8a, 0x14, 0xd9, 0x63, 0x2f, 0xb7, 0x4e, 0xc1,
+        0x05, 0x9d, 0x76, 0xe2, 0x3b, 0xa8, 0x50, 0xff};
+    static const uint8_t wseg_b[16] = {
+        0x1d, 0xc7, 0x6a, 0x39, 0x84, 0x0e, 0xf2, 0x5b,
+        0xae, 0x47, 0xb0, 0x92, 0x68, 0xd5, 0x21, 0x3c};
+    static const uint8_t wseg_c[16] = {
+        0xf6, 0x09, 0x7e, 0xa3, 0x4d, 0xc8, 0x1b, 0x60,
+        0x95, 0x2a, 0xe7, 0x53, 0x88, 0x31, 0xbc, 0x0f};
+    for (int i = 0; i < 16; ++i) {
+        uint8_t t = static_cast<uint8_t>(wseg_a[i] ^ wseg_b[(i * 5 + 3) & 15]);
+        t = rotl8(t, (i % 7) + 1);
+        t = static_cast<uint8_t>(t ^ wseg_c[i]);
+        t = static_cast<uint8_t>(t + i * 37);
+        if (g_device_mat_len > 0) {
+            t = static_cast<uint8_t>(t ^ g_device_mat[(i * 3) % g_device_mat_len]);
+            t = rotl8(t, g_device_mat[(i * 3 + 1) % g_device_mat_len] & 7);
+            t = static_cast<uint8_t>(t ^ g_device_mat[(i + 11) % g_device_mat_len]);
+        }
+        out[i] = t;
+    }
+}
+
 #ifdef GUARD_DEV_SELFTEST
 // KDF cross-check vectors (fixed inputs → expected derive_* output), generated
 // from tools/kdf_common.py by tools/gen_kdf_vectors.py. Debug-config only
@@ -534,6 +600,9 @@ bool kdf_self_test() {
     uint8_t saved_seed[sizeof(g_server_seed)];
     std::memcpy(saved_seed, g_server_seed, sizeof(g_server_seed));
     size_t saved_seed_len = g_server_seed_len;
+    uint8_t saved_device[sizeof(g_device_mat)];
+    std::memcpy(saved_device, g_device_mat, sizeof(g_device_mat));
+    size_t saved_device_len = g_device_mat_len;
 
     bool ok = true;
     uint8_t k[16];
@@ -561,11 +630,29 @@ bool kdf_self_test() {
     // (4) domain separation: registry cert-only key must differ from bootstrap.
     if (std::memcmp(reg_certonly, b, 16) == 0) ok = false;
 
+    // (5) 牙③ wrap key: device material set, derive_wrap_key matches the vector.
+    std::memcpy(g_device_mat, kKdfTestDevice, sizeof(g_device_mat));
+    g_device_mat_len = sizeof(g_device_mat);
+    uint8_t w[16];
+    derive_wrap_key(w);
+    if (std::memcmp(w, kKdfVecWrap, 16) != 0) ok = false;
+
+    // (6) 牙③ domain separation: derive_wrap_key(X) must differ from
+    // derive_registry_key(cert-only off, server_seed=X) — same fold math, only the
+    // base segments differ. Equality ⇒ wseg_* == seg_* (domain separation broken).
+    g_binding_len = 0;
+    std::memcpy(g_server_seed, kKdfTestDevice, sizeof(g_server_seed));
+    g_server_seed_len = sizeof(g_server_seed);
+    derive_registry_key(k);
+    if (std::memcmp(w, k, 16) == 0) ok = false;
+
     // Restore live key state.
     std::memcpy(g_binding, saved_binding, sizeof(g_binding));
     g_binding_len = saved_binding_len;
     std::memcpy(g_server_seed, saved_seed, sizeof(g_server_seed));
     g_server_seed_len = saved_seed_len;
+    std::memcpy(g_device_mat, saved_device, sizeof(g_device_mat));
+    g_device_mat_len = saved_device_len;
     return ok;
 #else
     // Release SO: vectors are not embedded; KDF drift is caught in debug/CI

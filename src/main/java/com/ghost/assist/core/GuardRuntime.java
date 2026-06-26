@@ -1,6 +1,7 @@
 package com.ghost.assist.core;
 
 import com.ghost.assist.BuildConfig;
+import com.ghost.assist.net.EnvelopeStore;
 
 /**
  * GuardRuntime — single entry point for hook recipes (class/field names).
@@ -106,5 +107,46 @@ public final class GuardRuntime {
     public static boolean hasRecipe(String gateway, String key) {
         String v = getRecipe(gateway, key);
         return v != null && !v.isEmpty();
+    }
+
+    // ── A2 防封授权闸（Phase A2-1 · 签名轴）─────────────────────
+    //
+    // isAntiBanReady() 是 A2 防封能力（喂官方签名）的唯一闸出口，与隐私
+    // isActive() / isConfigReady() 两闸独立、互不连坐（设计稿 §5 / DESIGN §1 /
+    // 授权检查官 §九）。隐私功能仍走 isActive()，本闸只门控 A2，不读 StateMachine。
+    //
+    // 本期最小真闸（设计稿 §5；安全官红线 #1「不是裸客户端布尔」）：
+    //   有效授权信封 + registry 解开 + 官方 DER 料解得出 → 才装 A2。
+    // 盗版无 server seed → 官方 DER 料解不出 → recipeOk=false → 闸 false → A2 散沙
+    // （fail-closed，设计稿 §4/§9）。完整时间闸（T_soft/T_login/T_kill/影子期）=
+    // A2-4 后补；本期到期宽限沿用授权链（isAuthorizedNow 内部已用 LeaseClock 防回拨
+    // 判到期），不在此引入墙钟时间逻辑（红线 #3）。
+
+    /** A2 签名轴官方 DER 取件口（registry gateway/field；料缺即闸 false 散沙）。 */
+    public static final String A2_SIG_GATEWAY      = "a2.sig";
+    public static final String A2_SIG_OFFICIAL_DER = "official_der";
+
+    public static boolean isAntiBanReady() {
+        return EnvelopeStore.isAuthorizedNow()
+                && isConfigReady()
+                && hasRecipe(A2_SIG_GATEWAY, A2_SIG_OFFICIAL_DER);
+    }
+
+    /**
+     * DEBUG-only cold-start self-test for the A2 anti-ban gate. Logs the final
+     * gate decision plus its three sub-signals so the active branch
+     * (authorized / unauthorized / DER-material-missing) is readable in logcat
+     * under the {@code ANTIBAN-GATE} marker. No JUnit harness exists in this
+     * repo; this mirrors the existing native KDF / registry self-tests and is
+     * gated by BuildConfig.DEBUG at the call site so release never logs it.
+     */
+    public static void antiBanGateSelfTest(String tag) {
+        boolean auth   = EnvelopeStore.isAuthorizedNow();
+        boolean cfg    = isConfigReady();
+        boolean recipe = hasRecipe(A2_SIG_GATEWAY, A2_SIG_OFFICIAL_DER);
+        android.util.Log.i(tag, "[ANTIBAN-GATE] ready=" + isAntiBanReady()
+                + " authorizedNow=" + auth
+                + " configReady=" + cfg
+                + " a2RecipeOk=" + recipe);
     }
 }

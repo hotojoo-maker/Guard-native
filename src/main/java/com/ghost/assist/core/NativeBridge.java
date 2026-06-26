@@ -322,6 +322,17 @@ public final class NativeBridge {
         nativeSetBindingMaterial(certSha256);
     }
 
+    /**
+     * Phase 1F (牙③ W_dev): push the per-device material D_mat = SHA-256(ANDROID_ID)
+     * (full 32B) to the SO for the per-device wrap key. MUST be the real device
+     * ANDROID_ID, never the official SSAID that A2 feeds the host (A2 同源隔离).
+     * Batch 0: SO stores it only (not yet used to unwrap k). No-op if SO unavailable.
+     */
+    public static void setDeviceMaterial(byte[] deviceMaterial) {
+        if (!sAvailable || deviceMaterial == null || deviceMaterial.length == 0) return;
+        nativeSetDeviceMaterial(deviceMaterial);
+    }
+
     // ── Phase 1D-server (S3a): server seed (S_rel) from envelope k ─
 
     /**
@@ -380,6 +391,7 @@ public final class NativeBridge {
     // links this symbol.
     private static native boolean nativeKdfSelfTest();
     private static native void    nativeSetBindingMaterial(byte[] certSha256);
+    private static native void    nativeSetDeviceMaterial(byte[] deviceMaterial);
     private static native boolean nativeUnwrapServerSeed(byte[] k, byte[] nonce);
     private static native String  nativeGetRecipe(String gateway, String key);
     private static native String  nativeGetEndpoint(String key);

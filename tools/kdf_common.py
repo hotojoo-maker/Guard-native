@@ -41,6 +41,22 @@ DOM = bytes([
     0x14, 0x8e, 0x7b, 0xa3, 0x50, 0xc9, 0x2d, 0xf6,
 ])
 
+# Phase 1F (牙③ W_dev) — wrap-key segments. MUST match config_crypto.cpp
+# wseg_a/b/c in guard::derive_wrap_key(). MUST differ from SEG_A/B/C (domain
+# separation; asserted by gen_kdf_vectors.py + guard::kdf_self_test()).
+WSEG_A = bytes([
+    0x8a, 0x14, 0xd9, 0x63, 0x2f, 0xb7, 0x4e, 0xc1,
+    0x05, 0x9d, 0x76, 0xe2, 0x3b, 0xa8, 0x50, 0xff,
+])
+WSEG_B = bytes([
+    0x1d, 0xc7, 0x6a, 0x39, 0x84, 0x0e, 0xf2, 0x5b,
+    0xae, 0x47, 0xb0, 0x92, 0x68, 0xd5, 0x21, 0x3c,
+])
+WSEG_C = bytes([
+    0xf6, 0x09, 0x7e, 0xa3, 0x4d, 0xc8, 0x1b, 0x60,
+    0x95, 0x2a, 0xe7, 0x53, 0x88, 0x31, 0xbc, 0x0f,
+])
+
 # Fixed keystore cert SHA-256 (signing/guard-native-debug.keystore, alias
 # androiddebugkey). The runtime cert pushed via NativeBridge.setBindingMaterial()
 # MUST equal this for the embedded registry/bootstrap blobs to decrypt. Regenerate
@@ -107,5 +123,28 @@ def derive_bootstrap_key(binding=b""):
             t ^= binding[(i + 7) % blen]
         t ^= DOM[i]
         t = rotl8(t, DOM[(i * 7 + 1) & 15] & 7)
+        out[i] = t
+    return bytes(out)
+
+
+def derive_wrap_key(device_mat=b""):
+    """Mirror guard::derive_wrap_key() byte-for-byte. 牙③ W_dev (per-device wrap key).
+
+    Same loop structure as derive_registry_key (seg base + the server_seed fold's
+    index math), but uses the domain-separated WSEG_* segments and folds the device
+    material D_mat = SHA-256(ANDROID_ID) (full 32B). WSEG_* MUST differ from SEG_*
+    (domain separation). device_mat=b"" → segment-only base (no device fold).
+    """
+    out = bytearray(16)
+    dlen = len(device_mat)
+    for i in range(16):
+        t = WSEG_A[i] ^ WSEG_B[(i * 5 + 3) & 15]
+        t = rotl8(t, (i % 7) + 1)
+        t ^= WSEG_C[i]
+        t = (t + i * 37) & 0xff
+        if dlen > 0:
+            t ^= device_mat[(i * 3) % dlen]
+            t = rotl8(t, device_mat[(i * 3 + 1) % dlen] & 7)
+            t ^= device_mat[(i + 11) % dlen]
         out[i] = t
     return bytes(out)
