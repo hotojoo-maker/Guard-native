@@ -194,7 +194,7 @@ jadx_8071_out/classes9.dex.jadx
 
 - `CLAUDE.md` §三 / §七、`FAILURE_LOG.md`、`PROJECT_INDEX.md` §四
 - `ANTIBAN_MAP.md`（**防封官权威账**，最新水位线；结论先看这里）
-- `03_execute_执行任务/P_AntiBanGate_防封授权闸/PLAN.md`（**防封 × 授权 交叉线 · 「血管逻辑」**：首装宽限内授权 → 防封保活；超时从未授权 → `isAntiBanReady()` 让**防封散沙** → 宿主自然判非官方 = 用「被封」反制盗版。设计 / 状态机 / 风险见此。⚠️ 授权·激活·散沙**机制本体**归 `guard-security_网络安全官` + `PROTECTION_MAP.md`（那是「防破解」线）；本角色只认「**防封保护被门控**」这一防封面，交叉点见 PLAN §三 / §四。当前主线**尚无防封运行代码**，本闸是「等 A2 签名 spoof 落地后挂上的闸门」）
+- `03_execute_执行任务/P_AntiBanGate_防封授权闸/PLAN.md`（**防封 × 授权 交叉线 · 「血管逻辑」**：首装宽限内授权 → 防封保活；超时从未授权 → `isAntiBanReady()` 让**防封散沙** → 宿主自然判非官方 = 用「被封」反制盗版。设计 / 状态机 / 风险见此。⚠️ 授权·激活·散沙**机制本体**归 `guard-security_网络安全官` + `PROTECTION_MAP.md`（那是「防破解」线）；本角色只认「**防封保护被门控**」这一防封面，交叉点见 PLAN §三 / §四。（⚠️ 2026-06-27 回正）**A2 签名轴已落主线 + live**（`A2SignatureSpoof`→`ModuleMain §6.7`，`[A2SIG] installed der=751B` L1）；本闸已挂上，门控 `isAntiBanReady=!isRefunded&&CompatProbe.isIntegrityIntact`(Route B/D-018)）
 - 工具脚本 `tools/`：`dump_mm_z3.js`（主调 `z3(0)`/`Y8` 设备指纹明文快照）、`dump_normsg_plaintext.js`（warm-attach hook 采集器明文）、`dump_wx_detect.js`（AccStrike/c29 快照）、`dump_normsg_native.js`（native 探针）、`dump_normsg_event_probe_v2_B56.js`（event 层明文/byte[]/stack）、`dump_normsg_f_run_loader_B56.js`（ClassLoader-aware f.run / WCProbe.m / c$p.ae-af 追踪，Java replacement 未接管时转 native/JNI 或静态切片）
 - L1 实证 log：`tools/normsg_dump_20260618.log`、`tools/normsg_mm_z3_B35_20260618.log`、`tools/normsg_sig_B35_20260618.log`、`tools/normsg_boot_probe_B35_20260618.log`、`tools/normsg_mm_z3_B56_cli_20260618.log`、`tools/normsg_sig_B56_cli_20260618.log`、`tools/normsg_boot_probe_B56_cli_20260618.log`、`tools/normsg_event_probe_v2_B56_20260618.log`
 
@@ -242,7 +242,7 @@ jadx_8071_out/classes9.dex.jadx
 
 标准分类：
 
-1. **非官方身份类**：用于识别“这是不是官方微信 / 是否被改包”。看包名、签名、数据目录、`sourceDir`、versionCode、installer、证书 hash、native lib 路径。例如 `com.tencent.mm` vs `com.tencent.mn`、`/data/data/com.tencent.mm` vs `/data/data/com.tencent.mn`。
+1. **非官方身份类**：用于识别“这是不是官方包 / 是否被改包”。看包名、签名、数据目录、`sourceDir`、versionCode、installer、证书 hash、native lib 路径。例如 `com.tencent.mm` vs `com.tencent.mn`、`/data/data/com.tencent.mm` vs `/data/data/com.tencent.mn`。
 2. **异常设备类**：用于识别设备环境是否异常。看 bootloader / root / 系统属性、Magisk 痕迹、厂商反欺诈结果、SELinux、`ro.debuggable`、`ro.secure`、build tags、异常系统路径。
 3. **运行时污染类**：用于识别 hook / 注入 / 框架痕迹。看 maps / status / fd、classloader、stacktrace、LSPosed / Frida / Zygisk 痕迹、可疑 so、进程列表、native 探测返回。
 4. **行为异常类**：用于识别操作密度或路径是否异常。看 normsg 事件数量、CONN 密度、同一动作触发次数、后台 / 前台切换、自动化输入、通知 / 搜索 / 朋友圈相关事件。

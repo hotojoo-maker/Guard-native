@@ -491,6 +491,22 @@ StateMachine.isActive()                // 取中央总闸
 
 ---
 
+## 10.10 退款撤闸（rf）+ A2 防封门改吊本地完整性（D-018）— 2026-06-27 代码复核回正
+
+> 本节补记两处「代码已落、总账未记」的回正（会话 F37，2026-06-27 对码 L2 复核）。证据 file:line。一结论一处（G10）：决策真源仍是 `DECISION_LOG.md D-018`、退款工程真源仍是 `P_RB1/worklog`，本节只做防破解总账侧指针。
+
+### 退款撤闸（rf）客户端链已落码（L2）
+- `AuthEnvelopeVerifier.Envelope.rf`（`:62`）= 信封退款位；`EnvelopeStore.applyVerifiedEnvelope` 见 `e.refunded==1` → `markRefunded()`（`:107`）。
+- `EnvelopeStore.isAuthorizedNow()`（`:146-151`）首判 `isRefunded()` → true 即 false（`isVipAuthorized=false` → `isActive` 四层断 → 隐私撤；A2 侧 `isAntiBanReady()=false`）。退款态**不自愈**（不入 `revokeKeepToken` 清单，重连/换 token 不抹），不清用户数据（红线#5）。
+- **现状（2026-06-27 recon 回正）**：服务器 `rf` 撤闸能力**已建并在主节点 live**（L1：`zxmqq.shop` `/admin/api/cards/refund` + 06-26 `card_refund` audit 实证）；客户端撞闸链已落码（见上）。**仍待**：e2e 真机 rf 撤闸 L1 日志落盘 + 备节点；改 envelope/crypto 送安全官复审。
+
+### D-018：A2 防封门改吊「本地完整性 cert」（L2）
+- 2026-06-26 拍板：A2 防封安装门**只吊本地完整性（模块自身证书 SHA-256）**，不再吊授权 / server seed（`GuardRuntime.java:116-119` + `CompatProbe.isIntegrityIntact():105-127`）。
+- 机制：读模块自身 APK 证书 == `EXPECTED_CERT`(`ca421ec3…`) 才装 A2；**仅「确证不符」(被重签) 才 false→散 A2**，读不到 / 异常 = fail-open 保护优先（逆序线误判 = 账号异常不可逆，不误杀正版）。
+- 边界：蜜罐 canary（诱饵 `BASELINE`）**不进** A2 门（漏重算会整片误判撤 A2），仍只走 `check()→markTampered→影子期引流`（§10.9 不变）。
+
+---
+
 ## 附录 A. 证据明细（2026-06-02 只读核查）
 
 - `StateMachine.java:86-92` —— `isActive()` 链 + `isVipAuthorized(){return true;}`（假锁）⚠️ 此为 2026-06-02 旧态；现 `:97 isVipAuthorized()=EnvelopeStore.isAuthorizedNow()` 真授权门（见 §1 注 / §10.6）

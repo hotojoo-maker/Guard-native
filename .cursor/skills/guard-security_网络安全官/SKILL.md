@@ -527,7 +527,7 @@ trusted_now = last_server_now + (current_elapsedRealtime - last_elapsedRealtime)
 推荐失效点：
 
 1. Registry 失效：`EncryptedConfigLoader` 返回空 registry 或降级 registry。
-2. 中央网关失效：`StateMachine.isActive()` 依赖租约、配方、RiskLevel。
+2. 中央网关失效：`StateMachine.isActive()` 依赖租约（授权）+ 配方（crypto config-ready）+ 总开关 + HIDDEN 态。**不依赖 RiskLevel**（#4 canonical 2026-06-27：密友门=isActive；RiskLevel 另走杂项+弹窗轴、不连坐；真源见 `RiskState` 类注释 / `STATUS_防封加密线`）。
 3. 数据源失效：过滤层拿到空列表、乱码列表或过期快照，用户原始数据不清除。
 4. 策略失效：`TAMPER_FUNNEL` 后 UI 可点，但核心过滤链不给完整能力。
 

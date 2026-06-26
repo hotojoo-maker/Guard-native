@@ -149,6 +149,8 @@
 
 ### 3.1 ⚠️ 关键前提（必读）
 
+> ⚠️ **2026-06-27 回正**：本节以下「主线无防封运行代码」为旧态——**A2 签名轴已接主线 + live**（`A2SignatureSpoof`→`ModuleMain §6.7`；`isAntiBanReady=!isRefunded&&CompatProbe.isIntegrityIntact`，Route B/D-018；`[A2SIG] installed der=751B` L1）。android_id / 包名 spoof 仍在研究线设计；下文保留作历史设计背景。
+
 把 `guard_native/src` + `native_core` 翻遍——**主线现在没有任何「防封」运行代码**（A2 签名 spoof / android_id / 包名 spoof 都还只在隔壁研究线 `防封_反检测线` 的设计里，没落到主线）。
 → 所以「防封散沙」现在**散的是个还没接上的模块**。本项 = **先把闸门建好，等防封模块落地直接挂**；闸门也可立刻复用到现有隐私 hook。
 

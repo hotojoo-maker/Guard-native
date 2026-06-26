@@ -15,10 +15,11 @@ import android.util.Log;
  *   • 主体仍 record-only：评估 + 记录等级 + 驱动「唯一弹窗」，不收紧 isActive()
  *     主链（密友隐藏 ConvFilter/MomentsFilter/ContactFilter 不受本类散沙影响，
  *     GUARD_GATE_TRUTH §4 防误伤正版）。
- *   • ⚠️ 例外（2026-06-12 已落地）：`isTamperDegraded()` 已是真闸——确认篡改过影子期
- *     （TAMPER_FUNNEL/PERSISTENT）后 `CallGuard.active()=isActive()&&!isTamperDegraded()`
- *     会让来电拦截**单点散沙**。故「不关闭任何功能」已不再成立；其余功能仍 record-only。
- *     更全面的散沙降级仍待服务器真锁阶段（Phase 1D-server）扩点。
+ *   • ⚠️ 例外（2026-06-12 起，2026-06-26 块B 扩面已落地）：`isTamperDegraded()` 已是真闸——
+ *     确认篡改过影子期（TAMPER_FUNNEL/PERSISTENT）后，杂项功能 `active()=isActive()&&!isTamperDegraded()`
+ *     单点散沙。当前消费者：CallGuard / PushFilter / AntiRecall / FakeLocation（杂项=来电/通知未读/防撤回/定位）。
+ *     故「不关闭任何功能」已不再成立。**密友隐藏四链(Conv/Moments/Contact/Search)不走本轴**——
+ *     走 isActive(=授权+crypto config-ready)，重签即 crypto registry 散沙，与 RiskLevel 独立、不连坐（#4 canonical）。
  *   • 全项目只准本类写风险等级；业务层只读 currentLevel()。
  * ═══════════════════════════════════════════════════════════════
  */
