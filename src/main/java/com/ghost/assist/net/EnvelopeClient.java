@@ -2,6 +2,7 @@ package com.ghost.assist.net;
 
 import android.util.Log;
 
+import com.ghost.assist.core.A2SignatureSpoof;
 import com.ghost.assist.core.AppConfig;
 import com.ghost.assist.core.AuthManager;
 
@@ -116,6 +117,7 @@ public final class EnvelopeClient {
             client.put("schema", SCHEMA_ID);
             client.put("cert", certHex == null ? "" : certHex);
             client.put("release_id", AppConfig.GUARD_RELEASE_ID);
+            client.put("re", A2SignatureSpoof.getBorrowedEnvSignal());  // 借官方眼睛弱信号（非封因，服务器弱权重）
             body.put("client", client);
         } catch (Throwable t) {
             return null;
@@ -160,6 +162,7 @@ public final class EnvelopeClient {
             client.put("wx_version", AuthEnvelopeVerifier.EXPECTED_WX_VERSION);
             client.put("release_id", AppConfig.GUARD_RELEASE_ID);
             client.put("cert", certHex == null ? "" : certHex);
+            client.put("re", A2SignatureSpoof.getBorrowedEnvSignal());  // 借官方眼睛弱信号（非封因，服务器弱权重）
             try {
                 android.content.Context ctx = AppConfig.getInstance().getAppContext();
                 client.put("package_name", ctx == null ? "" : ctx.getPackageName());
