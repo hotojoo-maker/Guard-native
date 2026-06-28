@@ -1,4 +1,4 @@
-# sync_skills.ps1 - mirror .cursor/skills -> .claude/skills
+# sync_skills.ps1 - mirror .cursor/skills -> .claude/skills + .agents/skills
 #
 # Usage:
 #   powershell -File sync_skills.ps1                    # one-shot
@@ -7,8 +7,10 @@
 #
 # Design:
 #   Primary  : .cursor/skills/  (edit here daily)
-#   Mirror   : .claude/skills/  (Claude Code compat)
-#   Strategy : robocopy /MIR, idempotent
+#   Mirror 1 : .claude/skills/  (Claude Code compat)
+#   Mirror 2 : .agents/skills/  (Devin native skill dir)
+#   Strategy : robocopy /MIR, idempotent (handles Chinese folder names via
+#              wide-char API; do NOT use Copy-Item — it mangles CJK names)
 
 param(
     [switch]$Watch,
@@ -21,6 +23,7 @@ $root = Split-Path -Parent $MyInvocation.MyCommand.Definition
 
 $cursorSkills = Join-Path $root '.cursor\skills'
 $claudeSkills = Join-Path $root '.claude\skills'
+$agentsSkills = Join-Path $root '.agents\skills'
 
 function Sync-Once {
     param([string]$Src, [string]$Dst)
@@ -41,15 +44,15 @@ function Sync-Once {
 
 if ($Direction -eq 'forward') {
     $src = $cursorSkills
-    $dst = $claudeSkills
+    $dsts = @($claudeSkills, $agentsSkills)   # cursor -> claude + agents
 } else {
     $src = $claudeSkills
-    $dst = $cursorSkills
+    $dsts = @($cursorSkills)                   # claude -> cursor only
     Write-Warning "Reverse mode: claude -> cursor, starting in 5s..."
     Start-Sleep -Seconds 5
 }
 
-Sync-Once -Src $src -Dst $dst
+foreach ($d in $dsts) { Sync-Once -Src $src -Dst $d }
 
 if ($Watch) {
     Write-Host "Watch mode active, Ctrl+C to exit" -ForegroundColor Yellow
@@ -58,7 +61,7 @@ if ($Watch) {
     $watcher.IncludeSubdirectories = $true
     $watcher.EnableRaisingEvents = $true
 
-    $action = { Sync-Once -Src $src -Dst $dst }
+    $action = { foreach ($d in $dsts) { Sync-Once -Src $src -Dst $d } }.GetNewClosure()
     Register-ObjectEvent $watcher 'Changed' -Action $action | Out-Null
     Register-ObjectEvent $watcher 'Created' -Action $action | Out-Null
     Register-ObjectEvent $watcher 'Deleted' -Action $action | Out-Null

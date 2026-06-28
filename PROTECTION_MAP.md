@@ -344,8 +344,8 @@ StateMachine.isActive()                // 取中央总闸
 
 #### P1（下一轮安全加固）
 
-1. **重放 / 过期绑定（牙④ a 案 · 不折静态 key）。** ⬜ 未落码
-   - 牙③ 设备材料 `dm` 已落（`caf2142`）；牙④ = Java 验签后把 `expire_at` 下推 SO（`setEnvelopeExpiry`）。
+1. **重放 / 过期绑定（牙④ a 案 · 不折静态 key）。** ✅ 已落码（2026-06-27, commit `f6cc31b`/`c5597b1`；G91 回正）
+   - 牙③ 设备材料 `dm` 已落（`caf2142`）+ Batch2 服务器按设备 wrap 已部署主节点（`I:\miyou-server\REVIEW_2026-06-27.md` §A，灰度② dm~25%，删全局 W=Batch3 待 dm≥90%）；牙④ = Java 验签后把 `expire_at` 下推 SO（`setEnvelopeExpiry`），SO `seed_expired()` 比对（已落）。
    - SO `unwrap_server_seed` 成功后比 `expire_at <= trusted_now`（官方授时 floor 防冻结）→ 过期散沙；**不折进静态 registry key**（续约会自锁，见 `钥匙加固_KeyHardening设计.md §3` a 案）。
 2. **`EncryptedConfigLoader` 接入 LeaseClock / RiskState。**
    - 过期、篡改、包名 / 证书不符、风险态确认后 scatter。
@@ -476,7 +476,7 @@ StateMachine.isActive()                // 取中央总闸
 - 仅「真等 7 天」未现场验（组件逻辑均单独验过）。
 
 ### ⚠️ 维护要点（方便后续 AI / 发版）
-1. **改诱饵 `PromoConfig` 任一字面量 → 必须重算 `CompatProbe.BASELINE`**（canary）：`BASELINE = fp(PROMO_URL) ^ fp(PROMO_TOKEN) ^ (PROMO_ENABLED?0x9E3779B9:0)`，`fp` 为 `h=h*131+c`（Java int）。不重算 = 正版自我误报。
+1. **改诱饵 `PromoConfig` 任一字面量 → canary 基线自动跟随（无需手算）**：`BASELINE` 现 = `BuildConfig.CANARY_BASELINE`，由 `build.gradle computeCanaryBaseline()` 构建期从 `PromoConfig` 真值算出（`fp(PROMO_URL) ^ fp(PROMO_TOKEN) ^ (PROMO_ENABLED?0x9E3779B9:0)`，`fp` 为 `h=h*131+c` Java int；原硬编码 `0xF3C1CAB3` 已废）。构建期带 KAT 自检（fp 漂移即 build 失败）+ 解析失败 fail-closed。**杜绝「忘重算→正版自我误报」**（场景B 误伤根除）。⚠️ 测 canary 须改【编译后 APK】诱饵值（smali）再装机，改源码重编不再触发（基线跟源码走 = 正版重编永不误判，设计如此）。
 2. **改落地页 URL → 改 `native_core/bootstrap_endpoints.json` 的 `cs.endpoint.funnel` → 重跑 `python tools/gen_bootstrap_cipher.py`**（生成 `bootstrap_cipher.inc`）。绝不在 Java 写明文 URL。`net.endpoint`（授权服务器）与 `cs.endpoint`（引流）分开；`guardServerList()` 只读 net.endpoint。
 3. **`CompatProbe.EXPECTED_CERT` 随发行线 keystore 改**：当前 = 固定 debug keystore 证书 `ca421ec3...`（与 `registry_cipher` 的 `_CERT_SHA256` 同源）。官替/共存若用不同 keystore，发版时按包档案同步改（同 registry 一套机制）。
 4. **阈值数字（影子期 168h / 冷却 10s / 离线 144h）= 段1 明文常量（轻迷彩）**，以后随服务器 `risk_pack` 下发。位置：`RiskState.SHADOW_HOURS_DEFAULT`、`RiskPromptController.COOLDOWN_MS`、`LeaseClock.FUNNEL_MS`。
@@ -491,19 +491,13 @@ StateMachine.isActive()                // 取中央总闸
 
 ---
 
-## 10.10 退款撤闸（rf）+ A2 防封门改吊本地完整性（D-018）— 2026-06-27 代码复核回正
+## 10.10 A2 防封门 + 封停/删卡撤闸 → 详见 SSOT（A2 唯一真源）
 
-> 本节补记两处「代码已落、总账未记」的回正（会话 F37，2026-06-27 对码 L2 复核）。证据 file:line。一结论一处（G10）：决策真源仍是 `DECISION_LOG.md D-018`、退款工程真源仍是 `P_RB1/worklog`，本节只做防破解总账侧指针。
+> A2 防封 / 授权 / 防破解的**唯一可读真源** = `03_execute_执行任务/P_AntiBanGate_防封授权闸/SSOT_A2授权防破解_统一真源.md`（D-020 · code-true）。本节只留防破解总账侧指针，不复述结论（G10）。
 
-### 退款撤闸（rf）客户端链已落码（L2）
-- `AuthEnvelopeVerifier.Envelope.rf`（`:62`）= 信封退款位；`EnvelopeStore.applyVerifiedEnvelope` 见 `e.refunded==1` → `markRefunded()`（`:107`）。
-- `EnvelopeStore.isAuthorizedNow()`（`:146-151`）首判 `isRefunded()` → true 即 false（`isVipAuthorized=false` → `isActive` 四层断 → 隐私撤；A2 侧 `isAntiBanReady()=false`）。退款态**不自愈**（不入 `revokeKeepToken` 清单，重连/换 token 不抹），不清用户数据（红线#5）。
-- **现状（2026-06-27 recon 回正）**：服务器 `rf` 撤闸能力**已建并在主节点 live**（L1：`zxmqq.shop` `/admin/api/cards/refund` + 06-26 `card_refund` audit 实证）；客户端撞闸链已落码（见上）。**仍待**：e2e 真机 rf 撤闸 L1 日志落盘 + 备节点；改 envelope/crypto 送安全官复审。
-
-### D-018：A2 防封门改吊「本地完整性 cert」（L2）
-- 2026-06-26 拍板：A2 防封安装门**只吊本地完整性（模块自身证书 SHA-256）**，不再吊授权 / server seed（`GuardRuntime.java:116-119` + `CompatProbe.isIntegrityIntact():105-127`）。
-- 机制：读模块自身 APK 证书 == `EXPECTED_CERT`(`ca421ec3…`) 才装 A2；**仅「确证不符」(被重签) 才 false→散 A2**，读不到 / 异常 = fail-open 保护优先（逆序线误判 = 账号异常不可逆，不误杀正版）。
-- 边界：蜜罐 canary（诱饵 `BASELINE`）**不进** A2 门（漏重算会整片误判撤 A2），仍只走 `check()→markTampered→影子期引流`（§10.9 不变）。
+- **A2 闸**：吊本地 cert 完整性 **+ 时间闸**（首装 72h / 曾授权失效 7 天），fail-open；**未授权超窗撤 A2**（D-020 取代 D-018「未授权永不撤」）。代码锚点见 SSOT §8。
+- **封停 / 删卡撤销**：代码 `isCardRevoked` / `markCardRevoked`（语义 = 后台**封停 / 删卡**，**项目无「退款」概念**；`rf` 仅保留作 wire/存储键的历史缩写）；`EnvelopeStore.isAuthorizedNow()` 首判 `isCardRevoked()` → 撤隐私、A2 侧 `isAntiBanReady()=false`；不自愈、不清数据（红线#5）。服务器侧封停/删卡能力主节点 live（`/admin/api/cards/refund` 为历史接口名，归 miyou-server 仓库）；e2e 真机 L1 + 备节点待补。详见 SSOT §3 / §8。
+- 蜜罐 canary **不进** A2 门（仍走 `check()→markTampered→影子期引流`，§10.9 不变）。
 
 ---
 

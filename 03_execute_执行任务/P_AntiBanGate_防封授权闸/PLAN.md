@@ -123,7 +123,7 @@
 **蜜罐全套（与归一是两套独立子系统）：**
 
 - 诱饵 `core/PromoConfig.java`（明文 PROMO_URL/TOKEN/ENABLED，真功能不读）
-- 绊线 `core/CompatProbe.java`（canary `BASELINE=0xF3C1CAB3` 比诱饵 + `EXPECTED_CERT` 比模块签名 → `markTampered`）
+- 绊线 `core/CompatProbe.java`（canary `BASELINE=BuildConfig.CANARY_BASELINE`〔构建期自动从 PromoConfig 算，原硬编码 `0xF3C1CAB3`〕比诱饵 + `EXPECTED_CERT` 比模块签名 → `markTampered`）
 - `core/RiskState.java` / `RiskPromptController.java` / `FunnelPrompt.java`（风险态 + 唯一弹窗 + 展示）
 - 引流 URL = `bootstrap_endpoints.json` 的 `cs.endpoint.funnel` → `gen_bootstrap_cipher.py` → `bootstrap_cipher.inc`，经 `NativeBridge.getEndpoint("funnel")` 取（**bootstrap 管线，cert-only，不折服务器种子**）
 
@@ -137,7 +137,7 @@
 **⚠️ 4 个共享常量禁区（归一时绝不能碰，碰了会连带炸蜜罐 / 正版误伤）：**
 
 1. `_SEG_A/B/C`（key 段）+ `_CERT_SHA256`：被 `gen_registry_cipher.py`、`gen_bootstrap_cipher.py`、`config_crypto.cpp` 三处共享。归一只改 json 内容 + 接线，**绝不动 key 派生 / 段常量 / cert**，否则 registry 和 bootstrap 一起解不开。
-2. `CompatProbe.BASELINE` / `PromoConfig` 任一字面量：归一**不碰 PromoConfig**（它是诱饵、不是死配置，别顺手优化删）；碰了必须重算 BASELINE，否则正版误报篡改。
+2. `CompatProbe.BASELINE` / `PromoConfig` 任一字面量：归一**不碰 PromoConfig**（它是诱饵、不是死配置，别顺手优化删）；BASELINE 现【构建期自动从 PromoConfig 算】（`build.gradle computeCanaryBaseline` → `BuildConfig.CANARY_BASELINE`），改诱饵重编自动跟随、无需手算（不再有「忘重算→正版误报」）。
 3. `CompatProbe.EXPECTED_CERT` = registry `_CERT_SHA256`（同一证书 `ca421ec3…`）：归一不换 keystore / cert，故两者保持对齐；若哪天换证书，三处 + 运行时 `setBindingMaterial` 必须一起改。
 4. `NativeBridge.getEndpoint`（引流 URL 出口）：归一只动 `getRecipe`，绝不混进 `getEndpoint`。
 
@@ -186,7 +186,7 @@ isAntiBanReady():
 
 ### 3.4 诚实风险（要你拍板 · 见 §四）
 
-1. **2h 太短**：防封散沙=可能被封号，比「隐藏功能失效」后果重得多。PROTECTION_MAP 铁律=「只砸确认破解/宽限真耗尽」。2h 就判盗版，对**还没来得及付款的真用户**可能误伤。建议拉长（24–72h）或叠加绊线/重签信号才散。
+1. **2h 太短**：防封散沙=不再保号（官方怎么判我方读不到、不预测），比「隐藏功能失效」后果重得多。PROTECTION_MAP 铁律=「只砸确认破解/宽限真耗尽」。2h 就判盗版，对**还没来得及付款的真用户**可能误伤。建议拉长（24–72h）或叠加绊线/重签信号才散。
 2. **时钟回拨**：攻击者把系统时间往回调→永远到不了 2h。首装那刻没有服务器时间，只能靠墙钟+elapsedRealtime 单调锚兜底，联网拿 trustedNow() 后收紧。挡普通党、挡不住硬核动态党。
 3. **和 V3 共存版冲突**：共存版改了包名，`anti_tamper.cpp` 现硬编码 `com.tencent.mm` 会误判篡改。上这套前先让期望包名随打包注入走（`PROTECTION_MAP.md` §10.8 已记此坑）。
 

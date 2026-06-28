@@ -14,6 +14,46 @@ plugins {
     id 'com.android.application' version '8.2.2' apply true
 }
 
+// ── Canary 基线构建期自动计算（单一真源 = PromoConfig.java）────────────
+// 蜜罐绊线 CompatProbe 比对「诱饵真值指纹」与编译期基线。过去基线是手写常量
+// (CompatProbe.BASELINE=0xF3C1CAB3)，改诱饵忘重算 → 正版自我误判篡改（场景B 误伤）。
+// 现改为构建期从 PromoConfig 真值算出并注入 BuildConfig.CANARY_BASELINE：改诱饵
+// 重编 → 基线自动跟随，从根上消除「忘重算」误伤。
+// ⚠️ guardCanaryFp 必须与 CompatProbe.fp 逐位一致（Java int：h = h*131 + c，32 位回绕）。
+int guardCanaryFp(String s) {
+    long h = 0
+    for (int i = 0; i < s.length(); i++) {
+        h = (h * 131L + (long) (int) s.charAt(i)) & 0xFFFFFFFFL
+    }
+    return (int) h
+}
+
+int computeCanaryBaseline() {
+    // KAT：固定输入 → 期望输出，证 gradle fp 未漂移（有人改坏 fp → 正版全误判，
+    // 此处当场 build 失败，不用等装机）。期望值由 tools 同算法预算（hex 0x9009DA99）。
+    int kat = guardCanaryFp("guard_canary_kat_v1")
+    if (kat != (int) 0x9009DA99L) {
+        throw new GradleException("[canary] fp KAT failed: got 0x" +
+                Integer.toHexString(kat) + " expected 0x9009DA99 — gradle fp drifted")
+    }
+    File f = file("src/main/java/com/ghost/assist/core/PromoConfig.java")
+    if (!f.exists()) {
+        throw new GradleException("[canary] PromoConfig.java not found: " + f)
+    }
+    String src = f.text
+    def mUrl = (src =~ /PROMO_URL\s*=\s*"([^"]*)"/)
+    def mTok = (src =~ /PROMO_TOKEN\s*=\s*"([^"]*)"/)
+    def mEn = (src =~ /PROMO_ENABLED\s*=\s*(true|false)/)
+    if (!mUrl.find() || !mTok.find() || !mEn.find()) {
+        throw new GradleException("[canary] failed to parse PROMO_* from PromoConfig.java")
+    }
+    int gr = (int) 0x9E3779B9L
+    int baseline = guardCanaryFp(mUrl.group(1)) ^ guardCanaryFp(mTok.group(1)) ^
+            (mEn.group(1) == "true" ? gr : 0)
+    println "[canary] baseline=0x" + Integer.toHexString(baseline) + " (auto from PromoConfig)"
+    return baseline
+}
+
 android {
     namespace 'com.ghost.assist'
     compileSdk 34
@@ -26,6 +66,10 @@ android {
         versionName "1.3"
 
         buildConfigField "String", "GUARD_PRODUCT_VERSION", "\"v1.3\""
+
+        // Canary 基线：构建期从 PromoConfig 单一真源自动算（见文件顶部 computeCanaryBaseline）。
+        // CompatProbe 运行时读 BuildConfig.CANARY_BASELINE，改诱饵重编自动跟随，杜绝忘重算误伤。
+        buildConfigField "int", "CANARY_BASELINE", "${computeCanaryBaseline()}"
 
         // ── libguardcore.so ───────────────────────────────────
         // Build for arm64-v8a (Xiaomi 9 primary) + armeabi-v7a (32-bit compat).

@@ -19,15 +19,21 @@ import java.security.MessageDigest;
  *     • 与诱饵【分开放、名字无关联】，破解者改了诱饵不会顺藤摸到本检测器。
  *     • 不当场翻脸：只 markTampered（记时间戳进影子期），不立即弹/不关功能。
  *     • 本地不自洗白：清缓存/改时间不能消风险态（RiskState 持久化 tamper_first_seen）。
- *   canary 基线由 tools 按 PromoConfig 真值算出；改诱饵必须同步重算（否则正版误报）。
+ *   canary 基线【构建期自动从 PromoConfig 算出】(build.gradle computeCanaryBaseline →
+ *   BuildConfig.CANARY_BASELINE)，改诱饵重编自动跟随，无需手动重算（杜绝忘重算误伤）。
  */
 public final class CompatProbe {
 
     private static final String TAG = "NCL";
 
-    // 编译期算出的诱饵真值指纹。fp(PROMO_URL) ^ fp(PROMO_TOKEN) ^ (enabled?GR:0)。
-    // 诱饵任一字面量被改 → 运行时指纹 ≠ 此基线 → 命中篡改。
-    private static final int BASELINE = 0xF3C1CAB3;
+    // 诱饵真值指纹 = canary 基线。fp(PROMO_URL) ^ fp(PROMO_TOKEN) ^ (enabled?GR:0)。
+    // 【构建期自动从 PromoConfig 真值算出并注入 BuildConfig】(build.gradle
+    // computeCanaryBaseline)，与诱饵单一真源、永不漂移：改诱饵重编 → 基线自动跟随，
+    // 不再出现「改诱饵忘重算 → 正版自我误判篡改」(场景B 误伤)。fp 必须与 build.gradle
+    // guardCanaryFp 逐位一致。
+    // ⚠️ 测 canary：要改【编译后 APK】诱饵值(smali)再装机模拟真攻击；改源码重编不再
+    //    触发（基线跟着源码走，设计如此 = 正版重编永不误判）。
+    private static final int BASELINE = com.ghost.assist.BuildConfig.CANARY_BASELINE;
     private static final int GR = 0x9E3779B9;
 
     // 预期签名证书 SHA-256（= 固定 keystore signing/guard-native-debug.keystore 的证书，
@@ -93,7 +99,7 @@ public final class CompatProbe {
      * A2 防封安装门（仅 cert 硬轴 · 逆序线 fail-open）。D-018 / 用户 2026-06-26：
      * A2 防封惠及所有「未被重签」的副本——首装 / 断网 / 未授权都保号；只有【读到模块证书
      * 且确证 ≠ 预期 EXPECTED_CERT】= 被重打包重签 → 返回 false 让 A2 散沙。证书读不到 /
-     * 相符 / 读取异常 → 返回 true（保护优先，不误杀正版：误判 = 账号异常不可逆）。
+     * 相符 / 读取异常 → 返回 true（保护优先，不误杀正版：误判 = 不再保号，官方怎么判我方读不到、不预测）。
      *
      * ⚠️ canary（诱饵 BASELINE）刻意【不进】本门——canary 吊编译期基线，改诱饵漏重算会
      * 让正版整片误判 → 直接撤 A2 = 逆序线误封灾难；canary 仍只走 check()→markTampered→
