@@ -111,3 +111,9 @@ tmp_*.json
 tmp_ssh_*.py
 # Python 字节码缓存（可重生成）
 **/__pycache__/
+
+# Release signing private keys + passwords — NEVER commit to this PUBLIC repo.
+# (keystore lockdown 2026-06-28) 正式发版私钥一旦进公开仓 = 任何人可签冒充官替正版包，
+# 直接过 CompatProbe 证书校验 + 证书绑定 registry，整套真锁作废。仅留本机 + 离线备份。
+signing/keystore.properties
+signing/*.jks

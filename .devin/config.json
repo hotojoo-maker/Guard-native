@@ -1,0 +1,46 @@
+{
+  // Devin 专属隔离配置（Cursor 不读 .devin/，本文件只约束 Devin）。
+  // 机制：deny > ask > allow > 默认(询问)。deny 绝对优先。
+  // 文本行为规则（禁推测/命名规约）见同目录 GUARD_RULES.md，任务提示词开头引用它。
+  "permissions": {
+    "allow": [
+      // 允许直接读的工作区（无需逐次询问）
+      "Read(src/**)",
+      "Read(native_core/**)",
+      "Read(tools/**)",
+      "Read(docs/**)",
+      "Read(build.gradle)",
+      "Read(settings.gradle)",
+      "Read(proguard-rules.pro)",
+      "Read(.devin/**)",
+      "Read(AGENTS.md)",
+      "Read(CLAUDE.md)",
+      // 允许的命令
+      "Exec(git)",
+      "Exec(./gradlew)",
+      "Exec(gradlew.bat)",
+      "Exec(python)",
+      "Exec(adb)",
+      "Exec(apksigner)",
+      "Exec(keytool)",
+      "Exec(git push)",
+      "Exec(gh)"
+    ],
+    "ask": [
+      // 这些大目录读前必须先问（防全盘漫游）
+      "Read(06_refs_参考资料/**)",
+      "Read(07_archive_归档/**)"
+    ],
+    "deny": [
+      // 密钥 / 证书 / 机密一律禁读
+      "Read(signing/**)",
+      "Read(**/*.keystore)",
+      "Read(**/*.jks)",
+      "Read(**/.env*)",
+      "Read(**/config.local.json)",
+      // 危险命令禁用（push 已放开用于开 PR；禁 push main / force 见 GUARD_RULES）
+      "Exec(rm)",
+      "Exec(sudo)"
+    ]
+  }
+}
