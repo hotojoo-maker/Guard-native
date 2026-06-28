@@ -3,6 +3,7 @@ package com.ghost.assist.core;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.Signature;
 import android.util.Log;
 
 import java.security.MessageDigest;
@@ -36,11 +37,12 @@ public final class CompatProbe {
     private static final int BASELINE = com.ghost.assist.BuildConfig.CANARY_BASELINE;
     private static final int GR = 0x9E3779B9;
 
-    // 预期签名证书 SHA-256（= 固定 keystore signing/guard-native-debug.keystore 的证书，
-    // 与 registry 加密绑定的 _CERT_SHA256=ca421ec3... 同源；打包前已知）。重签名 = 不符。
-    // 官替/共存若用不同 keystore，发版时按包档案改这里（同 registry 一套机制）。
-    private static final String EXPECTED_CERT =
-            "ca421ec3a33708ceb3f70c37f4616751094736c496fe21b3b0e2cea480cdb6a0";
+    // 预期签名证书 SHA-256：按 flavor 从 BuildConfig 注入（official / coexist 各自 keystore）。
+    // 单一真源 = build.gradle 各 flavor 的 GUARD_EXPECTED_CERT；换 keystore 只改 build.gradle，
+    // 这里自动跟随，杜绝"打错 cert 伤正版"。与 CANARY_BASELINE 同一注入套路。
+    // 三端红线（官替线）：EXPECTED_CERT == kdf_common.CERT_SHA256（registry 绑定）== 实际签名证书，
+    // 三者逐字节相等。coexist 的 registry 待 per-flavor 生成，届时三端同步同理。
+    private static final String EXPECTED_CERT = com.ghost.assist.BuildConfig.GUARD_EXPECTED_CERT;
 
     private CompatProbe() {}
 
@@ -77,15 +79,8 @@ public final class CompatProbe {
     public static void checkSignature(Context ctx, String modulePath) {
         if (ctx == null || modulePath == null || modulePath.isEmpty()) return;
         try {
-            PackageManager pm = ctx.getPackageManager();
-            @SuppressWarnings("deprecation")
-            PackageInfo pi = pm.getPackageArchiveInfo(modulePath, PackageManager.GET_SIGNATURES);
-            if (pi == null || pi.signatures == null || pi.signatures.length == 0) {
-                return;  // 读不到 → 不误报
-            }
-            byte[] der = pi.signatures[0].toByteArray();
-            byte[] dig = MessageDigest.getInstance("SHA-256").digest(der);
-            String hex = toHex(dig);
+            String hex = selfCertSha256Hex(ctx.getPackageManager(), modulePath);
+            if (hex == null) return;  // 读不到 → 不误报
             if (!hex.equalsIgnoreCase(EXPECTED_CERT)) {
                 Log.i(TAG, "[cp] cert mismatch");
                 RiskState.markTampered(ctx);   // 进影子期，不当场翻脸
@@ -113,15 +108,11 @@ public final class CompatProbe {
             return true;   // 读不到模块路径 → 不判篡改（保护优先）
         }
         try {
-            PackageManager pm = ctx.getPackageManager();
-            @SuppressWarnings("deprecation")
-            PackageInfo pi = pm.getPackageArchiveInfo(modulePath, PackageManager.GET_SIGNATURES);
-            if (pi == null || pi.signatures == null || pi.signatures.length == 0) {
+            String hex = selfCertSha256Hex(ctx.getPackageManager(), modulePath);
+            if (hex == null) {
                 return true;   // 证书读不到 → 不判篡改（保护优先）
             }
-            byte[] der = pi.signatures[0].toByteArray();
-            byte[] dig = MessageDigest.getInstance("SHA-256").digest(der);
-            boolean match = toHex(dig).equalsIgnoreCase(EXPECTED_CERT);
+            boolean match = hex.equalsIgnoreCase(EXPECTED_CERT);
             if (!match) {
                 Log.i(TAG, "[cp] A2 gate: cert mismatch → scatter");
             }
@@ -130,6 +121,34 @@ public final class CompatProbe {
             Log.w(TAG, "[cp] A2 gate probe err: " + t.getClass().getSimpleName());
             return true;   // 异常 → 不判篡改（逆序线 fail-open，保护优先）
         }
+    }
+
+    /**
+     * 读「模块自身 APK 当前签名者」证书 SHA-256（小写 hex）。与 ModuleMain.bindSigningCert
+     * 完全同一读法：SDK>=28 用 GET_SIGNING_CERTIFICATES → getApkContentsSigners()[0] = 当前签名者。
+     * ⚠ 关键：密钥轮换(APK v3 lineage)后，旧 API GET_SIGNATURES 会返回【最旧证书】(轮换前 debug)，
+     *   而 getApkContentsSigners() 返回【当前证书】(轮换后 official)。本检测必须读当前证书，
+     *   才能与 registry 绑定(bindSigningCert)、EXPECTED_CERT 三端一致；否则官替轮换包会被自我误判
+     *   cert mismatch → A2 散沙(F-31)。SDK<28(无轮换)回退 GET_SIGNATURES。读不到返回 null。
+     * 安全性不降：别人重签/重打包 → 当前签名者 ≠ official → 仍判不符散沙；仅放行合法 debug→official 轮换。
+     */
+    private static String selfCertSha256Hex(PackageManager pm, String modulePath) throws Exception {
+        Signature sig = null;
+        if (android.os.Build.VERSION.SDK_INT >= 28) {
+            PackageInfo pi = pm.getPackageArchiveInfo(modulePath, PackageManager.GET_SIGNING_CERTIFICATES);
+            if (pi != null && pi.signingInfo != null) {
+                Signature[] s = pi.signingInfo.getApkContentsSigners();
+                if (s != null && s.length > 0) sig = s[0];
+            }
+        }
+        if (sig == null) {
+            @SuppressWarnings("deprecation")
+            PackageInfo pi = pm.getPackageArchiveInfo(modulePath, PackageManager.GET_SIGNATURES);
+            if (pi != null && pi.signatures != null && pi.signatures.length > 0) sig = pi.signatures[0];
+        }
+        if (sig == null) return null;
+        byte[] dig = MessageDigest.getInstance("SHA-256").digest(sig.toByteArray());
+        return toHex(dig);
     }
 
     private static String toHex(byte[] b) {

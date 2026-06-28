@@ -49,13 +49,16 @@ MODE_PROD_SERVER_LOCK = "prod_server_lock"
 # kdf_common.derive_registry_key MUST stay byte-for-byte identical to
 # guard::derive_registry_key() in native_core/src/config_crypto.cpp; the KDF
 # vector cross-check (gen_kdf_vectors.py + guard::kdf_self_test) enforces it.
-from kdf_common import CERT_SHA256, derive_registry_key as _kdf_derive_registry_key
+from kdf_common import CERT_SHA256 as _DEFAULT_CERT_SHA256, derive_registry_key as _kdf_derive_registry_key
+
+# Active cert for this invocation (overridable via --cert-sha256 for coexist line).
+_ACTIVE_CERT: bytes = _DEFAULT_CERT_SHA256
 
 
 def derive_registry_key(server_seed=b""):
     # A-step2: the fixed keystore cert SHA-256 is always folded as binding here
     # (blen=32); runtime Java pushes the same cert via setBindingMaterial().
-    return _kdf_derive_registry_key(CERT_SHA256, server_seed)
+    return _kdf_derive_registry_key(_ACTIVE_CERT, server_seed)
 
 
 def parse_args():
@@ -84,6 +87,20 @@ def parse_args():
             "When set, registry_mode and s_rel_b64 are read from it (single source of "
             "truth shared with miyou-server). See docs/RELEASE_RECIPE契约.md."
         ),
+    )
+    parser.add_argument(
+        "--cert-sha256",
+        default="",
+        help=(
+            "Override signing-cert SHA-256 (hex, 64 chars). Defaults to kdf_common.CERT_SHA256 "
+            "(official line). Pass the coexist keystore cert here for the coexist registry. "
+            "Also controls --out-file default basename when --release-id is set."
+        ),
+    )
+    parser.add_argument(
+        "--out",
+        default="",
+        help="Output path for the .inc file (default: native_core/src/registry_cipher.inc).",
     )
     parser.add_argument(
         "--dry-run",
@@ -134,6 +151,19 @@ def load_server_seed(args):
 
 
 args = parse_args()
+
+# Apply --cert-sha256 override (coexist line uses a different keystore).
+if args.cert_sha256:
+    import binascii as _binascii
+    _cert_bytes = _binascii.unhexlify(args.cert_sha256)
+    if len(_cert_bytes) != 32:
+        raise SystemExit("ERROR: --cert-sha256 must be 64 hex chars (32 bytes)")
+    _ACTIVE_CERT = _cert_bytes  # noqa: F811 override module global
+
+# Apply --out override.
+if args.out:
+    OUT = args.out  # noqa: F811
+
 _S_REL = load_server_seed(args)
 requires_server_seed = args.mode == MODE_PROD_SERVER_LOCK
 key = derive_registry_key(_S_REL)
