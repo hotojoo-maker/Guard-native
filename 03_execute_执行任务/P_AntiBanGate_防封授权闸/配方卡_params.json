@@ -1,7 +1,7 @@
 {
   "schema_id": "antiban_params_v1",
   "wechat_version": "8.0.71",
-  "_note": "防封授权闸配方卡 A 参数表 + isAntiBanReady 真值表的机器可读副本。风格沿用 native_core/registry_8071.json（schema_id/version/_note + 结构体），因每参数需带 值/含义/谁判/成色，故 value 用嵌套对象（非 registry 的扁平字符串）。值一律以 配方卡_SPEC_v1.md 为准，禁自改。时间口径=A51+C18 拍板：从未授权走影子期7天+不续命；正版到期走7天续费宽限后才撤A2。",
+  "_note": "防封授权闸配方卡 A 参数表 + isAntiBanReady 真值表的机器可读副本。风格沿用 native_core/registry_8071.json（schema_id/version/_note + 结构体），因每参数需带 值/含义/谁判/成色，故 value 用嵌套对象（非 registry 的扁平字符串）。值一律以 配方卡_SPEC_v1.md 为准，禁自改。机制权威 = SSOT_A2授权防破解_统一真源.md §3（D-020）。时间口径=D-020+A3 拍板：首装未授权 72h（官方授时 jy0.hd.b() 有值起算）/ 服务器封停删卡 72h / 仅自然到期 7天；撤后除篡改可重授权恢复；全局只两个宽限值 72h / 7天。",
   "enums": {
     "decided_by": ["server", "server+client_fallback", "client(LeaseClock)+server", "client(rate)+server(issue)", "server(client_reports_only)", "gate(release_check)"],
     "grade": ["L1", "L2", "L4", "design-only"]
@@ -9,46 +9,54 @@
   "params": {
     "t_soft": {
       "value_human": "1h", "value_ms": 3600000,
-      "meaning": "从未授权满 1h → 起可关软引流弹窗",
-      "decided_by": "server+client_fallback", "grade": "design-only"
+      "meaning": "首装未授权满 1h → 起可关软引流弹窗；非 A2 撤闸触发（仅 UI 副作用）",
+      "decided_by": "server+client_fallback", "grade": "design-only",
+      "note": "v1 可选，去留随 T_login"
     },
     "t_login": {
       "value_human": "2h", "value_ms": 7200000,
-      "meaning": "从未授权满 2h → 弹关不掉登录砸门、强制输授权码（输一次后不再弹）；只挡进隐私功能、不挡微信、不动 A2；非封号",
-      "decided_by": "server+client_fallback", "grade": "design-only"
+      "meaning": "首装未授权满 2h → 关不掉登录砸门、强制输授权码；只挡进隐私功能、不动 A2；非账号异常",
+      "decided_by": "server+client_fallback", "grade": "design-only",
+      "note": "降 v2（DESIGN §6：无 Activity 锚点）"
     },
-    "t_kill": {
-      "value_human": "影子期7天+不续命+服务器抖动", "value_ms": null, "shadow_lease_days": 7, "server_jitter": true,
-      "meaning": "从未授权不设固定短散；A2 影子期内仍开/看着正常 → 到期不续命 → A2 像租约自然到期悄悄失效 → 宿主读非官方 → 平台自判/封；模块不自爆（A51：去掉固定小时阈值、反分析）",
-      "decided_by": "server(主控)+client(影子期兜底)", "grade": "design-only",
-      "note": "A51 override 2026-06-24: 去掉固定短散沙(C81 24h / A51 中途 2h 均废)，复用 honeypot_shadow/redline_shadow_lease 的 7天 + 服务器抖动；像租约自然到期、反分析"
-    },
-    "paid_offline_grace": {
-      "value_human": "7天", "value_ms": 604800000,
-      "meaning": "曾授权+断网（付费用户掉线）宽限，不误杀",
-      "decided_by": "client(LeaseClock)+server", "grade": "design-only"
+    "unauth_revoke": {
+      "value_human": "72h", "value_ms": 259200000,
+      "meaning": "首装未授权（白嫖/观望）满 72h → isAntiBanReady=false、撤 A2；官方授时 jy0.hd.b() 有值起算、断网也撤、全新装无值 fail-open 恒装；倒计时只读官方授时、我方零上报",
+      "decided_by": "client(LeaseClock)+server", "grade": "design-only",
+      "note": "D-020；[码] 时间闸未落（现 isAntiBanReady 仅 cert+封停删卡、无时间闸）"
     },
     "auth_expiry_grace": {
       "value_human": "7天（可加 6-12h 服务器抖动）", "value_ms": 604800000, "server_jitter_h": "6-12",
-      "meaning": "正版授权到期后短期只催续费，不立刻撤 A2；宽限耗尽仍未续费 → isAntiBanReady=false、A2 撤",
+      "meaning": "仅自然到期：license 到 expire_at 未续 → 短期只催续费，licenseExpire+7天 仍未续 → 撤 A2",
       "decided_by": "server+client_fallback", "grade": "design-only",
-      "note": "C18 指挥拍板 2026-06-24"
+      "note": "D-020+A3：仅自然到期=7天（封停/删卡走 card_revoke_grace 的 72h）"
+    },
+    "card_revoke_grace": {
+      "value_human": "72h", "value_ms": 259200000,
+      "meaning": "后台封停 / 删卡密（isCardRevoked）→ cardRevokedAt+72h 撤 A2；复用首装 72h 常量；误封 72h 内可恢复",
+      "decided_by": "server+client_fallback", "grade": "design-only",
+      "note": "D-020+A3：封停/删卡=72h（纠正 D-020 原文 7天）"
+    },
+    "paid_offline_grace": {
+      "value_human": "7天", "value_ms": 604800000,
+      "meaning": "曾授权+断网（付费用户掉线、授权仍有效）宽限，用上次授权快照兜底、不误杀",
+      "decided_by": "client(LeaseClock)+server", "grade": "design-only"
     },
     "honeypot_shadow": {
       "value_human": "7天", "value_ms": 604800000,
-      "meaning": "触发线A：碰假诱饵 → 延迟弹窗期",
+      "meaning": "触发线A：碰假诱饵 → 延迟弹窗期；篡改线 D-019、非未授权撤闸（别与首装 72h 混）",
       "decided_by": "server", "grade": "L2",
-      "note": "现客户端硬编码 SHADOW_HOURS=7天，应迁服务端 risk_pack"
+      "note": "现客户端硬编码 SHADOW_HOURS=168h，应迁服务端 risk_pack"
     },
     "redline_shadow_lease": {
       "value_human": "7天", "value_ms": 604800000,
-      "meaning": "触发线C：铁证篡改 → 影子租约让其觉正常 → 到期不续命",
+      "meaning": "触发线C：铁证篡改 → 影子租约让其觉正常 → 到期不续命；篡改线 D-019、非未授权撤闸",
       "decided_by": "server", "grade": "design-only",
       "note": "原 DESIGN 7-10 区间 → 定 7"
     },
     "privacy_offline_grace": {
       "value_human": "72h", "value_ms": 259200000,
-      "meaning": "隐私功能（会话/通讯录/朋友圈/搜索）断网宽限；独立闸、非 A2 时间闸，在功能界面弹",
+      "meaning": "隐私功能（会话/通讯录/朋友圈/搜索）断网宽限；独立隐私闸、非 A2 时间闸；与首装未授权撤 A2 的 72h 不同闸、别混",
       "decided_by": "client(LeaseClock)+server", "grade": "L2",
       "note": "已实现（LeaseClock GRACE_DEGRADE_HOURS=72h）；配方卡只标注、不重做"
     },
@@ -81,8 +89,8 @@
     },
     "conn_density_redline": {
       "value_human": "0.5", "value_num": 0.5,
-      "meaning": "心跳频率硬约束，测出 >0.5 即停",
-      "decided_by": "gate(release_check)", "grade": "L2", "note": "CLAUDE §七"
+      "meaning": "心跳频率参考；明显异常才查（非即停）",
+      "decided_by": "gate(release_check)", "grade": "L2", "note": "CLAUDE §七；与 SPEC A 表对齐（原 json 误写即停）"
     },
     "verifiedbootstate_redline": {
       "value_human": "38", "value_num": 38,
@@ -101,17 +109,20 @@
     }
   },
   "is_antiban_ready_truth_table": {
-    "_note": "本闸只决 A2 装/卸；不检查登录、不检查隐私授权。软引流(1h)/登录砸门(2h)=age 触发的 UI 副作用、不改本布尔(登录砸门只挡隐私功能、A2 不撤)；A2 撤看正版到期续费宽限耗尽(C18)或影子租约到期/不续命(7天±服务器抖动)、不看固定小时数(A51 反分析)。均走唯一 RiskPromptController。",
+    "_note": "本闸只决 A2 装/卸；逆序线 fail-open（拿不准就装）；不检查登录、不检查隐私授权。撤 A2 三触发：篡改立刻散（不可逆 D-019）/ 首装未授权 72h（官方授时 jy0.hd.b() 起算）/ 曾授权失效（自然到期 7天·封停删卡 72h）。撤后除篡改可重授权恢复。T_soft(1h)/T_login(2h,降v2)=UI 副作用、不改本布尔。均走唯一 RiskPromptController。",
     "official_der_md5_baseline": "18c867f0717aa67b2ab7347505ba07ed",
     "branches": [
-      { "branch": "authorized", "condition": "EnvelopeStore.isAuthorizedNow()", "is_antiban_ready": true, "ui_side_effect": "none", "grade": "design-only" },
-      { "branch": "auth_expiry_grace", "condition": "曾授权 && 授权到期 && 7天续费宽限内", "is_antiban_ready": true, "ui_side_effect": "renew_prompt_or_privacy_auth_gate", "grade": "design-only", "note": "C18: 到期不立刻撤 A2" },
-      { "branch": "paid_offline", "condition": "曾授权 && (租约未到期 || 离线宽限 7天内)", "is_antiban_ready": true, "ui_side_effect": "none", "grade": "design-only" },
-      { "branch": "fresh_early", "condition": "从未授权 && age<1h", "is_antiban_ready": true, "ui_side_effect": "none", "grade": "design-only" },
-      { "branch": "soft_funnel", "condition": "从未授权 && 1h<=age<2h", "is_antiban_ready": true, "ui_side_effect": "soft_funnel_popup(closeable)", "grade": "design-only" },
-      { "branch": "login_enforcer", "condition": "从未授权 && age>=2h && 影子租约未到期", "is_antiban_ready": true, "ui_side_effect": "login_enforcer_popup(uncloseable, blocks_privacy_features_only, A2_still_on)", "grade": "design-only", "note": "A51: 与解体解耦, 砸门只挡隐私功能、A2 不撤" },
-      { "branch": "auth_expiry_dissolve", "condition": "曾授权 && 授权到期 && 7天续费宽限耗尽仍未续费", "is_antiban_ready": false, "ui_side_effect": "A2_uninstalled(looks_like_natural_lease_expiry)", "grade": "design-only", "note": "C18: 7天宽限后 false" },
-      { "branch": "dissolve", "condition": "从未授权 && 影子租约到期不续", "is_antiban_ready": false, "ui_side_effect": "A2_uninstalled(looks_like_natural_lease_expiry, platform_self_ban)", "grade": "design-only", "note": "A51: 去掉固定小时阈值, 影子期 7天 ± 服务器抖动, 反分析" }
+      { "branch": "tamper", "condition": "cert≠EXPECTED / canary 绊线", "is_antiban_ready": false, "ui_side_effect": "影子期→引流（RiskState 篡改线、非本闸宽限）", "recoverable": false, "grade": "design-only", "note": "D-019 立刻散·不可逆" },
+      { "branch": "authorized", "condition": "EnvelopeStore.isAuthorizedNow()", "is_antiban_ready": true, "ui_side_effect": "none", "recoverable": null, "grade": "design-only" },
+      { "branch": "card_revoke_grace", "condition": "isCardRevoked && now < cardRevokedAt+72h", "is_antiban_ready": true, "ui_side_effect": "renew_prompt_or_privacy_auth_gate", "recoverable": true, "grade": "design-only", "note": "D-020+A3：封停删卡=72h" },
+      { "branch": "card_revoke_dissolve", "condition": "isCardRevoked && now >= cardRevokedAt+72h", "is_antiban_ready": false, "ui_side_effect": "A2_uninstalled", "recoverable": true, "grade": "design-only", "note": "D-020+A3：72h；重授权恢复" },
+      { "branch": "paid_offline", "condition": "曾授权 && (租约未到期 || 离线宽限7天内)", "is_antiban_ready": true, "ui_side_effect": "none", "recoverable": null, "grade": "design-only" },
+      { "branch": "auth_expiry_grace", "condition": "曾授权 && 到期 && now < licenseExpireAt+7天", "is_antiban_ready": true, "ui_side_effect": "renew_prompt", "recoverable": true, "grade": "design-only", "note": "D-020+A3：仅自然到期=7天" },
+      { "branch": "auth_expiry_dissolve", "condition": "曾授权 && 到期 && now >= licenseExpireAt+7天", "is_antiban_ready": false, "ui_side_effect": "A2_uninstalled", "recoverable": true, "grade": "design-only", "note": "D-020+A3：重授权恢复" },
+      { "branch": "fresh_no_clock", "condition": "从未授权 && 官方授时无值（全新装）", "is_antiban_ready": true, "ui_side_effect": "none", "recoverable": null, "grade": "design-only", "note": "fail-open 恒装" },
+      { "branch": "fresh_early", "condition": "从未授权 && 官方授时有值 && age<72h", "is_antiban_ready": true, "ui_side_effect": "<1h none; 1h起 soft_funnel_popup(closeable)", "recoverable": null, "grade": "design-only" },
+      { "branch": "unauth_dissolve", "condition": "从未授权 && 官方授时有值 && age>=72h", "is_antiban_ready": false, "ui_side_effect": "A2_uninstalled(断网也撤)", "recoverable": true, "grade": "design-only", "note": "D-020：72h 官方授时起算；重授权恢复" },
+      { "branch": "time_suspicious", "condition": "trustedNow 拿不到/回拨", "is_antiban_ready": true, "ui_side_effect": "none", "recoverable": null, "grade": "design-only", "note": "fail-open 宁不撤勿误杀正版" }
     ]
   }
 }

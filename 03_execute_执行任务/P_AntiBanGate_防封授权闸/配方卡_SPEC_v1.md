@@ -2,11 +2,11 @@
 
 > 建立：2026-06-23（C82 授权检查官/执行 落盘，D-017 指挥拍板后）
 > 用途：把 `DESIGN.md`/`PLAN.md` 的「为什么」提炼成 AI 能机械照做的「怎么做」。单值、无矛盾。
-> 时间口径以 **A51 指挥拍板（2026-06-24）+ C18 到期宽限拍板（2026-06-24）**为准：**T_kill 去掉固定短散沙，改「影子期 7 天 + 不续命 + 服务器抖动」**（像租约自然到期、反分析）；**正版授权到期给 7 天续费宽限，宽限内 A2 仍开，宽限耗尽仍未续费才撤 A2**；T_soft=1h / T_login=2h（只挡隐私功能、A2 不撤）沿用。旧 24h（C81）/ A51 中途 2h / 72h（C36）仅演进存档。
+> 时间口径以 **DECISION_LOG D-020（2026-06-27）+ A3 补丁（用户拍板：封停/删卡=72h、仅自然到期=7天）**为准（机制权威 = `SSOT_A2授权防破解_统一真源.md` §3，本卡只存数值、不复制正文）：A2 撤闸**三触发，否则 fail-open 装**——① 篡改（cert≠EXPECTED）→ 立刻散·不可逆（D-019）；② 首装未授权 → **72h** 撤（官方授时 `jy0.hd.b()` 有值起算、断网也撤、全新装无值 fail-open）；③ 曾授权 → **自然到期 licenseExpire+7天** 撤 / **服务器封停·删卡 cardRevokedAt+72h** 撤。撤后（除篡改）**重输有效授权可恢复**。**全局只两个宽限值：72h（首装未授权 + 封停/删卡）/ 7天（仅自然到期）**。`T_login 2h` 登录砸门 **降 v2**（DESIGN §6：无 Activity 锚点）；`T_soft 1h` 软引流保留为可选 UI 副作用（非 A2 撤闸触发）。旧 A51「未授权走影子期7天」/ C18「到期·失效·封停·删卡统一7天」/ 24h（C81）/ 2h 等**仅演进存档，已被 D-020+A3 取代**。
 > 机器可读副本：同目录 `配方卡_params.json`（A 参数表 + isAntiBanReady 真值表）。
 > 成色：L1 动态实证 / L2 静态实证 / L4 待验证 / 设计only（仅设计、无证据）。
 >
-> **铁律：A2 是「装了就跑、跑了就生效」的开机默认保护（倒序：装→跑→生效，全在登录之前）；从未授权**不设固定短散沙**，走影子期（7 天）+ 不续命 + 服务器抖动 → 到期像租约自然失效才撤（A51 去掉 2h/24h 固定短散、覆盖 C81）。**正版授权到期给 7 天续费宽限，宽限内 A2 仍开，宽限耗尽仍未续费才撤 A2（C18）**。登录/授权是另一条线（解锁隐私功能），不进 A2 判定；登录砸门只挡隐私功能、A2 不撤。**
+> **铁律：A2 是「装了就跑、跑了就生效」的开机默认保护（倒序：装→跑→生效，全在登录之前）；逆序线 fail-open——拿不准就装，误判=不再保号（咽喉只剩生料，官方怎么判我方读不到、不预测）。撤 A2 只三触发：篡改立刻散（不可逆 D-019）/ 首装未授权 72h / 曾授权失效（自然到期 7天·封停删卡 72h）。`未授权时间闸`（固定阈值、官方授时驱动）与 `篡改 7天影子期`（D-019·RiskState 篡改线）是两条独立线、别混。登录/授权是另一条线（解锁隐私功能），不进 A2 判定；登录砸门（降 v2）只挡隐私功能、A2 不撤。**
 
 ---
 
@@ -14,14 +14,15 @@
 
 | 参数 | 值 | 含义 | 谁判 | 成色 |
 |---|---|---|---|---|
-| T_soft 软引流起点 | **1h** | 从未授权满 1h → 起**可关**软引流弹窗 | 服务器/客户端兜底 | 设计only |
-| T_login 登录砸门 | **2h** | 从未授权满 2h → 弹**关不掉**登录砸门、强制输授权码（输一次后不再弹）；只挡进隐私功能、不挡官方包、不动 A2；**非风号** | 服务器/客户端兜底 | 设计only |
-| T_kill 防封解体 | **影子期7天+不续命+服务器抖动** | 从未授权不设固定短散；A2 影子期内仍开/看着正常 → 到期不续命 → A2 像租约自然到期悄悄失效 → 宿主读非官方 → 平台自判/封；模块不自爆（A51：去掉 2h/24h 固定短散，反分析） | 服务器主控 / 客户端按影子期兜底 | 设计only（A51 指挥拍板 2026-06-24，覆盖 C81 24h） |
-| 正版到期续费宽限 | **7天（可加 6-12h 服务器抖动）** | 授权到期后短期只催续费，不立刻撤 A2；宽限耗尽仍未续费 → `isAntiBanReady=false`、A2 撤 | 服务器主控 / 客户端 LeaseClock 兜底 | 设计only（C18 指挥拍板 2026-06-24） |
-| 付费断网宽限（曾授权+断网） | **7天** | 付费用户掉线不误杀 | 客户端(LeaseClock)/服务器 | 设计only |
-| 蜜罐影子期（触发线A） | **7天** | 碰假诱饵 → 延迟弹窗期 | 服务器（现客户端硬编码） | L2（SHADOW_HOURS 现硬编码 7天） |
-| 红线影子租约（触发线C） | **7天** | 铁证篡改 → 影子租约让其觉正常 → 到期不续命 | 服务器 | 设计only（原 7-10 → 定 7） |
-| 隐私功能离线宽限 | **72h** | 会话/通讯录/朋友圈/搜索 断网宽限（**独立闸、非 A2 时间闸，在功能界面弹**） | 客户端(LeaseClock)/服务器 | L2/已实现（配方卡只标注、不重做） |
+| T_soft 软引流起点 | **1h** | 首装未授权满 1h → 起**可关**软引流弹窗；**非 A2 撤闸触发**（仅 UI 副作用） | 服务器/客户端兜底 | 设计only（v1 可选，去留随 T_login） |
+| T_login 登录砸门 | **2h** | 首装未授权满 2h → **关不掉**登录砸门、强制输授权码；只挡进隐私功能、不挡官方包、不动 A2；**非账号异常** | — | **降 v2**（DESIGN §6：无 Activity 锚点） |
+| 首装未授权撤 A2 | **72h** | 首装未授权（白嫖/观望）满 72h → `isAntiBanReady=false`、撤 A2；**官方授时 `jy0.hd.b()` 有值起算**、断网也撤、全新装无值 fail-open 恒装；倒计时只读官方授时、我方零上报 | 客户端(官方授时驱动) / 服务器 | 设计only（D-020；`[码]` 时间闸未落） |
+| 自然到期续费宽限 | **7天（可加 6-12h 服务器抖动）** | **仅自然到期**：license 到 expire_at 未续 → 短期只催续费，licenseExpire+7天 仍未续 → 撤 A2 | 服务器主控 / 客户端 LeaseClock 兜底 | 设计only（D-020+A3：仅自然到期=7天） |
+| 服务器封停/删卡撤 A2 | **72h** | 后台封停 / 删卡密（`isCardRevoked`）→ cardRevokedAt+72h 撤 A2（**复用首装 72h 常量**）；误封 72h 内可恢复 | 服务器（心跳/push）/ 客户端 latch 兜底 | 设计only（D-020+A3：封停/删卡=72h，纠正 D-020 原文 7天） |
+| 付费断网宽限（曾授权+断网、授权仍有效） | **7天** | 付费用户掉线不误杀；用上次授权快照兜底、不因暂连不上判未授权 | 客户端(LeaseClock)/服务器 | 设计only |
+| 蜜罐影子期（触发线A·篡改 D-019） | **7天** | 碰假诱饵 → 延迟弹窗期；**篡改线、非未授权撤闸**（别与首装 72h 混） | 服务器（现客户端硬编码） | L2（SHADOW_HOURS=168h 硬编码） |
+| 红线影子租约（触发线C·篡改 D-019） | **7天** | 铁证篡改 → 影子租约让其觉正常 → 到期不续命；**篡改线、非未授权撤闸** | 服务器 | 设计only（原 7-10 → 定 7） |
+| 隐私功能离线宽限 | **72h** | 会话/通讯录/朋友圈/搜索 断网宽限（**独立隐私闸、非 A2 时间闸**；⚠️ 与「首装未授权撤 A2 72h」不同闸、别混） | 客户端(LeaseClock)/服务器 | L2/已实现（配方卡只标注、不重做） |
 | 信任分及格线 | **60%（占位）** | 一周累计 ≥60% 及格 → 长租约 | **服务器判分**（红线#1）；客户端只上报、不自评/不自封信任档 | 设计only（占位，待第4步 KPI 基线校准） |
 | 心跳起步 | **2-3min 带抖动，激活即停** | 首装短促抓激活 | 客户端调频/服务器签发 | 设计only |
 | 心跳回落 | **10-30min（probe）** | 激活后 | 同上 | 设计only（PLAN §3.6） |
@@ -42,28 +43,39 @@
 > 哑端优先：在线时直接用服务器签名结论；下列伪码 = 断网本地兜底（红线#1：布尔不可信，吊 EnvelopeStore + LeaseClock）。
 
 ```
-isAntiBanReady():            # 只决 A2 装/卸；默认开机保护，不受登录/授权门控
-  if EnvelopeStore.isAuthorizedNow(): return true   # 已授权
-  if 曾授权过 and 授权到期但续费宽限7天内: return true  # 到期短期只催续费, A2 不撤
-  if 曾授权过:  return (LeaseClock 租约未到期 或 离线宽限 7天内)  # 付费断网
-  age = LeaseClock.trustedNow() - 首装时间          # 红线#3 不信墙钟；仅用于 1h/2h 的 UI 副作用
-  # 从未授权(观望/白嫖): 不设固定短散沙; A2 由影子租约决定(server-issued, 默认 7天 ± 抖动; 断网本地按影子期兜底)
-  if 影子租约未到期: return true              # 影子期内 A2 仍开、看着正常（默认保护）
-  return false                                # 续费宽限/影子租约耗尽仍不续 → 撤 A2（像租约自然到期, fail-closed）
-# 软引流(1h)/登录砸门(2h) = age 触发的 UI 副作用，走唯一 RiskPromptController；
-# 登录砸门只挡进隐私功能、A2 不撤（与解体解耦）；A2 撤只看影子租约到期/不续命，不看固定小时数（A51 反分析）
+isAntiBanReady():            # 只决 A2 装/卸；逆序线 fail-open（拿不准就装）；不受登录/授权门控
+  # ① 篡改铁证（不可逆 D-019）——最高优先
+  if not CompatProbe.isIntegrityIntact(): return false   # cert≠EXPECTED / canary 绊线 → 立刻散，重授权也不恢复
+  # ② 已授权
+  if EnvelopeStore.isAuthorizedNow(): return true
+  # ③ 服务器封停/删卡（D-020+A3：72h；可被重新授权恢复）
+  if EnvelopeStore.isCardRevoked(): return now < getCardRevokedAt() + 72h
+  # ④ 曾授权自然到期（D-020+A3：续费宽限 7天；付费断网用快照兜底）
+  if 曾授权过:
+      if LeaseClock 租约未到期 or 离线宽限 7天内: return true
+      return now < licenseExpireAt + 7天                 # 自然到期 7天宽限，耗尽撤
+  # ⑤ 首装从未授权（D-020+A3：72h；官方授时 jy0.hd.b() 驱动、改表杀不掉）
+  t0 = LeaseClock.officialTimeFirstSeen()                # 官方授时首个有值点（第二时间源）
+  if t0 is None: return true                             # 全新装无授时值 → fail-open 恒装
+  return LeaseClock.trustedNow() < t0 + 72h              # 官方授时有值起算满 72h → 撤（断网也撤）
+# 可信时间拿不到/异常 → 按「未到点」(fail-open，宁不撤勿误杀正版)
+# T_soft(1h)/T_login(2h,降v2) = UI 副作用、不改本布尔；走唯一 RiskPromptController
+# 撤后（除①篡改）重输有效授权 → isAuthorizedNow=true → 恢复（封停/删卡 latch 同步清，D-020）
 ```
 
-| 分支 | 条件 | isAntiBanReady（A2） | UI/隐私门副作用 | 成色 |
-|---|---|:--:|---|---|
-| 已授权 | isAuthorizedNow | **true** | 无 | 设计only |
-| 正版到期宽限 | 曾授权 & 授权到期 & 7天续费宽限内 | **true** | 催续费 / 隐私授权门 | 设计only（C18：到期不立刻撤 A2） |
-| 付费断网 | 曾授权 & 租约/7天内 | **true** | 无 | 设计only |
-| 首装早期 | 从未授权 & age<1h | **true** | 无 | 设计only |
-| 软引流期 | 从未授权 & 1h≤age<2h | **true** | 软引流弹窗（可关） | 设计only |
-| 登录砸门期 | 从未授权 & age≥2h & 影子租约未到期 | **true** | 登录砸门（关不掉，只挡进隐私功能；A2 仍开） | 设计only（A51：与解体解耦） |
-| 正版到期解体 | 曾授权 & 授权到期 & 7天续费宽限耗尽仍未续费 | **false** | A2 像租约自然到期悄悄失效 | 设计only（C18：7天宽限后 false） |
-| 解体 | 从未授权 & 影子租约到期不续 | **false** | A2 像租约自然到期悄悄失效 → 平台自封；**无固定小时阈值**（影子期 7天 ± 服务器抖动） | 设计only（A51：去掉固定短散沙、反分析） |
+| 分支 | 条件 | isAntiBanReady（A2） | UI/隐私门副作用 | 可恢复 | 成色 |
+|---|---|:--:|---|:--:|---|
+| 篡改铁证 | cert≠EXPECTED / canary 绊线 | **false 立刻散** | 影子期→引流（RiskState 篡改线、非本闸宽限） | ✗ 不可逆 | 设计only（D-019） |
+| 已授权 | isAuthorizedNow | **true** | 无 | — | 设计only |
+| 封停/删卡宽限 | isCardRevoked & now<revokedAt+72h | **true** | 催续费 / 隐私授权门 | ✓ | 设计only（D-020+A3：封停删卡=72h） |
+| 封停/删卡撤 | isCardRevoked & now≥revokedAt+72h | **false** | A2 撤 | ✓ 重授权恢复 | 设计only（D-020+A3：72h） |
+| 付费断网 | 曾授权 & 租约未到期/离线7天内 | **true** | 无 | — | 设计only |
+| 自然到期宽限 | 曾授权 & 到期 & now<expireAt+7天 | **true** | 催续费 | ✓ | 设计only（D-020+A3：仅自然到期=7天） |
+| 自然到期撤 | 曾授权 & 到期 & now≥expireAt+7天 | **false** | A2 撤 | ✓ 重授权恢复 | 设计only（D-020+A3） |
+| 首装无授时 | 从未授权 & 官方授时无值（全新装） | **true** | 无 | — | 设计only（fail-open 恒装） |
+| 首装早期 | 从未授权 & 官方授时有值 & age<72h | **true** | <1h 无；1h 起软引流（可关） | — | 设计only |
+| 首装撤 | 从未授权 & 官方授时有值 & age≥72h | **false** | A2 撤（断网也撤） | ✓ 重授权恢复 | 设计only（D-020：72h 官方授时起算） |
+| 可信时间异常 | trustedNow 拿不到/回拨 | **true** | 无 | — | 设计only（fail-open 宁不撤） |
 
 ---
 
@@ -73,12 +85,12 @@ isAntiBanReady():            # 只决 A2 装/卸；默认开机保护，不受�
 
 **① 配方卡（本文）**—锁定本 SPEC。PASS：指挥签字、本表无 ❓（文档步）。
 
-**② 哑客户端靠服务器**—GuardRuntime 新增 isAntiBanReady()（吊 EnvelopeStore+LeaseClock；**不检查登录**）；持久化 2 值（首装时间=Bridge 新键 / 曾授权=EnvelopeStore）；在线用服务器签名结论、断网才本地兜底、**本地只降级不自升级**。正版到期按 C18：7 天续费宽限内 A2 仍开，宽限耗尽仍未续费才撤。
+**② 哑客户端靠服务器**—GuardRuntime `isAntiBanReady()` **扩时间闸**（现 `[码]` 仅 `!isCardRevoked() && isIntegrityIntact()`、无时间闸；吊 EnvelopeStore+LeaseClock；**不检查登录**）；持久化值（官方授时首值点=LeaseClock 新键 / 曾授权 licenseExpireAt=EnvelopeStore / cardRevokedAt）；在线用服务器签名结论、断网才本地兜底、**本地只降级不自升级**。撤闸按 D-020+A3：首装未授权 72h（官方授时起算）/ 自然到期 7天 / 封停·删卡 72h，可被重授权恢复。
   - 验收（一条）：冷启后 `adb logcat -d | findstr ANTIBAN-GATE`
-  - PASS：`ready=true reason=fresh src=local`；模拟正版到期但 7 天宽限内 → `ready=true reason=renew_grace`；模拟正版到期宽限耗尽 / 影子租约到期不续 → `ready=false reason=lease_expire`（A51/C18：解体走 7 天宽限/影子期+不续命、无固定小时阈值）；联网 `src=server`；各分支行为对。
+  - PASS：`ready=true reason=fresh src=local`；模拟自然到期但 7天宽限内 → `ready=true reason=renew_grace`；自然到期超 7天 / 封停·删卡超 72h / 首装未授权超 72h（官方授时起算）→ `ready=false reason=expire|card_revoke|unauth_72h`；篡改 → `ready=false reason=tamper`（立刻散）；全新装无授时 → `ready=true reason=fresh_no_clock`（fail-open）；联网 `src=server`；各分支行为对。
   - 成色：设计only / L4 待验证（探针需做时间注入小钩）。
 
-**③ A2 接主线 + 修 android_id 同源**—A2SignatureSpoof 接 ModuleMain.handleLoadPackage `if(isAntiBanReady()) install`（影子期内默认 true → 冷启即跑、在登录前；A51：解体走影子期+不续命、非固定小时）；料进加密 registry；**A2 android_id hook 仅官方包 caller**、放过 computeDeviceHash。
+**③ A2 接主线 + 修 android_id 同源**—A2SignatureSpoof 接 ModuleMain `if(isAntiBanReady()) install`（fail-open 默认 true → 冷启即跑、在登录前；未授权满 72h/官方授时起算才撤，非影子期）；料进加密 registry；**A2 android_id hook 仅官方包 caller**、放过 computeDeviceHash。`[码]` A2SignatureSpoof.java 已 live、由 ModuleMain §6.7 装（SSOT §8）。
   - 验收（沿用研究线 §10.7 已证范式）：
 ```
 $p=(adb -s <设备> shell "pidof <目标包名>").Trim().Split(' ')[0]
@@ -86,8 +98,8 @@ frida -D <设备> -p $p -l 脚本\a2_probe_mn.js -o a2_verify.txt
 adb -s <设备> shell input keyevent 3
 adb -s <设备> shell monkey -p <目标包名> -c android.intent.category.LAUNCHER 1
 ```
-  - PASS：`c$p.aa/ad` 读 `toByteArray len=751 md5=18c867f0717aa67b2ab7347505ba07ed`；他包签名不变；android_id=官方 SSAID（本机 `05f894e8e1e260fa`）；登录不崩。
-  - 成色：A2 签名/android_id 机制 **L1 已证**（防封账 §八/§九/§十.8）；接主线集成 **L4 待验证**。
+  - PASS：`c$p.aa/ad` 读 `toByteArray len=751 md5=18c867f0717aa67b2ab7347505ba07ed`；他包签名不变；`c$p.aa/ea` 经 Java `getString("android_id")` 读到**本机** official SSAID（实验机示例 `05f894e8e1e260fa`，非全球常量）；登录不崩。
+  - 成色：A2 签名/android_id **大血管 Java 喂点 L1 已证**（防封账 §八/§九/§十.8 + `recon/A2_FEED_DIFF_KPI_实验_20260625.md`）；接主线集成 **L4 待验证**。
   - ⚠️ 治理门：本步受 **D-015 阶段铁律 + D-017 拍板**约束（见 DESIGN 附录A 决策10）。
 
 **④ KPI 出包前体检**—官方包跑 frida_stats.js 建参考 → 装模块后对照。
@@ -116,9 +128,9 @@ adb -s <设备> shell monkey -p <目标包名> -c android.intent.category.LAUNCH
 
 ## E. 成色总账
 
-- **L1 已证**：A2 签名轴 Java 可 hook+喂官方→c$p 读官方（防封账§八/§十.8）；SSAID 算法+`05f894e8`（§九）；包名 cmdline 冷启=0（§13.4）；签名轴无隐藏血管（§十二，L1+L2）。
-- **L2**：isAntiBanReady 全仓不存在/需新建（GuardRuntime 现仅 isConfigReady）；主线零 A2 代码（PLAN§3.1，主线 Glob 零 A2SignatureSpoof.java）；隐私 72h 离线已实现（LeaseClock GRACE_DEGRADE 72h）；心跳稳定态/蜜罐已实装；设备绑定（computeDeviceHash）。
-- **设计only**：所有时间阈值（1h 软引流 / 2h 登录砸门 / 正版到期续费宽限7天〔C18〕 / 解体=影子期7天+不续命〔A51 去掉固定短散〕）+ 60%信任分 + 心跳起步（架构师拍板、无 KPI 实证）。
+- **L1 已证**：A2 签名轴 Java 可 hook+喂官方→c$p 读官方（防封账§八/§十.8）；android_id **大血管** `c$p.aa/ea` ← Java `getString("android_id")` hook 控上传（`A2_FEED_DIFF_KPI`）；SSAID **算法全球同构**、`user_key` **每机随机**（实验机 `05f894e8…` 仅为本机示例）；包名 cmdline 冷启=0（§13.4）；签名轴无隐藏血管（§十二，L1+L2）。
+- **L2/`[码]`**：`isAntiBanReady` **已落码 live** = `!isCardRevoked() && isIntegrityIntact()`（只 cert+封停/删卡、**无时间闸**，SSOT §3.2/§8）；`A2SignatureSpoof.java` 已存在、由 ModuleMain §6.7 装；隐私 72h 离线已实现（LeaseClock GRACE_DEGRADE 72h）；心跳稳定态/蜜罐已实装；设备绑定（computeDeviceHash）。
+- **设计only（待落码）**：A2 时间闸（首装未授权 72h〔官方授时起算〕/ 自然到期 7天 / 封停·删卡 72h / 可恢复，D-020+A3）+ 官方授时第二源 `noteOfficialTime` 接线 + isCardRevoked latch 改可恢复 + 60%信任分 + 心跳起步（无 KPI 实证）。`T_login 2h` 降 v2、`T_soft 1h` 保留为可选 UI。
 
 ---
 
@@ -129,14 +141,14 @@ adb -s <设备> shell monkey -p <目标包名> -c android.intent.category.LAUNCH
 | 参数/步骤 | 官替 | 共存 | 管理(后台) | 备注 |
 |---|:--:|:--:|:--:|---|
 | A2 签名轴（official_der 喂官方） | ✅ | ✅ | — | 两形态都非官方签名，都要喂（防封账§十一） |
-| A2 android_id 轴（官方 SSAID） | ✅ | ✅ | — | SSAID 由签名 key 派生，两形态都偏移 |
+| A2 android_id 轴（本机 official SSAID） | ✅ | ✅ | — | 大血管 Java 读点已 L1；算法同构、输出每机不同；root 实验机 `ssaid_calc.py` 算本机值入库 |
 | A2 包名/路径轴 | — | ✅ | — | 官替已占官方包名、不需要；共存包名≠官方→需灌官方值（§十三） |
-| isAntiBanReady 时间闸（1h 软引流 / 2h 登录砸门；解体=影子期7天+不续命，A51） | ✅ | ✅ | — | 模块内运行，两形态共用 |
-| 正版到期续费宽限（7天，C18） | ✅ | ✅ | ✅裁决 | 宽限内 A2 仍开；宽限耗尽仍未续费才撤 |
+| isAntiBanReady 时间闸（首装未授权 72h / 封停·删卡 72h / 自然到期 7天，D-020+A3；T_login 降 v2） | ✅ | ✅ | — | 模块内运行，两形态共用 |
+| 自然到期续费宽限 7天 / 封停·删卡 72h（D-020+A3） | ✅ | ✅ | ✅裁决 | 宽限内 A2 仍开；耗尽才撤；可重授权恢复 |
 | 隐私 72h 离线宽限 | ✅ | ✅ | — | 隐私 DRM，模块内运行 |
 | 心跳节奏（起步/回落/稳定/嫌疑） | ✅客户端 | ✅客户端 | ✅签发 | 客户端调频、后台签名下发周期 |
 | 信任分 60% / 信任档 q | — | — | ✅ | 服务器算分（红线#1） |
-| 蜜罐影子期 7天 / 红线影子租约 7天 / 不续命 | △触发 | △触发 | ✅裁决 | 客户端命中上报，后台裁决/发租约 |
+| 蜜罐影子期 7天 / 红线影子租约 7天 / 不续命（篡改线 D-019、非未授权撤闸） | △触发 | △触发 | ✅裁决 | 客户端命中上报，后台裁决/发租约 |
 | 设备绑定 wxid+device / 永久标签 / 解绑 | △上报 | △上报 | ✅ | 绑定/解绑只后台 |
 | KPI 红线（CONN 0.5 / vbs 38） | ✅验收 | ✅验收 | — | 发版前验收门 |
 
@@ -175,7 +187,7 @@ adb -s <设备> shell monkey -p <目标包名> -c android.intent.category.LAUNCH
 ---
 
 ## 仍待后续（S9 / KPI）—诚实缺口，别编
-1. **登录砸门弹窗实现锚点**：新增，三份料无 hook 点/Activity 锚点/代码（现仅 FunnelPrompt 可关闭引流窗）→ **设计only**。
+1. **登录砸门弹窗实现锚点（T_login）**：无 hook 点/Activity 锚点/代码（现仅 FunnelPrompt 可关闭引流窗）→ **降 v2**（DESIGN §6）。
 2. **服务器下发 isAntiBanReady 结论的信封协议/字段** → **待 S9**（miyou-server）。
 3. **KPI 零点** → **待第4步**建（F-22）。
 4. **「激活」定义**（登录成功拿本人 wxid？心跳成功？授权成功？）→ 暂定登录成功拿 wxid，料无明文 → **设计only**。
