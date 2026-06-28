@@ -2140,7 +2140,7 @@ public class SettingsEntry {
     }
 
     private static String activationExpireText(Context ctx) {
-        // 未授权(退款/到期/未激活/未同步/异常)一律回 Unix 纪元(1970-01-01)——看着像未初始化
+        // 未授权(封停删卡/到期/未激活/未同步/异常)一律回 Unix 纪元(1970-01-01)——看着像未初始化
         // 默认值，不暴露真到期、不暴露残留缓存、不给破解者"未授权"触发点(掩人耳目)。仅授权态显真到期。
         long exp = 0L;
         try {

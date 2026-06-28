@@ -72,15 +72,22 @@ public class MomentsFilter {
     private static final String FIELD_ITEM_USER    = "d";
 
     // 8.0.71 确认：z15.e56 / cs5.di0 / i84.y 的 wxid 字段均为 "d"
-    private static final String[] ACTOR_FIELD_NAMES = {
-            "d", "f435583d", "username", "field_userName"
-    };
+    // C7-接6 归一: 从 registry moments.feed 取，fallback 走 RegistryFallback（debug=值/release=空数组）。NON-FINAL 供 resolveRecipes 覆盖。
+    private static String[] ACTOR_FIELD_NAMES =
+            RegistryFallback.MOMENTS_FEED__ACTOR_FIELD_NAMES.isEmpty()
+                    ? new String[0]
+                    : RegistryFallback.MOMENTS_FEED__ACTOR_FIELD_NAMES.split(",");
 
     private static volatile boolean sRecipesResolved = false;
 
     /** Resolve one recipe field from registry moments.feed; release+PROD has no fallback. */
     private static String recipe(String key, String fallback) {
         return GuardRuntime.getRecipeOrFallback("moments.feed", key, fallback);
+    }
+
+    /** Resolve a comma-separated recipe field into an array; release+PROD has no fallback. */
+    private static String[] recipeArr(String key, String[] fallback) {
+        return GuardRuntime.getRecipeListOrFallback("moments.feed", key, fallback);
     }
 
     /**
@@ -104,6 +111,7 @@ public class MomentsFilter {
         ITEM_WQ_C1         = recipe("item_wq_c1", ITEM_WQ_C1);
         ITEM_WQ_Y0         = recipe("item_wq_y0", ITEM_WQ_Y0);
         ITEM_II5_B         = recipe("item_ii5_b", ITEM_II5_B);
+        ACTOR_FIELD_NAMES  = recipeArr("actor_field_names", ACTOR_FIELD_NAMES);
         sRecipesResolved = true;
         boolean ready = !ITEM_FRIEND.isEmpty()
                 && !ITEM_PROMO.isEmpty()

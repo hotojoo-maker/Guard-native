@@ -17,7 +17,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
  *
  * 中间程序「掐 getPackageInfo 咽喉、灌官方值」：afterHook 自身包
  * getPackageInfo 的签名读取，把 signatures[] + signingInfo 都喂成官方 DER，
- * 让官方包自检读到「官方」→ 我方号不被判非官方 / 账号异常。
+ * 让官方包自检读到熟料（官方态）→ 数据读出来尽量是官方正常态 = 保号（官方怎么判我方读不到、不预测）。
  *
  * 边界（设计稿 §3/§7 红线）：
  *   • 只动自身包 BuildConfig.GUARD_WX_PKG 的返回；他包原样返回（红线#1）。

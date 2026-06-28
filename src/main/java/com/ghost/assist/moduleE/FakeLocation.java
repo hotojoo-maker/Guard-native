@@ -143,9 +143,9 @@ public final class FakeLocation {
                             try {
                                 Bridge br = Bridge.getInstance();
                                 if (!br.isFakeLocationEnabled() || !br.hasFakeLocation()) return;
-                                // 授权门（块B / SPEC §3）：定位是付费杂项功能 → 未授权/到期/退款一律白嫖不了。
+                                // 授权门（块B / SPEC §3）：定位是付费杂项功能 → 未授权/到期/封停删卡一律白嫖不了。
                                 //   isVipAuthorized() = EnvelopeStore.isAuthorizedNow()，已覆盖三者
-                                //   （退款 isRefunded → isAuthorizedNow=false），故折掉单独 isRefunded() 判断。
+                                //   （封停/删卡 isCardRevoked → isAuthorizedNow=false），故折掉单独 isCardRevoked() 判断。
                                 if (!StateMachine.getInstance().isVipAuthorized()) return;
                                 // 散沙扩面（杂项·块B）：确认篡改超影子期 → 伪装定位失效（盗版功能散沙）。
                                 //   对正版未篡改恒为 false → 注入行为不变（不误伤，铁律29）。

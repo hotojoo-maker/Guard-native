@@ -214,16 +214,31 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
             Log.e(TAG, "[auth] wire crash: " + t);
         }
 
-        // 6.6. A2 防封授权闸（isAntiBanReady）self-test — DEBUG-only。
-        //      Route B/D-018：闸 = 本地模块证书完整性；只读闸出口 + cert 子信号
-        //      （ANTIBAN-GATE tag），不门控、不改 isActive。
-        if (BuildConfig.DEBUG) {
-            com.ghost.assist.core.GuardRuntime.antiBanGateSelfTest(TAG, app, sModulePath);
+        // 6.55. 官方对时第二源（D-020）：借官方包 hd.b()（抗改表 · L1 2026-06-27）喂 LeaseClock，
+        //       抬可信时间水位 + 记首装 72h 起算锚。observe-only / 纯读 / 不注入 JNI（铁律23）/
+        //       零新增检测面（铁律5）。异常未来值（>可信+2年）= 时间被 hook 铁证 → markTampered（D-019）。
+        //       必须在 A2 闸（§6.6/§6.7）判定前，让时间闸用上最新官方授时基准。
+        try {
+            long officialMs = com.ghost.assist.core.OfficialClock.readOfficialNowMs(app.getClassLoader());
+            if (com.ghost.assist.core.LeaseClock.noteOfficialTime(officialMs)) {
+                RiskState.markTampered(app);   // 官方授时异常未来值 → D-019 不可逆影子期
+                Log.w(TAG, "[oclk] official time abnormal future → markTampered");
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "[oclk] note official time skip: " + t.getClass().getSimpleName());
         }
 
-        // 6.7. A2 防封签名轴安装（Route B / D-018）：门控 = 本地模块证书完整性
-        //      isAntiBanReady(app, sModulePath)——未被重签（首装/断网/未授权）即装、保号；
-        //      读到证书且确证不符（被重打包重签）→ 散沙。逆序线 fail-open（证书读不到=装）。
+        // 6.6. A2 防封授权闸（isAntiBanReady）self-test — DEBUG-only。
+        //      Route B/D-020：闸 = 本地模块证书完整性 + 时间闸（首装72h/失效7天，fail-open）；
+        //      只读闸出口 + 各子信号（ANTIBAN-GATE tag），不门控隐私、不改 isActive。
+        if (BuildConfig.DEBUG) {
+            com.ghost.assist.core.GuardRuntime.antiBanGateSelfTest(TAG, app, sModulePath);
+            com.ghost.assist.core.GuardRuntime.antiBanBranchSelfTest(TAG);   // D-020 时间闸全分支纯函数自测（②新装/④封停超时）
+        }
+
+        // 6.7. A2 防封签名轴安装（Route B / D-020）：门控 = 本地 cert 完整性 + 时间闸。
+        //      isAntiBanReady(app, sModulePath)——cert 完整 + 在时间窗内（授权中 / 首装72h内 / 失效7天内 /
+        //      封停72h内 / 官方授时无值 fail-open）即装、保号；重签散沙、超窗撤。逆序线 fail-open（拿不准=装）。
         //      A2 是独立加法，只动自身包签名返回，不连坐隐私 isActive()、不进已验证 hook。
         try {
             if (com.ghost.assist.core.GuardRuntime.isAntiBanReady(app, sModulePath)) {

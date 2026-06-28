@@ -43,7 +43,7 @@ public final class ContactImportGuard {
 
     private static final String SELECT_UI  = "com.tencent.mm.ui.contact.SelectContactUI";
     // 启动目标包名 = 宿主包（官替=com.tencent.mm / 共存=com.tencent.mn），随 flavor 自动注入。
-    // 写死 com.tencent.mm 会让共存版跨包拉官方微信选人器被系统拦截 → 加不进密友/密群。
+    // 写死 com.tencent.mm 会让共存版跨包拉官方包选人器被系统拦截 → 加不进密友/密群。
     private static final String WECHAT_PKG = BuildConfig.GUARD_WX_PKG;
 
     // SelectContactUI Intent extra keys（L1 实证；titile 是微信原拼写错误，勿改）

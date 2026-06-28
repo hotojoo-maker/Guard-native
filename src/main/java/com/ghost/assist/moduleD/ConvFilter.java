@@ -68,11 +68,21 @@ public class ConvFilter {
     private static final String CONV_LIST_VIEW      = "com.tencent.mm.ui.conversation.ConversationListView";
     static String ADAPTER_CLASS_71    = RegistryFallback.CONV_LIST__ADAPTER_CLASS;   // confirmed 8.0.71 (ConvHotReload reads it)
     // 2026-06-21 清理：删除 ADAPTER_CLASS_66="f45.s0"（8.0.66 旧适配器，8.0.71 不存在；3 处引用全为空转死代码）。
+    // C7-接6 归一: L1/L2 安装期方法名选择器（n,m / s）从 registry 取，fallback 走 RegistryFallback。NON-FINAL 供 resolveRecipes 覆盖。安装期取值，非 hook 回调体（铁律29 不触）。
+    private static String[] L1_METHODS =
+            RegistryFallback.CONV_LIST__L1_METHODS.isEmpty()
+                    ? new String[0]
+                    : RegistryFallback.CONV_LIST__L1_METHODS.split(",");
+    private static String L2_METHOD = RegistryFallback.CONV_LIST__L2_METHOD;
 
     // MvvmList internal ArrayList field names
     static final String[] MVVMLIST_ARRAY_FIELDS = {"o", "p", "h"};
     // Contact field on conversation item (8.0.66: item.d = m3 contact obj)
-    private static final String[] CONTACT_FIELD_NAMES = {"d", "e", "f", "a", "b", "c"};
+    // C7-接6 归一: 从 registry conv.list 取，fallback 走 RegistryFallback。NON-FINAL 供 resolveRecipes 覆盖。
+    private static String[] CONTACT_FIELD_NAMES =
+            RegistryFallback.CONV_LIST__CONTACT_FIELDS.isEmpty()
+                    ? new String[0]
+                    : RegistryFallback.CONV_LIST__CONTACT_FIELDS.split(",");
     // 友好名/昵称源（contact 层）。优先 conRemark（本地备注）→ nickname → username 派生。
     private static final String[] NICK_FIELD_NAMES = {
             "field_conRemark", "field_nickname", "field_chatRoomName",
@@ -107,6 +117,12 @@ public class ConvFilter {
         return com.ghost.assist.core.GuardRuntime.getRecipeListOrFallback("conv.list", key, fallback);
     }
 
+    /** install-期 L1 方法名匹配（registry conv.list/l1_methods 解析后）。 */
+    private static boolean isL1Method(String mn) {
+        for (String n : L1_METHODS) if (n.equals(mn)) return true;
+        return false;
+    }
+
     /**
      * P1E Step4: pull the 3 SAFE named anchors from the encrypted registry,
      * falling back to literals on registry miss. Idempotent; called once at
@@ -119,6 +135,9 @@ public class ConvFilter {
         MVVMLIST_CLASS    = recipe("mvvmlist_class", MVVMLIST_CLASS);
         ADAPTER_CLASS_71  = recipe("adapter_class", ADAPTER_CLASS_71);
         WXID_GETTER_NAMES = recipeArr("wxid_getters", WXID_GETTER_NAMES);
+        CONTACT_FIELD_NAMES = recipeArr("contact_fields", CONTACT_FIELD_NAMES);
+        L1_METHODS        = recipeArr("l1_methods", L1_METHODS);
+        L2_METHOD         = recipe("l2_method", L2_METHOD);
         sRecipesResolved = true;
         boolean fbOk = BuildConfig.DEBUG && "kc5.v0".equals(recipe("__no_such_key__", "kc5.v0"));
         boolean ready = !MVVMLIST_CLASS.isEmpty()
@@ -388,11 +407,11 @@ public class ConvFilter {
             int l1Count = 0;
             for (Method m : mvvmCls.getDeclaredMethods()) {
                 String mn = m.getName();
-                if (!"n".equals(mn) && !"m".equals(mn)) continue;
+                if (!isL1Method(mn)) continue;
                 Class<?>[] p = m.getParameterTypes();
                 if (p.length != 2 || p[1] != boolean.class) continue;
                 final String sig = m.toGenericString();
-                final String label = "n".equals(mn) ? "L1n" : "L1m";
+                final String label = "L1" + mn;
                 try { m.setAccessible(true); } catch (Throwable ignored) {}
                 XposedBridge.hookMethod(m, new XC_MethodHook() {
                     @Override
@@ -441,10 +460,10 @@ public class ConvFilter {
                 Log.w(TAG, sb.toString());
             }
 
-            // L2: any method named "s" with exactly 1 param
+            // L2: any method named L2_METHOD ("s") with exactly 1 param
             int l2Count = 0;
             for (Method m : mvvmCls.getDeclaredMethods()) {
-                if (!"s".equals(m.getName())) continue;
+                if (!L2_METHOD.equals(m.getName())) continue;
                 if (m.getParameterTypes().length != 1) continue;
                 final String sig = m.toGenericString();
                 XposedBridge.hookMethod(m, new XC_MethodHook() {
@@ -490,7 +509,7 @@ public class ConvFilter {
             for (Method m : mvvmCls.getDeclaredMethods()) {
                 String mn = m.getName();
                 // Already covered by L1/L2
-                if ("n".equals(mn) || "m".equals(mn) || "s".equals(mn)) continue;
+                if (isL1Method(mn) || L2_METHOD.equals(mn)) continue;
                 // Covered by L0w write-path hooks.
                 if ("e".equals(mn) || "k".equals(mn) || "l".equals(mn)) continue;
                 Class<?>[] params = m.getParameterTypes();
@@ -631,11 +650,11 @@ public class ConvFilter {
             int l1Count = 0;
             for (Method m : convListCls.getDeclaredMethods()) {
                 String mn = m.getName();
-                if (!"n".equals(mn) && !"m".equals(mn)) continue;
+                if (!isL1Method(mn)) continue;
                 Class<?>[] p = m.getParameterTypes();
                 if (p.length != 2 || p[1] != boolean.class) continue;
                 final String sig = m.toGenericString();
-                final String label = "n".equals(mn) ? "CL1n" : "CL1m";
+                final String label = "CL1" + mn;
                 XposedBridge.hookMethod(m, new XC_MethodHook() {
                     @Override
                     protected void beforeHookedMethod(MethodHookParam param) {
@@ -647,9 +666,9 @@ public class ConvFilter {
                 l1Count++;
                 Log.i(TAG, "[CF] MvvmConvList." + mn + " hooked: " + sig);
             }
-            // Also hook any method named "s" with 1 param
+            // Also hook any method named L2_METHOD ("s") with 1 param
             for (Method m : convListCls.getDeclaredMethods()) {
-                if (!"s".equals(m.getName()) || m.getParameterTypes().length != 1) continue;
+                if (!L2_METHOD.equals(m.getName()) || m.getParameterTypes().length != 1) continue;
                 XposedBridge.hookMethod(m, new XC_MethodHook() {
                     @Override
                     protected void beforeHookedMethod(MethodHookParam param) {

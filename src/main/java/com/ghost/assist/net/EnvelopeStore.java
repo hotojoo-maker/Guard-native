@@ -44,7 +44,7 @@ public final class EnvelopeStore {
     private static final String K_UP_D    = "ud";    // 更新文案
     private static final String K_UP_U    = "uu";    // 更新链接
     private static final String K_RN_DAY  = "rd";    // #3 续费预警上次弹出日（可信 epoch day，按天去重）
-    private static final String K_REFUNDED = "rf";   // #6 退款撤闸：首见退款的可信时间戳(ms)，0=未退款（SPEC §4）
+    private static final String K_CARD_REVOKED = "rf";   // #6 封停/删卡撤销：首见封停/删卡的可信时间戳(ms)，0=未撤（SPEC §4 / SSOT §3）。值 "rf" = 历史缩写的不透明键，保留作 wire/存储兼容，语义=封停/删卡撤销（非退款）
 
     // 牙④ a案 重放/过期绑定: crypto 种子硬过期宽限 = 配方卡 SPEC A.付费断网宽限 = 7 天(秒)。
     // 硬过期点 = leaseExpire + 本宽限。与隐私 72h 离线宽限(独立闸)不是一回事，别混。
@@ -106,9 +106,15 @@ public final class EnvelopeStore {
                 .putString(K_UP_U, e.updateUrl == null ? "" : e.updateUrl)
                 .remove(K_ERR)
                 .apply();
-        // #6 服务器下发退款位 → 落持久退款标志（幂等，只记首见）。其余字段照存，
-        // 但 isAuthorizedNow/isAntiBanReady 会因 isRefunded() 立刻断闸。
-        if (e.refunded == 1) markRefunded();
+        // #6 封停/删卡 rf 位驱动 latch（D-020 可恢复）：
+        //   • rf=1 → markCardRevoked() 落持久标志（幂等，只记首见）。
+        //   • rf≠1 + license 未过期（= 服务器下发有效授权）→ clearCardRevokedIfAuthorized() 清 latch、两闸恢复。
+        // 篡改（D-019/RiskState）不走此路、仍不可逆。
+        if (e.cardRevoked == 1) {
+            markCardRevoked();
+        } else {
+            clearCardRevokedIfAuthorized(e);
+        }
         resetVerifiedCache();
     }
 
@@ -148,7 +154,7 @@ public final class EnvelopeStore {
     }
 
     public static boolean isAuthorizedNow() {
-        if (isRefunded()) return false;   // #6 退款 → 立刻撤隐私（isVipAuthorized=false → isActive 四层断），与 A2 一起死
+        if (isCardRevoked()) return false;   // #6 封停/删卡（rf）→ 立刻撤隐私（isVipAuthorized=false → isActive 四层断），与 A2 一起死
         if (!hasToken()) return false;
         AuthEnvelopeVerifier.Envelope e = getVerifiedCachedEnvelope();
         return e != null && !isLicenseExpired(e.licenseExpire);
@@ -171,50 +177,66 @@ public final class EnvelopeStore {
         if (sPrefs != null) sPrefs.edit().putLong(K_RN_DAY, day).apply();
     }
 
-    // ── #6 退款撤闸（SPEC §4：唯一连坐 A2+隐私 的非篡改场景）────────────────
+    // ── #6 封停/删卡撤销（SSOT §3 / D-020：连坐 A2+隐私 的非篡改场景；非退款）──
     //
     // 信号源 = 服务器（块A）push 的信封 `rf` 位（暂缓未建，字段先约定）。客户端职责：
-    //   • 收到 refunded 信封 → markRefunded() 落持久标志（可信时间戳）。
-    //   • isRefunded()=true → isAuthorizedNow()=false（撤隐私）+ isAntiBanReady()=false（撤 A2）。
-    // 与 revokeKeepToken 的区别：那是离线/到期【可自愈】（保留 token 重连恢复）；退款【不自愈】
-    //   —— markRefunded 故意不入 revokeKeepToken 的清单，重连/换 token 都不会抹掉退款态。
-    // 不清用户数据（密友名单/密码）——安全官红线#5。本地解除只能靠服务器（块A）或 clear() 全重置。
+    //   • 收到 rf=1 信封 → markCardRevoked() 落持久标志（可信时间戳，幂等只记首见）。
+    //   • isCardRevoked()=true → isAuthorizedNow()=false（隐私 fail-closed 立刻撤）+ A2 走
+    //     cardRevokedAt+72h 宽限后撤（D-020：两闸独立，A2 fail-open 给 72h 防误封）。
+    //   • 收到 rf≠1 + license 未过期的有效信封 → clearCardRevokedIfAuthorized() 清 latch、两闸恢复。
+    // D-020 改「可被有效授权恢复」（取代旧「永久不自愈」）：服务器误封后发新有效信封即恢复；本地改时间/
+    //   清缓存不触发（须 Ed25519 验签）。与 revokeKeepToken（离线/到期可自愈）区别：封停只认服务器有效信封恢复。
+    // 篡改（D-019/RiskState）不走此路、仍不可逆。不清用户数据（密友名单/密码）——安全官红线#5。
 
-    /** 是否已退款（持久标志 > 0）。 */
-    public static boolean isRefunded() {
-        return getRefundedAt() > 0L;
+    /** 是否已被封停/删卡（rf 持久标志 > 0）。 */
+    public static boolean isCardRevoked() {
+        return getCardRevokedAt() > 0L;
     }
 
-    /** 首见退款的可信时间戳(ms)；0=未退款。 */
-    public static long getRefundedAt() {
-        return sPrefs == null ? 0L : sPrefs.getLong(K_REFUNDED, 0L);
+    /** 首见封停/删卡的可信时间戳(ms)；0=未撤。 */
+    public static long getCardRevokedAt() {
+        return sPrefs == null ? 0L : sPrefs.getLong(K_CARD_REVOKED, 0L);
     }
 
     /**
-     * 标记退款（块A server push / 信封 rf 位驱动）。幂等：只记首见时间，重复调不覆盖。
+     * 标记封停/删卡（块A server push / 信封 rf 位驱动）。幂等：只记首见时间，重复调不覆盖。
      * 用可信时间（防墙钟改），落盘后立刻使两闸断开。
      */
-    public static void markRefunded() {
+    public static void markCardRevoked() {
         if (sPrefs == null) return;
-        if (getRefundedAt() > 0L) return;                 // 幂等：保留首见时间
-        sPrefs.edit().putLong(K_REFUNDED, LeaseClock.trustedNow()).apply();
+        if (getCardRevokedAt() > 0L) return;                 // 幂等：保留首见时间
+        sPrefs.edit().putLong(K_CARD_REVOKED, LeaseClock.trustedNow()).apply();
         resetVerifiedCache();
-        Log.i(TAG, "[env] refunded marked → revoke A2+privacy");
+        Log.i(TAG, "[env] card-revoked marked → revoke A2+privacy");
     }
 
     /**
-     * DEBUG-only 退款撞闸自测（装机 L1 验「退款立刻散」用；release BuildConfig.DEBUG=false → 空操作）。
-     * on=true 置退款、on=false 清退款（仅供反复测试复位；release 永不可达）。
+     * DEBUG-only 封停/删卡撞闸自测（装机 L1 验「撤闸立刻散」用；release BuildConfig.DEBUG=false → 空操作）。
+     * on=true 置撤闸、on=false 清撤闸（仅供反复测试复位；release 永不可达）。
      */
-    public static void debugSetRefunded(boolean on) {
+    public static void debugSetCardRevoked(boolean on) {
         if (!com.ghost.assist.BuildConfig.DEBUG || sPrefs == null) return;
         if (on) {
-            sPrefs.edit().putLong(K_REFUNDED, LeaseClock.trustedNow()).apply();
+            sPrefs.edit().putLong(K_CARD_REVOKED, LeaseClock.trustedNow()).apply();
         } else {
-            sPrefs.edit().remove(K_REFUNDED).apply();
+            sPrefs.edit().remove(K_CARD_REVOKED).apply();
         }
         resetVerifiedCache();
-        Log.i(TAG, "[env] DEBUG setRefunded=" + on + " (debug-only)");
+        Log.i(TAG, "[env] DEBUG setCardRevoked=" + on + " (debug-only)");
+    }
+
+    /**
+     * D-020：封停/删卡 latch「可被有效授权恢复」。收到服务器新有效信封（rf≠1 + 验签通过 + license
+     * 未过期）→ 清除 cardRevoked 持久标志，两闸（A2 + 隐私）恢复。仅服务器权威可恢复——本地改时间 /
+     * 清缓存不触发（e 须经 Ed25519 验签，由 saveEnvelope 调用链保证）。篡改（D-019）不走此路、仍不可逆。
+     */
+    private static void clearCardRevokedIfAuthorized(AuthEnvelopeVerifier.Envelope e) {
+        if (sPrefs == null || e == null) return;
+        if (getCardRevokedAt() <= 0L) return;            // 未撤，无需恢复
+        if (e.cardRevoked == 1) return;                  // 仍封停，不恢复（防御性，调用点已分流）
+        if (isLicenseExpired(e.licenseExpire)) return;   // license 已过期 → 不算有效授权，不恢复
+        sPrefs.edit().remove(K_CARD_REVOKED).apply();
+        Log.i(TAG, "[env] card-revoked cleared by valid envelope → restore A2+privacy (D-020)");
     }
 
     /**

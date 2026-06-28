@@ -34,6 +34,7 @@ public final class LeaseClock {
     private static final String KEY_MAX_TRUSTED     = "mtn";   // 历史最大可信时间水位(ms)
     private static final String KEY_EXPIRE_AT       = "lea";   // 租约过期(ms)，0=无租约
     private static final String KEY_LAST_HEARTBEAT  = "lhb";   // 上次心跳的可信时间(ms)
+    private static final String KEY_OFFICIAL_BASE   = "ofb";   // A2 时间闸：首次拿到官方对时(hd.b)有效值的水位(ms)，0=未拿到；首装未授权 72h 倒计时起算基准（D-020）
 
     // 断网阶梯（小时）。对齐 NativeBridge.GRACE_* 与安全官口径 24h/72h。
     private static final long WARN_MS    = NativeBridge.GRACE_WARN_HOURS    * 3600_000L; // 24h
@@ -41,6 +42,11 @@ public final class LeaseClock {
     // 引流阶梯：断网超 72h×2=144h（6天）→ OFFLINE_FUNNEL 引流（可恢复：联网即降回）。
     // 用户拍板 2026-06-12。数字段1走明文常量（轻迷彩），以后随 risk_pack 服务端下发。
     private static final long FUNNEL_MS  = DEGRADE_MS * 2;                                // 144h
+
+    // 官方对时(hd.b)未来上限兜底（架构师补丁 2026-06-28 · D-020）：比 hd.b 原值——若 > 现有可信 + 2 年
+    // = 时间被 hook 的篡改铁证（官方服务器时间不可能差 2 年）→ 丢值 + markTampered（D-019 不可逆）。
+    // 正版触发不了（hd.b 抗改表）。TODO：2 年可随最长授权期 / 服务器下发调；勿写进配方卡（另一路在改）。
+    private static final long FUTURE_CAP_MS = 2L * 365L * 24L * 3600_000L;                 // 2 年
 
     private LeaseClock() {}
 
@@ -61,6 +67,47 @@ public final class LeaseClock {
         long maxTrusted = b.getLong(KEY_MAX_TRUSTED, 0L);
         if (serverNowMs > maxTrusted) b.putLong(KEY_MAX_TRUSTED, serverNowMs);
         Log.i(TAG, "[lease] heartbeat server_now=" + serverNowMs + " expire=" + expireAtMs);
+    }
+
+    /**
+     * 记录官方对时第二独立源（hd.b()，MicroMsg.TimeHelper · 抗改表 · L1 2026-06-27）。
+     * 与服务器授时共用 max_trusted_now 水位「只抬不降」（防回拨 / 反复重启冻结 trustedNow）。
+     * 官方授时即通过抬高 max_trusted_now 纳入 trustedNow()（故 trustedNow 逻辑不变、不破坏现有消费者）。
+     *
+     * 未来上限兜底（架构师补丁 · D-020）：比 hd.b 原值（非我方外推中间值）——
+     *   • officialMs ≤ 0（全新装 / 未登录 / 无锚 / 读取异常）→ 忽略（fail-open，不计时）。
+     *   • 有可信基准且 officialMs > 现有可信 + 2 年 → 丢值，返回 true（调用方 markTampered，D-019 不可逆）。
+     *   • 否则采信：抬 max_trusted_now 水位 + 首次有效值记 officialBase（首装 72h 倒计时起算）。
+     *
+     * @param officialMs hd.b() 原值（epoch ms），由 OfficialClock 读出
+     * @return true = 检测到异常未来值（调用方应 markTampered）；false = 正常 / 忽略
+     */
+    public static synchronized boolean noteOfficialTime(long officialMs) {
+        if (officialMs <= 0L) return false;                       // 无值 → fail-open，忽略
+        Bridge b = Bridge.getInstance();
+        long maxTrusted = b.getLong(KEY_MAX_TRUSTED, 0L);
+        long current = maxTrusted;                                // 现有可信（不含墙钟、不含本次官方值）
+        long lastServer = b.getLong(KEY_LAST_SERVER_NOW, 0L);
+        if (lastServer > 0L) {
+            long delta = SystemClock.elapsedRealtime() - b.getLong(KEY_LAST_ELAPSED, 0L);
+            if (delta >= 0L) current = Math.max(current, lastServer + delta);
+        }
+        // 仅在有可信基准时判未来上限；current<=0（全新装无基准）→ 采信首值（hd.b 抗改表，可信）。
+        if (current > 0L && officialMs > current + FUTURE_CAP_MS) {
+            Log.w(TAG, "[lease] official time abnormal future (>cap) → discard + tamper");
+            return true;
+        }
+        if (officialMs > maxTrusted) b.putLong(KEY_MAX_TRUSTED, officialMs);   // 只抬不降
+        if (b.getLong(KEY_OFFICIAL_BASE, 0L) <= 0L) {
+            b.putLong(KEY_OFFICIAL_BASE, officialMs);                          // 首次有效值 = 72h 起算锚
+            Log.i(TAG, "[lease] official base set (72h countdown anchor)");
+        }
+        return false;
+    }
+
+    /** A2 时间闸：首次官方对时有效值水位(ms)，0=尚未拿到（首装未授权 72h 从此起算；无值 fail-open 不计时）。 */
+    public static synchronized long getOfficialBaseMs() {
+        return Bridge.getInstance().getLong(KEY_OFFICIAL_BASE, 0L);
     }
 
     /**

@@ -51,7 +51,7 @@ public final class EnvelopeClient {
     public static String authErrorText(String code) {
         if ("CARD_EXPIRED".equals(code)) return "授权已到期，请联系客服";
         if ("CARD_BANNED".equals(code) || "CARD_DISABLED".equals(code)) return "授权码已停用，请联系客服";
-        if ("REFUNDED".equals(code)) return "该授权码已退款失效，请联系客服";
+        if ("REFUNDED".equals(code)) return "该授权码已失效，请联系客服";
         if ("DEVICE_BANNED".equals(code)) return "设备已封停，请联系客服";
         if ("DEVICE_ALREADY_BOUND".equals(code)) return "此设备已绑定其他授权码，请联系客服";
         if ("DEVICE_LIMIT".equals(code)) return "设备数量已达上限，请联系客服";

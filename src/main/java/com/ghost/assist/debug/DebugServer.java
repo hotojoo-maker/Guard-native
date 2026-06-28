@@ -140,8 +140,8 @@ public class DebugServer {
                 response = apiActivate(body);
             } else if ("/api/forcefunnel".equals(path) && "POST".equals(method)) {
                 response = apiForceFunnel();
-            } else if ("/api/forcerefund".equals(path) && "POST".equals(method)) {
-                response = apiForceRefund(body);
+            } else if ("/api/forcecardrevoke".equals(path) && "POST".equals(method)) {
+                response = apiForceCardRevoke(body);
             } else if ("/api/mywxid".equals(path)) {
                 response = "GET".equals(method) ? apiGetMyWxid() : apiSetMyWxid(body);
             } else if ("/api/dumps".equals(path)) {
@@ -466,15 +466,15 @@ public class DebugServer {
     }
 
     /**
-     * #6 装机验证入口（DEBUG-only）：置/清退款态，验「退款立刻散」(A2+隐私一起死)。
-     * body {"on":true} 置退款 / {"on":false} 复位。release BuildConfig.DEBUG=false → 空操作。
+     * #6 装机验证入口（DEBUG-only）：置/清封停删卡态（rf），验「撤闸立刻散」(A2+隐私一起死)。
+     * body {"on":true} 置撤闸 / {"on":false} 复位。release BuildConfig.DEBUG=false → 空操作。
      * 置后回前台/冷启 → isAntiBanReady=false（A2 不装）+ isAuthorizedNow=false（isActive 断、隐私放行）。
      */
-    private static byte[] apiForceRefund(String body) {
+    private static byte[] apiForceCardRevoke(String body) {
         boolean on = !"false".equalsIgnoreCase(extractJsonField(body, "on"));
-        com.ghost.assist.net.EnvelopeStore.debugSetRefunded(on);
-        return jsonResponse("{\"ok\":true,\"refunded\":"
-                + com.ghost.assist.net.EnvelopeStore.isRefunded() + "}");
+        com.ghost.assist.net.EnvelopeStore.debugSetCardRevoked(on);
+        return jsonResponse("{\"ok\":true,\"cardRevoked\":"
+                + com.ghost.assist.net.EnvelopeStore.isCardRevoked() + "}");
     }
 
     private static byte[] apiFeedWxids() {

@@ -82,6 +82,8 @@ public class ContactFilter {
         ADDR_ITEM_CLS  = recipe("item_class", ADDR_ITEM_CLS);
         ADDR_Z3_CLS    = recipe("contact_class", ADDR_Z3_CLS);
         WXID_GETTER    = recipe("wxid_getter", WXID_GETTER);
+        ITEM_CONTACT_FIELD = recipe("contact_field", ITEM_CONTACT_FIELD);
+        ITEM_TYPE_FIELD    = recipe("type_field", ITEM_TYPE_FIELD);
         sRecipesResolved = true;
         // fallback self-proof: an unknown key must return the supplied fallback
         // (proves the registry-miss path keeps old behaviour, no regression).
@@ -100,8 +102,9 @@ public class ContactFilter {
     }
 
     // DEX field names (JADX prefix stripped):  f238409d → "d",  f238410e → "e"
-    private static final String ITEM_CONTACT_FIELD = "d"; // → z3
-    private static final String ITEM_TYPE_FIELD    = "e"; // int, 2 = contact
+    // C7-接6 归一: 从 registry contact.address 取，fallback 走 RegistryFallback（debug=值/release=""）。NON-FINAL 供 resolveRecipes 覆盖。
+    private static String ITEM_CONTACT_FIELD = RegistryFallback.CONTACT_ADDRESS__CONTACT_FIELD; // → z3
+    private static String ITEM_TYPE_FIELD    = RegistryFallback.CONTACT_ADDRESS__TYPE_FIELD;    // int, 2 = contact
 
     // Cached reflection refs
     private static volatile Method  sZ3C1      = null;

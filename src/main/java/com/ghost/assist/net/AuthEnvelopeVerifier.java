@@ -59,7 +59,7 @@ public final class AuthEnvelopeVerifier {
         public long licenseExpire;  // le : license 到期
         public int tier;            // q  : 0=stable 1=probe 2=suspicious 3=shadow 4=notice
         public int risk;            // r  : 0-255
-        public int refunded;        // rf : 1=已退款（场景#6）→ 客户端立刻撤 A2+隐私（SPEC §4，唯一连坐两闸的非篡改场景）
+        public int cardRevoked;     // rf : 1=已封停/删卡（场景#6，wire key 历史缩写）→ 客户端立刻撤 A2+隐私（SPEC §4，唯一连坐两闸的非篡改场景；非退款）
         public String schema;       // z
         public String wxVersion;    // w
         public String productVersion; // pv
@@ -146,7 +146,7 @@ public final class AuthEnvelopeVerifier {
             e.licenseExpire = p.optLong("le", 0);
             e.tier = p.optInt("q", 1);
             e.risk = p.optInt("r", 0);
-            e.refunded = p.optInt("rf", 0);   // 退款位（块A server push 下发；缺省 0）
+            e.cardRevoked = p.optInt("rf", 0);   // rf 位 = 封停/删卡撤销（块A server push 下发；缺省 0；wire key 保留 "rf"）
             e.schema = z;
             e.wxVersion = w;
             e.productVersion = p.optString("pv", "");
