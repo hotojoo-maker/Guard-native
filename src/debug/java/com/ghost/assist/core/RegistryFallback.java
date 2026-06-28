@@ -31,6 +31,10 @@ public final class RegistryFallback {
     public static final String MOMENTS_FEED__LIKE_LIST = "LikeUserList";
     public static final String MOMENTS_FEED__COMMENT_LIST = "CommentUserList";
     public static final String MOMENTS_FEED__ACTOR_FIELD_NAMES = "d,f435583d,username,field_userName";
+    public static final String MOMENTS_FEED__ITEM_NOTIFY = "jw1.d";
+    public static final String MOMENTS_FEED__ITEM_WQ_C1 = "wq.c1";
+    public static final String MOMENTS_FEED__ITEM_WQ_Y0 = "wq.y0";
+    public static final String MOMENTS_FEED__ITEM_II5_B = "ii5.b";
 
     // -- contact.address --
     public static final String CONTACT_ADDRESS__LIVE_LIST = "com.tencent.mm.ui.contact.address.AddressLiveList";

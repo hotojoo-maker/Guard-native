@@ -45,6 +45,16 @@ OUT_RELEASE = os.path.join(ROOT, "src", "release", "java", PKG_PATH, "RegistryFa
 PACKAGE = "com.ghost.assist.core"
 CLASS = "RegistryFallback"
 
+# Entries excluded from the Java fallback layer entirely (not even as "" stub).
+# Rationale: a2.sig.official_der is the WeChat-official cert DER used by
+# A2SignatureSpoof (Route B / D-018). A2SignatureSpoof reads the value from its
+# own local final constant OFFICIAL_DER_HEX, so it never touches
+# RegistryFallback. Letting the generator emit RegistryFallback.A2_SIG_*
+# anyway would (a) leave dead code in release and (b) expose the public-cert
+# DER in debug-variant Java -- both contradict the P_AntiBanGate worklog watch
+# "A2 料只进 registry_pack (不进 Java fallback)".
+SKIP_ENTRIES = {"a2.sig"}
+
 
 def norm(token):
     """conv.list -> CONV_LIST ; mvvmlist_class -> MVVMLIST_CLASS"""
@@ -68,6 +78,8 @@ def collect_constants():
     seen = {}
     for entry, fields in entries.items():
         if not isinstance(fields, dict):
+            continue
+        if entry in SKIP_ENTRIES:
             continue
         for key, value in fields.items():
             if not isinstance(value, str):

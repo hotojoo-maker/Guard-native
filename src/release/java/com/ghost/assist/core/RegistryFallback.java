@@ -31,6 +31,10 @@ public final class RegistryFallback {
     public static final String MOMENTS_FEED__LIKE_LIST = "";
     public static final String MOMENTS_FEED__COMMENT_LIST = "";
     public static final String MOMENTS_FEED__ACTOR_FIELD_NAMES = "";
+    public static final String MOMENTS_FEED__ITEM_NOTIFY = "";
+    public static final String MOMENTS_FEED__ITEM_WQ_C1 = "";
+    public static final String MOMENTS_FEED__ITEM_WQ_Y0 = "";
+    public static final String MOMENTS_FEED__ITEM_II5_B = "";
 
     // -- contact.address --
     public static final String CONTACT_ADDRESS__LIVE_LIST = "";

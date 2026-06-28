@@ -37,7 +37,7 @@ public class MomentsFilter {
 
     private static final String TAG = "NCL";
 
-    // P1E Step3: these 8 anchors are sourced from the encrypted SO registry
+    // P1E Step3: these 12 anchors are sourced from the encrypted SO registry
     // (moments.feed) via GuardRuntime.getRecipe(). C5a 归一: the DEBUG fallback is
     // generated from native_core/registry_8071.json (RegistryFallback; debug =
     // literal, release = ""), not hand-written here. resolveRecipes() (called
@@ -48,11 +48,11 @@ public class MomentsFilter {
     private static String ITEM_PROMO      = RegistryFallback.MOMENTS_FEED__ITEM_PROMO;
     private static String ITEM_FRIEND     = RegistryFallback.MOMENTS_FEED__ITEM_FRIEND;
     private static final String ITEM_BUBBLE     = "com.tencent.mm.plugin.sns.ui.SnsMsgUIWithRelevance";
-    private static final String ITEM_NOTIFY     = "jw1.d";
+    private static String ITEM_NOTIFY     = RegistryFallback.MOMENTS_FEED__ITEM_NOTIFY;
     // 控制台高频类，待确认语义（疑似 like/comment 元素）
-    private static final String ITEM_WQ_C1      = "wq.c1";
-    private static final String ITEM_WQ_Y0      = "wq.y0";
-    private static final String ITEM_II5_B      = "ii5.b";
+    private static String ITEM_WQ_C1      = RegistryFallback.MOMENTS_FEED__ITEM_WQ_C1;
+    private static String ITEM_WQ_Y0      = RegistryFallback.MOMENTS_FEED__ITEM_WQ_Y0;
+    private static String ITEM_II5_B      = RegistryFallback.MOMENTS_FEED__ITEM_II5_B;
     private static String METHOD_SNS_OBJ  = RegistryFallback.MOMENTS_FEED__SNS_GETTER;   // la4.p.h1() → TimeLineObject（p1 字段的解包 getter）
     private static final String METHOD_NICKNAME = "O0";
     private static String FIELD_WXID      = RegistryFallback.MOMENTS_FEED__WXID_FIELD;
@@ -84,7 +84,7 @@ public class MomentsFilter {
     }
 
     /**
-     * P1E Step3: pull the 8 live moments.feed anchors from the encrypted registry,
+     * P1E Step3: pull the 12 live moments.feed anchors from the encrypted registry,
      * falling back to the embedded literals when the registry is unavailable /
      * scattered. Idempotent; called once at install() before any hook fires.
      * Only swaps the class-name SOURCE — does not touch addAll/remove callback
@@ -100,6 +100,10 @@ public class MomentsFilter {
         METHOD_SNS_OBJ     = recipe("sns_getter", METHOD_SNS_OBJ);
         FIELD_LIKE_LIST    = recipe("like_list", FIELD_LIKE_LIST);
         FIELD_COMMENT_LIST = recipe("comment_list", FIELD_COMMENT_LIST);
+        ITEM_NOTIFY        = recipe("item_notify", ITEM_NOTIFY);
+        ITEM_WQ_C1         = recipe("item_wq_c1", ITEM_WQ_C1);
+        ITEM_WQ_Y0         = recipe("item_wq_y0", ITEM_WQ_Y0);
+        ITEM_II5_B         = recipe("item_ii5_b", ITEM_II5_B);
         sRecipesResolved = true;
         boolean ready = !ITEM_FRIEND.isEmpty()
                 && !ITEM_PROMO.isEmpty()

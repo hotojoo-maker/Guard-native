@@ -21,7 +21,11 @@
       "sns_getter": "h1",
       "like_list": "LikeUserList",
       "comment_list": "CommentUserList",
-      "actor_field_names": "d,f435583d,username,field_userName"
+      "actor_field_names": "d,f435583d,username,field_userName",
+      "item_notify": "jw1.d",
+      "item_wq_c1": "wq.c1",
+      "item_wq_y0": "wq.y0",
+      "item_ii5_b": "ii5.b"
     },
     "contact.address": {
       "live_list": "com.tencent.mm.ui.contact.address.AddressLiveList",
