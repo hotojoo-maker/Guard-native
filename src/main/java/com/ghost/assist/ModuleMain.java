@@ -217,7 +217,7 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         // 6.6. A2 防封授权闸（isAntiBanReady）self-test — DEBUG-only。
         //      Route B/D-018：闸 = 本地模块证书完整性；只读闸出口 + cert 子信号
         //      （ANTIBAN-GATE tag），不门控、不改 isActive。
-        if (BuildConfig.DEBUG) {
+        if (AppConfig.isDevBuild()) {
             com.ghost.assist.core.GuardRuntime.antiBanGateSelfTest(TAG, app, sModulePath);
         }
 
@@ -269,7 +269,7 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
 
         // 8a. HTTP debug server — DEBUG build always; RELEASE only in HONEY mode.
         //     RELEASE + PROD (customer build) → never starts, so /api/hidden etc. are not exposed.
-        if (BuildConfig.DEBUG || AppConfig.getInstance().isDebugEnabled()) {
+        if (AppConfig.isDebugSurface()) {
             DebugServer.start();
             Log.i(TAG, "[init] debug server started port=" + AppConfig.getInstance().getServerPort());
         } else {
@@ -281,7 +281,7 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         UiContextTracker.install(lpparam);
 
         // 8c. UI debug tools (overlay + notification) only in DEV/HONEY.
-        if (AppConfig.getInstance().isDebugEnabled()) {
+        if (AppConfig.isDiagnostics()) {
             StatusNotification.show(app);
             OverlayWindow.attach(app);
             Log.i(TAG, "[init] debug UI tools started");
@@ -428,7 +428,7 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
             //       Python kdf_common vectors). BuildConfig.DEBUG-gated so the
             //       release build never references nativeKdfSelfTest (which is
             //       compiled out of the release SO) — easy to strip at ship time.
-            if (BuildConfig.DEBUG) {
+            if (AppConfig.isDevBuild()) {
                 Log.i(TAG, "[native] KDF_VECTOR_VERIFY "
                         + (NativeBridge.kdfSelfTest() ? "PASS" : "FAIL"));
             }

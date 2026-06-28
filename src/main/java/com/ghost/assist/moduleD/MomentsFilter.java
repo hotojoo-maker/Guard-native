@@ -2,7 +2,6 @@ package com.ghost.assist.moduleD;
 
 import android.util.Log;
 
-import com.ghost.assist.BuildConfig;
 import com.ghost.assist.core.AppConfig;
 import com.ghost.assist.core.Bridge;
 import com.ghost.assist.core.GuardRuntime;
@@ -113,7 +112,7 @@ public class MomentsFilter {
                 && !METHOD_SNS_OBJ.isEmpty()
                 && !FIELD_LIKE_LIST.isEmpty()
                 && !FIELD_COMMENT_LIST.isEmpty();
-        boolean fbOk = BuildConfig.DEBUG && "na4.b".equals(recipe("__no_such_key__", "na4.b"));
+        boolean fbOk = AppConfig.isDevBuild() && "na4.b".equals(recipe("__no_such_key__", "na4.b"));
         Log.i(TAG, "[MF] recipes friend=" + ITEM_FRIEND + " promo=" + ITEM_PROMO
                 + " adapter=" + ADAPTER_CLASS + " wxid=" + FIELD_WXID
                 + " inner=" + FIELD_INNER + " sns=" + METHOD_SNS_OBJ
@@ -489,7 +488,7 @@ public class MomentsFilter {
 
         // L0v3: 互动消息 / 顶部更新提醒
         if (isBubble || isNotify) {
-            if (AppConfig.getInstance().isDebugEnabled()) {
+            if (AppConfig.isDiagnostics()) {
                 dumpItem(first, bridge);
             }
             if (!filterOn) return;
