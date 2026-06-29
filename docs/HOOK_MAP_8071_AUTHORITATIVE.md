@@ -287,6 +287,65 @@
 
 ---
 
+### 11. 隐藏触发机制（B 模块：摇一摇 / 切后台 / 锁屏 / 口令解锁）
+
+> 状态机自动切换触发器，主体 `moduleB/TriggerGuard.java`（B6 口令走 `SearchUnlock.java`）。B1/B2/B5 单向 → HIDDEN（PRODUCT_GATE §8.1）；B6 → VISIBLE。全部用系统 API、不依赖微信混淆类，升版稳定。
+
+| 触发 | 机制 | hook/监听 | 状态 |
+|------|------|-----------|------|
+| **B1 摇一摇** | SensorManager 加速度 ≥15m/s²（默认关，用户可开） | `setShakeEnabled` 注册 TYPE_ACCELEROMETER | 🟡 代码已写，无 L1 logcat |
+| **B2 切后台 · 手势隐藏** | ①前台计数 `onActivityStopped` 归 0 ②广播 `CLOSE_SYSTEM_DIALOGS`(fs_gesture/Home/Recent) → `enterHidden`（默认开，不可关） | `ActivityLifecycleCallbacks` + `BroadcastReceiver(ACTION_CLOSE_SYSTEM_DIALOGS)` | ✅ **L1 2026-06-30 共存版**（见下证据） |
+| **B3 Home 键** | 并入 B2（被 CLOSE_SYSTEM_DIALOGS 覆盖） | — | ❌ 不单独实现 |
+| **B4 返回键** | hook `Activity.dispatchKeyEvent` 吞 KEYCODE_BACK | `B4_BACK_KEY_ENABLED=false` | 🚫 默认关闭（D-022 入口 bug：MIUI 边缘滑动误触，由 B2 覆盖） |
+| **B5 锁屏** | 广播 `ACTION_SCREEN_OFF` → `enterHidden`（解锁后不自动显形） | `BroadcastReceiver(ACTION_SCREEN_OFF)` | ✅ 用户确认 2026-06-01 |
+| **B6 口令解锁** | 放大镜 FTS 搜索框输 `111111` → VISIBLE | `SearchUnlock.java` TextWatcher | ✅ 8071 已验（L1 2026-06-30 `[UNLOCK:B6] success`） |
+
+**B2「手势隐藏」L1 实证（2026-06-30 共存版 `com.tencent.mn`）：**
+
+```
+[TG] B2-close_dialogs(fs_gesture) → enterHidden
+[SM] notify old=显形 new=隐藏
+[SF:sm] VISIBLE → HIDDEN
+[CF] L4collect removed wxid=...        ← 密友随之隐藏
+```
+
+> 同轮还验了 B6：`[SU] unlock matched text=111111` → `[SM] 隐藏→解锁中→显形` → `[UNLOCK:B6] success`（密友 restore 显形）。
+
+**⚠️ 偏移修正**：本节 2026-06-30 补建——此前权威**整体缺 B 触发器章节**（B1–B6 仅根 `HOOKMAP.md` §B 有），属文档偏移，今补齐。
+
+---
+
+### 12. 消息控制（C 模块：未读 / 来电拦截 / 推送过滤）
+
+> C1 防撤回见 §2。本节补 C 模块其余已装机功能，主体 `moduleC/PushFilter.java` + `moduleC/CallGuard.java`。代码核准 2026-06-30。
+
+| 功能 | hook 点（8.0.71 代码核准） | 项目代码 | 状态 |
+|------|------|------|------|
+| **PushFilter L1 后台消息入队拦截** | `LinkedList.add(NotificationItem)`（`NotificationItem` = `com.tencent.mm.booter.notification.NotificationItem`）→ 密友 talker → `setResult(false)` 不入队 | `moduleC/PushFilter.java`（`[PF:L1]`） | ✅ L1 装机 2026-05-22 |
+| **PushFilter NM 通知拦截** | `NotificationManager.notify()` 唯一 hook → 密友 cancel/bypass（普通消息 + voip channel）；VoIP 委托 `CallGuard.handleNmVoip` | `moduleC/PushFilter.java` + `CallGuard.java` | ✅ 装机 2026-05-22 |
+| **CallGuard CA 来电屏** | `com.tencent.mm.plugin.voip.ui.VideoActivity` `onResume/onStart` → `moveTaskToBack(true)`（全屏来电后台→前台不露）；+ `onUserLeaveHint` 兜底（通话中按 Home） | `moduleC/CallGuard.java`（`[PF:CA]`/`[PF:UL]`） | ✅ 装机 2026-05-29（语音+视频 × 静默/震动） |
+| **UNREADFIX 未读计数过滤（C3）** | 底部 tab `com.tencent.mm.ui.LauncherUIBottomTabView.l(int)` + 顶部标题 `com.tencent.mm.plugin.taskbar.ui.TaskBarContainer.setActionBarTitle("微信(N)")` → 减 `moduleD/ConvFilter.getHiddenUnread()`；开关 `shu` 默认关，开则显示密友未读数 | `moduleC/PushFilter.java`（`[PF:UNREADFIX]`） | ✅ 装机 2026-06-06 |
+
+> **权威账**：通知/推送/来电 12 层 hook + 证伪清单见 `docs/P22_PushFilter_VoIP.md`。`NotifyRouter`（提醒 OFF/VIBRATE/SOUND）+ C4 铃声 → v1.1 backlog。废弃 L4b/L4c 见 `docs/archive/HOOKMAP_废弃拦截层_已证伪归档.md`。
+> **⚠️ 偏移修正**：本节 2026-06-30 补建——此前权威仅 §2 防撤回，缺 C 其余已装机功能。
+
+---
+
+### 13. 朋友圈痕迹隐藏（D 模块：密友帖 / 点赞 / 评论）
+
+> 主体 `moduleD/MomentsFilter.java`，D 默认全开。朋友圈互动小红点见 §8e；自己「仅可见分组」图标见 §6a。代码核准 2026-06-30。
+
+| 功能 | hook 点（8.0.71 代码核准） | 项目代码 | 状态 |
+|------|------|------|------|
+| **D1 密友帖整条隐藏** | `ArrayList.addAll(na4.b)` → `la4.p` extractPosterWxid（`la4.p.field_userName` 直读 = fallback 主路径）→ `remove` post；**禁改回 `h1()`**（F-31 null miss） | `moduleD/MomentsFilter.java`（`[MF]`） | ✅ 装机 2026-05-21（fallback 命中 5 次实证） |
+| **D2 密友点赞不显示** | `LinkedList.add/addAll`（含懒加载单条）→ 元素 `z15.e56`(或 `cs5.di0`/`i84.y`) wxid 字段 = `d`(proto field1) 或 `f435583d` → block；+ `la4.p.getLikeUserList()` afterHook 过滤 | `moduleD/MomentsFilter.java` | ✅ 装机 2026-05-20 |
+| **D3 密友评论不显示** | 同 D2 链路 + `la4.p.getCommentList()` afterHook 过滤密友评论 | `moduleD/MomentsFilter.java` | ✅ 装机 2026-05-20 |
+
+> 失败铁律：`SnsObject.parseFrom` Java hook 零命中（走 JNI/C++，F-27/F-28）；`getCommentList/getLikeUserList` 本体走 JNI 时用 `addAll/add` 拦截兜底。
+> **⚠️ 偏移修正**：本节 2026-06-30 补建——此前权威 §一 无 D1/D2/D3 朋友圈主过滤（仅 §8e 小红点 / §6a 仅可见分组图标）。
+
+---
+
 ## 二、资料盘点（功能就绪度）
 
 ### "齐活"可立即落 hook（6 项）
