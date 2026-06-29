@@ -79,6 +79,57 @@ Guard Native / Guard Pack 从 **1.0 正式发布**开始，同一客户包必须
 
 ## 双版本发布手册（官替版 / 共存版）
 
+### 签名与安装唯一真相（2026-06-29）
+
+以 `./gradlew signingReport` 和 Android 安装器为准：
+
+| 产物 | 当前签名 | 用途 |
+|------|----------|------|
+| `officialDebug` / `coexistDebug` 模块 APK | `ca421ec3` debug key | 只用于模块更新、公告、C2/心跳 smoke；因 `GUARD_EXPECTED_CERT` 仍按正式 cert 注入，registry/A2 会 cert mismatch/scatter |
+| `officialRelease` 模块 APK | `e3e13a49` official key | 官替正式发行候选 |
+| `coexistRelease` 模块 APK | `8f47a47a` coexist key | 共存正式发行候选 |
+
+安装判定分两层，禁止混：
+
+- **只装模块**：Android 比较 `com.ghost.assist` 现装模块签名；签名不同只能卸载模块后重装，**不动** `com.tencent.mm` 数据。
+- **LSPatch 官替/共存整包**：Android 比较宿主包签名（`com.tencent.mm` / `com.tencent.mn`）；宿主签名不同不能覆盖，除非有同一 keystore 或确认卸载宿主。
+- `certBind=<前缀>` 是模块/registry 绑定材料，不等于宿主安装签名；不能拿它判断 `adb install -r` 是否能覆盖。
+
+发版候选必须用 release 变体；debug 变体只能算调试 smoke。
+
+### 共存版打包 + 干净装机（唯一速查，每次照此跑）
+
+> 每次重编/装机就这 4 步。专治两个高频坑：**装到旧模块**、**启动崩 LSPatch metaloader**。
+> 完整发版（换 s_rel + 服务器同步）见下方「s_rel 轮换 + 双版本 LSPatch 发版工作流」；本块是其精简装机口径，不另立第二套。
+
+```text
+# 1. clean 重编共存模块（必须 clean，否则 gradle 判 UP-TO-DATE 打进旧 dex）
+./gradlew clean :assembleCoexistDebug
+#    产物：build/outputs/apk/coexist/debug/guard-native-coexist-debug.apk（GUARD_WX_PKG=com.tencent.mn）
+
+# 2. LSPatch 重新打包进共存宿主（用户用 MT 改好包名的 com.tencent.mn 克隆 APK）
+java -jar 02_tools_工具/lspatch.jar 02_tools_工具/mn_clean_origin_8071.apk \
+  -m build/outputs/apk/coexist/debug/guard-native-coexist-debug.apk \
+  -l 2 -k signing/guard-native-debug.keystore android androiddebugkey android \
+  -o 02_tools_工具/lspatch_out -f
+#    校验日志：Embedding modules - com.ghost.assist
+#    产物：02_tools_工具/lspatch_out/<宿主名>-<versionCode>-lspatched.apk
+
+# 3. 干净装机（绝不 install -r 覆盖；卸 + 重启清 dex/odex + 装）
+adb uninstall com.tencent.mn
+adb reboot                       # 等 sys.boot_completed=1 再继续
+adb install 02_tools_工具/lspatch_out/<上一步产物>.apk
+
+# 4. 用户桌面点开图标（禁 am start / monkey —— 会崩 metaloader）
+```
+
+铁律（2026-06-29 实测踩坑固化）：
+
+- **必 `clean`**：省 `clean` → gradle 判 UP-TO-DATE → 把旧模块打进包（表现：日志 self/cert 对不上、自测缺失）。
+- **必干净装**：`install -r` 覆盖 + `monkey`/`am start` 起 → 崩 LSPatch metaloader（`ExceptionInInitializerError`）；卸载 + 重启 + **桌面点开**才稳（详发版官 skill §坑4）。
+- 共存只动 `com.tencent.mn`，不碰官方 `com.tencent.mm`、也不碰其他克隆。
+- 官替版同理：把 flavor 换 `:assembleOfficialDebug`、宿主换原版微信 clean APK、目标包换 `com.tencent.mm`。
+
 ### 下次发新版最短流程（先看这里）
 
 > 目标：新版本发版只走一条线，不再临时猜“官替/共存/服务器配方”。
@@ -94,7 +145,7 @@ Guard Native / Guard Pack 从 **1.0 正式发布**开始，同一客户包必须
 | 发行包 | 宿主包名 | 客户端 release_id | 服务器 release_line |
 |--------|----------|-------------------|---------------------|
 | 官替版 | `com.tencent.mm` | 例如 `android_8072_hijack` | 同名 |
-| 共存版 | 例如 `com.tencent.mn` | 例如 `android_8072_coexist` | 同名 |
+| 共存版 | `com.tencent.mn`（固定） | 例如 `android_<版本>_coexist` | 同名 |
 
 铁律：客户端 `BuildConfig.GUARD_WX_PKG` 和 `BuildConfig.GUARD_RELEASE_ID` 必须按 flavor 注入；不能只改包名、不改 release_id。否则会出现“共存包名 `com.tencent.mn`，但服务器归到官替线 `android_8071`”的错位。
 
@@ -148,12 +199,12 @@ BATCH1_VERIFY PASS
 | 版本线 | 包名规则 | 覆盖关系 | 典型用途 |
 |--------|----------|----------|----------|
 | 官替版 | 固定 `com.tencent.mm` | 只覆盖官替版 | 卸官方后安装，体验最接近原微信 |
-| 共存版 | 固定一个后缀包名，例如 `com.tencent.mm.xxx` | 只覆盖同包名共存版 | 官方微信保留，隐私版独立共存 |
+| 共存版 | 固定 `com.tencent.mn`（首发已定，不可改） | 只覆盖同包名共存版 | 官方包保留，隐私版独立共存 |
 
 铁律：
 
 1. **官替版只能覆盖官替版**：包名固定 `com.tencent.mm`，签名证书必须一致。
-2. **共存版只能覆盖共存版**：包名固定为首次发布选定的共存包名，签名证书必须一致。
+2. **共存版只能覆盖共存版**：包名固定 `com.tencent.mn`（首发已定），签名证书必须一致。
 3. **官替版和共存版互不覆盖**：它们是两条独立发行线，分别维护 `versionCode`、keystore、release_id 和客户包档案。
 4. **同一版本线禁止换签名**：换签名 = Android 不能覆盖安装，且证书绑定会导致 encrypted registry 散沙。
 
@@ -250,7 +301,7 @@ native_core/registry_8071.json
 - 已完成：AES-GCM encrypted registry、签名证书绑定、`GuardRuntime.getRecipe()` 取配方、失败 scatter、S4 Ed25519 信封验签、S3b-A/B 服务器授时 + 设置页 72h 离线强验。
 - 已完成（当前 `android_8071` 发行线）：`prod_server_lock` 生成链路已把服务器 `S_rel` 折入 `registry_cipher.inc`，产物 `GUARD_REGISTRY_REQUIRES_SERVER_SEED=1`；线上 envelope `k/n` unwrap 后 `recipeOk=true`，无有效 server seed 时 registry scatter。
 - 仍未完成：共存版 `GUARD_RELEASE_ID` flavor 注入、删剩余 Filter 明文字面量 / fallback 债、V3 官替/共存证书源完整对齐、RiskState 全链路散沙降级与正版恢复闭环（当前仅来电拦截有篡改散沙例外）。
-- 对外只能说：**v1.1 商业授权闭环 + Ed25519 防伪造信封 + 当前发行线 server seed 解 registry 已接入**。
+- 对外只能说：**v1.6 商业授权闭环 + Ed25519 防伪造信封 + 当前发行线 server seed 解 registry 已接入**。
 - 对外禁止说：**服务器真锁终局完成** 或 **授权无法破解**。
 
 发版时必须保证：
@@ -263,6 +314,7 @@ native_core/registry_8071.json
 6. standalone 测试如果调用 `registry_self_test()`，必须先设置和生成端一致的 binding material；否则 scatter 是正确结果，不是误报。
 7. 装机日志必须看到 `PHASE1C_VERIFY PASS`、`PHASE1D_VERIFY PASS`、`PHASE1E_VERIFY PASS`，才说明 encrypted registry、证书绑定、recipe 出口都通。
 8. **release SO 不得残留调试宏/符号（发版前必查）**：2026-06-25 曾实测 `build.gradle` 的 `defaultConfig.externalNativeBuild.cmake.buildTypes{debug/release}` **失效**，`-DGUARD_DEBUG` 泄漏进 release SO。**已修（2026-06-25）**：删 Gradle `cppFlags`；可剖代码改 `GUARD_DEV_SELFTEST` + `GUARD_DEV_LOG`（`CMakeLists.txt` 仅 `CMAKE_BUILD_TYPE=Debug` 定义）。**发版前仍必查两条**：① release 的 `compile_commands.json` 不含 `-DGUARD_DEBUG` / `GUARD_DEV_*`；② release `.so` 的 `nm -D` 中 `nativeKdfSelfTest` **absent**（对照 `nativeRegistrySelfTest` 仍在）。
+9. **release 包不得残留测试/调试痕迹（dex+SO strings 体检，已接 gradle 硬闸）**：`assembleOfficialRelease` / `assembleCoexistRelease` 后由 `finalizedBy :checkStringLeak{Official,Coexist}Release`（`build.gradle`）自动调 `tools/check_release_strings.ps1` 扫产物 APK 的 dex+SO。命中 **FAIL 词**（dex：`[ANTIBAN-GATE]` / `[ANTIBAN-BRANCH]` / `KDF_VECTOR_VERIFY` / `GuardRuntimeAntiBanTest`；SO：`nativeKdfSelfTest`）即脚本 exit 1 → **断构建**，泄漏包发不出。debug 变体不挂（本含 DEBUG 码）。手动 / 排错：`gradlew checkStringLeakOfficialRelease -PstringGateApk=<apk>`，或 `powershell -NoProfile -File tools/check_release_strings.ps1 -Apk <apk>`（exit 0=PASS / 1=泄漏 / 2=文件错）。**WARN 只复核不阻断**：`[D2D3:`（`MomentsFilter` cleanD2D3/dump 由运行期 `sDiagSeen` 门控、非 `BuildConfig.DEBUG`，按设计进 release）、`kdf_self_test` / `decrypt_config_self_test`（release `RelWithDebInfo` 保留的内部函数名）、keep 残留 `kdfSelfTest` / `fallbackSelfTest` / `*SelfTest`。把 WARN 清到可升 FAIL = 减法收口线另开任务（D2D3 诊断改 `BuildConfig.DEBUG` 门控走双审〔铁律29〕 / strip release SO）。本条是第 8 条 SO `nm -D` 的 **dex 层补网**（native 靠 `#ifdef` 物理隔离，Java 靠 R8 逻辑隔离需 strings 兜底）。
 
 scatter 排查顺序：
 
@@ -334,13 +386,15 @@ scatter 排查顺序：
 
 ### 共存版特别说明
 
-共存版的核心原则是：**官方微信负责官方身份和第三方跳转，隐私版负责隐私功能**。
+共存版的核心原则是：**官方包负责官方身份和第三方跳转，隐私版负责隐私功能**。
+
+**共存固定身份（8071）**：包名 `com.tencent.mn`、签名 `coexistRelease 8f47a47a`；release_id 见「下次发新版最短流程」。
 
 注意：
 
-- 共存包名首次确定后不得再改；改包名等于新产品线。
+- 共存包名固定 `com.tencent.mn`，首次确定后不得再改（改包名 = 新产品线）。
 - 共存版签名首次确定后不得再换；换签名无法覆盖安装。
-- 共存版更新只覆盖同一共存包名，不影响官方微信。
+- 共存版更新只覆盖同一共存包名，不影响官方包。
 - 官替版更新只覆盖 `com.tencent.mm`，不影响共存版。
 - 共存版上线前必须单独验证登录、推送、聊天记录迁移、微信内支付、第三方支付跳转边界。
 
