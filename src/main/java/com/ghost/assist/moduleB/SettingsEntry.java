@@ -2686,67 +2686,6 @@ public class SettingsEntry {
         return row;
     }
 
-    private static void showWxidListDialog(Activity activity) {
-        Bridge br = Bridge.getInstance();
-        java.util.Set<String> wxids = br.getWxids();
-        if (wxids == null || wxids.isEmpty()) {
-            Toast.makeText(activity, "\u6682\u65e0\u5bc6\u53cb", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        final String[] items = wxids.toArray(new String[0]);
-        new AlertDialog.Builder(activity)
-                .setTitle("\u5bc6\u53cb\u5217\u8868 (\u70b9\u51fb\u79fb\u9664)")
-                .setItems(items, new DialogInterface.OnClickListener() {
-                    @Override public void onClick(DialogInterface d, int which) {
-                        Bridge.getInstance().removeWxid(items[which]);
-                        Log.i(TAG, "[SET:overlay] remove wxid=" + items[which]);
-                    }
-                })
-                .setNegativeButton("\u5173\u95ed", null)
-                .show();
-    }
-
-    private static void showAddWxidDialog(final Activity activity) {
-        final EditText input = new EditText(activity);
-        input.setInputType(InputType.TYPE_CLASS_TEXT);
-        input.setHint("\u8f93\u5165 wxid");
-        new AlertDialog.Builder(activity)
-                .setTitle("\u6dfb\u52a0\u5bc6\u53cb")
-                .setView(input)
-                .setPositiveButton("\u6dfb\u52a0", new DialogInterface.OnClickListener() {
-                    @Override public void onClick(DialogInterface d, int w) {
-                        String wxid = input.getText().toString().trim();
-                        if (wxid.isEmpty()) return;
-                        Bridge.getInstance().addWxid(wxid);
-                        Log.i(TAG, "[SET:overlay] add wxid=" + wxid);
-                        Toast.makeText(activity,
-                                "\u5df2\u6dfb\u52a0: " + wxid, Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .setNegativeButton("\u53d6\u6d88", null)
-                .show();
-    }
-
-    private static void showGroupListDialog(Activity activity) {
-        Bridge br = Bridge.getInstance();
-        java.util.Set<String> groups = br.getGroupIds();
-        if (groups == null || groups.isEmpty()) {
-            Toast.makeText(activity, "\u6682\u65e0\u5bc6\u7fa4", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        final String[] items = groups.toArray(new String[0]);
-        new AlertDialog.Builder(activity)
-                .setTitle("\u5bc6\u7fa4\u5217\u8868 (\u70b9\u51fb\u79fb\u9664)")
-                .setItems(items, new DialogInterface.OnClickListener() {
-                    @Override public void onClick(DialogInterface d, int which) {
-                        Bridge.getInstance().removeGroupId(items[which]);
-                        Log.i(TAG, "[SET:overlay] remove group=" + items[which]);
-                    }
-                })
-                .setNegativeButton("\u5173\u95ed", null)
-                .show();
-    }
-
     private static Activity unwrapActivity(Context ctx) {
         while (ctx instanceof ContextWrapper) {
             if (ctx instanceof Activity) return (Activity) ctx;

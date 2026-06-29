@@ -297,7 +297,7 @@ public class MomentsRedDotGuard {
     // -------------------------------------------------------------------------
     // v15 Catfish 翻译：MainEntry.hookSnsMsgList() → addBlackList2(ArrayList)
     //   隐藏态：把密友 wxid 并入微信侧黑名单 List，供 SnsMsg 过滤/计数使用
-    //   参考：refs/MainEntry.java hookSnsMsgList + P19 brief addBlackList2 语义
+    //   参考：docs/isolation/MainEntry.java hookSnsMsgList + P19 brief addBlackList2 语义
     // -------------------------------------------------------------------------
     private static final String[] CATFISH_SNSMSG_SCAN_CLASSES = {
             SNS_COMMENT_STORAGE,                                           // w1
@@ -1054,60 +1054,6 @@ public class MomentsRedDotGuard {
             Log.i(TAG, "[MRD:view] FinderRedDotTextView hooked " + hooked);
         } catch (Throwable t) {
             Log.w(TAG, "[MRD:view] hook failed: " + t);
-        }
-    }
-
-    /**
-     * 一次性扫描 BaseDexClassLoader 内部 DexFile，
-     * 找出含 SnsComment / RedDot / EventCenter / FindMoreFriends 关键字的类。
-     * 这是 Frida enumerateLoadedClasses 的 Xposed 替代。
-     */
-    private static void dumpCandidateClasses(XC_LoadPackage.LoadPackageParam lpparam) {
-        try {
-            Object cl = lpparam.classLoader;
-            // BaseDexClassLoader 内部链：pathList → dexElements[] → dexFile.entries()
-            java.lang.reflect.Field pathListField =
-                    Class.forName("dalvik.system.BaseDexClassLoader")
-                            .getDeclaredField("pathList");
-            pathListField.setAccessible(true);
-            Object pathList = pathListField.get(cl);
-
-            java.lang.reflect.Field elemsField = pathList.getClass().getDeclaredField("dexElements");
-            elemsField.setAccessible(true);
-            Object[] elements = (Object[]) elemsField.get(pathList);
-
-            String[] needles = {"SnsComment", "RedDot", "EventCenter", "FindMoreFriends",
-                                "NotifyTabTips", "ResetBadgeCount", "IListener"};
-            int total = 0;
-            int matched = 0;
-            for (Object elem : elements) {
-                java.lang.reflect.Field dexFileField = elem.getClass().getDeclaredField("dexFile");
-                dexFileField.setAccessible(true);
-                Object dexFile = dexFileField.get(elem);
-                if (dexFile == null) continue;
-
-                java.lang.reflect.Method entries = dexFile.getClass().getMethod("entries");
-                java.util.Enumeration<String> en =
-                        (java.util.Enumeration<String>) entries.invoke(dexFile);
-                while (en.hasMoreElements()) {
-                    String name = en.nextElement();
-                    total++;
-                    for (String needle : needles) {
-                        if (name.contains(needle)) {
-                            Log.i(TAG, "[MRD:dump] " + needle + " ⊃ " + name);
-                            matched++;
-                            break;
-                        }
-                    }
-                    if (matched > 200) {  // 防爆量
-                        Log.w(TAG, "[MRD:dump] >200 matches, stopping early");
-                        return;
-                    }
-                }
-            }
-            Log.i(TAG, "[MRD:dump] scanned " + total + " classes, matched " + matched);
-        } catch (Throwable t) {
-            Log.w(TAG, "[MRD:dump] failed: " + t);
         }
     }
 
@@ -2095,23 +2041,6 @@ public class MomentsRedDotGuard {
         @Override public boolean isAfterLast() { return map.length == 0 || pos >= map.length; }
         @Override public boolean isFirst() { return pos == 0 && map.length > 0; }
         @Override public boolean isLast() { return pos == map.length - 1 && map.length > 0; }
-    }
-
-    /** 从 w1.insertLike/insertComment 参数中读 SnsAction.fromUserName */
-    private static String getSnsActionFromUserName(Object[] args) {
-        if (args == null) return null;
-        for (Object arg : args) {
-            if (arg == null) continue;
-            // 直接读 fromUserName 字段（protobuf 字段名，全版本不变）
-            try {
-                java.lang.reflect.Field f = arg.getClass().getDeclaredField("fromUserName");
-                f.setAccessible(true);
-                Object v = f.get(arg);
-                if (v instanceof String && !((String) v).isEmpty()) return (String) v;
-            } catch (NoSuchFieldException ignored) {
-            } catch (Throwable ignored2) {}
-        }
-        return null;
     }
 
     /**

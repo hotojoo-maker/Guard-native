@@ -61,9 +61,11 @@ public class TriggerGuard {
             "com.tencent.mm.plugin.setting.ui.setting_new.MainSettingsUI";
     private static final String LAUNCHER_UI_CLASS = "com.tencent.mm.ui.LauncherUI";
 
-    private static boolean isOnSettingsPage() {
-        return MAIN_SETTINGS_CLASS.equals(sCurrentResumedActivity);
-    }
+    // entry-bug(20260629): 返回键触发器关闭。B4 把返回吞掉并强制隐藏，连微信内部导航的返回也误触，
+    // 导致解锁后进设置看不到入口。「真的离开微信才隐藏」已由 B2 前台计数器
+    // (installForegroundTracker) 覆盖——微信所有 activity stop 才 enterHidden，内部导航不触发。
+    // 故 B4 冗余且有害，置 false 关闭。
+    private static final boolean B4_BACK_KEY_ENABLED = false;
 
     public static void install(Application app) {
         if (sInstalled) return;
@@ -72,11 +74,12 @@ public class TriggerGuard {
         installForegroundTracker(app);          // B2
         installScreenAndCloseDialogReceiver(app); // B5 + B2 兜底
         syncShakeListener(app);                  // B1
-        installBackKeyHook();                    // B4
+        if (B4_BACK_KEY_ENABLED) installBackKeyHook();   // B4（默认关：离开微信由 B2 覆盖）
 
         Log.i(TAG, "[TG] install done b1=" + AppConfig.getInstance().isB1Enabled()
                 + " b2=" + AppConfig.getInstance().isB2Enabled()
                 + " b5=" + AppConfig.getInstance().isB5Enabled()
+                + " b4=" + B4_BACK_KEY_ENABLED
                 + " dev=" + AppConfig.getInstance().isDevMode());
     }
 

@@ -356,15 +356,6 @@ public class ContactDiscoveryHook {
         } catch (Throwable ignored) {}
     }
 
-    private static boolean isSubclassOf(Class<?> cls, String parentName) {
-        Class<?> cur = cls.getSuperclass();
-        while (cur != null) {
-            if (parentName.equals(cur.getName())) return true;
-            cur = cur.getSuperclass();
-        }
-        return false;
-    }
-
     /**
      * 在 host (RecyclerView / ListView) 的 adapter 字段图里找：
      *   - MvvmList 子类（含 fc5.g item 的 List 持有者）

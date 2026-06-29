@@ -1613,32 +1613,6 @@ public class ConvFilter {
 
     
 
-    /**
-     * Step 2 (apply after Step 1 confirms crack is gone):
-     * Safe warm-attach: clean + notify only when LauncherUI is in foreground.
-     * Replace scheduleWarmAttach's postDelayed body with this call.
-     */
-    @SuppressWarnings("unused")
-    private static void safeWarmCleanAndNotify(Object adapter, Object mvvmList) {
-        Log.i(TAG, "[CF:warm] start adapter=" + adapter.getClass().getSimpleName());
-        int cleaned = cleanMvvmList(mvvmList);
-        Log.i(TAG, "[CF:warm] clean removed=" + cleaned);
-        if (cleaned == 0) return;
-
-        if (!isLauncherUiActive()) {
-            Log.i(TAG, "[CF:warm] skip not launcher/conversation");
-            return;
-        }
-        long now = System.currentTimeMillis();
-        if (now - gLastCleanMs < 1500L) {
-            Log.i(TAG, "[CF:warm] cooldown skip");
-            return;
-        }
-        gLastCleanMs = now;
-        ConvHotReload.notifyConvAdapter("warm");
-        Log.i(TAG, "[CF:warm] notify full");
-    }
-
     /** True only when WeChat's main conv-list Activity is in the foreground. */
     private static boolean isLauncherUiActive() {
         try {
