@@ -1396,26 +1396,6 @@ public class ConvFilter {
     // INIT warm-attach
     // =========================================================================
 
-    private static void installWarmAttach(XC_LoadPackage.LoadPackageParam lpparam) {
-        try {
-            Class<?> clvCls = lpparam.classLoader.loadClass(CONV_LIST_VIEW);
-            XC_MethodHook warmHook = new XC_MethodHook() {
-                @Override
-                protected void afterHookedMethod(MethodHookParam param) {
-                    scheduleWarmAttach(param.thisObject);
-                }
-            };
-            int hooked = 0;
-            for (Constructor<?> ctor : clvCls.getDeclaredConstructors()) {
-                XposedBridge.hookMethod(ctor, warmHook);
-                hooked++;
-            }
-            Log.i(TAG, "[CF] INIT warm-attach hook ok (" + hooked + " ctors)");
-        } catch (Throwable e) {
-            Log.w(TAG, "[CF] INIT warm-attach fail: " + e.getMessage());
-        }
-    }
-
     private static void scheduleWarmAttach(final Object convListView) {
         // delay=200ms: give WeChat time to fully attach the adapter and populate MvvmList
         // before we attempt to clean. 0ms was occasionally too early on slow hardware.

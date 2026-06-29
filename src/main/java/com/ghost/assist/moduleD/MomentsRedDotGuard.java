@@ -67,24 +67,9 @@ public class MomentsRedDotGuard {
     private static final String SNS_COMMENT_STORAGE =
             "com.tencent.mm.plugin.sns.storage.w1"; // 8.0.71 混淆真名
 
-    // FindMoreFriendsUI 候选完整路径（待装机确认）
-    private static final String[] FIND_MORE_FRIENDS_UI_CANDIDATES = {
-            "com.tencent.mm.plugin.findersdk.tmp.FindMoreFriendsUI",
-            "com.tencent.mm.plugin.subapp.ui.pluginapp.FindMoreFriendsUI",
-            "com.tencent.mm.ui.contact.FindMoreFriendsUI",
-    };
-
     // SnsCommentStorage 上要 hook 的方法名（用户给 E1，但保守起见挂多个 0-param int 候选）
     private static final String[] COMMENT_COUNT_GETTERS = {
             "E1", "D1", "F1", "G1", "getUnreadCount", "getNewCount",
-    };
-
-    // EventBus 红点事件类名（用户调研，挂全简名匹配）
-    private static final String[] RED_DOT_EVENT_SIMPLE_NAMES = {
-            "FindMoreFriendEntryRedDotEvent",
-            "NotifyTabTipsToShowEvent",
-            "ResetBadgeCountEvent",
-            "FinderRedDotEraseEvent",
     };
 
     private static boolean sInstalled = false;
@@ -2172,120 +2157,6 @@ public class MomentsRedDotGuard {
         } catch (Throwable t) {
             Log.w(TAG, "[MRD:scs] hook failed: " + t);
         }
-    }
-
-    // -------------------------------------------------------------------------
-    // 候选 C：FindMoreFriendsUI 入口红点
-    // -------------------------------------------------------------------------
-    private static void installFindMoreFriendsUIHook(XC_LoadPackage.LoadPackageParam lpparam) {
-        for (String candidate : FIND_MORE_FRIENDS_UI_CANDIDATES) {
-            try {
-                Class<?> cls = lpparam.classLoader.loadClass(candidate);
-                int hooked = 0;
-                for (Method m : cls.getDeclaredMethods()) {
-                    String mn = m.getName();
-                    if (!("M1".equals(mn) || "l0".equals(mn))) continue;
-                    if (m.getParameterTypes().length > 1) continue;
-                    Class<?> ret = m.getReturnType();
-                    // 仅 hook 返回 bool / int 的 getter（avoid 误伤）
-                    if (ret != boolean.class && ret != int.class
-                            && ret != Boolean.class && ret != Integer.class) continue;
-
-                    final String fmn = mn;
-                    XposedBridge.hookMethod(m, new XC_MethodHook() {
-                        @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
-                            if (!isFilteringActive()) return;
-                            if (!AppConfig.getInstance().isMomentsRedDotEnabled()) return;
-
-                            Object original = param.getResult();
-                            if (ret == boolean.class || ret == Boolean.class) {
-                                param.setResult(false);
-                            } else {
-                                param.setResult(0);
-                            }
-                            if (sDiagSeen.add("C_" + fmn)) {
-                                Log.i(TAG, "[MRD:C] " + candidate + "." + fmn
-                                        + " " + original + " → blocked");
-                            }
-                            InterceptCounter.getInstance().incF05("MRD-C-" + fmn);
-                        }
-                    });
-                    hooked++;
-                }
-                if (hooked > 0) {
-                    Log.i(TAG, "[MRD:C] " + candidate + " hooked " + hooked);
-                }
-                return; // 找到一个候选类就停（避免重复 hook 同语义类）
-            } catch (ClassNotFoundException ignored) {
-                // 下一个候选
-            } catch (Throwable t) {
-                Log.w(TAG, "[MRD:C] " + candidate + " failed: " + t);
-            }
-        }
-        Log.w(TAG, "[MRD:C] no FindMoreFriendsUI candidate matched");
-    }
-
-    // -------------------------------------------------------------------------
-    // 候选 D：EventBus 红点事件拦截
-    //
-    // 微信用 com.tencent.mm.sdk.event.EventCenter (或 IEvent.publish())
-    // 拦截 publish() 时，如果事件类名匹配红点事件 simple name → 隐藏态阻断
-    // -------------------------------------------------------------------------
-    private static final String[] EVENT_CENTER_CANDIDATES = {
-            "com.tencent.mm.sdk.event.EventCenter",
-            "com.tencent.mm.sdk.event.IEvent",
-    };
-
-    private static void installEventBusHook(XC_LoadPackage.LoadPackageParam lpparam) {
-        for (String candidate : EVENT_CENTER_CANDIDATES) {
-            try {
-                Class<?> cls = lpparam.classLoader.loadClass(candidate);
-                int hooked = 0;
-                for (Method m : cls.getDeclaredMethods()) {
-                    String mn = m.getName();
-                    if (!("publish".equals(mn) || "post".equals(mn))) continue;
-                    if (m.getParameterTypes().length != 1) continue;
-
-                    XposedBridge.hookMethod(m, new XC_MethodHook() {
-                        @Override
-                        protected void beforeHookedMethod(MethodHookParam param) {
-                            Object evt = param.args[0];
-                            if (evt == null) return;
-                            String simpleName = evt.getClass().getSimpleName();
-
-                            if (sDiagSeen.add("D_evt_" + simpleName)) {
-                                Log.i(TAG, "[MRD:D] event=" + simpleName);
-                            }
-
-                            if (!isRedDotEvent(simpleName)) return;
-                            if (!isFilteringActive()) return;
-                            if (!AppConfig.getInstance().isMomentsRedDotEnabled()) return;
-
-                            param.setResult(null); // 阻断 publish
-                            Log.i(TAG, "[MRD:D] blocked event=" + simpleName);
-                            InterceptCounter.getInstance().incF05("MRD-D-" + simpleName);
-                        }
-                    });
-                    hooked++;
-                }
-                if (hooked > 0) {
-                    Log.i(TAG, "[MRD:D] " + candidate + " hooked " + hooked);
-                    return;
-                }
-            } catch (ClassNotFoundException ignored) {
-            } catch (Throwable t) {
-                Log.w(TAG, "[MRD:D] " + candidate + " failed: " + t);
-            }
-        }
-        Log.w(TAG, "[MRD:D] no EventCenter candidate matched");
-    }
-
-    private static boolean isRedDotEvent(String simpleName) {
-        for (String n : RED_DOT_EVENT_SIMPLE_NAMES) {
-            if (n.equals(simpleName)) return true;
-        }
-        return false;
     }
 
     // -------------------------------------------------------------------------

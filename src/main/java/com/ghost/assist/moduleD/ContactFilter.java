@@ -250,48 +250,6 @@ public class ContactFilter {
     }
 
     // ------------------------------------------------------------------
-    // 主线：hook MvvmList.n(List, boolean) — 与 ConvFilter 一致（可能不走，保留）
-    // AddressLiveList.isInstance(this) 区分通讯录 vs 会话
-    // ------------------------------------------------------------------
-    private static void installMvvmNHook(XC_LoadPackage.LoadPackageParam lpparam) {
-        try {
-            Class<?> mvvmCls  = lpparam.classLoader.loadClass(MVVMLIST_CLASS);
-            final Class<?> addrCls = lpparam.classLoader.loadClass(ADDR_LIVE_LIST);
-
-            int hooked = 0;
-            for (Method m : mvvmCls.getDeclaredMethods()) {
-                Class<?>[] pt = m.getParameterTypes();
-                if (pt.length != 2) continue;
-                if (!java.util.List.class.isAssignableFrom(pt[0])) continue;
-                if (pt[1] != boolean.class) continue;
-                final String mName = m.getName();
-                XposedBridge.hookMethod(m, new XC_MethodHook() {
-                    @Override
-                    @SuppressWarnings({"unchecked", "rawtypes"})
-                    protected void beforeHookedMethod(MethodHookParam param) {
-                        if (!addrCls.isInstance(param.thisObject)) return;
-                        java.util.List list = (java.util.List) param.args[0];
-                        if (list == null || list.isEmpty()) return;
-                        int before = list.size();
-                        int removed = filterContactList(
-                                list instanceof java.util.ArrayList
-                                        ? (java.util.ArrayList) list
-                                        : new java.util.ArrayList(list),
-                                "MvvmN." + mName);
-                        if (removed > 0)
-                            Log.i(TAG, "[CTF:MvvmN] " + mName + " removed=" + removed + "/" + before);
-                    }
-                });
-                Log.i(TAG, "[CTF] MvvmList." + mName + "(List,bool) hooked for AddressLiveList");
-                hooked++;
-            }
-            if (hooked == 0) Log.w(TAG, "[CTF] MvvmList: no n(List,bool) method found");
-        } catch (Throwable e) {
-            Log.w(TAG, "[CTF] MvvmNHook fail: " + e);
-        }
-    }
-
-    // ------------------------------------------------------------------
     // 补线：onResume / onHiddenChanged → 找 AddressLiveList 实例 → 强制清理
     // 使用 getMethods()（含继承），只 hook 生命周期方法
     // ------------------------------------------------------------------
