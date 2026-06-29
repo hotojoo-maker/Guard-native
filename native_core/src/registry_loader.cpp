@@ -40,7 +40,14 @@ namespace {
 // native_core/bootstrap_endpoints.json by tools/gen_bootstrap_cipher.py.
 // Decrypted with derive_bootstrap_key() (no server seed) so endpoints are
 // available before any server handshake. See docs/HONEYPOT_蜜罐设计.md §4.
+// Per-flavor 选择（同上 registry）：bootstrap 也绑 cert，coexist 变体（com.tencent.mn）
+// 嵌 8f47a47a 绑定的引导段，官替嵌 e3e13a49 绑定的。漏了它 → coexist 解不开服务器地址
+// → bootstrapEndpoints count=0 → 连不上服务器。两 inc 符号名相同（kBootstrap*），二选一。
+#if defined(GUARD_REGISTRY_COEXIST)
+#include "bootstrap_cipher_coexist.inc"
+#else
 #include "bootstrap_cipher.inc"
+#endif
 
 #ifndef GUARD_REGISTRY_REQUIRES_SERVER_SEED
 #define GUARD_REGISTRY_REQUIRES_SERVER_SEED 0
