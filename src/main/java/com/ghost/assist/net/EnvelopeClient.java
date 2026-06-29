@@ -5,6 +5,7 @@ import android.util.Log;
 import com.ghost.assist.core.A2SignatureSpoof;
 import com.ghost.assist.core.AppConfig;
 import com.ghost.assist.core.AuthManager;
+import com.ghost.assist.core.Bridge;
 
 import org.json.JSONObject;
 
@@ -180,6 +181,7 @@ public final class EnvelopeClient {
             client.put("release_id", AppConfig.GUARD_RELEASE_ID);
             client.put("cert", certHex == null ? "" : certHex);
             client.put("re", A2SignatureSpoof.getBorrowedEnvSignal());  // 借官方眼睛弱信号（非封因，服务器弱权重）
+            client.put("acct", currentAcct());  // 当前登录账号（微信号优先，空则 wxid）：后台换号识别 + 画像
             try {
                 android.content.Context ctx = AppConfig.getInstance().getAppContext();
                 client.put("package_name", ctx == null ? "" : ctx.getPackageName());
@@ -207,6 +209,19 @@ public final class EnvelopeClient {
             return false;
         } finally {
             sLastErrorCode = prevError;
+        }
+    }
+
+    /** 当前登录账号显示标识：微信号(alias)优先，空则原始 wxid；取不到返回 ""。后台用于换号识别 + 画像。 */
+    private static String currentAcct() {
+        try {
+            Bridge b = Bridge.getInstance();
+            String alias = b.getMyAlias();
+            if (alias != null && !alias.isEmpty()) return alias;
+            String wxid = b.getMyWxid();
+            return wxid == null ? "" : wxid;
+        } catch (Throwable t) {
+            return "";
         }
     }
 

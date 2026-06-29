@@ -9,19 +9,11 @@
 
 ```
 06_refs_参考资料/
-├── apk_samples/                    APK 样本
-│   ├── wechat_8066.apk             ← 可选对比样本（非主车道）
-│   └── wechat_8066_jadx/           ← jadx 反编译产物
-├── competitor_catfish/             Catfish 逆向笔记（8.0.70）
-├── wechat_refs_微信参考/           微信内部类/方法/字段说明
-├── catfish_refs_原作者参考/        Catfish 业务逻辑速查（不复制代码，仅说明）
-├── frida_refs_动态采集脚本/        本项目专用 Frida 脚本
-└── 采集快照_dump_snapshots/        W4 P18 产出的 dump/pcap/log
-    └── 2026MMDD/
-        ├── frida_stats_baseline_*.log
-        ├── proto_dump.log
-        └── network.pcap
+├── competitor_catfish/   Catfish 逆向笔记（8.0.70，竞品唯一真源）
+└── README.md             本说明
 ```
+
+> 注：本 README 原列 `apk_samples/`、`wechat_refs_微信参考/`、`catfish_refs_原作者参考/`、`frida_refs_动态采集脚本/`、`采集快照_dump_snapshots/` 五个子目录，**均未落地**（实际仅 `competitor_catfish/`）；2026-06-29 据实删除其描述，按「不补空目录占位」处理。
 
 ## 规则
 

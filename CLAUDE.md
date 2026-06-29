@@ -24,7 +24,7 @@
 
 ## 零、AI 接手第一步 — 确认角色，读 skill
 
-> 不读 skill 直接动代码 = 原地打转。**8 个 skill（4 核心 + 4 专项）** 覆盖全部场景，接手先判断你是哪个角色。
+> 不读 skill 直接动代码 = 原地打转。**10 个 skill（4 核心 + 6 专项）** 覆盖全部场景，接手先判断你是哪个角色。
 
 **核心 4 角色（日常主链路）：**
 
@@ -63,15 +63,15 @@
 
 ```
 文档层   ████████████ 100%   HOOK_POINTS / CLASS_MAP / FAILURE_LOG / 29 条铁律
-代码层   ████████░░░░  65%   ← 我们在这里（v1 功能开发阶段）
+代码层   ███████████░  上线维护期·hook 点基本完成   ← 转「维护 + 加功能 + 版本适配」（详 CURRENT_PLAN）
 验证层   ████████████ 100%   D1/D2/D3 + 会话 + 通讯录 + 密群 装机已验
 试错层   ████████████ 100%   F-01~F-41 已验证失败方案归档 (FAILURE_LOG.md)
 ```
 
-**v1 已稳定**（有日志原文）：D1/D2/D3 朋友圈 · 会话 V→H · 会话 H→V fresh-warm（普通有历史 hidden id）· 通讯录 · A2 密友导入 · A3 密群/密群导入 · P21 Layer0b + P21B WithAll/bm · P20 搜索（联系人/群聊密群/聊天记录关键词场景）· B1/B2/B5/B6 触发 · **C1 防撤回**（2026-05-31）· **CA 语音/视频来电拦截**（2026-05-29）· **C3 未读计数 UNREADFIX**（2026-06-06）· **E2 伪装订位**（2026-06-07）
-**v1 部分稳定**：零历史 wxid 的会话行创建仍受微信 DB 限制（见 `docs/CONV_REFRESH_PROBLEM.md`）
-**转 v1.1 / 本轮不阻塞**：C4 普通消息通知 + 铃声功能（静默/震动已实证，SOUND 档待补）· P18 KPI 基线（本轮跳过，正式发版门控再补）
-**下一个**：v1 收口——文档/证据收敛 + 发版前 git 快照（详见 [`01_dispatch_总调度/CURRENT_PLAN.md`](./01_dispatch_总调度/CURRENT_PLAN.md)）；P26C 搜索高亮归 UI 优化，不阻塞
+**v1 hook 已稳定**（有日志原文）：D1/D2/D3 朋友圈 · 会话 V→H · 会话 H→V fresh-warm（普通有历史 hidden id）· 通讯录 · A2 密友导入 · A3 密群/密群导入 · P21 Layer0b + P21B WithAll/bm · P20 搜索（联系人/群聊密群/聊天记录关键词场景）· B1/B2/B5/B6 触发 · **C1 防撤回**（2026-05-31）· **CA 语音/视频来电拦截**（2026-05-29）· **C3 未读计数 UNREADFIX**（2026-06-06）· **E2 伪装订位**（2026-06-07）
+**已知限制**：零历史 wxid 的会话行创建仍受微信 DB 限制（见 `docs/CONV_REFRESH_PROBLEM.md`）
+**上线加固已落地**：防破解 / A2 / 共存 / 官替 / 蜜罐 / 绊线 框架已建，cert-sync 已装机验；A2 闸等部分 🟡 待装机（详 `TASK_BOARD.md` §五）
+**当前阶段：上线维护期**（2026-06-29 相位切换）——主线转「① 上线维护 ② 按需加功能 ③ 版本适配」，详 [`01_dispatch_总调度/CURRENT_PLAN.md`](./01_dispatch_总调度/CURRENT_PLAN.md)。按需加功能（C4 通知+铃声 / C5 转发 / E3 改余额 / §6a 等）一功能一卡，见「未做功能索引」。
 
 ---
 
@@ -138,6 +138,9 @@
 | G5 | **未经用户明确同意，禁止改任何 .md 文档** |
 | G6 | **用户口述/截图/抓包/粘贴 ≠ 已验证**——即使是 L1 日志原文也要先找到磁盘文件再采信，不直接写入文档 |
 | G7 | **写文件一律 UTF-8（无 BOM）**——PS 5.1 下 `>` / `Out-File` 默认 UTF-16LE、裸 `Set-Content` 默认 GBK 会把中文写成乱码；改文件优先走编辑器 / AI 文件工具，终端中文乱码先 `chcp 65001`（文件没坏，是控制台 cp936 问题） |
+| G8 | **代码即真相**——文档与代码冲突，以代码为准；STATUS 页定期对着代码核（防旧文档把 AI 带偏，如「A2 未接主线」实已接） |
+| G9 | **改完必更**——改代码/改方向必同步更新对应 STATUS 页 + `DECISION_LOG.md`，否则视为没做完 |
+| G10 | **一结论一处**——同一结论只写单一真源（机制=DESIGN / 规则=skill / 坑=FAILURE_LOG / 决策=DECISION_LOG），别处只放链接（防漂移） |
 
 **触发任意一条 → 中断当前动作，给用户一句话报告 + 一个问题，等回复。**
 
@@ -183,7 +186,7 @@
 | **E** | 装b 模块（步数/定位/改零钱） | v2/v3 |
 | **F** | 商业彩蛋（授权引流/独家功能/专属链接） | v2 |
 
-### v1 锁定范围（**待收敛**：本节为初心口径，与 §三/§五 实装表已出现偏离）
+### v1 锁定范围（**产品初心存档**：v1 功能探索期已收口，本节为初心口径，与现状实装表有偏离，仅作存档）
 ```
 11 个 hook（HOOK_MAP_V1.md 的 P0+P1）
  + 3 态状态机（显形/隐藏/解锁中）
@@ -193,7 +196,7 @@
  + 【已下沉 v1】PushFilter L1+NM ✅（05-22）· 来电拦截 CA ✅（05-29）· C1 防撤回 ✅（05-31）· C3 未读 UNREADFIX ✅（06-06）；L4b/L4c 已废弃；C4 通知+铃声转 v1.1
  + 【已下沉 v1】P21 朋友圈小红点 Layer0b ✅ + P21B WithAll/bm ✅（LSPosed 装机实证；rm/Layer2/v18 tab 备用层保留）
 ```
-> **AI 注意**：本"v1 锁定范围"已与现状偏离（C 模块下沉、P21 朋友圈小红点接入等）。新会话以 [`HOOKMAP.md`](./HOOKMAP.md) §二 实体表为准；本节作为产品初心存档，待 v1 收口时统一重写。
+> **AI 注意**：v1 功能探索期已收口（2026-06-29 转上线维护期），本节作为产品初心存档保留、与现状有偏离。当前任务框架见 [`01_dispatch_总调度/CURRENT_PLAN.md`](./01_dispatch_总调度/CURRENT_PLAN.md) 与 `TASK_BOARD.md` §一；hook 事实以 [`HOOKMAP.md`](./HOOKMAP.md) §二 实体表为准。
 
 v1 完整 hook 名单 → [`./docs/archive/wechat_8066/HOOK_MAP_V1.md`](./docs/archive/wechat_8066/HOOK_MAP_V1.md) P0 + P1（**历史规划**）；8071 事实 → [`./docs/HOOK_MAP_8071_AUTHORITATIVE.md`](./docs/HOOK_MAP_8071_AUTHORITATIVE.md)
 P2 / 暂缓 / 禁止 / 系统层破绽点 → **全部不做**
@@ -304,16 +307,17 @@ v4  2 月     底层 C++ 蜜罐 + 加盐字幕混合加密
 
 ---
 
-## 十一、当前 4 窗口速览
+## 十一、当前阶段：上线维护期（2026-06-29 相位切换）
 
-详细见 [`TASK_BOARD.md`](./TASK_BOARD.md)
+详细见 [`TASK_BOARD.md`](./TASK_BOARD.md) §一 + [`01_dispatch_总调度/CURRENT_PLAN.md`](./01_dispatch_总调度/CURRENT_PLAN.md)
 
-| 窗口 | 主题 | 状态 |
-|:--:|------|:---:|
-| **W1** | B 模块触发器 + 搜索（P20B/P20） | ⬜ 代码已写，待装机 |
-| **W2** | 朋友圈小红点（P21） | ✅ Layer0b + P21B WithAll/bm；rm/DiscoverTabBadge 待触发 |
-| **W3** | 会话 LSPosed（P17） | ✅ 完成 |
-| **W4** | 离线资料库采集（P18） | ⬜ 未领 |
+> v1 探索期旧 4 窗口（W1 P20/P20B · W2 P21 · W3 P17 · W4 P18）已全部收口/归档（去向见 `TASK_BOARD.md` §五）。当前三条主线：
+
+| 主线 | 范围 | 状态 |
+|:--:|------|:--:|
+| ① 上线维护 | 防破解 / miyou-server 授权 / 发版(官替+共存) / 绊线 / KPI | 🟡 进行中（cert-sync ✅；A2 闸等 🟡） |
+| ② 按需加功能 | E3 改余额 / C5 语音转发 / §6a / 选人列表隐私缺口 等（一功能一卡） | ⬜ |
+| ③ 版本适配 | 换微信版本的 hook diff 流程 | 📘 `docs/VERSION_UPGRADE_SOP.md` |
 
 **并发铁律**：每个窗口只动自己 P 任务目录，根目录看板（HOOKMAP/TASK_BOARD）改动前 git pull。
 
@@ -330,10 +334,10 @@ v4  2 月     底层 C++ 蜜罐 + 加盐字幕混合加密
   ./docs/HOOK_MAP_8071_AUTHORITATIVE.md  8071 hook 权威
   ./docs/archive/INDEX.md           8066 历史（禁止直搬）
   ./docs/isolation/INDEX_COMPETITOR.md  Catfish 竞品参考
-  ./refs/MainEntry.java             竞品入口 989 行
-  ./refs/UserControll.java          竞品业务 944 行
-  ./refs/filter_moments.js          Frida 朋友圈已验证脚本
-  ./06_refs_参考资料/competitor_catfish/CATFISH_REVERSE.md   竞品逆向文档（8.0.70，禁止直搬类名）
+  ./docs/isolation/MainEntry.java      竞品入口 989 行
+  ./docs/isolation/UserControll.java   竞品业务 944 行
+  ./docs/isolation/filter_moments.js   Frida 朋友圈已验证脚本
+  ./06_refs_参考资料/competitor_catfish/CATFISH_REVERSE.md   竞品逆向文档（⚠️ 老版本 8.0.70，与目标 8.0.71 偏移很大：混淆类名/字段/行号全变，仅作行为·思路参考，禁止直搬类名/字段/偏移；竞品唯一真源，勿删勿移）
 
 外部资料（只读，不复制）:
   I:/apk2/_4__samples/dynamic_fast/HOOK_IMPLEMENTATION_ANALYSIS.md

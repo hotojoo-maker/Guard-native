@@ -16,7 +16,8 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
  * 自动采集当前登录用户的昵称 + 微信号。
  *
  * 触发时机：用户进入"我"Tab，页面顶部 Profile 区域展示了资料。
- * 采集方式：hook View.onAttachedToWindow，过滤 id=0x7f0c6c6d（资源名 ouv = 微信号 TextView）。
+ * 采集方式：hook TextView.setText，按文本"微信号：xxx"命中（8.0.71 起微信资源 id 每版重排，
+ *           写死 id 失效，故改按文本识别、与版本解耦）。
  * 昵称：优先走 ContactResolver.resolveJson(wxid)，失败时留空等下次。
  *
  * 一次采集持久化，终生可用（Bridge KEY_MY_NICK / KEY_MY_ALIAS）。
@@ -25,40 +26,39 @@ public class SelfProfileCapture {
 
     private static final String TAG = "NCL";
 
-    // 资源 id 0x7f0c6c6d = "ouv"，"我"页面顶部"微信号：xxx"TextView
-    private static final int VIEW_ID_ALIAS = 0x7f0c6c6d;
-
     public static void install(XC_LoadPackage.LoadPackageParam lpparam) {
         try {
-            // Hook TextView.setText(CharSequence) — 数据填充时即触发，无 onAttachedToWindow 时序问题。
-            // 过滤 id=0x7f0c6c6d + 文本含"微信号："前缀 → 提取 alias。
+            // Hook TextView.setText(CharSequence) — 数据填充时即触发，无时序问题。
+            // 8.0.71 起资源 id 每版重排，旧写死 id 失效；改按"我"页文本"微信号：xxx"命中，与版本解耦。
             XposedHelpers.findAndHookMethod(
                 TextView.class, "setText",
                 CharSequence.class,
                 new XC_MethodHook() {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) {
-                        TextView tv = (TextView) param.thisObject;
-                        if (tv.getId() != VIEW_ID_ALIAS) return;
-                        if (!Bridge.getInstance().getMyAlias().isEmpty()) return;
+                        try {
+                            if (!Bridge.getInstance().getMyAlias().isEmpty()) return;
 
-                        CharSequence cs = (CharSequence) param.args[0];
-                        if (cs == null) return;
-                        String raw = cs.toString().trim();
-                        if (raw.isEmpty()) return;
+                            CharSequence cs = (CharSequence) param.args[0];
+                            if (cs == null) return;
+                            String raw = cs.toString().trim();
+                            // 只认"微信号"开头 + 含冒号（全角／半角都兼容）的那一栏
+                            if (raw.length() < 4 || !raw.startsWith("\u5fae\u4fe1\u53f7")) return;
+                            int colon = raw.indexOf('\uff1a');
+                            if (colon < 0) colon = raw.indexOf(':');
+                            if (colon < 0) return;
 
-                        // "微信号：MarkDno" → "MarkDno"
-                        String alias = raw.contains("：")
-                                ? raw.substring(raw.indexOf('：') + 1).trim()
-                                : raw;
-                        if (alias.isEmpty()) return;
+                            // "微信号：MarkDno" → "MarkDno"
+                            String alias = raw.substring(colon + 1).trim();
+                            if (alias.isEmpty() || alias.length() > 64) return;
 
-                        Bridge.getInstance().setMyAlias(alias);
-                        Log.i(TAG, "[SPC] alias=" + alias);
+                            Bridge.getInstance().setMyAlias(alias);
+                            Log.i(TAG, "[SPC] alias=" + alias);
 
-                        // 用户已在"我"Tab，补刷 wxid 并解析昵称
-                        Bridge.getInstance().refreshWxid();
-                        tryResolveNickname();
+                            // 用户已在"我"Tab，补刷 wxid 并解析昵称
+                            Bridge.getInstance().refreshWxid();
+                            tryResolveNickname();
+                        } catch (Throwable ignored) {}
                     }
                 });
             Log.i(TAG, "[SPC] setText hook installed");

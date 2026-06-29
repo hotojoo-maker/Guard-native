@@ -12,7 +12,7 @@
 > - `docs/archive/wechat_8066/HOOK_POINTS.md`（8066 历史，仅 diff）
 > - `docs/archive/wechat_8066/HOOK_MAP_V1.md`（v1 规划 DEPRECATED）
 > - `docs/isolation/INDEX_COMPETITOR.md`（Catfish 行为参考）
-> - `refs/FEATURE_MATRIX.md`（功能矩阵 + 失败档案）
+> - `docs/isolation/FEATURE_MATRIX.md`（功能矩阵 + 失败档案）
 > - `I:\apk2\_4__samples\dynamic_fast\HOOK_IMPLEMENTATION_ANALYSIS.md`（甜密友 Catfish 8.0.66 反编译，**静态已证实**）
 > - `03_execute_执行任务/P*/result.md`（14 份 P 任务实证报告）
 > - `src/main/java/com/ghost/assist/`（项目代码现状）
@@ -55,7 +55,6 @@
 | **UX 设计（已实装）** | 复用微信原生选点页 `RedirectUI` 选点 → 拦截右上角"发送/保存"读 LatLng 存 MMKV、不发消息（仿 A2/A3 复用原生 UI），2026-06-07 装机验证 |
 | **混淆名警告** | `pz0.h` / `n83.g` / `lt5.*` 为 8.0.71 专属混淆名，升版必经 classmap 重查 |
 | **探针** | `tools/probe_loc_send_8071.js`(v1) / `probe_loc_sdk_8071.js`(v2) / `probe_loc_src_8071.js`(v3 栈) / `probe_loc_inject_8071.js`(v4 契约) / `probe_loc_poc_8071.js`(PoC 注入) |
-| **历史竞品锚点（8.0.66 参考）** | `MainEntry.hookLocation` → `MyLocation.getLocation`；`ckSetLocation`；目标类 `lbssdk.service.TencentLocation`；address 反射字段 `r/d/t/u/g/f`；来源 `HOOK_IMPLEMENTATION_ANALYSIS.md` §2.8 |
 
 ---
 
@@ -64,8 +63,6 @@
 | 项 | 内容 |
 |------|------|
 | **8.0.71 状态** | ✅ **L1 装机实证 2026-05-31**（`moduleC/AntiRecall.java` v4） |
-| **竞品关键类（8.0.66）** | **`WmyRevokeMsg`**（Catfish 自有类） |
-| **竞品 hook 入口** | `MainEntry.revoke(p1, p2)` → `WmyRevokeMsg.init` · `MainEntry.revoke(cmd, Map, obj)` → `WmyRevokeMsg.revoke` |
 | **数据通道** | `cmd == "revokemsg"` 的命令通道 |
 | **存储** | MMKV: `revoke_msg`（项目 key=`arc`） |
 | **项目代码** | ✅ `moduleC/AntiRecall.java` v4：hook `jy0.t.f`(doRevokeMsg) → `setResult(null)` 保原文 + 插 type=10000 系统提示染红；+ `Bridge.isAntiRecallEnabled()`（key=`arc`，default true） |
@@ -269,6 +266,27 @@
 
 ---
 
+### 10. 当前登录账号采集（自身 wxid + 微信号）+ 服务器绑定
+
+> 采集「当前登录的是哪个微信账号」，随授权信封上报服务器做**换号识别 + 设备画像**（一个授权码绑到哪个号）。当前 release 自动生效的是**微信号(alias)**，已 L1 装机验证；**wxid 自动采集链路缺失**（详「⚠️ wxid 现状」），故上报的 `acct` 实为微信号。
+
+| 项 | 内容 |
+|------|------|
+| **8.0.71 状态** | 🟡 微信号(alias) ✅ L1 装机实证 2026-06-30（后台 `cur_acct` 出数）；wxid ⚠️ release 自动链路缺失（仅 DEV 调试接口手动设） |
+| **微信号(alias) 采集（✅ 生效）** | `moduleB/SelfProfileCapture.install()` hook `TextView.setText(CharSequence)`；用户进「我」Tab 资料页时，按文本以「微信号」开头 + 含冒号（全角 `：`／半角 `:` 均兼容）命中 → 截冒号后子串即微信号 → `Bridge.setMyAlias()`（MMKV key `myal`）。`getMyAlias()` 非空即短路、不重复采集，一次持久化终生复用 |
+| **★ 版本鲁棒（本轮修复根因）** | 旧 `SelfProfileCapture` 写死 `VIEW_ID_ALIAS=0x7f0c6c6d`（8.0.66 资源名 `ouv`）；微信每版资源 id 重排，8.0.71 几乎必不等此值 → 永不命中 → 微信号恒空。改为**按文本「微信号：」命中、与资源 id 解耦**，升版免逐版改 id（仅当资料页中文文案变才需复验） |
+| **昵称(nick) 采集** | `SelfProfileCapture.tryResolveNickname()` → `debug/ContactResolver.resolveJson(wxid)` 提取 `nickname` → `Bridge.setMyNick()`（key `mynk`）。依赖 wxid，wxid 空时昵称同空 |
+| **⚠️ wxid 现状（L2 代码实证）** | `Bridge.getMyWxid()`（key `mwxd`）当前 release **无自动采集链路**：`Bridge.refreshWxid()` 是 no-op stub（空体）；`setMyWxid()` 全项目唯一调用方是 `DebugServer.apiSetMyWxid`（DEV/HONEY 调试 HTTP 接口手动设）。源码注释声称由 `SelfProfileCapture` / `switch_account_preferences` listener 填充，但该链路**未实装**（注释 ≠ 代码）。如需 release 自动绑 wxid，须另补登录态采集（独立任务） |
+| **绑定上报（客户端 → 服务器）** | `net/EnvelopeClient.currentAcct()`：微信号(alias) 优先、空则 wxid、再空返 `""` → 作为 `acct` 字段并入 client 信息 JSON，随授权信封 POST 上报 |
+| **服务器侧（miyou-server）** | 记 `cur_acct`（当前账号）/ `first_acct`（首见基准）/ `acct_changed`（换号 0→1 风控信号）；`admin/v2` 设备 tab 展示「微信号 / wxid + 首次激活 + 到期进度条」（本轮 `db.py + static/admin_v2.html` 已部署 prod） |
+| **L1 证据（原 logcat 临时 dump 已清，关键行留档）** | `06-30 00:50:46 I/NCL [SPC] alias=Markeyno`（微信号抓取成功）；同期反复 `06-30 00:50:55 W/NCL [auth] bindAccount: myWxid not set`（wxid 未采集，印证「wxid 现状」）。源 `logs_mi9_spcfix_20260630.txt` 为临时 logcat dump，已按收尾清理 |
+| **Bridge 键位** | `mwxd`=wxid · `myal`=微信号 · `mynk`=昵称（均 MMKV，§6.7 seed 化命名空间） |
+| **项目代码** | `moduleB/SelfProfileCapture.java`（采集 alias/nick）· `core/Bridge.java`（存 mwxd/myal/mynk + refreshWxid stub）· `net/EnvelopeClient.java`（currentAcct / acct 上报）· `debug/DebugServer.java`（apiSetMyWxid DEV 接口）|
+| **用途** | 后台「一个授权码绑到哪个微信号」识别；换号 → `acct_changed=1` 风控；设备画像 |
+| **升版复验** | alias 抽取与资源 id 解耦，正常升版无需改；仅资料页「微信号：」中文文案变（极少）需复验 |
+
+---
+
 ## 二、资料盘点（功能就绪度）
 
 ### "齐活"可立即落 hook（6 项）
@@ -316,7 +334,7 @@
 | `HOOKMAP.md` | 功能模块总图（A~F 域，v1 / v2 分类） |
 | `docs/archive/wechat_8066/HOOK_POINTS.md` | 8066 历史伪代码（仅 diff） |
 | `docs/archive/wechat_8066/HOOK_MAP_V1.md` | v1 规划 DEPRECATED |
-| `refs/FEATURE_MATRIX.md` | 功能 × 状态 × 失败档案矩阵 |
-| `FAILURE_LOG.md` | F-01 ~ F-41 禁止方案铁律（F-38 伪装订位坐标候选证伪、F-39 CLH getMethod 命中父类误 finish、F-40 重装顶爆假种子 recipeOk=false、F-41 后台标记正常不重置 tier/risk） |
-| `02_tools_工具/dynamic_crawler_动态爬虫/README.md` | 动态探针工具集 |
+| `docs/isolation/FEATURE_MATRIX.md` | 功能 × 状态 × 失败档案矩阵 |
+| `FAILURE_LOG.md` | F-01 ~ F-42 禁止方案铁律索引（详细正文 → `07_archive_归档/FAILURE_LOG_full_20260629.md`；F-40 重装顶爆假种子 recipeOk=false、F-41 后台标记正常不重置 tier/risk、F-42 LSPatch 439×A15 干净装闪退） |
+| `07_archive_归档/tools/dynamic_crawler_动态爬虫/README.md` | 动态探针工具集（已归档）|
 | `03_execute_执行任务/P*/result.md` | 14 份 P 任务装机实证 |
