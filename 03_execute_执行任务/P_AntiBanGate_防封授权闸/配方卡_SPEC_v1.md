@@ -16,7 +16,7 @@
 |---|---|---|---|---|
 | T_soft 软引流起点 | **1h** | 首装未授权满 1h → 起**可关**软引流弹窗；**非 A2 撤闸触发**（仅 UI 副作用） | 服务器/客户端兜底 | 设计only（v1 可选，去留随 T_login） |
 | T_login 登录砸门 | **2h** | 首装未授权满 2h → **关不掉**登录砸门、强制输授权码；只挡进隐私功能、不挡官方包、不动 A2；**非账号异常** | — | **降 v2**（DESIGN §6：无 Activity 锚点） |
-| 首装未授权撤 A2 | **72h** | 首装未授权（白嫖/观望）满 72h → `isAntiBanReady=false`、撤 A2；**官方授时 `jy0.hd.b()` 有值起算**、断网也撤、全新装无值 fail-open 恒装；倒计时只读官方授时、我方零上报 | 客户端(官方授时驱动) / 服务器 | 设计only（D-020；`[码]` 时间闸未落） |
+| 首装未授权撤 A2 | **72h** | 首装未授权（白嫖/观望）满 72h → `isAntiBanReady=false`、撤 A2；**官方授时 `jy0.hd.b()` 有值起算**、断网也撤、全新装无值 fail-open 恒装；倒计时只读官方授时、我方零上报 | 客户端(官方授时驱动) / 服务器 | `[码]` 已落（GuardRuntime `evalAntiBanWindow` 72h，committed 1b83346）；真号防封效果 L4 待验 |
 | 自然到期续费宽限 | **7天（可加 6-12h 服务器抖动）** | **仅自然到期**：license 到 expire_at 未续 → 短期只催续费，licenseExpire+7天 仍未续 → 撤 A2 | 服务器主控 / 客户端 LeaseClock 兜底 | 设计only（D-020+A3：仅自然到期=7天） |
 | 服务器封停/删卡撤 A2 | **72h** | 后台封停 / 删卡密（`isCardRevoked`）→ cardRevokedAt+72h 撤 A2（**复用首装 72h 常量**）；误封 72h 内可恢复 | 服务器（心跳/push）/ 客户端 latch 兜底 | 设计only（D-020+A3：封停/删卡=72h，纠正 D-020 原文 7天） |
 | 付费断网宽限（曾授权+断网、授权仍有效） | **7天** | 付费用户掉线不误杀；用上次授权快照兜底、不因暂连不上判未授权 | 客户端(LeaseClock)/服务器 | 设计only |
@@ -85,10 +85,10 @@ isAntiBanReady():            # 只决 A2 装/卸；逆序线 fail-open（拿不�
 
 **① 配方卡（本文）**—锁定本 SPEC。PASS：指挥签字、本表无 ❓（文档步）。
 
-**② 哑客户端靠服务器**—GuardRuntime `isAntiBanReady()` **扩时间闸**（现 `[码]` 仅 `!isCardRevoked() && isIntegrityIntact()`、无时间闸；吊 EnvelopeStore+LeaseClock；**不检查登录**）；持久化值（官方授时首值点=LeaseClock 新键 / 曾授权 licenseExpireAt=EnvelopeStore / cardRevokedAt）；在线用服务器签名结论、断网才本地兜底、**本地只降级不自升级**。撤闸按 D-020+A3：首装未授权 72h（官方授时起算）/ 自然到期 7天 / 封停·删卡 72h，可被重授权恢复。
+**② 哑客户端靠服务器**—GuardRuntime `isAntiBanReady()` **已含时间闸**（`[码]` `evalAntiBanWindow` 72h/7d/fail-open，committed 1b83346；吊 EnvelopeStore+LeaseClock；**不检查登录**）；持久化值（官方授时首值点=LeaseClock 新键 / 曾授权 licenseExpireAt=EnvelopeStore / cardRevokedAt）；在线用服务器签名结论、断网才本地兜底、**本地只降级不自升级**。撤闸按 D-020+A3：首装未授权 72h（官方授时起算）/ 自然到期 7天 / 封停·删卡 72h，可被重授权恢复。
   - 验收（一条）：冷启后 `adb logcat -d | findstr ANTIBAN-GATE`
   - PASS：`ready=true reason=fresh src=local`；模拟自然到期但 7天宽限内 → `ready=true reason=renew_grace`；自然到期超 7天 / 封停·删卡超 72h / 首装未授权超 72h（官方授时起算）→ `ready=false reason=expire|card_revoke|unauth_72h`；篡改 → `ready=false reason=tamper`（立刻散）；全新装无授时 → `ready=true reason=fresh_no_clock`（fail-open）；联网 `src=server`；各分支行为对。
-  - 成色：设计only / L4 待验证（探针需做时间注入小钩）。
+  - 成色：已落码（1b83346）/ L4 真机回归待验证（探针需做时间注入小钩）。
 
 **③ A2 接主线 + 修 android_id 同源**—A2SignatureSpoof 接 ModuleMain `if(isAntiBanReady()) install`（fail-open 默认 true → 冷启即跑、在登录前；未授权满 72h/官方授时起算才撤，非影子期）；料进加密 registry；**A2 android_id hook 仅官方包 caller**、放过 computeDeviceHash。`[码]` A2SignatureSpoof.java 已 live、由 ModuleMain §6.7 装（SSOT §8）。
   - 验收（沿用研究线 §10.7 已证范式）：
@@ -129,8 +129,8 @@ adb -s <设备> shell monkey -p <目标包名> -c android.intent.category.LAUNCH
 ## E. 成色总账
 
 - **L1 已证**：A2 签名轴 Java 可 hook+喂官方→c$p 读官方（防封账§八/§十.8）；android_id **大血管** `c$p.aa/ea` ← Java `getString("android_id")` hook 控上传（`A2_FEED_DIFF_KPI`）；SSAID **算法全球同构**、`user_key` **每机随机**（实验机 `05f894e8…` 仅为本机示例）；包名 cmdline 冷启=0（§13.4）；签名轴无隐藏血管（§十二，L1+L2）。
-- **L2/`[码]`**：`isAntiBanReady` **已落码 live** = `!isCardRevoked() && isIntegrityIntact()`（只 cert+封停/删卡、**无时间闸**，SSOT §3.2/§8）；`A2SignatureSpoof.java` 已存在、由 ModuleMain §6.7 装；隐私 72h 离线已实现（LeaseClock GRACE_DEGRADE 72h）；心跳稳定态/蜜罐已实装；设备绑定（computeDeviceHash）。
-- **设计only（待落码）**：A2 时间闸（首装未授权 72h〔官方授时起算〕/ 自然到期 7天 / 封停·删卡 72h / 可恢复，D-020+A3）+ 官方授时第二源 `noteOfficialTime` 接线 + isCardRevoked latch 改可恢复 + 60%信任分 + 心跳起步（无 KPI 实证）。`T_login 2h` 降 v2、`T_soft 1h` 保留为可选 UI。
+- **L2/`[码]`（已 committed 1b83346）**：`isAntiBanReady` **已落码 live** = cert 完整性 + **完整时间闸**（`isWithinAntiBanWindow`→`evalAntiBanWindow` 72h/7d/fail-open，SSOT §3/§8）；官方授时第二源 `LeaseClock.noteOfficialTime`+`OfficialClock.readOfficialNowMs` 已接线（ModuleMain §6.55）；`A2SignatureSpoof.java` 已存在、由 ModuleMain §6.7 装；隐私 72h 离线已实现（LeaseClock GRACE_DEGRADE 72h）；心跳稳定态/蜜罐已实装；设备绑定（computeDeviceHash）。
+- **设计only（待落码）**：isCardRevoked latch 改可恢复 + 60%信任分 + 心跳起步（无 KPI 实证）+ 服务端下发 isAntiBanReady 结论（S9）。`T_login 2h` 降 v2、`T_soft 1h` 保留为可选 UI。（A2 时间闸 + 官方授时第二源 `noteOfficialTime` 接线 **已落码 1b83346**，见上条 L2/`[码]`。）
 
 ---
 
