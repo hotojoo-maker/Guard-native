@@ -68,8 +68,6 @@ public class MomentsFilter {
     private static final String FIELD_CMT_UC       = "CommentUserListCount";
     // e56 元素字段（proto field 1 = wxid，proto field 2 = 昵称）
     private static final String FIELD_E56_WXID     = "f435583d";
-    private static final String FIELD_E56_NICK     = "f435584e";
-    private static final String FIELD_ITEM_USER    = "d";
 
     // 8.0.71 确认：z15.e56 / cs5.di0 / i84.y 的 wxid 字段均为 "d"
     // C7-接6 归一: 从 registry moments.feed 取，fallback 走 RegistryFallback（debug=值/release=空数组）。NON-FINAL 供 resolveRecipes 覆盖。

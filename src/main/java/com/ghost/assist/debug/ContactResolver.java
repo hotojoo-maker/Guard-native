@@ -19,7 +19,6 @@ public class ContactResolver {
 
     private static final String TAG = "NCL";
     private static final String CONTACT_STORAGE_CLASS = "com.tencent.mm.storage.ContactStorage";
-    private static final String CONTACT_CLASS = "com.tencent.mm.storage.e4"; // may vary by version
 
     /**
      * Attempt to resolve wxid → {nickname, avatar_path}.

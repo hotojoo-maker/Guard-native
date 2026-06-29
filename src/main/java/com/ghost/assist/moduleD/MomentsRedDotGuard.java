@@ -67,11 +67,6 @@ public class MomentsRedDotGuard {
     private static final String SNS_COMMENT_STORAGE =
             "com.tencent.mm.plugin.sns.storage.w1"; // 8.0.71 混淆真名
 
-    // SnsCommentStorage 上要 hook 的方法名（用户给 E1，但保守起见挂多个 0-param int 候选）
-    private static final String[] COMMENT_COUNT_GETTERS = {
-            "E1", "D1", "F1", "G1", "getUnreadCount", "getNewCount",
-    };
-
     private static boolean sInstalled = false;
     private static final Set<String> sDiagSeen = new HashSet<>();
 
@@ -85,19 +80,6 @@ public class MomentsRedDotGuard {
     // 冷启动时 FMF 懒加载未就绪：LauncherUI.onResume 设 pending=true，
     // FMF.onResume 首次触发时发现 pending=true 则立即清除红点。
     private static volatile boolean sPendingClearBadge = false;
-
-    // 8.0.71 dump 实证（2026-05-21）：红点 Event 没有全局 EventCenter,
-    // 每个 Event 类有自己的发布渠道。下面是 4 个目标类，先 dump 字段/方法，
-    // 下一轮根据 dump 结果精准 hook。
-    private static final String[] RED_DOT_TARGET_CLASSES = {
-            "com.tencent.mm.plugin.brandservice.ui.timeline.preference.WeChatTabRedDotEvent",
-            "com.tencent.mm.plugin.brandservice.ui.timeline.preference.TabRedDotChangeEvent",
-            // 不知道完整路径，用 dump 兜底
-            "WeChatTabRedDotEvent",
-            "TabRedDotChangeEvent",
-            "FinderRedDotTrigger",
-            "FinderRedDotTextView",
-    };
 
     // 8.0.71 实证完整路径（用户 dump 2026-05-21）
     private static final String CLS_WECHAT_TAB_EVT =

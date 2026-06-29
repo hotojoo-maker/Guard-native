@@ -39,7 +39,6 @@ import de.robv.android.xposed.XposedHelpers;
 public class TriggerGuard {
 
     private static final String TAG = "NCL";
-    private static final float SHAKE_THRESHOLD = 15.0f; // m/s²，仿 Catfish ShakeHandler
     private static final long SHAKE_COOLDOWN_MS = 1500; // 摇一次的冷却时间，避免连续触发
 
     private static boolean sInstalled = false;
@@ -57,8 +56,6 @@ public class TriggerGuard {
     // 包括 B1 摇一摇 / B2 close_dialogs 任意 reason / B5 锁屏。
     // 真实"用户离开微信"路径走 Activity lifecycle onActivityStopped → onLeftForeground，
     // 此时 sCurrentResumedActivity 已被 onActivityPaused 清空，冻结自动失效，enterHidden 正常 fire。
-    private static final String MAIN_SETTINGS_CLASS =
-            "com.tencent.mm.plugin.setting.ui.setting_new.MainSettingsUI";
     private static final String LAUNCHER_UI_CLASS = "com.tencent.mm.ui.LauncherUI";
 
     // entry-bug(20260629): 返回键触发器关闭。B4 把返回吞掉并强制隐藏，连微信内部导航的返回也误触，

@@ -59,8 +59,6 @@ public class ContactDiscoveryHook {
             "LauncherUI", "MainTabUI", "MainUI", "Launcher",
             "Address", "Contact", "Chatroom"
     };
-    private static final String RV_CLS = "androidx.recyclerview.widget.RecyclerView";
-    private static final String LV_CLS = "android.widget.ListView";
     private static final long SCAN_DELAY_MS = 800L;
 
     private static volatile boolean sInstalled = false;
