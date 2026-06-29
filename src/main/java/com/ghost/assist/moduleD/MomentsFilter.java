@@ -536,13 +536,15 @@ public class MomentsFilter {
                 DebugTelemetry.getInstance().noteFeedWxid(outerWxid, nick);
             }
 
-            if (!diagDone) {
+            // release 收口：诊断探针只在 DEBUG 跑（release minify=true → R8 把本块 + runD2D3Diag
+            // + 其内裸字面量(w45.a/la4.*/[D2D3:*] 等)一并 dead-code 剥离，不进正式包、不跑）。
+            if (BuildConfig.DEBUG && !diagDone) {
                 diagDone = true;
                 runD2D3Diag(item);
             }
 
-            // cmList 探针：每条 la4.p 都试 getCommentList()，直到找到非空
-            if (!sDiagSeen.contains("D2D3_CMLIST_DONE") && ITEM_PROMO.equals(item.getClass().getName())) {
+            // cmList 探针（诊断）：release 收口 → 只 DEBUG 跑（R8 剥离）
+            if (BuildConfig.DEBUG && !sDiagSeen.contains("D2D3_CMLIST_DONE") && ITEM_PROMO.equals(item.getClass().getName())) {
                 try {
                     Object la4p = ITEM_FRIEND.equals(item.getClass().getName()) ? getField(item, FIELD_INNER) : item;
                     java.util.List<?> cmList = (java.util.List<?>) la4p.getClass().getMethod("getCommentList").invoke(la4p);
@@ -788,9 +790,11 @@ public class MomentsFilter {
                 }
             }
 
-            // 5. 控制台高频类：wq.c1 / wq.y0 / ii5.b — 疑似 like/comment 元素类（k0 在 tinker 版已改名，跳过）
+            // 5. 控制台高频类：疑似 like/comment 元素类（k0 在 tinker 版已改名，跳过）
+            // C7 归一：锚点取 registry moments.feed 的 resolved 字段（单一源），不再内联硬编码。
             ClassLoader cl = la4p.getClass().getClassLoader();
-            for (String suspectClass : new String[]{"wq.c1", "wq.y0", "ii5.b"}) {
+            for (String suspectClass : new String[]{ITEM_WQ_C1, ITEM_WQ_Y0, ITEM_II5_B}) {
+                if (suspectClass == null || suspectClass.isEmpty()) continue;
                 dumpListMethodsOnClass("[D2D3:" + suspectClass + "]", cl, suspectClass);
                 dumpAllMethodsOnClass("[D2D3:" + suspectClass + ".all]", cl, suspectClass);
             }

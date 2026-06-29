@@ -60,7 +60,7 @@
 
 ### 🔴 已知缺口（架构师 E99 记 · 文档资料ai-1 挖出）
 
-- **`GUARD_RELEASE_ID` 硬编码 `android_8071`，未随 flavor 注入** → **共存版上报官替发行线**（device 计入错线）。修 = 码活，归**块D(出包)前置**，文档窗口只记不碰码。详见《共存差异清单》第3类。
+- ~~**`GUARD_RELEASE_ID` 硬编码 `android_8071`，未随 flavor 注入**~~ → **✅ 已修（2026-06-29 · MJ25 核）**：`build.gradle:138/156` 按 flavor 注入（官替 `android_8071` / 共存 `android_8071_coexist`）+ `AppConfig.java:52 = BuildConfig.GUARD_RELEASE_ID`，共存版上报正确发行线（G4 闭合）。
 - **续费弹窗欠红线#9 债**：`SettingsEntry.showRenewReminderIfNeeded` 走独立 AlertDialog 未走 `RiskPromptController`(单一弹窗源)；现状保留，块D 收口统一。
 
 ---
