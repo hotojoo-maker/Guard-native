@@ -62,10 +62,10 @@ android {
         applicationId "com.ghost.assist"
         minSdk 27           // Android 8.1 — Xiaomi 9 (MI 9) minimum
         targetSdk 34
-        versionCode 13
-        versionName "1.3"
+        versionCode 14
+        versionName "1.6"
 
-        buildConfigField "String", "GUARD_PRODUCT_VERSION", "\"v1.3\""
+        buildConfigField "String", "GUARD_PRODUCT_VERSION", "\"v1.6\""
 
         // Canary 基线：构建期从 PromoConfig 单一真源自动算（见文件顶部 computeCanaryBaseline）。
         // CompatProbe 运行时读 BuildConfig.CANARY_BASELINE，改诱饵重编自动跟随，杜绝忘重算误伤。
@@ -85,8 +85,9 @@ android {
         }
     }
 
-    // ── Release signing: passwords loaded from gitignored signing/keystore.properties ──
-    // debug 仍用固定 debug keystore；release 按 flavor 各自的正式 keystore（官替/共存各一把）。
+    // ── Signing truth (2026-06-29) ──
+    // debug 变体当前签 CA421... debug key（signingReport 为准），只用于模块/公告/C2 smoke；
+    // release 变体按 flavor 各自正式 keystore（官替 e3e13a49 / 共存 8f47a47a）。
     // signingConfigs 必须在 productFlavors 之前声明（flavor 要引用它们）。
     def keystorePropsFile = rootProject.file("signing/keystore.properties")
     def keystoreProps = new Properties()
@@ -129,7 +130,7 @@ android {
     productFlavors {
         official {
             dimension "releaseLine"
-            signingConfig signingConfigs.guardOfficialRelease   // release=官替正式 key；debug 由 buildType 覆盖为 guardFixed
+            signingConfig signingConfigs.guardOfficialRelease   // 官替 release 正式 key（e3e13a49）；debug 仍以 signingReport 为准
             // 预期签名证书 SHA-256（官替）—— CompatProbe 读 BuildConfig.GUARD_EXPECTED_CERT。
             // 三端同步红线：必须 == kdf_common.CERT_SHA256 == 实际 official keystore 证书。
             buildConfigField "String", "GUARD_EXPECTED_CERT", "\"e3e13a4974fe4c40432a583b11309edb4705c8a50b03f474d6b693817adecf36\""
@@ -143,16 +144,16 @@ android {
         }
         coexist {
             dimension "releaseLine"
-            signingConfig signingConfigs.guardCoexistRelease    // release=共存正式 key；debug 由 buildType 覆盖为 guardFixed
+            signingConfig signingConfigs.guardCoexistRelease    // 共存 release 正式 key（8f47a47a）；debug 仍以 signingReport 为准
             // 预期签名证书 SHA-256（共存）—— 独立 keystore 的证书。
             // ⚠ registry_cipher.inc 当前仍按 official cert 生成，coexist 运行时 registry 会 scatter；
             //   coexist 发版前须按此 cert 生成 per-flavor registry（见 tools/kdf_common.py + gen_registry_cipher.py）。
             buildConfigField "String", "GUARD_EXPECTED_CERT", "\"8f47a47afde078c47713db78668e6ed9ab027bc9b86d58a9e646a1f3998d5685\""
             buildConfigField "String", "GUARD_WX_PKG", "\"com.tencent.mn\""
-            // 共存发行线 ID = android_8071_mn（呼应 mn 包后缀，便于追溯）。
-            // ⚠️ 发版前必须：服务器 release_lines 登记 android_8071_mn + 配 S_rel/W/registry_cipher/卡密 同源，
-            //    否则共存包 registry 解不开 → 散沙（缺迁移=全量散）。最终值待发版官确认。
-            buildConfigField "String", "GUARD_RELEASE_ID", "\"android_8071_mn\""
+            // 共存发行线 ID = android_8071_coexist（设计稿 + 服务器既有线；SSOT 口径 v1）。
+            // 服务器 release_lines 已登记 android_8071_coexist，须配 S_rel/W/registry_cipher/卡密同源；
+            // 换 cert/registry 后两版各自重生成、装机 recipeOk=true（docs/RELEASE_LINE_SSOT_发行线统一口径.md）。
+            buildConfigField "String", "GUARD_RELEASE_ID", "\"android_8071_coexist\""
             externalNativeBuild {
                 cmake {
                     arguments "-DGUARD_WX_PKG=com.tencent.mn"
@@ -170,13 +171,14 @@ android {
 
     buildTypes {
         debug {
-            signingConfig signingConfigs.guardFixed
+            // AGP debug 变体当前走 debug signing（signingReport = ca421ec3），不等于 release 正式签名。
+            // 因 BuildConfig.GUARD_EXPECTED_CERT 仍按发行线正式 cert 注入，debug 包会触发 cert mismatch/scatter；
+            // debug 只用于模块更新、公告、C2/心跳 smoke，不作为 release/recipeOk 候选。
             minifyEnabled false
             debuggable true
         }
         release {
-            // signingConfig 由 flavor 决定：official→guardOfficialRelease, coexist→guardCoexistRelease
-            // （buildType 不设 signingConfig 时，release 变体采用 flavor 的；debug buildType 显设 guardFixed 会覆盖 flavor）
+            // signingConfig 由 flavor 决定：official→guardOfficialRelease, coexist→guardCoexistRelease。
             minifyEnabled true
             shrinkResources false   // keep xposed_init asset
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
@@ -218,6 +220,12 @@ android {
     buildFeatures {
         buildConfig true
     }
+
+    // A2 anti-ban gate pure-logic JUnit lives in src/test/ (never packaged).
+    // returnDefaultValues guards class-load against android.* stubs throwing.
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
 }
 
 dependencies {
@@ -233,6 +241,9 @@ dependencies {
     // (java.security Ed25519 needs API 33+). Tiny (~80KB), verify-only — the
     // client holds only the server's public key.
     implementation 'net.i2p.crypto:eddsa:0.3.0'
+
+    // Unit test only (testImplementation → not in any APK variant).
+    testImplementation 'junit:junit:4.13.2'
 
     // RecyclerView compileOnly removed: WeChat ProGuards the class name,
     // causing NoClassDefFoundError at runtime. Use pure reflection instead.

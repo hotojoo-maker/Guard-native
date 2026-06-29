@@ -47,7 +47,7 @@ public class AppConfig {
     // 传输强制 HTTPS（信封里的短命 key 材料 k 不得走明文）。
     public static final String GUARD_PRODUCT_ID      = "quantum_wechat";
     public static final String GUARD_PRODUCT_VERSION = BuildConfig.GUARD_PRODUCT_VERSION;
-    // 发行线主索引：随 flavor 注入（官替 android_8071 / 共存 android_8071_mn），不再硬编码。
+    // 发行线主索引：随 flavor 注入（官替 android_8071 / 共存 android_8071_coexist），不再硬编码。
     // 客户端上报 + 服务器 release_lines + registry_cipher 折的 S_rel + 卡密 必须同源（发版前对齐）。
     public static final String GUARD_RELEASE_ID      = BuildConfig.GUARD_RELEASE_ID;
 

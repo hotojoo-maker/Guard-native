@@ -27,7 +27,14 @@ namespace {
 // are GENERATED from registry_8071.json by tools/gen_registry_cipher.py (single
 // source of truth — no hand-maintained plaintext copy). decrypt_config() turns
 // it back into the registry JSON; tag mismatch / wrong key → scatter.
+// Per-flavor 选择：coexist 变体（com.tencent.mn）嵌 8f47a47a 绑定的 registry，官替嵌
+// e3e13a49 绑定的。CMake 按 GUARD_WX_PKG 定义 GUARD_REGISTRY_COEXIST；两 inc 符号名
+// 相同（kRegistry*），必须二选一（docs/RELEASE_LINE_SSOT_发行线统一口径.md）。
+#if defined(GUARD_REGISTRY_COEXIST)
+#include "registry_cipher_coexist.inc"
+#else
 #include "registry_cipher.inc"
+#endif
 
 // C2: cert-only bootstrap endpoint blob (AUTH server domains). Generated from
 // native_core/bootstrap_endpoints.json by tools/gen_bootstrap_cipher.py.

@@ -37,6 +37,12 @@ target_include_directories(guardcore PRIVATE include)
 # 把期望包名灌成编译期宏，guard_core.h 的 EXPECTED_PACKAGE 取它。
 target_compile_definitions(guardcore PRIVATE GUARD_EXPECTED_PACKAGE="${GUARD_WX_PKG}")
 
+# Per-flavor registry：共存包名 → 嵌 coexist registry（绑 8f47a47a）。registry_loader.cpp
+# 据此 #if 选 registry_cipher_coexist.inc vs registry_cipher.inc（SSOT 口径 v1）。
+if(GUARD_WX_PKG STREQUAL "com.tencent.mn")
+    target_compile_definitions(guardcore PRIVATE GUARD_REGISTRY_COEXIST=1)
+endif()
+
 # DEBUG-only hooks: logging + KDF self-test. Defined ONLY when CMAKE_BUILD_TYPE
 # is Debug (AGP: debug→Debug, release→RelWithDebInfo). Never use -DGUARD_DEBUG
 # via Gradle cppFlags — the old defaultConfig.buildTypes block was ineffective
