@@ -1802,6 +1802,7 @@ public class SettingsEntry {
         final String title = nonEmpty(EnvelopeStore.getUpdateTitle(), "量子密友更新");
         final String msg = nonEmpty(EnvelopeStore.getUpdateMessage(), "发现新版本，请联系客服获取更新。");
         final String url = EnvelopeStore.getUpdateUrl();
+        final boolean hasUrl = url != null && !url.isEmpty();
         sUpdateNoticeShown = true;
         LinearLayout box = new LinearLayout(activity);
         box.setOrientation(LinearLayout.VERTICAL);
@@ -1814,23 +1815,23 @@ public class SettingsEntry {
         TextView tvTitle = new TextView(activity);
         tvTitle.setText(title);
         tvTitle.setTextColor(Color.parseColor("#1C1C1E"));
-        tvTitle.setTextSize(18f);
+        tvTitle.setTextSize(19f);
         tvTitle.getPaint().setFakeBoldText(true);
         tvTitle.setGravity(Gravity.CENTER);
         box.addView(tvTitle);
 
         TextView tvMsg = new TextView(activity);
         tvMsg.setText(msg);
-        tvMsg.setTextColor(Color.parseColor("#555555"));
+        tvMsg.setTextColor(Color.parseColor("#FA5151"));
         tvMsg.setTextSize(14f);
-        tvMsg.setGravity(Gravity.CENTER);
+        tvMsg.setGravity(Gravity.START);
         tvMsg.setLineSpacing(dp(activity, 3), 1.0f);
         LinearLayout.LayoutParams msgLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         msgLp.topMargin = dp(activity, 12);
         box.addView(tvMsg, msgLp);
 
-        if (url != null && !url.isEmpty()) {
+        if (hasUrl) {
             TextView linkHint = new TextView(activity);
             linkHint.setText("点击底部按钮，用浏览器打开");
             linkHint.setTextColor(Color.parseColor("#D97706"));
@@ -1843,44 +1844,57 @@ public class SettingsEntry {
             box.addView(linkHint, hintLp);
         }
 
+        View divider = new View(activity);
+        divider.setBackgroundColor(Color.parseColor("#EEEEEE"));
+        LinearLayout.LayoutParams divLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 1);
+        divLp.topMargin = dp(activity, 14);
+        box.addView(divider, divLp);
+
         LinearLayout buttons = new LinearLayout(activity);
         buttons.setOrientation(LinearLayout.HORIZONTAL);
-        buttons.setGravity(Gravity.CENTER);
+        buttons.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
         LinearLayout.LayoutParams buttonsLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        buttonsLp.topMargin = dp(activity, 18);
+        buttonsLp.topMargin = dp(activity, 6);
         box.addView(buttons, buttonsLp);
 
         final AlertDialog dialog = new AlertDialog.Builder(activity).setView(box).create();
 
-        Button later = new Button(activity);
-        later.setText("稍后");
-        later.setTextColor(Color.parseColor("#555555"));
-        later.setTextSize(14f);
-        GradientDrawable laterBg = new GradientDrawable();
-        laterBg.setColor(Color.parseColor("#F2F2F7"));
-        laterBg.setCornerRadius(dp(activity, 18));
-        later.setBackground(laterBg);
-        later.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { dialog.dismiss(); }
-        });
-        buttons.addView(later, new LinearLayout.LayoutParams(0, dp(activity, 38), 1f));
+        if (hasUrl) {
+            Button later = new Button(activity);
+            later.setText("稍后");
+            later.setTextColor(Color.parseColor("#9A9A9A"));
+            later.setTextSize(14f);
+            later.setAllCaps(false);
+            later.setBackgroundColor(Color.TRANSPARENT);
+            later.setMinWidth(0); later.setMinimumWidth(0);
+            later.setMinHeight(0); later.setMinimumHeight(0);
+            later.setPadding(dp(activity, 14), dp(activity, 8), dp(activity, 14), dp(activity, 8));
+            later.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) { dialog.dismiss(); }
+            });
+            buttons.addView(later, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        }
 
         Button primary = new Button(activity);
-        primary.setText((url != null && !url.isEmpty()) ? (mode == 1 ? "下载更新" : "联系客服") : "我知道了");
-        primary.setTextColor(Color.WHITE);
+        primary.setText(hasUrl ? (mode == 1 ? "下载更新" : "联系客服") : "我知道了");
+        primary.setTextColor(Color.parseColor("#576B95"));
         primary.setTextSize(14f);
         primary.getPaint().setFakeBoldText(true);
-        GradientDrawable primaryBg = new GradientDrawable();
-        primaryBg.setColor(Color.parseColor("#07A85C"));
-        primaryBg.setCornerRadius(dp(activity, 18));
-        primary.setBackground(primaryBg);
-        LinearLayout.LayoutParams primaryLp = new LinearLayout.LayoutParams(0, dp(activity, 38), 1f);
-        primaryLp.leftMargin = dp(activity, 10);
+        primary.setAllCaps(false);
+        primary.setBackgroundColor(Color.TRANSPARENT);
+        primary.setMinWidth(0); primary.setMinimumWidth(0);
+        primary.setMinHeight(0); primary.setMinimumHeight(0);
+        primary.setPadding(dp(activity, 14), dp(activity, 8), dp(activity, 14), dp(activity, 8));
+        LinearLayout.LayoutParams primaryLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        if (hasUrl) primaryLp.leftMargin = dp(activity, 4);
         buttons.addView(primary, primaryLp);
         primary.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
-                if (url != null && !url.isEmpty()) {
+                if (hasUrl) {
                     try {
                         Intent it = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
                         it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

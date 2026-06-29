@@ -192,6 +192,20 @@
 - **状态**：决策已锁；落码-A3（A2 时间闸，8 分支回归未绿）/ 配方卡对齐-A3（diff 未回）**进行中**——code-true 收口（SSOT §3.2 `[码]` / §8 / §9）等两路绿后补。
 - **不撤回**：D-020 主体（A2 时间闸 + 可恢复 + 命门官方对时 + fail-open + 两闸独立）全有效；本条只细化触发3 拆分（封停 72h vs 到期 7天）+ 钉死隐私立刻 + 补超 2 年影子 + 到期弹窗。
 
+### D-022：B4 返回键触发器默认关闭（入口 bug 根因）+「离开微信才藏」归 B2（2026-06-29）
+
+- **决策**：B4 `installBackKeyHook`（hook `dispatchKeyEvent` / `KEYCODE_BACK`）**默认关闭**（`TriggerGuard.B4_BACK_KEY_ENABLED=false`）。「真的离开微信才隐藏」由 **B2 前台计数器**（`installForegroundTracker`，默认开、不可关）覆盖；微信**内部导航返回不再触发隐藏**。
+- **依据**：入口 bug 根因 L1+L2 坐实——MIUI 边缘滑动返回手势被 B4 的 `dispatchKeyEvent` 当 `KEYCODE_BACK` 吞掉 → `enterHidden` → 解锁后状态从显形掉回隐藏；隐藏态下 `SettingsEntry.shouldShowEntry()` 返回 false（`Bridge.isHideEntryInHidden` 默认 true）→ 设置页入口不挂（≈20% 客户首装解锁后看不到入口，反复滑动易触发）。修后 L1：`03_execute_执行任务/P_AntiBanGate_防封授权闸/logs/verify_b4off_20260629.txt`——`[TG] install done … b4=false`、`[TG] B4-back` 0 次、解锁后状态全程显形、`[SET] overlay banner added`。用户拍板 2026-06-29 · Vchat guard_native-FSI67。
+- **影响**：① `TriggerGuard.java` 加 `B4_BACK_KEY_ENABLED=false` 守 `installBackKeyHook()`；② `HOOKMAP.md` §B B4 行改「默认关闭」并对齐代码真相（实际 hook `dispatchKeyEvent` 非 `onBackPressed`，原文档「仅会话/通讯录主页」与码不符）；③「离开微信→隐藏」唯一路径 = B2（B5 锁屏兜底不变）。
+- **防回归（禁止复用）**：不得重新开启 B4——手势导航设备（MIUI / 全面屏）上 `dispatchKeyEvent` 无法区分「微信内部返回」与「边缘滑动手势」，重开必复发入口 bug。B1 摇一摇（默认关）/ B5 锁屏不受影响。
+- **不撤回**：B1/B2/B5/B6 触发器与状态机 3 态不变；本条只关 B4。
+
+### D-023：更新公告弹窗样式定稿（客户端对齐设计稿）+ 测试公告收尾（2026-06-29）
+- **决策**：客户端「更新通知」弹窗（`SettingsEntry.showUpdateNoticeIfNeeded`）样式定稿——大标题居中、按钮上方淡分割线（#EEEEEE）、正文红字（#FA5151）、按钮改靠右文字风（稍后灰 + 主按钮微信蓝 #576B95），**单按钮「我知道了」不再 `MATCH_PARENT` 全宽长条**（改 `WRAP_CONTENT` 靠右）。仅视图层，不动 `up` 解析 / 授权 / 状态机。
+- **依据**：用户拍板 2026-06-29 · Vchat guard_native-MJ25（HTML 预览定样 → 手机 L1 验证「弹出来了，样式对」）。三态（纯文字 / 联系客服 / 下载更新）共用同一套右对齐按钮。
+- **影响**：① `SettingsEntry.java` 仅改弹窗视图构造；已 build + `adb install -r` 装机 L1 验证，正式 release 包自动带上。② 服务器下发能力（`pv` 按 `release_lines.product_version`、release 级公告覆盖）真源在 `I:\miyou-server` 文档（SCHEMA / OPS），本条不复述（G10）。③ 期间为验证临时开的测试公告**已全部关闭**（全局 + android_8071 + 共存 `update_enabled` / `update_notice_enabled` 全 off，envelope 不再下发 `up`）。
+- **不撤回**：不影响公告下发逻辑 / 授权链 / 状态机；纯 UI 定稿。
+
 ---
 
 ## 决策模板
