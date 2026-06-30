@@ -263,6 +263,7 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         ContactLabelHideGuard.install(lpparam); // P19B 通讯录【标签】入口/管理/Activity 隐藏
         ContactLabelMemberFilter.install(lpparam); // P19B 标签内成员列表 ye5.j 密友过滤（HIDDEN 态，2026-05-31 恢复并独立成模块）
         com.ghost.assist.moduleB.ContactImportGuard.install(lpparam); // P_IMPORT 密友/密群批量导入（复用 SelectContactUI）
+        com.ghost.assist.moduleD.SelectContactFilter.install(lpparam, app.getClassLoader()); // P_SelectFilter 发圈选人器隐私过滤（hook h0.s 注入 a5.m 排除密友/密群）
         // 微信 8.0.71 带 Tinker 热补丁：运行时 UI/插件类由 app 的 DelegateLastClassLoader 加载，
         // 与 lpparam.classLoader（base.apk）不是同一份。hook 这类类必须用 app.getClassLoader()。
         PushFilter.install(lpparam, app.getClassLoader());
@@ -275,12 +276,18 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         // 隐藏微信「设置」页「存储空间」入口行（授权 + 隐身态；只读 StateMachine）
         com.ghost.assist.moduleD.SettingsStorageHideGuard.install(lpparam);
         UpdateGuard.install(lpparam);
+        // 官方热更新通道冻结（libcso/Tinker）。Tinker 类走 app classloader（DelegateLastClassLoader）。
+        // 默认观测模式（AppConfig.isHotFreezeEnabled=false）：只挂钩 log、不改行为。
+        com.ghost.assist.moduleB.HotUpdateFreeze.install(lpparam, app.getClassLoader());
         installForegroundFunnelTrigger(lpparam);  // 段1: 前台(onResume)触发引流弹窗（唯一出口 RiskPromptController）
         TriggerGuard.install(app);  // B1/B2/B5，Android API，不吃 lpparam
         com.ghost.assist.moduleD.ContactDiscoveryHook.install(app); // P_CV1 V1：动态发现通讯录 LiveList/Adapter
 
         // E2 伪装订位 — 全局伪造定位（pz0.h 是 tinker 运行时类 → 必须用 app classloader）
         com.ghost.assist.moduleE.FakeLocation.install(lpparam, app.getClassLoader());
+
+        // E3 改余额 — 全局伪造钱包/零钱余额显示（wallet_core/kinda 是 tinker 运行时类 → app classloader）
+        com.ghost.assist.moduleE.FakeBalance.install(lpparam, app.getClassLoader());
 
         // 设置入口 — 微信「我→设置」顶部注入"密友设置 ›"行（仅 VISIBLE 态可见）
         SettingsEntry.install(lpparam);

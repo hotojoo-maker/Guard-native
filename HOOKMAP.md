@@ -50,6 +50,7 @@
 | **L0v4 赞评过滤 D2/D3** | `LinkedList.add(z15.e56/cs5.di0/i84.y)` → `entry.d`（或 `f435583d`）=wxid → block | ✅ 装机确认 2026-05-20 | ⭐⭐⭐ | 4 字段轮询：`d / f435583d / username / field_userName`；getCommentList/LikeUserList 走 JNI 不可用 |
 | **F07 通讯录 8.0.71** | `ArrayList.addAll` → `fc5.g` → `g.d`（z3 实例）→ `z3.c1()` → remove | ✅ P19 2026-05-20 | ⭐⭐⭐ | **仅通讯录**；类常量 `com.tencent.mm.storage.z3`；`MvvmList.n/u` 零触发 |
 | **F07B 标签成员 8.0.71** | `ArrayList.addAll(ye5.j)` → 去后缀 wxid → `allHiddenIds()` | ✅ 2026-06-01 复跑实证 | ⭐⭐⭐ | 详情：`07_archive_归档/P19B_ContactLabel/result.md` |
+| **F07C 选人器（SCF）8.0.71** | `com.tencent.mm.ui.contact.h0.s()` beforeHook → 反射父类 `a5.m`（=`f188236m` 排除名单）`addAll(allHiddenIds())`，s() 自身按 m 排除 cursor row | ✅ 装机 2026-06-30 | ⭐⭐⭐ | 隐藏态发圈「谁可以看 / 不给谁看 → 选择朋友」无密友 / 密群；三 UI（SelectContactUI / SnsAddressUI / SnsSelectConversationAddressUI）共用 h0 一处覆盖；显形态 `isActive()=false` 直接 return（加密友不受影响）；详情 `03_execute_执行任务/P_SelectFilter_选人器隐私/任务卡.md` |
 | **朋友圈小红点 P21** | Layer0b `Activity.onResume` 入口归零；P21B `bm/rm -> s9.f(Cursor)` live 游标按 `talker` 过滤互动条目；Layer2/v18 备用 | ✅ 主线收尾：Layer0b 2026-05-21；P21B WithAll/bm 2026-06-09 | ⭐⭐⭐ | 证据：`07_archive_归档/P21_MomentsRedDot/logs/p21b_cursor_fix_verify_20260609.txt`；`rm` 同路径覆盖，后续有场景再复验；详情：`07_archive_归档/P21_MomentsRedDot/worklog.md` |
 | **L1 MvvmList.n/m** | `MvvmList.n(List,bool)` 8.0.71 / `.m`（8066）→ `kc5.v0` / `kc5.y` → `y.d`（l4）→ **`l4.C0()`** wxid（8071 主路径） | ✅ **装机确认 2026-05-20** | ⭐⭐⭐ | 8066 曾用 h1() 轮询；8071 以 C0 实证（P20B） |
 | **L2 MvvmList.s** | `MvvmList.s(List)`                         | ✅ Frida 验证 | ⭐⭐⭐    | 会话备用      |
