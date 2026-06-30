@@ -27,7 +27,7 @@
 | 6 | A2 三轴 / 检测面实证 | `C:\Users\Me\Desktop\防封_反检测线\防封权威账_2026年6月.md`（外部研究线，只读引用） |
 | 7 | 授权门控 / 状态机 | [`docs/GUARD_GATE_TRUTH.md`](./docs/GUARD_GATE_TRUTH.md) + [`PROTECTION_MAP.md`](./PROTECTION_MAP.md) |
 
-> `PLAN.md` / `进度安全盘点_v0` / `A3-0` = **ARCHIVED 留档**，不作决策依据。
+> `A3-0` = **ARCHIVED 留档**，不作决策依据（`PLAN.md` / `进度安全盘点_v0` 已于 2026-06-30 减法删除；PLAN §A.5 共享常量禁区并入 `P_AntiBanGate/DESIGN.md` 附录 F）。
 
 ---
 
@@ -49,9 +49,10 @@
 | 密友 / 密群批量导入 | P_IMPORT（A2/A3） | `07_archive_归档/P_IMPORT_密友密群导入` |
 | 来电拦截 + 通知拦截 + 未读计数过滤 | P22 / P_PF2 / P_NF4 | `03_execute_执行任务/P22_PushFilter` |
 | 伪装定位（全局伪造位置） | E2 | `07_archive_归档/E2_FakeLocation` |
-| 会话热切 V↔H（部分场景） | P_CV1 / P_ConvWarm / P26（热切版） | `07_archive_归档/P_CV1…`、`P_ConvWarm`、`P26_会话场景freshwarm` |
+| 会话热切 V↔H（部分场景） | P_CV1 / P_ConvWarm / P26（热切版） | `07_archive_归档/P_CV1…`、`P_ConvWarm`、`P26_好友热切fresh触发` |
 | B 触发：摇一摇 / 切后台 / 锁屏 / 搜索解锁 | P20B（B1/B2/B5/B6） | `07_archive_归档/P20B_BTriggers_SearchUnlock` |
 | 朋友圈"可见分组"图标隐藏 | M6a | `07_archive_归档/M6a_MomentsGroupIcon`；时间线/详情页 `pt GONE` L1（2026-06-10），个人相册页=Flutter 无原生 pt、v1 不做。详见 `HOOKMAP.md` M6a 行 / 权威 §6a |
+| 设置页隐藏「存储空间」入口（授权 + 隐身态，热切） | M6c | 代码 `src/main/java/com/ghost/assist/moduleD/SettingsStorageHideGuard.java` + ModuleMain 注册；官替 debug LSPosed 装机 L1（2026-06-30 用户复验：隐藏生效 + V→H 热切）；授权门 `isVipAuthorized()&&getState()!=VISIBLE`。详见 `HOOKMAP.md` M6c / 权威 §6c / D-024 |
 
 ### 🟡 进行中 / 部分（别当已完成）
 
@@ -78,14 +79,15 @@
 
 | 任务 | 编号 | 状态 | 文件夹 / 说明 |
 |------|------|------|--------|
-| 统一风控引擎（防封授权闸 × A2 三轴 × 蜜罐 / 引流 / 延迟弹窗 canary）| P_AntiBanGate | ⬜ 设计 only · 决策已锁（未动代码，待装机回归）| `03_execute_执行任务/P_AntiBanGate_防封授权闸/`（DESIGN + PLAN；归属 网络安全官 + 防封官）|
+| 统一风控引擎（防封授权闸 × A2 三轴 × 蜜罐 / 引流 / 延迟弹窗 canary）| P_AntiBanGate | 🟡 A2-1 签名轴码已落(未提交,快照 5dd0a52 之上)·改前+改后双审 WARN(2026-06-23/06-25)·**闸空转**(registry 缺 official_der→恒 false→不装)·待装机；其余轴(android_id/包名)+完整时间闸仍设计 only | `03_execute_执行任务/P_AntiBanGate_防封授权闸/`（DESIGN + PLAN + worklog 2026-06-25；归属 网络安全官 + 防封官）|
 | normsg 三轴身份上报实证（封号根因 = k33 包名 / k49 数据路径 / k18 签名 MD5 明文上报）| P_ANTIBAN_B36 | ✅ 研究结论 L1（frida / tcpdump 实抓 2026-06-18）| `07_archive_归档/P_ANTIBAN_B36_normsg三轴/result.md`（防封官研究产物；命脉真源在外部防封线）|
 | 重放绑定 ReplayBind（SO envelope 摘要折入 key 派生，堵 W 静态明文缝）| P_RB1 | ⬜ 未开工（仅排期，P1 加固项）| `03_execute_执行任务/P_RB1_重放绑定_ReplayBind/钥匙加固_KeyHardening设计.md`（来源 PROTECTION_MAP §10.7）|
 
-### ⚠️ 四个重复编号（同号两义，看清单别被绕晕）
+### ⚠️ 五个重复编号（同号两义，看清单别被绕晕）
 
 | 重复号 | ① 已完成 / 归档（不改名） | ② 计划 / 另一义（还没做或活跃用此义） |
 |--------|------------------------|------------------------|
+| **A2** | 密友列表（数据层 + 导入 UI，P_IMPORT，✅ 已装机；HOOKMAP §A / 权威 §3） | 防封授权闸「A2 三轴 / A2-1 签名轴」（`03_execute_执行任务/P_AntiBanGate_防封授权闸`，代码 `core/A2SignatureSpoof.java` / `core/A2PkgPathSpoof.java`，🟡 空转待装机·活跃用此义） |
 | **P22** | SearchCrawler 搜索链路调研（`07_archive_归档/P22_SearchCrawler`，research.md + result.md：`fz2.e c=3` UIN→wxid 映射 / 聊天记录内联行过滤） | PushFilter 通知 / 来电 / 未读策略层（`03_execute_执行任务/P22_PushFilter`，活跃·主用此义） |
 | **P25** | B2 触发器误触发 V→H 修复 | 类名 / 字符串 seed 化本地生成流程 |
 | **P26** | 好友 V 态热切 fresh-item | v2 设置页 UI 优化（打包进官方包设置页） |
@@ -95,7 +97,7 @@
 
 ---
 
-## 一、根目录核心文档（14 份）
+## 一、根目录核心文档（15 份）
 
 > doc-audit / 资料员 / 文档员 三个角色已于 2026-05-27 合并入 **guard-review_质检门控** 的"资料功能"档。
 
@@ -114,6 +116,7 @@
 | [`ANTIBAN_MAP.md`](./ANTIBAN_MAP.md) | **防封官权威账**：反检测 / 防封号最新水位线、证据等级、阻塞项 | antiban |
 | [`TOOLS_INDEX.md`](./TOOLS_INDEX.md) | 工具 / 脚本索引 | review |
 | [`FINDINGS.md`](./FINDINGS.md) | 发现即落盘 / 防压缩断链 | review |
+| [`术语词表_大白话对照.md`](./术语词表_大白话对照.md) | **大白话 ↔ 技术锚点对照**：给项目主看的叫法索引（顺风耳 / 保险柜 / 4 颗钥匙牙 / 散沙…）；只索引不重定义、代号不进 release 码 | 所有人 |
 | [`docs/DOC_AUDIT_2026-05-27.md`](./docs/DOC_AUDIT_2026-05-27.md) | 8071 隔离后文档审计报告 | review |
 
 ---
@@ -170,24 +173,24 @@ guard_native/
 
 | 文件 | 内容 |
 |------|------|
-| [`./refs/MainEntry.java`](./refs/MainEntry.java) | Catfish 入口 989 行（40+ hook 方法）|
-| [`./refs/UserControll.java`](./refs/UserControll.java) | Catfish 业务 944 行（状态机 / 搜索 / 摇一摇 / 通知伪装）|
-| [`./refs/VipPreference.java`](./refs/VipPreference.java) | MMKV 封装参考 |
-| [`./refs/ReflectHelper.java`](./refs/ReflectHelper.java) | 反射工具参考 |
+| [`./docs/isolation/MainEntry.java`](./docs/isolation/MainEntry.java) | Catfish 入口 989 行（40+ hook 方法）|
+| [`./docs/isolation/UserControll.java`](./docs/isolation/UserControll.java) | Catfish 业务 944 行（状态机 / 搜索 / 摇一摇 / 通知伪装）|
+| [`./docs/isolation/VipPreference.java`](./docs/isolation/VipPreference.java) | MMKV 封装参考 |
+| [`./docs/isolation/ReflectHelper.java`](./docs/isolation/ReflectHelper.java) | 反射工具参考 |
 
 ### Frida 脚本
 
 | 文件 | 内容 |
 |------|------|
-| [`./refs/filter_moments.js`](./refs/filter_moments.js) | 朋友圈过滤 Frida v21（已验证）|
+| [`./docs/isolation/filter_moments.js`](./docs/isolation/filter_moments.js) | 朋友圈过滤 Frida v21（已验证）|
 
-### 现有 refs（保留）
+### 竞品/旧版本参考（已隔离 docs/isolation）
 
 | 文件 | 内容 |
 |------|------|
-| [`./refs/VERSION_8065_ANALYSIS.md`](./refs/VERSION_8065_ANALYSIS.md) | 8.0.65 静态分析 + 跨版本字段差异 |
-| [`./refs/CATFISH_8070_INDEX.md`](./refs/CATFISH_8070_INDEX.md) | Catfish 8070 索引 |
-| [`./refs/SOURCE_MAP.md`](./refs/SOURCE_MAP.md) | 源码映射 |
+| [`./docs/isolation/VERSION_8065_ANALYSIS.md`](./docs/isolation/VERSION_8065_ANALYSIS.md) | 8.0.65 静态分析 + 跨版本字段差异 |
+| [`./docs/isolation/CATFISH_8070_INDEX.md`](./docs/isolation/CATFISH_8070_INDEX.md) | Catfish 8070 索引 |
+| [`./docs/isolation/SOURCE_MAP.md`](./docs/isolation/SOURCE_MAP.md) | 源码映射 |
 
 ---
 
@@ -297,11 +300,12 @@ I:/apk2_build/
 | 8066 历史类名（仅 diff） | [`./docs/archive/INDEX.md`](./docs/archive/INDEX.md) |
 | Catfish 行为参考 | [`./docs/isolation/INDEX_COMPETITOR.md`](./docs/isolation/INDEX_COMPETITOR.md) |
 | 我能不能做 X | [`FAILURE_LOG.md`](./FAILURE_LOG.md) F-01~F-42 档案 + CLAUDE.md §三 29 条战略铁律 先查 |
-| Catfish 怎么做的 | [`./refs/MainEntry.java`](./refs/MainEntry.java) + [`UserControll.java`](./refs/UserControll.java) |
+| Catfish 怎么做的 | [`./docs/isolation/MainEntry.java`](./docs/isolation/MainEntry.java) + [`UserControll.java`](./docs/isolation/UserControll.java) |
 | 历史版本对比 | 外部 `apk2/_4__samples/sample_history_research/VERSION_INDEX.md` |
 | 防封号边界 | 外部 `apk2/QE66_RESUME.md` + [`CLAUDE.md`](./CLAUDE.md) §六 KPI |
 | 授权服务器 | 外部 `I:/miyou-server/CLAUDE.md` |
 | 工具/脚本在哪 | [`TOOLS_INDEX.md`](./TOOLS_INDEX.md) |
+| 技术术语听不懂 / 要大白话 | [`术语词表_大白话对照.md`](./术语词表_大白话对照.md) |
 
 ---
 
