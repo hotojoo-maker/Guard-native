@@ -159,7 +159,7 @@
 
 ### 9.1 仍开口（明天/后续）
 1. **官替出货包：实测候选也坏 → 已修（2026-07-01 AK53）**。`build/lspatch_out_rel/wx_host`=debug ca421ec3（不可出货）；`02_tools_工具/lspatch_out/host_official_clean...lspatched.apk` 的内嵌 `origin.apk`=**0fe4ff85** → 同 F-43 会散沙（不可出货）。已用同修法做正确官替包 **`build/lspatch_out_official_fix/official_e3host_8071-439-lspatched.apk`**（文件+origin 双 e3e13a49，L2 预判过）。**装机 L1（冷启 certBind/recipeOk）待补**——避免打断现跑官替，未实装。
-2. **`tools/lspatch_pack.ps1` 加 `-RebindHost`**：把 step0（重签克隆宿主）自动化进脚本，否则仍靠人记。
+2. ✅ **`tools/lspatch_pack.ps1` 加 `-RebindHost`（2026-07-01 已落 + 实测·机器闸#1 上线）**：release 模式自动重签克隆宿主为 e3e13a49 再 LSPatch，不再靠人记 step0。实测 `-Flavor coexist -BuildType release` → rebind 宿主 e3e13a49 + 输出 origin.apk=e3e13a49。坑：局部变量别叫 `$rebindHost`（PS 大小写不敏感、撞 `$RebindHost` switch），已用 `$resignedHost`。
 3. **P0 `verify_cert_chain` 四端硬闸**（§4 硬闸 A）：老 AI 同意起位——cert-bleed-through 这类装前比对就该 BLOCK。
 4. **P2-2**：`kdf_common.py:66-67` 过期 coexist 注释 → ✅ 已改 v2 口径（2026-07-01）。
 
