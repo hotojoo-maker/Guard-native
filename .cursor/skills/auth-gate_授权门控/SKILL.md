@@ -1,15 +1,17 @@
 ---
+icon: 🚪
+cn: 授权门控
 name: auth-gate
 description: 授权检查官快捷入口（授权执行官/授权门控/auth-gate）。Guard Native 四层门控大框架审查；动 StateMachine/AuthManager/SearchUnlock/防盗版前必用。
 ---
-
 > ⚠️ 输出前自查：禁止错别字、黑话、客户看不懂的话。
 
 # auth-gate — 授权门控（快捷入口）
 
-## 🔐 固定签名铁律（所有角色必读）
-- 项目唯一固定签名文件：`signing/guard-native-debug.keystore`。
-- `build.gradle` 的 debug/release 必须都指向该文件；禁止依赖或重建 `~/.android/debug.keystore`。
+## 🔐 固定签名铁律（所有角色必读 · 2026-06-30 cert-converge v2 起更新）
+- **发版用** `signing/guard-native-official-release.jks`（official key、alias `guardofficial`，密码在 `signing/keystore.properties`，gitignore；D-026 起官替/共存 release 共用）。**调试 smoke 用** `signing/guard-native-debug.keystore`（guardFixed，仅模块更新 / 公告 / C2-smoke）。
+- `build.gradle` 的 release flavor 必须指向 official jks（cert `e3e13a49`）；debug 走 AGP 默认 debug keystore（cert `ca421ec3`，注定 cert mismatch → registry scatter，**不作发版候选**）。禁止依赖或重建 `~/.android/debug.keystore`。
+- **cert binding 输入源 = 宿主整包 sourceDir（D-027 / F-43）**：`ModuleMain.bindSigningCert` 改读 `app.getApplicationInfo().sourceDir`、**不**读模块自身 `sModulePath`——LSPatch metaloader 会重打包内嵌模块用自家 debug keystore 重签（`ca421ec3`），与发版 `e3e13a49` 不一致；改读宿主后跨 LSPatch 形态都对得上。
 - `INSTALL_FAILED_UPDATE_INCOMPATIBLE` 必须先停、比对已装 APK 与固定 key 指纹，未经用户确认禁止卸载。
 - 缺少固定 key 时停止 build/装机；日志只能写当前 P 任务 `logs/`，禁止写进 docs/skill 目录。
 

@@ -1,4 +1,6 @@
 ---
+icon: 🛡
+cn: 网络安全官
 name: guard-security-officer
 description: Guard Native 安全与加密官。负责客户端安全、DRM、防破解策略、加密配方、服务器授权信封、SO 解密、Java/SO/服务器交叉校验、租约时间、字段伪装、防重放、蜜罐、影子成功期、打开即弹引流、RiskLevel 和防误杀审查。Use when the user mentions 加密、SO、decrypt_config、AES-GCM、签名、服务器心跳、断网弹窗、时间异常、蜜罐、改 vip、RiskState、LeaseClock, or before refactoring native security code.
 ---
@@ -70,7 +72,6 @@ SO 不是越多越安全。
 `libguardcore.so` 的职责：
 
 - `decrypt_config()` 解密核心 registry。
-- `verify_envelope()` 验服务器签名、hash、版本、schema。
 - 校验 package/cert/device/customer 绑定摘要。
 - 给 Java 返回不可伪造的 risk hint。
 - 解不开返回散沙配置，不崩、不全开。
@@ -195,7 +196,7 @@ StateMachine.isActive()
 
 ## 加密 hook 名粒度与单一真源（2026-06-21 决策 · 维护性收口准绳）
 
-> 触发：用户问「当前加密的类名不需要那么细碎，再补一些是否更好维护？」本节给死结论。配套工作计划 `03_execute_执行任务/P_AntiBanGate_防封授权闸/PLAN.md` §二。
+> 触发：用户问「当前加密的类名不需要那么细碎，再补一些是否更好维护？」本节给死结论。配套机制设计 `03_execute_执行任务/P_AntiBanGate_防封授权闸/DESIGN.md` §3（原 PLAN §二已并入；PLAN 2026-06-30 减法删除）。
 
 ### 一句话结论
 
@@ -239,19 +240,14 @@ StateMachine.isActive()
 拆更碎 = 更难维护 + 不增安全；归一 = 更好维护 + 配合删明文才增安全。
 ```
 
-## 防封能力反白嫖（isAntiBanReady 闸 + 载荷弹窗 canary · 2026-06-21）
+## 防封能力反白嫖 → 详见 SSOT（A2 唯一真源）
 
-> 用户定调：防封（A2 三轴 = 签名/android_id/包名 喂官方）是**辛苦研究出来的成果**，**不能让人白嫖、不能被当成别人的底座**。完整设计 = `03_execute_执行任务/P_AntiBanGate_防封授权闸/DESIGN.md`；命脉真源 = 研究线权威账（见 `PROJECT_INDEX.md §四`）。本节只立**反白嫖准则**，细节看 DESIGN，不在此复写。
+> 防封（A2 三轴 = 签名/android_id/包名 喂官方）是辛苦研究的成果，不能被白嫖 / 当别人底座。**完整设计 + 反白嫖准则 = `03_execute_执行任务/P_AntiBanGate_防封授权闸/SSOT_A2授权防破解_统一真源.md`（D-020 · code-true）**；命脉真源 = 研究线权威账（`PROJECT_INDEX.md §四`）。本节只留要点指针，不复写（G10）。
 
-> ⚠️ **D-018（2026-06-26）取代下文锁 #1 / #2**（`DECISION_LOG.md` D-018 + `授权风险场景矩阵_SPEC.md` §2/§4；机制真源 = `DESIGN.md §5.1/§6`）。A2 防封闸改吊**本地模块证书完整性**（`CompatProbe.isIntegrityIntact`，fail-open）：**首装/断网/未授权都保号、永不撤 A2**（唯一例外 = 退款）；**放弃「白嫖→撤防封→封」反白嫖杠杆**，变现靠隐私付费门 `isActive`。official DER 已**本地常量化**（公开值，`A2SignatureSpoof.OFFICIAL_DER_HEX`），不再锁进 server-seed registry。下文锁 #1/#2 保留作演进记录，**勿照旧实现**。
-
-反白嫖三道锁（canary 收口到 `RiskState` + `RiskPromptController`，红线#9 一个弹窗源）：
-
-1. ~~**防封授权闸 `isAntiBanReady()`（时间闸）**~~ **【D-018 取代】**：旧设计 = 未授权超阈值 → 卸 A2 → 号被封（反白嫖）。**现 = 本地 cert 完整性 fail-open，未授权永不撤 A2**；时间闸 v1 仅 T_soft 软引流（不撤 A2）、T_login 降 v2（SPEC §4）。详见 `DESIGN.md §6`。
-2. ~~**A2 料锁进加密 registry**~~ **【D-018 取代】**：旧设计 = official DER 进 server-seed `registry_pack`、fail-closed、盗版无种子 → 散沙。**现 = DER 本地常量（公开值）、fail-open**；防重打包/盗版靠 cert（重签 → `isIntegrityIntact`=false → A2 散沙）。⚠️ **隐私 registry 仍 server-seed + fail-closed 不动**（密友四链配方）—— 别把「A2 料本地化」误读成「隐私 registry 也不锁了」。详见 `DESIGN.md §5.1`。
-3. **载荷弹窗 canary（删弹窗自反噬）·【仍有效】**：引流弹窗**稳定核心段**只做 COMPARE 绊线，命中后 `markTampered` → 影子期 → 不续命 / 引流；**禁止折进 A2 key（禁 USE）**。⚠️ **canary 刻意不进 A2 安装门**（D-018：A2 门只认 cert；canary 吊编译期 `BASELINE`，漏重算会让正版整片误封 = 逆序线灾难）—— canary 仍只走 `CompatProbe.check → markTampered → 影子期引流`。原因：防封是逆序线，USE 误判会让正版账号异常不可逆；COMPARE + 影子期保留服务器转正/恢复缓冲。坑：每版改弹窗稳定段须同步重算 canary 基线；URL / 引流地址永不进 key。
-
-边界（诚实）：客户端 APK 防不住被反编译/改（视为预期威胁）；真锁是服务器种子 + 短命租约 + 设备绑定，上面三道是「让白嫖代价 = 被封 + 删弹窗自废」的加固，非无敌。隐私功能走原有 DRM（`isConfigReady`/`isActive` + registry 加密），**不进**这个时间闸——两闸独立、各管各能力，只共用 RiskState/弹窗。
+- **A2 闸 = 本地 cert 完整性 + 时间闸**（首装 72h / 曾授权失效 7 天，fail-open；D-020 取代 D-018「未授权永不撤」）：未授权超窗撤 A2、封停/删卡撤、可被重新授权恢复（除篡改不可逆）；变现靠隐私付费门 `isActive`。
+- **official DER = 本地公开常量**（`A2SignatureSpoof.OFFICIAL_DER_HEX`，非 server-seed）；防重打包/盗版靠 cert（重签 → `isIntegrityIntact`=false → A2 散沙）。⚠️ **隐私 registry 仍 server-seed + fail-closed 不动**（密友四链配方）—— 别把「A2 料本地化」误读成「隐私 registry 也不锁了」。
+- **载荷弹窗 canary**：稳定核心段只做 COMPARE 绊线 → `markTampered` → 影子期 → 引流；**禁折进 A2 key（禁 USE）、不进 A2 安装门、URL 永不折 key**（逆序线误判不可逆，只用 COMPARE+影子期）。坑：每版改弹窗稳定段须重算 canary 基线。
+- 边界（诚实）：客户端 APK 防不住反编译/改（预期威胁）；真锁 = 服务器种子 + 短命租约 + 设备绑定。两闸独立、各管各能力，只共用 RiskState / 弹窗。
 
 ## S3b 压测后硬锁收口（2026-06-12）
 
@@ -346,7 +342,7 @@ AES key 不得是 SO 里的静态明文常量。
 - 本地材料只用于绑定和增加静态分析成本，不能替代服务器材料。
 - 不追求复杂白盒密码，但要避免 IDA 一眼看到固定 key。
 - Frida hook `decrypt_config()` 出参仍是高级威胁，防线重点是短命租约、设备绑定、risk 记录和服务端轮换。
-- ⚠️ **当前状态（2026-06-26 核实，G8 对码）**：解服务器信封 `k→S_rel` 的 wrapping key `W`（`config_crypto.cpp` 的 `g_wk_lo`/`g_wk_hi`）仍作**全局静态明文回退**；牙③ W_dev 一机一密 **batch0/1 已落码**（`caf2142`：`derive_wrap_key`/`setDeviceMaterial`/双试 unwrap，全局 W 仍回退），Batch2（按设备切）+ Batch3（删全局 W）未做。牙④ 重放绑定 = **a 案**（SO 比 `expire_at`、**不折 key**），📄 未落码。详合并设计稿 `03_execute_执行任务/P_RB1_重放绑定_ReplayBind/钥匙加固_KeyHardening设计.md`，见「阶段计划」第 9/10 项。
+- ⚠️ **当前状态（2026-06-27 晚回正 · G91 · 2026-06-30 cert-converge + Batch3 门禁调整，证据 = git + `I:\miyou-server\REVIEW_2026-06-27.md` §A）**：解服务器信封 `k→S_rel` 的 wrapping key `W`（`config_crypto.cpp` 的 `g_wk_lo`/`g_wk_hi`）仍作**全局静态明文回退**；牙③ W_dev 一机一密 **batch0/1 已落码**（`caf2142`：`derive_wrap_key`/`setDeviceMaterial`/双试 unwrap，全局 W 仍回退）+ **Batch2（服务器按设备切）已部署主节点**（prod KDF 自检过，2026-06-30 实测灰度 dm 回填 100% — 2/2 设备）；**Batch3（删全局 W）未做**，~~冻结待 dm ≥90% + 观察窗~~ **门禁 2026-06-30 改为「服务器单方判定」（D-029）**：prod 仅 2 设备 / 无规模化客户 → 灰度统计失去意义 → 服务器直接删 `crypto_utils.py` 的 `w_b64` 回退分支 + 客户端同步删 `config_crypto.cpp` 双试 unwrap 中的全局 W；发点顺序仍 = 服务器先停发 → 客户端再出新包（顺序不可反）；落码归 P_RB1 牙③ Batch3 工作项，待 V3 新发行线（或 D-026 cert-converge 后续）同时推。详 `DECISION_LOG.md` D-029。牙④ 重放绑定 = **a 案**（SO 比 `expire_at`、**不折 key**），**已落码**（commit `f6cc31b`/`c5597b1`，2026-06-27）。**cert binding 输入源（2026-06-30 D-027 / F-43）**：`bindSigningCert` 改读宿主整包 sourceDir（不是 `sModulePath`），LSPatch metaloader 重打包重签模块（`ca421ec3`）不再影响 cert binding。详合并设计稿 `03_execute_执行任务/P_RB1_重放绑定_ReplayBind/钥匙加固_KeyHardening设计.md`，见「阶段计划」第 9/10 项。
 
 ## 三端钥匙派生镜像对账（维护铁律 · F-31 静默翻车重灾区）
 
@@ -571,15 +567,15 @@ GuardRuntime.getActiveRegistry()
 4. ✅ Phase 1B Registry 抽取：核心 hook 配方抽成 registry，明文跑通。（PHASE1B_VERIFY PASS）
 5. ✅ Phase 1C Encrypted Registry：`registry_8071.json` 单一源 → `registry_cipher.inc`，SO 解密 registry，失败散沙；搜索收敛 `search.gateway`；另含 1D-local 派生 key（去明文 key 常量）+ A-step2 证书绑定。（PHASE1C/1D_VERIFY PASS）
 6. 🟡 **Phase 1C.5 Filter 读 registry（消明文双份，任务名 `P1E_Filter读Registry`）**：让 ContactFilter/MomentsFilter/ConvFilter 真从 registry 读类名（取件口 `GuardRuntime.getRecipe`+`nativeGetRecipe`），conv.list 漂移债已结案；现为 registry+fallback 双份，**删 fallback 未做**（每个 Filter 删前要先核账 registry 完整性）。SearchFilter 暂未迁。⚠️ 注意：这里的任务名 P1E ≠ 下面第 8 条的 Phase 1E。
-7. ✅/🟡 **Phase 1D-server（S2/S3a/S4/S3b，2026-06-11）**：miyou-server 已下发 Ed25519 signed envelope；客户端 `EnvelopeClient` / `AuthEnvelopeVerifier` / `EnvelopeStore` / `GuardHeartbeat` / `GuardActivation` 已形成商业授权闭环（**客户端 pv 现 v1.3**，见 `build.gradle`）。当前 `android_8071` 已切 `prod_server_lock`：`registry_cipher.inc` 为 `GUARD_REGISTRY_REQUIRES_SERVER_SEED=1`，线上 envelope `k/n` unwrap 后 `recipeOk=true`。现状权威 + 下一受控步骤见 `PROTECTION_MAP.md` §10.6。
+7. ✅/🟡 **Phase 1D-server（S2/S3a/S4/S3b，2026-06-11）**：miyou-server 已下发 Ed25519 signed envelope；客户端 `EnvelopeClient` / `AuthEnvelopeVerifier` / `EnvelopeStore` / `GuardHeartbeat` / `GuardActivation` 已形成商业授权闭环（**客户端 pv 现 v1.6**，见 `build.gradle`）。当前 `android_8071` 已切 `prod_server_lock`：`registry_cipher.inc` 为 `GUARD_REGISTRY_REQUIRES_SERVER_SEED=1`，线上 envelope `k/n` unwrap 后 `recipeOk=true`。现状权威 + 下一受控步骤见 `PROTECTION_MAP.md` §10.6。
 8. 🟡 **Phase 1E LeaseClock + RiskState（P1F 本地一刀 + 两闸，S3b 已推进）**：`LeaseClock` 已接信封授时并用于到期判定；设置页断网 >72h 强制重验，失败撤销授权但保留 token 自愈；`RiskState` 主链仍偏 record-only，但来电拦截已接 `RiskState.isTamperDegraded()` 单点散沙例外；全链路散沙降级与正版恢复闭环仍未完成。
-9. 🟡 **Phase 1F W 一机一密（`P_RB1_重放绑定_ReplayBind/钥匙加固_KeyHardening设计.md`，batch0/1 已落码 `caf2142`）**：wrapping key W 从「全局静态明文 `g_wk_lo`/`g_wk_hi`」改为 `W_dev = KDF(本地三段 wseg + 设备材料 SHA-256(ANDROID_ID))`，服务器按设备上报 `dm` 逐设备 wrap `S_rel`。收「抽一把 W 离线通杀所有设备信封」。**已落**：客户端 `setDeviceMaterial` + 双试 unwrap（全局 W 仍回退）。**未做**：Batch2（服务器按设备切 W_dev 信封）+ Batch3（删全局 W）。3 步灰度（双试 → 按设备切 → 删全局 W），缺迁移方案即全量正版散沙。落地受「三端钥匙派生镜像对账」铁律约束。
-10. 📄 **Phase 1G 重放绑定 P_RB1（`P_RB1_重放绑定_ReplayBind/钥匙加固_KeyHardening设计.md`，⬜ 未落码 · a 案）**：原「折 envelope 摘要进 `derive_registry_key`」**已否决**（正版续约会自锁）；改 **a 案**——Java 验签后 `setEnvelopeExpiry` 下推，SO `unwrap_server_seed` 后比 `expire_at <= trusted_now`（官方授时 floor 防冻结）→ 过期散沙，**不折静态 key**。优先级 P1（牙③ 设备绑定已落，本项堵旧/过期信封重放）。
+9. 🟡 **Phase 1F W 一机一密（`P_RB1_重放绑定_ReplayBind/钥匙加固_KeyHardening设计.md`，batch0/1 已落码 `caf2142`；2026-06-27 G91 回正 · 2026-06-30 D-029 门禁调整）**：wrapping key W 从「全局静态明文 `g_wk_lo`/`g_wk_hi`」改为 `W_dev = KDF(本地三段 wseg + 设备材料 SHA-256(ANDROID_ID))`，服务器按设备上报 `dm` 逐设备 wrap `S_rel`。收「抽一把 W 离线通杀所有设备信封」。**已落**：客户端 `setDeviceMaterial` + 双试 unwrap（全局 W 仍回退）+ **Batch2 服务器按设备切 W_dev 信封已部署主节点**（`REVIEW_2026-06-27.md` §A，2026-06-30 实测灰度 dm 回填 100% — 2/2 设备）。**未做**：Batch3（删全局 W）；~~冻结待 dm ≥90% + 观察窗~~ **门禁 2026-06-30 改「服务器单方判定」（D-029）**：服务器先停发全局 W → 客户端再出新包删双试回退。3 步灰度（双试 → 按设备切 → 删全局 W），缺迁移方案即全量正版散沙。落地受「三端钥匙派生镜像对账」铁律约束。
+10. ✅ **Phase 1G 重放绑定 P_RB1（`P_RB1_重放绑定_ReplayBind/钥匙加固_KeyHardening设计.md`，已落码 · a 案；2026-06-27 G91 回正）**：原「折 envelope 摘要进 `derive_registry_key`」**已否决**（正版续约会自锁）；改 **a 案**——Java 验签后 `setEnvelopeExpiry` 下推，SO `unwrap_server_seed` 后比 `expire_at <= trusted_now`（官方授时 floor 防冻结）→ 过期散沙，**不折静态 key**。**已落码**（commit `f6cc31b` + 负向单测 `c5597b1`，2026-06-27）。优先级 P1（牙③ 设备绑定已落，本项堵旧/过期信封重放）。
 
 ## 当前 SO 基线与工作量
 
 - 当前 `libguardcore.so`：在 Phase 0/Batch1 骨架（加载/JNI/进程角色/隐藏状态机/wxid 匹配/轻量包名/config_version）之上，**已加** `decrypt_config()` + AES-GCM + encrypted registry + 派生 key（去明文 key 常量）+ 证书绑定 + `registry_get_recipe`（取件口）。
-- **仍不是安全官标准真锁终局**：`nativeIsAuthorized()` / `nativeGetAuthState()` 仍是占位；`StateMachine.isVipAuthorized()` 已接 `EnvelopeStore.isAuthorizedNow()`；当前 `android_8071` 已用 server seed 解 registry。**缺**：共存版 `GUARD_RELEASE_ID` flavor 注入、删剩余 Filter 明文字面量 / fallback 债、V3 官替/共存证书源完整对齐、RiskState 全链路散沙降级与正版恢复闭环。对外不得宣称“授权无法破解”或“服务器真锁终局完成”。
+- **仍不是安全官标准真锁终局**：`nativeIsAuthorized()` / `nativeGetAuthState()` 仍是占位；`StateMachine.isVipAuthorized()` 已接 `EnvelopeStore.isAuthorizedNow()`；当前 `android_8071` / `android_8071_coexist` 均用 server seed 解 registry（v2 已合并为同源 S_rel `7255096e` + 同 cert `e3e13a49`，详 `docs/RELEASE_LINE_SSOT_发行线统一口径.md`）。**缺**：删剩余 Filter 明文字面量 / fallback 债、RiskState 全链路散沙降级与正版恢复闭环、`GuardHeartbeat.java:90` install_id per-install UUID（服务器重装锁闸前置）。对外不得宣称"授权无法破解"或"服务器真锁终局完成"。
 - 最低可用真锁：约 10 到 18 人天。范围：AES-GCM 测试向量、`decrypt_config()`、3 到 5 个核心 registry 抽取、`EncryptedConfigLoader`、基础 signed envelope、解不开散沙。
 - 上线标准：约 20 到 35 人天。范围：验签、防重放、device/customer/package/cert 绑定、LeaseClock、RiskState、蜜罐影子期、正版恢复闭环、release 混淆和装机回归。
 - 最小可用版：300 到 500 行 C++。
@@ -612,7 +608,7 @@ SO 只管“验真 + 解密 + 关键风险信号”；弹窗、影子期倒计�
 - 生成 cipher 时的签名证书 SHA-256 必须等于运行时 binding material；官替版/共存版签名不同就必须分别生成，不得混用。
 - Java 白名单、Xposed scope、C++ `GUARD_EXPECTED_PACKAGE`、服务器 `release_id` 必须来自同一包档案；不能只改 C++。
 - 业务 hook 仍生效但 `PHASE1D/1E` 失败时，可能只是 fallback 在兜底；禁止宣称加密链路通过。
-- 当前可宣称“商业授权闭环（客户端 pv v1.3）+ Ed25519 防伪造信封 + 当前发行线 server seed 解 registry 已接入”；删 fallback / V3 发行线 / RiskState 真降级完成前，禁止宣称“授权无法破解”或“服务器真锁终局完成”。
+- 当前可宣称“商业授权闭环（客户端 pv v1.6）+ Ed25519 防伪造信封 + 当前发行线 server seed 解 registry 已接入”；删 fallback / V3 发行线 / RiskState 真降级完成前，禁止宣称“授权无法破解”或“服务器真锁终局完成”。
 
 ## 安全任务收尾铁律
 

@@ -107,7 +107,7 @@ description: Guard Native 服务器运维与发行线接手。Use when the user 
 - **逐设备派生 W_dev 包 `S_rel`**：服务器用 `derive_wrap_key(dm)` 算该机 W_dev，AES-128-GCM 包 `S_rel`→`k/n`（取代 `w16` 全局 W 那段）。⚠️ **服务器的 `derive_wrap_key` 必须与 SO `config_crypto.cpp` / `tools/kdf_common.py` 逐字节一致**——服务器是镜像对账的一端，先过 KDF 测试向量再上；不一致 = 正版机 unwrap 失败 → registry 散沙 → 静默全挂（F-31）。
 - **`dm` + 信封摘要进 Ed25519 签名覆盖**：防 MITM 篡 `dm` / `k`。
 - **判定切信封（请求式·无歧义）**：判定基准 = **本次请求里自校验过的 `dm`**；因每次请求都回填入库，「请求带 `dm`」与「库里已回填」等价。带自校验 `dm` 的设备发 **W_dev 信封**；其余继续全局 W（这就是灰度②）。
-- **看板加 `dm` 回填进度核账**：按 release 看「活跃设备里已回填 `dm` 占比」——切 Batch 3（删全局 W）的前置门槛。
+- **看板加 `dm` 回填进度核账**：按 release 看「活跃设备里已回填 `dm` 占比」——~~切 Batch 3（删全局 W）的前置门槛~~。**2026-06-30 D-029 起改「服务器单方判定」**：prod 仅 2 设备 / 无规模化客户 → 回填率统计失去意义；切 Batch 3 不再等 dm ≥ 90%、直接服务器先停发全局 W → 客户端再出新包删双试回退。回填率看板仍保留作运营辅助。
 
 ### 红线对齐（沿用本 skill 既有红线）
 
@@ -115,7 +115,7 @@ description: Guard Native 服务器运维与发行线接手。Use when the user 
 - fail-closed：错 / 无 `dm`、错 W_dev → 该信封解不开 = 散沙，不崩、不全开、不删数据、不伤旧线（红线#4/#7/#8）。
 - 改 `crypto_utils.py` envelope / 新增 `guard_device_state` 列前：先备份 `auth.db`（红线#9）、只展示指纹（红线#1/#2）。
 - 完成 Batch 2 ≠ 真锁终局；牙③ 真生效还要 Batch 3 收口（删全局 W）。对外口径不得升级（不得称「真锁终局」）。
-- **🔴 Batch3 门禁（删全局 W 前必须全满足，否则全量正版散沙）**：① 活跃设备 dm 回填率 **≥ 90%**（当前 ~25%）② Batch2 稳定观察窗 1–2 周、health 无 W_dev `SERVER_SEED_UNWRAP_FAIL` 尖峰 ③ 绑 V3 新发行线、不动旧线 ④ 安全官 + 授权检查官共审 ⑤ 服务器先停发 → 给客端 Batch3 信号 → 客端再删回退（顺序不可反）。详见 `I:\miyou-server\REVIEW_2026-06-27.md` §B；`crypto_utils` 全局 W 回退分支在门禁满足前**保留**（该行已加红线注释）。
+- **🔴 Batch3 门禁（2026-06-30 D-029 已简化为「服务器单方判定」）**：~~① 活跃设备 dm 回填率 **≥ 90%**（当前 ~25%）② Batch2 稳定观察窗 1–2 周~~（prod 仅 2 设备 / 无规模化客户、灰度统计失去意义，2026-06-30 实测 dm 100%）③ 绑 V3 新发行线 / 或 D-026 cert-converge v2 同时推（不必独立起项）④ 安全官 + 授权检查官共审 ⑤ **服务器先停发 → 给客端 Batch3 信号 → 客端再删回退（顺序不可反，唯一硬约束）**。详见 `DECISION_LOG.md` D-029（取代 `I:\miyou-server\REVIEW_2026-06-27.md` §B 中的「dm ≥ 90%」一项）；`crypto_utils` 全局 W 回退分支在 Batch3 落码前**仍保留**（该行已加红线注释）。
 
 ### 排错补充（接 §排错口径）
 

@@ -1,4 +1,6 @@
 ---
+icon: 📦
+cn: 发版
 name: guard-release-officer
 description: Guard Native 发版官（发布 / 出包 / 官替版 / 共存版 / 换 s_rel / LSPatch 注入 / miyou-server 同步 / 装机验证）。把"真锁种子轮换 + 双版本出包 + LSPatch 注入 + 服务器同步 + 装机 L1 验证"串成一条可复刻流水线，用同一套签名 / 工具 / 流程 / 服务器方式。用户说"发版 / 发布新版本 / 做官替版 / 做共存版 / 出包 / 打包 / 换种子 / s_rel 轮换"时使用本 skill。
 ---
@@ -29,8 +31,8 @@ description: Guard Native 发版官（发布 / 出包 / 官替版 / 共存版 / 
 
 | 项 | 值 / 位置 |
 |---|---|
-| 签名 keystore | `signing/guard-native-debug.keystore`（guardFixed；store/key pass=android，alias=androiddebugkey）|
-| 模块证书 SHA-256 | `ca421ec3...` = registry `_CERT_SHA256`（模块包必须用此证书签，否则 registry 解不开）|
+| 签名 keystore | **发版用** `signing/guard-native-official-release.jks`（official key、alias=`guardofficial`，密码在 `signing/keystore.properties`，gitignore；2026-06-30 D-026 cert-converge v2 起官替+共存共用此把）。**调试 smoke 用** `signing/guard-native-debug.keystore`（guardFixed；store/key pass=android，alias=androiddebugkey；仅模块更新/公告/C2-smoke 用，cert mismatch 注定 scatter，不作发版候选） |
+| 模块证书 SHA-256 | **官替 / 共存 release 均 `e3e13a49`（v2 已合并）** / debug `ca421ec3`（仅 smoke）= 本线 registry `_CERT_SHA256`（模块包必须用本线证书签，否则 registry 解不开）。详 `docs/RELEASE_LINE_SSOT_发行线统一口径.md` §1。|
 | 工具 | `02_tools_工具/lspatch.jar`（JingMatrix LSPatch）、`02_tools_工具/apktool.jar`（共存改包名）|
 | 真锁配方 | `release/secrets/<release_id>.json`（机密，gitignore，含 `s_rel`/`wrap_key`，禁进 git/聊天/文档）|
 | W（wrap_key） | 客户端 SO `g_wk` = 服务器 `wrap_key[:16]`；换 s_rel **不动** W |
@@ -56,19 +58,25 @@ description: Guard Native 发版官（发布 / 出包 / 官替版 / 共存版 / 
 
 ## 主流程（5 步）
 
+> 📌 **打包/装机唯一真源** = `docs/RELEASE_RULES.md`「双版本发布手册」（含共存 4 步快查 + 干净装机铁律）。本 skill 只列角色速记，命令以 RELEASE_RULES 为准、防漂移。
+
 - **A 换 s_rel（可选）**：改 `release/secrets/<id>.json` 的 `s_rel_b64`（新随机 32B，W 不变）→ `python tools/gen_registry_cipher.py --recipe release/secrets/<id>.json` 重生成 `registry_cipher.inc`（确认 `GUARD_REGISTRY_REQUIRES_SERVER_SEED=1`）。两边指纹 `sha256(s_rel)[:8]` 对齐。
-- **B 出包**：`./gradlew :assembleOfficialDebug`（`com.tencent.mm`）或 `:assembleCoexistDebug`（`com.tencent.mn`）。
-- **C LSPatch 重新打包**：`java -jar 02_tools_工具/lspatch.jar <宿主APK> -m <对应flavor模块APK> -l 2 -k signing/guard-native-debug.keystore android androiddebugkey android -o 02_tools_工具/lspatch_out -f`。校验日志 `Embedding modules - com.ghost.assist`，可拆包比对内嵌 `libguardcore.so` 哈希。
+- **B 出包**（**发版候选用 Release 变体**，cert-converge v2 D-026 起强制）：`./gradlew :assembleOfficialRelease`（`com.tencent.mm`）或 `:assembleCoexistRelease`（`com.tencent.mn`）。自动跑 `checkStringLeak{Official,Coexist}Release` 硬闸（dex+SO 扫泄漏）。Debug 变体只作模块更新 / 公告 / C2-smoke、cert mismatch 注定 scatter、**不作发版候选**。
+- **C LSPatch 重新打包**（**`-k` 必须用 official release keystore**，cert binding 改读宿主 sourceDir = `-k` 那把 = `e3e13a49`）：`java -jar 02_tools_工具/lspatch.jar <宿主APK> -m <对应flavor模块APK> -l 2 -k signing/guard-native-official-release.jks <storePass> guardofficial <keyPass> -o 02_tools_工具/lspatch_out -f`。密码从 `signing/keystore.properties` 读。校验日志 `Embedding modules - com.ghost.assist`，可拆包比对内嵌 `libguardcore.so` 哈希。**一键替代**：`.\tools\lspatch_pack.ps1 -Flavor <official|coexist> -BuildType release -Clean -Build`（commit `2cd643c`）。
 - **D 服务器同步**（交 guard-server_服务器运维）：`config.py` 的 `GUARD_REL_KEYS[<id>].srel` 换同一新 s_rel + `release_lines` 登记（package_line/product_version）+ 部署主/备两节点。
 - **E 装机 L1 验证**：冷启动看 `available=true`、`role=1 MAIN`、`BATCH1_VERIFY PASS`；心跳后 `recipeOk=true`。日志落盘才算发布候选。
 
-## 五条坑（已实证，违反即翻车）
+## 六条坑（已实证，违反即翻车）
 
 1. **包名注入要连进程名**：`GUARD_WX_PKG` 不能只喂 `anti_tamper` 的 `EXPECTED_PACKAGE`，还必须驱动 `guard_core.h` 的 `PROCESS_MAIN`/`PROCESS_PUSH`。漏了 → 共存版 `role=UNKNOWN` + `BATCH1 FAIL` → 不报错但不隐藏。新增"按包名分支"的 native 常量一律从 `GUARD_EXPECTED_PACKAGE` 派生。
 2. **同 release_id 换 s_rel = 旧装机包散沙**。要"新版不影响老用户"必须用**新 release_id**（如 `android_8071_coexist`，需 flavor 专属 `GUARD_RELEASE_ID` + 独立 s_rel + 服务器加线）。
 3. **服务器 `config.py` 不在默认部署文件里**：`deploy_release_health.py` 只推 `server.py`/`db.py`；s_rel 在 `config.py`，要单独推 + 先核远端基线逐字节一致 + 远端备份 `config.py`+`auth.db`。
-4. **装机反复 install/卸载会出半损坏僵尸**（启动崩 LSPatch metaloader `NoClassDefFoundError` / 卸载报 `DELETE_FAILED_INTERNAL_ERROR`）→ **重启手机**清 dex/odex 状态再装，别误判为代码/兼容问题。
-5. **改包重签固有限制**：第三方 App 调起 / 跳转微信支付会失败（微信内支付正常）。需第三方支付跳转的客户走官方微信；共存版定位 = 官方管支付跳转 + 共存版管隐私。
+4. **装机反复 install/卸载会出半损坏僵尸**（启动崩 LSPatch metaloader `NoClassDefFoundError` / 卸载报 `DELETE_FAILED_INTERNAL_ERROR`）→ **重启手机**清 dex/odex 状态再装。重启后仍每次崩（`ExceptionInInitializerError`→`NoClassDefFoundError`，崩到 `crashed too many times: killing`）= 代码/打包 bug，非 dex 缓存，查模块首个 static init（`Loading legacy module` 后、任何 `NCL` 日志前就崩）。
+5. **改包重签固有限制**：第三方 App 调起 / 跳转微信支付会失败（微信内支付正常）。需第三方支付跳转的客户走官方包；共存版定位 = 官方管支付跳转 + 共存版管隐私。
+6. **装机签名核对 + 设备状态**：
+   - 装官替前 `apksigner verify --print-certs` 比对手机现装 `com.tencent.mm` cert 与官替 release cert `e3e13a49`（v2 共存 release 同 `e3e13a49`；debug smoke = `ca421ec3`）。
+   - 手机 `com.tencent.mm` 若 clean 未打补丁且 cert ≠ 我方官替 cert `e3e13a49`（609b4b18 = `0fe4ff85`）= 正版官方微信，该机测不了官替（`-r` 跨签名失败、卸正版丢数据），官替验证用另一台空机；该机用共存 `com.tencent.mn` 测。
+   - 「官方原版 host APK」可能已是 LSPatched（含 `assets/lspatch/origin.apk`，再 LSPatch → 0 字节）；用其 `assets/lspatch/origin.apk` 作 clean host，或用真 clean 原版（root `host_official_com.tencent.mm_8.0.71.apk` 已 patched，`_8.0.70` clean 但版本不对）。
 
 ## 边界（不越权，交对应 skill）
 
@@ -83,6 +91,6 @@ description: Guard Native 发版官（发布 / 出包 / 官替版 / 共存版 / 
 
 1. 必须装机 L1（`role=1 MAIN` + `BATCH1 PASS` + `recipeOk=true`，终端直采日志落盘）才算发布候选；用户口述只记待补。
 2. 只更新当前发版 `worklog` + `docs/RELEASE_RULES.md`，不把同一结论复制到多处。
-3. 对外口径：可说"v1.1 授权闭环 + Ed25519 防伪造信封 + 当前发行线 server seed 解 registry"；**禁说**"服务器真锁终局完成 / 授权无法破解"。
+3. 对外口径：可说"v1.6 授权闭环 + Ed25519 防伪造信封 + 当前发行线 server seed 解 registry"；**禁说**"服务器真锁终局完成 / 授权无法破解"。
 4. keystore 密码 / 私钥 / `s_rel` / `wrap_key` 原文禁进 git / 聊天 / 文档；只记 `sha256[:8]` 指纹。
 5. 1.0 正式发布后：`packageName` / keystore / `customerSeed` / `release_id` 永久不可变，只递增 `versionCode`（见 RELEASE_RULES「1.0 后签名证书不可变」）。
