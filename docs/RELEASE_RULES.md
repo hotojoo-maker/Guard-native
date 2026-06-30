@@ -5,15 +5,17 @@
 ## 危险通告 / 一键停用（安全兜底）
 
 **触发场景**：大面积账号异常 / 检测密度暴增 / 新版微信未适配 → 必须能远程拔插
-**机制**：
-- 客户端启动拉 miyou-server `cs_url` 的危险通告接口
-- 接口返回字段 `kill_switch: true|false`
-- `true` → 跳过 hook 注册（表现为完全无功能但不崩溃）+ 浮窗显示"已停用，等待更新"
-- 用户可手动覆盖（按住返回键 5 秒 → 临时启用，仅自查）
 
-**v1 实现**：客户端启动埋占位实现（默认 false），不调真实接口
-**v2 实现**：接入 miyou-server 真实接口 + HMAC 验签
-**服务器**：公告系统已就绪 → `I:/miyou-server/CLAUDE.md`
+**当前实现**（无需单独 `kill_switch` 字段；2026-06-30 减法收口）：
+
+| 应急维度 | 怎么做 | 客户端表现 |
+|---|---|---|
+| **整条发行线停用**（最常用） | 后台改 `release_lines.status=killed` | EnvelopeClient.activate / fetchEnvelope 返 `RELEASE_KILLED` → token 清 / 不开 hook → Toast「该版本已停用，请联系客服」 |
+| **单卡封停 / 退款** | 后台卡密 `status=banned/refunded` | envelope `cardRevoked=1` → 客户端立刻撤 A2 + 隐私（SPEC §4，唯一连坐两闸的非篡改场景） |
+| **暂停新激活但不影响老用户** | 后台 `release_lines.status=paused` | 老用户继续走；新激活返 `RELEASE_PAUSED`「该版本暂停新激活」 |
+| **服务器宕机** | 不用做 | 客户端 72h 离线宽限，过期自动降级（fail-closed） |
+
+> 历史：曾有本地 `AppConfig.isKillSwitch()` v1 占位（永远 false 的孤儿 stub）+ `ModuleMain §5` 启动门控读它。**2026-06-30 减法收口**：RELEASE_KILLED + cardRevoked + RELEASE_PAUSED 已覆盖全部应急维度，stub 与门控代码删除（commit 见下方时间线）。
 
 详细决策 → [`DECISION_LOG.md`](../DECISION_LOG.md) D-013
 
@@ -79,7 +81,9 @@ Guard Native / Guard Pack 从 **1.0 正式发布**开始，同一客户包必须
 
 ## 双版本发布手册（官替版 / 共存版）
 
-### 签名与安装唯一真相（2026-06-29）
+### 签名与安装唯一真相（v2 · 2026-06-30 cert-converge）
+
+> 命名 / cert / registry 真源 = `docs/RELEASE_LINE_SSOT_发行线统一口径.md`（v2 一套配方）。本节为速记，冲突以 SSOT 为准。
 
 以 `./gradlew signingReport` 和 Android 安装器为准：
 
@@ -87,7 +91,9 @@ Guard Native / Guard Pack 从 **1.0 正式发布**开始，同一客户包必须
 |------|----------|------|
 | `officialDebug` / `coexistDebug` 模块 APK | `ca421ec3` debug key | 只用于模块更新、公告、C2/心跳 smoke；因 `GUARD_EXPECTED_CERT` 仍按正式 cert 注入，registry/A2 会 cert mismatch/scatter |
 | `officialRelease` 模块 APK | `e3e13a49` official key | 官替正式发行候选 |
-| `coexistRelease` 模块 APK | `8f47a47a` coexist key | 共存正式发行候选 |
+| `coexistRelease` 模块 APK | **`e3e13a49` official key（v2 已合并）** | 共存正式发行候选；signingConfig 改指 `guardOfficialRelease` |
+
+> v1 共存专用 `8f47a47a` keystore 已退役（jks 保留作历史，未引用于任何 buildType）。详见 SSOT §0.5 / §2 / §8。
 
 安装判定分两层，禁止混：
 
@@ -205,7 +211,7 @@ BATCH1_VERIFY PASS
 
 1. **官替版只能覆盖官替版**：包名固定 `com.tencent.mm`，签名证书必须一致。
 2. **共存版只能覆盖共存版**：包名固定 `com.tencent.mn`（首发已定），签名证书必须一致。
-3. **官替版和共存版互不覆盖**：它们是两条独立发行线，分别维护 `versionCode`、keystore、release_id 和客户包档案。
+3. **官替版和共存版互不覆盖**：它们是两条独立发行线，分别维护 `versionCode`、release_id 和客户包档案；**v2 起共用同一把 release keystore（official jks → `e3e13a49`），区分仅靠包名 / release_id**。
 4. **同一版本线禁止换签名**：换签名 = Android 不能覆盖安装，且证书绑定会导致 encrypted registry 散沙。
 
 ### 发包 / 分发边界（2026-06-11 用户口径）
@@ -232,15 +238,15 @@ apktool: C:\Users\Me\Desktop\guard_native\02_tools_工具\apktool.jar
 最少记录：
 
 ```text
-release_line: hijack | coexist
+release_line: hijack | coexist        # 仅 package_line 维度命名，非 release_id 后缀
 package_name: com.tencent.mm 或共存后缀包名
-release_id: android_8071_hijack 或 android_8071_coexist
-keystore_path: 本地离线 keystore 路径
+release_id: android_8071 或 android_8071_coexist   # 官替裸 android_8071；共存带 _coexist 后缀
+keystore_path: signing/guard-native-official-release.jks (v2 两线共用)
 key_alias: 签名 alias
 version_code_next: 下一个可用 versionCode
 customer_seed: 客户/批次 seed
 guard_wx_pkg: 运行时宿主包名
-cert_sha256_source: 从 keystore/签名自动读取，不手写
+cert_sha256_source: 从 keystore/签名自动读取，不手写（v2 两线都是 e3e13a49）
 ```
 
 禁止事项：
@@ -267,9 +273,8 @@ cert_sha256_source: 从 keystore/签名自动读取，不手写
 
 - C++ 包名注入已预留：`-PguardWxPkg=...`（CMake `-DGUARD_WX_PKG` → `GUARD_EXPECTED_PACKAGE`）。
 - Java 宿主包白名单已随 `BuildConfig.GUARD_WX_PKG` 区分 official/coexist；共存版进程识别不再写死 `com.tencent.mm`。
-- ⚠️ `GUARD_RELEASE_ID` 仍在 `AppConfig` 硬编码为 `android_8071`，尚未随 flavor 写入。因此当前共存版即使宿主包名是 `com.tencent.mn`，客户端仍会上报 `android_8071`，不会真正走 `android_8071_coexist` 发行线。
-- **下次新版本发版前第一步**：先把 `GUARD_RELEASE_ID` 改成 `BuildConfig.GUARD_RELEASE_ID`，并在 official/coexist flavor 分别注入自己的 release_id；否则服务器版本总账会继续按 `android_8071` 聚合。
-- 共存版如果由 MT 管理器等工具改包名，仍必须把最终包名同步给模块构建链；下一步还必须同步 `GUARD_RELEASE_ID`，不能只改 C++ / 宿主包名。
+- ✅ `GUARD_RELEASE_ID` 已 per-flavor 注入（`build.gradle:138/154` + `AppConfig.java:52 = BuildConfig.GUARD_RELEASE_ID`，2026-06 完成）。官替上报 `android_8071`、共存上报 `android_8071_coexist`，服务器按 release_id 各自聚合。
+- 共存版如果由 MT 管理器等工具改包名，仍必须把最终包名同步给模块构建链（`GUARD_WX_PKG` 与 `GUARD_RELEASE_ID` 必须同源）。
 
 > ⚠️ **包名注入坑（2026-06-12 实证修正）**：`GUARD_WX_PKG` 不能只喂 `anti_tamper` 的 `EXPECTED_PACKAGE`，还**必须**驱动 `guard_core.h` 的 `PROCESS_MAIN` / `PROCESS_PUSH`（进程角色判定）。历史上后两者写死 `com.tencent.mm`，导致共存版（`com.tencent.mn`）进程角色判为 `UNKNOWN` → `BATCH1_VERIFY FAIL` → 业务 hook 不安装 → **不报错但不隐藏**。已改为 `PROCESS_MAIN = GUARD_EXPECTED_PACKAGE`、`PROCESS_PUSH = GUARD_EXPECTED_PACKAGE ":push"`（官替版值不变，零影响）。新增任何"按包名分支"的 native 常量，一律从 `GUARD_EXPECTED_PACKAGE` 派生，禁止再写死。
 
@@ -300,7 +305,7 @@ native_core/registry_8071.json
 
 - 已完成：AES-GCM encrypted registry、签名证书绑定、`GuardRuntime.getRecipe()` 取配方、失败 scatter、S4 Ed25519 信封验签、S3b-A/B 服务器授时 + 设置页 72h 离线强验。
 - 已完成（当前 `android_8071` 发行线）：`prod_server_lock` 生成链路已把服务器 `S_rel` 折入 `registry_cipher.inc`，产物 `GUARD_REGISTRY_REQUIRES_SERVER_SEED=1`；线上 envelope `k/n` unwrap 后 `recipeOk=true`，无有效 server seed 时 registry scatter。
-- 仍未完成：共存版 `GUARD_RELEASE_ID` flavor 注入、删剩余 Filter 明文字面量 / fallback 债、V3 官替/共存证书源完整对齐、RiskState 全链路散沙降级与正版恢复闭环（当前仅来电拦截有篡改散沙例外）。
+- 仍未完成：删剩余 Filter 明文字面量 / fallback 债、RiskState 全链路散沙降级与正版恢复闭环（当前仅来电拦截有篡改散沙例外）。`GuardHeartbeat.java:90` install_id 仍 = device_id 的 TODO（per-install UUID）= 服务器侧"重装锁闸"功能前置条件。
 - 对外只能说：**v1.6 商业授权闭环 + Ed25519 防伪造信封 + 当前发行线 server seed 解 registry 已接入**。
 - 对外禁止说：**服务器真锁终局完成** 或 **授权无法破解**。
 
@@ -308,7 +313,7 @@ native_core/registry_8071.json
 
 1. `registry_8071.json` 是唯一配方源；`registry_cipher.inc` 只能由脚本生成，禁止手改。
 2. 生成 cipher 时使用的证书 SHA-256，必须等于运行时 `bindSigningCert()` / 后续宿主签名读取到的证书 SHA-256。
-3. 官替版和共存版如果签名不同，必须分别生成自己的 `registry_cipher.inc`，不能共用错证书产物。
+3. v2 已合并签名：官替 / 共存 release 共用 `e3e13a49`，**共用一份 `registry_cipher.inc`**（绑 `e3e13a49`，详 SSOT §1）；不再需要 per-flavor `registry_cipher_coexist.inc`（已退役）。
 4. `tools/gen_registry_cipher.py::derive_registry_key()` 必须与 `config_crypto.cpp::derive_registry_key()` 保持一致；漂移会导致 tag 校验失败并 scatter。
 5. `registry_loader.cpp::registry_self_test()` 必须通过；它会验证 schema、核心 4 条 registry、tamper cipher、wrong key、miss gateway/field。
 6. standalone 测试如果调用 `registry_self_test()`，必须先设置和生成端一致的 binding material；否则 scatter 是正确结果，不是误报。
@@ -388,7 +393,7 @@ scatter 排查顺序：
 
 共存版的核心原则是：**官方包负责官方身份和第三方跳转，隐私版负责隐私功能**。
 
-**共存固定身份（8071）**：包名 `com.tencent.mn`、签名 `coexistRelease 8f47a47a`；release_id 见「下次发新版最短流程」。
+**共存固定身份（8071）**：包名 `com.tencent.mn`、签名 `coexistRelease e3e13a49`（v2 已合并，与官替共用 official jks）；release_id `android_8071_coexist`。详 `docs/RELEASE_LINE_SSOT_发行线统一口径.md` §1。
 
 注意：
 

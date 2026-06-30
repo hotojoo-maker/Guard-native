@@ -11,7 +11,7 @@
 ## 1. Gate Model
 
 ```text
-RiskGate    风险门：包名 / 签名 / killSwitch / SAFE_MODE
+RiskGate    风险门：包名 / 签名 / SAFE_MODE（整线停用走 envelope RELEASE_KILLED 错误码，无独立 killSwitch 字段，2026-06-30 减法收口）
 EntryGate   入口门：默认口令 111111 / 设置入口，只负责打开入口或显形入口
 AuthGate    授权门：wxid + device + license，决定能不能使用功能
 ConfigGate  配方门：server seed / encrypted registry ready，决定敏感 hook 是否可安装/生效
@@ -81,7 +81,7 @@ StateGate   状态门：HIDDEN / VISIBLE / UNLOCKING，决定密友过滤是否�
 当前 v1 为了保持已验证体验，允许以下临时简化：
 
 - `SearchUnlock` 输入 `111111` 后，可触发 `HIDDEN → VISIBLE` 并关闭搜索页；此显形动作与授权无关。
-- `isVipAuthorized()` 已在 v1.1 授权闭环中接入 `EnvelopeStore.isAuthorizedNow()`；无有效 token/envelope/license 时 Filter 放行，功能等于未授权未启用。
+- `isVipAuthorized()` 已在 v1.6 授权闭环中接入 `EnvelopeStore.isAuthorizedNow()`；无有效 token/envelope/license 时 Filter 放行，功能等于未授权未启用。
 - `StateMachine.isActive()` 当前还叠加 `GuardRuntime.isSensitiveConfigReady()`；release 严格模式无有效 server seed / registry scatter 时，敏感隐藏链静默失效，debug/dev 可保留诊断 fallback。
 - `NO_LICENSE / MISMATCH` 当前可放行，商业化 v2 前不擅自收紧。
 

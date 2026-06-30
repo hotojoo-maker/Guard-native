@@ -218,13 +218,16 @@ StateMachine.isActive()                // 取中央总闸
 - **黑名单（碰到就停）**：每功能自造小配方/小网关/小授权；新功能 hook 类名另建 `xxx_pack`（只准往 `registry_pack` 补字段）；Java 侧散落 `decrypt_config`/schema/key/risk 分支；多份弹窗策略；遍地写 if 判风险。
 - registry 现就 **4 条大动脉**：`conv.list` / `moments.feed` / `contact.address` / `search.gateway`，不是每个小功能一条。删 fallback 时**整条核账整条删，不抠碎**；脆锚点（如 `search.gateway` 搜索框）靠多锚点冗余 + L1 复验稳住，加密只防搜名、稳不住锚点。
 
-### 10.2 kill↔funnel 拆两个独立闸（拍板）
+### 10.2 kill↔funnel 拆两个独立闸（拍板 · 2026-06-30 减法收口）
 
-旧实现把本地 `kill_switch` 当篡改信号塞进引流链，与「停用」语义打架。拍板拆成两根独立线：
+旧实现把本地 `kill_switch` 当篡改信号塞进引流链，与「停用」语义打架。拍板拆成两根独立线，**且本地 `isKillSwitch()` stub 已删（永远 false 的孤儿代码）**——「整线停用」改由服务器 `release_lines.status=killed` → envelope `RELEASE_KILLED` 错误码 → 客户端 token 清 + Toast「该版本已停用」实现（见 `docs/RELEASE_RULES.md §危险通告`）。
 
-- **停用闸 `kill_switch`**：你主动停 / 服务器 kill=true → 跳过全部 hook + Toast「已停用，等待更新」（对齐 CLAUDE.md §十三）。**优先级最高**，`ModuleMain §5` 最先判，命中直接 return。
-- **引流闸 `funnel`**：确认篡改超影子期 / 断网超宽限 → `RiskPromptController` 弹窗引流 `zxmqq.shop`，点确定仍可用 + 短冷却。`ModuleMain §6.5` 独立线，只看 `RiskState.shouldFunnel()`，不再看 kill。
-- 落地动作（C 刀）：`RiskState.isConfirmedTamper()` 把 `isKillSwitch()` **剥离**（kill 归停用闸，不混进引流篡改链）。
+- **停用闸（已收口到服务器侧）**：
+  - 整线停用 = 后台 `release_lines.status=killed` → envelope `RELEASE_KILLED`
+  - 单卡封停 = envelope `cardRevoked=1`（SPEC §4，唯一连坐两闸的非篡改场景）
+  - 暂停新激活 = `release_lines.status=paused` → envelope `RELEASE_PAUSED`
+  - 三档覆盖全部应急维度；本地 `AppConfig.isKillSwitch()` 与 `ModuleMain §5` 启动门控已删。
+- **引流闸 `funnel`**：确认篡改超影子期 / 断网超宽限 → `RiskPromptController` 弹窗引流 `zxmqq.shop`，点确定仍可用 + 短冷却。`ModuleMain §6.5` 独立线，只看 `RiskState.shouldFunnel()`，不再看 kill（kill 自始与引流不共用信号）。
 
 ### 10.3 v1 节奏：够用就停（拍板）
 
@@ -260,7 +263,7 @@ StateMachine.isActive()                // 取中央总闸
 
 ## 10.6 Phase 1D-server（S2 服务器真锁）解冻 + 现状盘点（2026-06-11，用户拍板②）
 
-> §10.3 的「Phase 1D-server 冻结」已在 2026-06-11 由用户解除。当前已从 dormant 骨架推进到 **商业授权最小闭环（2026-06-11 装机 PASS）+ S4 Ed25519 验签 + S3b-A/B LeaseClock 授时/设置页 72h 离线强验**：授权码 → token → envelope → 客户端 AuthGate；**客户端产品版本 pv 现 `v1.3`**（`build.gradle` `GUARD_PRODUCT_VERSION`，L2 2026-06-25 回正）。但仍不是服务器真锁全部完成。本节为 S2/S3a/S3b/S4 的**唯一权威现状**。
+> §10.3 的「Phase 1D-server 冻结」已在 2026-06-11 由用户解除。当前已从 dormant 骨架推进到 **商业授权最小闭环（2026-06-11 装机 PASS）+ S4 Ed25519 验签 + S3b-A/B LeaseClock 授时/设置页 72h 离线强验**：授权码 → token → envelope → 客户端 AuthGate；**客户端产品版本 pv 现 `v1.6`**（`build.gradle` `GUARD_PRODUCT_VERSION`，L2 2026-06-29 升版 v1.6，有意跳过 1.4/1.5）。但仍不是服务器真锁全部完成。本节为 S2/S3a/S3b/S4 的**唯一权威现状**。
 
 ### 已建（`net/` 包，L2 代码核查）
 - `net/EnvelopeClient`：HTTPS 出站。`activate(卡密)→token`、`fetchEnvelope(token)→签名信封`；按 `AppConfig.guardServerList()` 主备 fallback；强制 https、连不上 / 证书错 = fail-closed。
@@ -268,7 +271,7 @@ StateMachine.isActive()                // 取中央总闸
 - `net/EnvelopeStore`：token / 信封 / license 到期 / 产品版本 `pv` / 更新通知 `up` 本地缓存；不存用户密友数据。
 - `net/GuardHeartbeat`：低频心跳 + 冷启动有 token 时启动；遇 `CARD_BANNED / CARD_DISABLED / CARD_EXPIRED / DEVICE_BANNED / TOKEN_INVALID` 清 token/envelope，网络失败不清，避免断网误杀。
 - `net/GuardActivation`：设置页授权码激活入口；token 后必须立刻拉 envelope 成功才算激活成功。
-- `core/AppConfig`：`GUARD_SERVER_PRIMARY=https://zxmqq.shop`、`GUARD_SERVER_BACKUP=""`（备机槽留 `miyou.lol`）、`GUARD_PRODUCT_ID=quantum_wechat`、`GUARD_PRODUCT_VERSION=v1.3`（`BuildConfig.GUARD_PRODUCT_VERSION`，`build.gradle`）、`GUARD_RELEASE_ID=android_8071`（硬编码，共存 flavor 未分线，见 R3 G4）。
+- `core/AppConfig`：`GUARD_SERVER_PRIMARY=https://zxmqq.shop`、`GUARD_SERVER_BACKUP=""`（备机槽留 `miyou.lol`）、`GUARD_PRODUCT_ID=quantum_wechat`、`GUARD_PRODUCT_VERSION=v1.6`（`BuildConfig.GUARD_PRODUCT_VERSION`，`build.gradle`）、`GUARD_RELEASE_ID` 按 flavor 注入（官替 `android_8071` / 共存 `android_8071_coexist`，`build.gradle:138/156`）。
 - `StateMachine.isVipAuthorized()`：已从 v1 stub 改为 `EnvelopeStore.isAuthorizedNow()`（token + verified envelope + license 未过期）。Filter 仍只读 `StateMachine.isActive()`，未直接接触服务器/风控。
 - `I:\miyou-server`：主节点 `zxmqq.shop` 已部署 `/api/v1/activate`、`/api/v1/guard/envelope`、后台卡密/设备封停、渠道/release 定向更新通知下发；备节点 8080 已部署，`miyou.lol` HTTPS 反代仍待办。
 
@@ -285,7 +288,7 @@ StateMachine.isActive()                // 取中央总闸
 5. 更新通知 `up` 已下发并被客户端消费，但属于运营提示，不是强制升级/真锁。
 
 ### 口径
-当前 = 「**商业授权最小闭环（客户端 pv **v1.3**）+ 当前 `android_8071` 发行线 prod_server_lock（server seed 解 registry）+ S4 Ed25519 信封验签 + S3b-A/B LeaseClock 授时与设置页 72h 离线强验（均 2026-06-11 装机 PASS）**」。可对内称“授权码→token→envelope→客户端 AuthGate 已通；信封已 Ed25519 防伪造/防篡改；当前发行线无有效 server seed 时 registry scatter；到期判定不信手机时间（trustedNow）；断网>72h 进设置页强制重验、失败撤销且可自愈”；**不得**对外或在文档里宣称「服务器真锁终局完成」（删 Filter fallback / V3 发行线发版流程 / RiskState 真降级仍未完成）。⚠️ 服务器 envelope 全局 `pv` 常量是否已跟注册表对齐 = **L4 待验**（接点①，见 LeanCloseout 任务卡 §8）。
+当前 = 「**商业授权最小闭环（客户端 pv **v1.6**）+ 当前 `android_8071` 发行线 prod_server_lock（server seed 解 registry）+ S4 Ed25519 信封验签 + S3b-A/B LeaseClock 授时与设置页 72h 离线强验（均 2026-06-11 装机 PASS）**」。可对内称“授权码→token→envelope→客户端 AuthGate 已通；信封已 Ed25519 防伪造/防篡改；当前发行线无有效 server seed 时 registry scatter；到期判定不信手机时间（trustedNow）；断网>72h 进设置页强制重验、失败撤销且可自愈”；**不得**对外或在文档里宣称「服务器真锁终局完成」（删 Filter fallback / V3 发行线发版流程 / RiskState 真降级仍未完成）。⚠️ 服务器 envelope 全局 `pv` 常量是否已跟注册表对齐 = **L4 待验**（接点①，见 LeanCloseout 任务卡 §8）。
 
 ### 发包分发边界（避免误读）
 - **服务器真锁 ≠ 服务器打包 / 服务器分发 APK**。
@@ -309,6 +312,8 @@ StateMachine.isActive()                // 取中央总闸
 > `SharedPreferences tk/bl/le`、`GuardRuntime.getRecipe()` fallback map、JNI 边界 hook
 > 三条绕过思路。该测试证明：**能反编译 / 能抽模块是既定威胁；当前最薄弱处不是 Ed25519，
 > 而是业务门仍信本地缓存 + release 仍保留明文 fallback。**
+>
+> **2026-06-29 架构基线盘点**：Devin 任务 `devin/arch-audit-v1` 完成，6 份文档（commit `6ca5333` on `full-restore` 分支，本地 worktree `C:\Users\Me\Desktop\gn_fullrestore\docs\arch_audit_2026q3\`）。核心发现：① `core/` 3 个强耦合环路（配方解密三角 / LeaseClock↔RiskState / A2 闸经原生回环）；② **GuardRuntime 同时担「配方出口」+「A2 防封时间闸」**，fail-OPEN（A2）与 fail-CLOSED（registry）两套相反失败哲学塞同一类 → 建议拆 `core/AntiBanGate`；③ **密友判定双真相源**（`Bridge.getWxids()` vs `NativeBridge.isHiddenWxid()`，NativeBridge:196-203 注释承诺 Phase 3 未兑现）；④ **debug 散点 12 处三种写法并存**（`BuildConfig.DEBUG` / `isDebugEnabled()` / OR）→ 归一到 `isDevBuild/isDiagnostics/isDebugSurface` 三入口；⑤ **`fc5.g` 散在 ≥3 类**（ContactFilter / ContactLabelHideGuard / ContactLabelMemberFilter），改一版微信要改三处；⑥ moduleD `*Filter` 实际 5 个非 4 个（`MomentsGroupIconFilter` 是 UI 异类）。已派 Devin 3 连击：`devin/debug-gate-unify` / `devin/anti-ban-gate-extract` / `devin/fc5g-anchor-merge`（2026-06-29）。
 
 #### 压测结论（证据等级）
 
@@ -328,6 +333,7 @@ StateMachine.isActive()                // 取中央总闸
 1. **Release/PROD 删明文 fallback。** 🟡 **C5a 部分落地（2026-06-25 L1）**
    - ✅ 22 个 `RegistryFallback` 常量 release 全 `""`（`gen_registry_fallback.py` + 装机 `fallbackSelfTest=ok`×4）。
    - ⬜ 仍剩 **5 处内联**（ContactDiscoveryHook `MvvmList`、ContactLabelHideGuard `fc5.g/z3`、MomentsFilter Like/Comment）+ D8 未删净 → 见 LeanCloseout worklog §③。
+   - 🟡 **registry-unify-v1（2026-06-29 派 Devin 执行）**：MomentsFilter 剩余混淆字面量（`jw1.d` / `wq.c1` / `wq.y0` / `ii5.b` 等）迁入 `registry_8071.json` → `RegistryFallback` → `resolveRecipes()` 覆盖；目标分支 `devin/registry-unify-v1`；任务卡 `.devin/tasks/registry-unify-v1.md`。
    - 规则不变：`GuardRuntime.getRecipe()` 返回空 ⇒ 不安装该敏感 hook。
 2. **授权门不再信裸 `tk/bl/le`。** 🟡 **部分落地**
    - ✅ `EnvelopeStore.isAuthorizedNow()` → `getVerifiedCachedEnvelope()` 每次对 cached blob 重验 Ed25519 + device/schema sanity（`EnvelopeStore:152-168`）。
@@ -472,13 +478,13 @@ StateMachine.isActive()                // 取中央总闸
 - 正向回归：`level=正常`、`recipeOk=true`、`[CTF:addAll] removed`（密友照常隐藏）、CallGuard 正常装载 → P0 三刀 + 本节改动**不误伤正版**。
 - funnel 闭环：debug `/api/forcefunnel` 强制 → `[risk] funnel prompt reason=foreground` → `[funnel] shown` → 跳 SO 解出的落地页。
 - 蜜罐绊线：改诱饵重编 → `[cp] baseline mismatch` → `tamper first seen` → `level=蜜罐影子期`（表面正常）。改回 → `level=正常`。
-- 签名/诱饵对自家包**不误报**：`无 [cp] cert mismatch / baseline mismatch`。apksigner 实测包证书 = `ca421ec3...` = `EXPECTED_CERT`。
+- 签名/诱饵对自家包**不误报**：`无 [cp] cert mismatch / baseline mismatch`。apksigner 实测 debug 包证书 = `ca421ec3...`（当时 debug EXPECTED_CERT 同值；当前 release：官替 / 共存 均 `e3e13a49`，v2 已合并，详 `docs/RELEASE_LINE_SSOT_发行线统一口径.md`）。
 - 仅「真等 7 天」未现场验（组件逻辑均单独验过）。
 
 ### ⚠️ 维护要点（方便后续 AI / 发版）
 1. **改诱饵 `PromoConfig` 任一字面量 → canary 基线自动跟随（无需手算）**：`BASELINE` 现 = `BuildConfig.CANARY_BASELINE`，由 `build.gradle computeCanaryBaseline()` 构建期从 `PromoConfig` 真值算出（`fp(PROMO_URL) ^ fp(PROMO_TOKEN) ^ (PROMO_ENABLED?0x9E3779B9:0)`，`fp` 为 `h=h*131+c` Java int；原硬编码 `0xF3C1CAB3` 已废）。构建期带 KAT 自检（fp 漂移即 build 失败）+ 解析失败 fail-closed。**杜绝「忘重算→正版自我误报」**（场景B 误伤根除）。⚠️ 测 canary 须改【编译后 APK】诱饵值（smali）再装机，改源码重编不再触发（基线跟源码走 = 正版重编永不误判，设计如此）。
 2. **改落地页 URL → 改 `native_core/bootstrap_endpoints.json` 的 `cs.endpoint.funnel` → 重跑 `python tools/gen_bootstrap_cipher.py`**（生成 `bootstrap_cipher.inc`）。绝不在 Java 写明文 URL。`net.endpoint`（授权服务器）与 `cs.endpoint`（引流）分开；`guardServerList()` 只读 net.endpoint。
-3. **`CompatProbe.EXPECTED_CERT` 随发行线 keystore 改**：当前 = 固定 debug keystore 证书 `ca421ec3...`（与 `registry_cipher` 的 `_CERT_SHA256` 同源）。官替/共存若用不同 keystore，发版时按包档案同步改（同 registry 一套机制）。
+3. **`CompatProbe.EXPECTED_CERT` 按发行线注入**：**v2（2026-06-30 已合并）官替 / 共存 release 均 `e3e13a49`**（`build.gradle:136/151`），与该线 `registry` 的 `_CERT_SHA256` 同源（`kdf_common.CERT_SHA256` 也是 `e3e13a49`）；`ca421ec3` 仅 debug smoke。换 keystore 按包档案同步改（同 registry 一套机制）。详 `docs/RELEASE_LINE_SSOT_发行线统一口径.md` §1。
 4. **阈值数字（影子期 168h / 冷却 10s / 离线 144h）= 段1 明文常量（轻迷彩）**，以后随服务器 `risk_pack` 下发。位置：`RiskState.SHADOW_HOURS_DEFAULT`、`RiskPromptController.COOLDOWN_MS`、`LeaseClock.FUNNEL_MS`。
 5. **单策略源红线**：弹窗只走 `RiskPromptController.maybeShow()`；`FunnelPrompt`/`PiracyNotice` 只是展示层，不得各自判风险/各自弹。
 6. **debug 专用 `/api/forcefunnel` + `RiskState.debugForceFunnel()`**：仅 `BuildConfig.DEBUG` 生效（release 空操作），装机验证用，勿当真链路。
@@ -514,7 +520,7 @@ StateMachine.isActive()                // 取中央总闸
 - `proguard-rules.pro:4-10` —— `-keep class com.ghost.assist.core.** { *; }`
 - `build.gradle:56-59` —— release `minifyEnabled true`；`:86` `mmkv:1.3.5`（依赖在，Java 未用）
 - `core/Bridge.java` —— `g_a7f2`；`hlst`/`glst`/`smst`/`smpw`/`lwxd`/`dvhsh`；`shouldHideId()` `:276`
-- `core/AppConfig.java:36` —— `SHOP_URL="https://zxmqq.shop"`；`:86` `isKillSwitch()` 本地 `kl` 默认 false
+- `core/AppConfig.java:36` —— `SHOP_URL="https://zxmqq.shop"`（`isKillSwitch()` stub 已删，2026-06-30 减法收口；整线停用走服务器 `RELEASE_KILLED`）
 - `core/NativeBridge.java:78-80` —— `GRACE_WARN_HOURS=24 / DEGRADE_HOURS=72 / LOCKOUT_DAYS=10`；`:200` `shouldHideWxid=isAuthorized()&&isHidden()&&isHiddenWxid()`；`:26` `System.loadLibrary("guardcore")`
 - `core/PiracyNotice.java:28` —— TAMPERED 时弹框跳浏览器；**全仓库无调用者**
 - 过滤器统一网关：`ConvFilter:531` / `ContactFilter:152` / `MomentsFilter:147` / `SearchFilter:220` / `PushFilter:143` 均 `if(!StateMachine.getInstance().isActive())return;`

@@ -20,7 +20,6 @@ public class AppConfig {
     private static final String PREFS_NAME = "ncl_cfg";  // seed-based
     private static final String KEY_MODE = "md";           // short hash
     private static final String KEY_LOCAL_DEV = "ld";      // local dev mode
-    private static final String KEY_KILL = "kl";           // kill switch
     private static final String KEY_OVERLAY = "ov";        // overlay enabled
     private static final String KEY_SERVER_PORT = "sp";    // server port
 
@@ -31,6 +30,7 @@ public class AppConfig {
     private static final String KEY_MRD      = "mrd";  // moments red dot
     private static final String KEY_URD      = "urd";  // update red dot
     private static final String KEY_MGI      = "mgi";  // moments group-visible icon (M6a)
+    private static final String KEY_HUF      = "huf";  // hot-update freeze (libcso/Tinker)
 
     // One-time migration marker: "mv2" = migrated from old DEV-default to PROD-default.
     private static final String KEY_MIG_V2 = "mv2";
@@ -127,12 +127,6 @@ public class AppConfig {
         mPrefs.edit().putBoolean(KEY_LOCAL_DEV, enabled).apply();
     }
 
-    // --- Kill switch (v1 placeholder) ---
-    public boolean isKillSwitch() { return mPrefs.getBoolean(KEY_KILL, false); }
-    public void setKillSwitch(boolean killed) {
-        mPrefs.edit().putBoolean(KEY_KILL, killed).apply();
-    }
-
     // --- Overlay ---
     public boolean isOverlayEnabled() { return mPrefs.getBoolean(KEY_OVERLAY, true); }
     public void setOverlayEnabled(boolean enabled) {
@@ -165,4 +159,9 @@ public class AppConfig {
     // M6a 朋友圈「可见分组」图标隐藏（默认开；纯开关驱动，独立于 HIDDEN 状态）
     public boolean isMomentsGroupIconEnabled() { return mPrefs.getBoolean(KEY_MGI, true); }
     public void setMomentsGroupIconEnabled(boolean v) { mPrefs.edit().putBoolean(KEY_MGI, v).apply(); }
+
+    // 官方热更新冻结（Tinker / 整包更新 / libcso 观测）。默认开 = 生产锁版本
+    // （防官方静默热补丁 + 整包升级把重打包版本换掉 / 改 hook 依赖类）。置 false 可临时观测。
+    public boolean isHotFreezeEnabled() { return mPrefs.getBoolean(KEY_HUF, true); }
+    public void setHotFreezeEnabled(boolean v) { mPrefs.edit().putBoolean(KEY_HUF, v).apply(); }
 }

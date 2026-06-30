@@ -182,15 +182,10 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         // 4. Init intercept counter
         InterceptCounter.getInstance().init();
 
-        // 5. 停用闸 kill_switch（v1: 本地占位 stub=false；服务器 kill 留 Phase 1D-server）。
-        //    与 §6.5 引流闸【两根独立线】：停用=最高优先级、命中直接 return 跳过全部 hook；
-        //    引流=确认篡改超影子期才弹窗。kill 不再当引流信号（P1F C 拍板，见 PROTECTION_MAP §10.2）。
-        boolean killed = AppConfig.getInstance().isKillSwitch();
-        Log.i(TAG, "[init] killSwitch=" + killed);
-        if (killed) {
-            android.widget.Toast.makeText(app, "已停用，等待更新", android.widget.Toast.LENGTH_SHORT).show();
-            return;
-        }
+        // 5. 「整线停用」走服务器 envelope 错误码 RELEASE_KILLED（EnvelopeClient
+        //    authErrorText → "该版本已停用"），不再走本地 kill_switch stub
+        //    (原 v1 placeholder, 永远 false 的孤儿代码已删, 文档同步)。
+        //    单卡封停走 envelope.cardRevoked (rf=1, SPEC §4)。
 
         // 6. Restore state from persistence
         StateMachine.getInstance().restoreState();

@@ -206,7 +206,6 @@ public class DebugServer {
             // ── P1F Java 防护层（两闸 + 风险等级）：复用本端点，不新建（PROTECTION_MAP §10.1 不碎拆）──
             + "\"jrisk\":\"" + com.ghost.assist.core.RiskState.currentLevel().label + "\","
             + "\"funnel\":" + com.ghost.assist.core.RiskState.shouldFunnel() + ","
-            + "\"kill\":" + com.ghost.assist.core.AppConfig.getInstance().isKillSwitch() + ","
             // ── S3a status-only snapshot. Never expose token/k/S_rel/W or raw envelope. ──
             + "\"release_id\":\"" + AppConfig.GUARD_RELEASE_ID + "\","
             + "\"auth\":\"" + auth + "\","
