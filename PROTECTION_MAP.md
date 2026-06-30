@@ -439,11 +439,17 @@ StateMachine.isActive()                // 取中央总闸
 
 真锁机制「把签名证书折进 registry key」（`bindSigningCert → NativeBridge.setBindingMaterial → derive_registry_key`）与 V3「改包 + 我们的证书重签」（`DECISION_LOG.md` D-016 / D-015）**天生相反**，落地前必须碰头：
 
-- **① 证书源切换（D-016 已记）**：cert-bind 现读 v1 模块 APK 签名；V3 落地要改 `tools/gen_registry_cipher.py` 的 `_CERT_SHA256` + 运行时证书源从 `sModulePath` 改读宿主自身签名。详见 `DECISION_LOG.md` D-016 §影响（**机制不变，只换证书源**）。
+- **① 证书源切换（D-016 已记 · 2026-06-30 D-027 已落码）**：~~cert-bind 现读 v1 模块 APK 签名~~；运行时证书源已从 `sModulePath` 改读 **宿主整包 sourceDir**（`ModuleMain.bindSigningCert` / `CompatProbe.checkSignature` / `GuardRuntime.isAntiBanReady` / `antiBanGateSelfTest` 4 处 + 新加 `hostApkPath(app)` helper），同步 `tools/kdf_common.py` 的 `CERT_SHA256` = `e3e13a49`（official keystore）+ `tools/gen_registry_cipher.py` 派生 cert 已切到 official。详见 `DECISION_LOG.md` D-026 cert-converge / D-027 cert binding 改读宿主 / `FAILURE_LOG.md` F-43（LSPatch metaloader 重打包重签模块 → 模块自身 cert = `ca421ec3` ≠ 发版 `e3e13a49` → registry 散沙；改读宿主 sourceDir = LSPatch `-k` 那把 = 与生成 cipher 同源 = 解开）。**机制不变，只换证书源 = 已完成**。
 - **② 删 fallback = 重签即死（D-016 未串）**：真锁终局（S3a 服务器钥匙 + §10.5「A」删明文 fallback）一旦落地，任何「证书变了却没为它重生成 `registry_cipher`」的重签 / 改包 → 钥匙错 → registry 散沙 → **没有 fallback 兜底 → 隐私 hook 静默全挂**。⇒ 铁律：**「删 fallback」必须与「V3 发版」绑同一套本地 AI 发版流程**（每个发行证书都重生成 `registry_cipher` 并装机回归），否则 V3 重签包上线即裸奔。
 - **③ 共存版改包名 → 误判篡改 → 砸自己客户（D-016 未串）**：`anti_tamper.cpp` 现「`package_name != com.tencent.mm` 即 `PACKAGE_MISMATCH`」→ `RiskState.isConfirmedTamper()` → funnel 弹窗。V3 **共存版**（改了包名）会**整片命中** → 把正版共存客户当盗版引流。⇒ 上共存版前，`tamper_check` 的期望包名必须随打包注入的 `WX_PKG`（D-015）走，不能硬编码 `com.tencent.mm`。
 
 **结论**：当前 `android_8071` 可保持 `prod_server_lock`；但 **删 fallback / 真锁终局 / V3 官替共存发行线** 在 V3 改包形态对齐之前不要继续推进到“无兜底全硬失败”。先把上面 ②③ 的本地 AI 发版流程 + 包名注入接通，再谈删 fallback。否则「防破解」会把「主攻方向 V3」拆台。
+
+**2026-06-30 cert-converge v2 + cert binding 改读宿主进展（D-026/D-027/F-43 已落码）**：
+- ① 证书源切换 = ✅ 已落（详上节）；
+- ② 删 fallback = 仍待 V3 发版流程接通，**未推进**；
+- ③ 共存版包名匹配 = 已通过 `GUARD_EXPECTED_PACKAGE` 从 `GUARD_WX_PKG` 派生（`native_core/CMakeLists.txt`）+ `anti_tamper` 现按编译期注入的期望包名比对；cert binding 因为改读宿主整包 sourceDir、共存包整包是 LSPatch `-k` 用同一把 official keystore `e3e13a49` 签的，cert match 通过，**不再误判篡改**。
+- v2 cert merge 后，"V3 改包共存"的两条线（cert + 包名注入）都对齐，可继续推进删 fallback；但 W_dev Batch 3（删全局 W 回退、D-029）仍待 V3 同时推。
 
 ---
 

@@ -103,23 +103,43 @@ Guard Native / Guard Pack 从 **1.0 正式发布**开始，同一客户包必须
 
 发版候选必须用 release 变体；debug 变体只能算调试 smoke。
 
-### 共存版打包 + 干净装机（唯一速查，每次照此跑）
+### 共存 / 官替版打包 + 干净装机（唯一速查，每次照此跑）
 
 > 每次重编/装机就这 4 步。专治两个高频坑：**装到旧模块**、**启动崩 LSPatch metaloader**。
 > 完整发版（换 s_rel + 服务器同步）见下方「s_rel 轮换 + 双版本 LSPatch 发版工作流」；本块是其精简装机口径，不另立第二套。
+>
+> **2026-06-30 cert-converge v2 起：发版候选必须走 `Release` 变体 + official keystore**（详 D-026 / D-027 / F-43）。`Debug` 变体的模块 cert = `ca421ec3` ≠ `GUARD_EXPECTED_CERT` = `e3e13a49` → registry 散沙 + A2 不装；`Debug` 现仅作模块更新 / 公告 / C2-smoke 用，不作发行候选（见上方 §"签名与安装唯一真相" 表）。
+
+**一键脚本（推荐 · `tools/lspatch_pack.ps1`，commit `2cd643c`）**：
+
+```powershell
+# 共存版 release（自动跑 :assembleCoexistRelease + 读 keystore.properties + LSPatch）
+.\tools\lspatch_pack.ps1 -Flavor coexist -BuildType release -Clean -Build
+
+# 官替版 release（同理）
+.\tools\lspatch_pack.ps1 -Flavor official -BuildType release -Clean -Build
+```
+
+脚本完事会打印产物路径 + 下一步 3 行装机命令。脚本细节看 `tools/lspatch_pack.ps1` 头注。
+
+**手动 4 步（如不想用脚本 / 排错时）**：
 
 ```text
-# 1. clean 重编共存模块（必须 clean，否则 gradle 判 UP-TO-DATE 打进旧 dex）
-./gradlew clean :assembleCoexistDebug
-#    产物：build/outputs/apk/coexist/debug/guard-native-coexist-debug.apk（GUARD_WX_PKG=com.tencent.mn）
+# 1. clean 重编共存 release 模块（必须 clean，否则 gradle 判 UP-TO-DATE 打进旧 dex）
+./gradlew clean :assembleCoexistRelease
+#    产物：build/outputs/apk/coexist/release/guard-native-coexist-release.apk（GUARD_WX_PKG=com.tencent.mn，e3e13a49 签）
+#    自动跑 checkStringLeakCoexistRelease 硬闸（dex+SO 扫泄漏）
 
-# 2. LSPatch 重新打包进共存宿主（用户用 MT 改好包名的 com.tencent.mn 克隆 APK）
+# 2. LSPatch 重新打包进共存宿主（-k 必须用 official release keystore = e3e13a49）
+#    keystore 密码从 signing/keystore.properties 读（gitignore，不进源码）
 java -jar 02_tools_工具/lspatch.jar 02_tools_工具/mn_clean_origin_8071.apk \
-  -m build/outputs/apk/coexist/debug/guard-native-coexist-debug.apk \
-  -l 2 -k signing/guard-native-debug.keystore android androiddebugkey android \
+  -m build/outputs/apk/coexist/release/guard-native-coexist-release.apk \
+  -l 2 -k signing/guard-native-official-release.jks <storePass> guardofficial <keyPass> \
   -o 02_tools_工具/lspatch_out -f
 #    校验日志：Embedding modules - com.ghost.assist
 #    产物：02_tools_工具/lspatch_out/<宿主名>-<versionCode>-lspatched.apk
+#    宿主整包签名 = e3e13a49（apksigner verify --print-certs 实测）→ ModuleMain.bindSigningCert
+#    读 hostApkPath(app)=app.getApplicationInfo().sourceDir 拿到 e3e13a49 = 与 registry 派生同源 → 解开
 
 # 3. 干净装机（绝不 install -r 覆盖；卸 + 重启清 dex/odex + 装）
 adb uninstall com.tencent.mn
@@ -129,12 +149,13 @@ adb install 02_tools_工具/lspatch_out/<上一步产物>.apk
 # 4. 用户桌面点开图标（禁 am start / monkey —— 会崩 metaloader）
 ```
 
-铁律（2026-06-29 实测踩坑固化）：
+铁律（2026-06-29 实测踩坑固化 · 2026-06-30 cert merge 补强）：
 
 - **必 `clean`**：省 `clean` → gradle 判 UP-TO-DATE → 把旧模块打进包（表现：日志 self/cert 对不上、自测缺失）。
 - **必干净装**：`install -r` 覆盖 + `monkey`/`am start` 起 → 崩 LSPatch metaloader（`ExceptionInInitializerError`）；卸载 + 重启 + **桌面点开**才稳（详发版官 skill §坑4）。
 - 共存只动 `com.tencent.mn`，不碰官方 `com.tencent.mm`、也不碰其他克隆。
-- 官替版同理：把 flavor 换 `:assembleOfficialDebug`、宿主换原版微信 clean APK、目标包换 `com.tencent.mm`。
+- 官替版同理：flavor 换 `:assembleOfficialRelease`、宿主换原版微信 clean APK（`02_tools_工具/host_official_clean_8.0.71.apk`）、目标包换 `com.tencent.mm`、LSPatch `-k` 同一把 `guard-native-official-release.jks`（cert-converge v2 起两 flavor 共用 official keystore）。
+- **2026-06-30 cert binding 真相**（F-43 教训）：`bindSigningCert` 读宿主整包 sourceDir（即 LSPatch `-k` 用的 keystore），**不再**读模块自身 `sModulePath`——LSPatch metaloader 会把内嵌模块 APK 在 extract 时用 LSPatch 内置 debug keystore 重打包重签（实测 cert = `ca421ec3`），与发版 release keystore `e3e13a49` 不一致。改读宿主 sourceDir 后机制对所有 LSPatch 形态都稳。详 `DECISION_LOG.md` D-027 / `FAILURE_LOG.md` F-43。
 
 ### 下次发新版最短流程（先看这里）
 
@@ -369,12 +390,13 @@ scatter 排查顺序：
 2. `python tools/gen_registry_cipher.py --recipe release/secrets/<release_id>.json` → 重生成 `native_core/src/registry_cipher.inc`（确认 `GUARD_REGISTRY_REQUIRES_SERVER_SEED=1`）。
 3. 指纹对账：客户端/服务器两边 `sha256(s_rel)[:8]` 必须一致（只记指纹，不记原文）。
 
-**B. 出包（每条发行线各编一次）**
-4. 官替版：`./gradlew :assembleOfficialDebug`（`GUARD_WX_PKG=com.tencent.mm`）。
-5. 共存版：`./gradlew :assembleCoexistDebug`（`GUARD_WX_PKG=com.tencent.mn`）。
-6. LSPatch 重新打包：`java -jar 02_tools_工具/lspatch.jar <宿主APK> -m <对应flavor模块APK> -l 2 -k signing/guard-native-debug.keystore android androiddebugkey android -o 02_tools_工具/lspatch_out -f`
-   - 官替宿主 = 微信原版 APK；共存宿主 = 改好包名的克隆 APK（`com.tencent.mn`）。
-   - 模块签名证书（guardFixed）= registry 的 `_CERT_SHA256`；LSPatch 外层签名不影响 registry 解密（`bindSigningCert` 读模块自身证书）。
+**B. 出包（每条发行线各编一次 · 2026-06-30 cert-converge v2 起强制 Release）**
+4. 官替版：`./gradlew :assembleOfficialRelease`（`GUARD_WX_PKG=com.tencent.mm`）。
+5. 共存版：`./gradlew :assembleCoexistRelease`（`GUARD_WX_PKG=com.tencent.mn`）。
+6. LSPatch 重新打包（**`-k` 用官替 release keystore，两 flavor 共用**）：`java -jar 02_tools_工具/lspatch.jar <宿主APK> -m <对应flavor模块APK> -l 2 -k signing/guard-native-official-release.jks <storePass> guardofficial <keyPass> -o 02_tools_工具/lspatch_out -f`。密码从 `signing/keystore.properties` 读（gitignore，不进源码 / 不进文档）；或一键 `tools\lspatch_pack.ps1 -Flavor <flavor> -BuildType release -Clean -Build`。
+   - 官替宿主 = 微信原版 APK（`02_tools_工具/host_official_clean_8.0.71.apk`）；共存宿主 = 改好包名的克隆 APK（`com.tencent.mn`，`02_tools_工具/mn_clean_origin_8071.apk`）。
+   - **cert binding 真相（2026-06-30 F-43）**：`bindSigningCert` 读宿主整包 sourceDir（即 LSPatch `-k` 用的 keystore），**不**读模块自身——LSPatch metaloader 会重打包内嵌模块用自家 debug keystore 重签（`ca421ec3`），与发版 release `e3e13a49` 不一致 → 改读宿主后跨 LSPatch 形态都对得上。详 D-027。
+   - 老话「LSPatch 外层签名不影响 registry 解密」（cert-converge 前）已**作废**：现在 LSPatch `-k` 那把 keystore 就是 cert binding 输入源、必须 = registry 派生 cert = `e3e13a49`。
    - 校验：日志 `Embedding modules - com.ghost.assist`；可拆包比对内嵌 `libguardcore.so` 哈希 = 重编模块 SO。
 
 **C. 服务器同步（关键，别漏）**
