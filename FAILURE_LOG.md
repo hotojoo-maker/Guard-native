@@ -4,7 +4,7 @@
 > 📦 详细试错正文（全文，F-01~F-42）已于 2026-06-29 相位收口迁入 [`07_archive_归档/FAILURE_LOG_full_20260629.md`](./07_archive_归档/FAILURE_LOG_full_20260629.md)（完整快照·搬柜不销毁·永久保留）。本文件保留一行索引 + 指针。
 > 旧 15 条（F-01~F-15）原始详细 → [`docs/isolation/FAILURE_LOG_catfish.md`](./docs/isolation/FAILURE_LOG_catfish.md)（apk2/竞品副本，与本项目 F 系列不同源）。
 
-更新时间：2026-07-01（增 F-43 LSPatch metaloader 重签模块导致 cert mismatch；相位收口 F-01~F-42 详细正文仍在 archive，F-43 详细见 `DECISION_LOG.md` D-027）
+更新时间：2026-07-01（增 F-43 克隆宿主签名 bleed-through + LSPatch sigbypass → cert mismatch，修复=宿主先重签 e3e13a49 再 LSPatch；相位收口 F-01~F-42 详细正文仍在 archive，F-43 详细见 `DECISION_LOG.md` D-027/D-030）
 
 ---
 

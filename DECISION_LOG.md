@@ -276,7 +276,7 @@
 - **影响**：
   - 流程：`docs/RELEASE_RULES.md` 共存/官替 4 步快查升级为 5 步（step 0 = `apksigner sign --ks` 重签宿主）；`tools/lspatch_pack.ps1` 一键脚本需加 `-RebindHost` 或类似 flag 自动跑步骤 0（待补，commit `2cd643c` 当前未含此步）。
   - 文档：`docs/RELEASE_RULES.md` / `.cursor/skills/guard-release_发版/SKILL.md` 加坑 / `PROTECTION_MAP.md` §10.x 增 D-030 链路。
-  - 出货：未来"克隆宿主"流派（共存版、自改包名包）一律走此流程；"官方原版直接 LSPatch"流派（官替版用 `host_official_clean_8.0.71.apk`）**同样需要重签**（宿主原始 `0fe4ff85` ≠ `e3e13a49` → 同样 cert mismatch，详老 AI 提示「官替能跑说明它用的宿主已是 e3e13a49」需 L3 再核）。
+  - 出货：未来"克隆宿主"流派（共存版、自改包名包）一律走此流程；"官方原版直接 LSPatch"流派（官替版用 `host_official_clean_8.0.71.apk`）**同样需要重签**（宿主原始 `0fe4ff85` ≠ `e3e13a49` → 同样 cert mismatch；老 AI 已 L2 坐实：官替候选 `02_tools_工具/lspatch_out/host_official_clean...lspatched.apk` 内嵌 `origin.apk`=`0fe4ff85` 真坏，已修为 `build/lspatch_out_official_fix/official_e3host_8071-439-lspatched.apk`，文件+origin 双 e3e13a49）。
   - 硬闸：建议起 P0 `verify_cert_chain` 四端硬闸（apksigner 文件级 + logcat 运行时 + registry_cipher 派生 + 服务器 release_lines.cert_prefix），装前不齐就 BLOCK（老 AI 推荐入 drift ledger P0）。
 - **撤回**：除非 LSPatch 出新版本能让 `-k` 同时改写运行时 sigbypass 返回的签名（目前 v0.6.x 不能），否则不撤。
 

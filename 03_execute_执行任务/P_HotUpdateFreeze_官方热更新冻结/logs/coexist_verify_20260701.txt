@@ -1,0 +1,28 @@
+# L1 coexist verify (com.tencent.mn) 2026-07-01 - device 609b4b18 / Android11 / WeChat 8.0.71
+# Shipped APK: build/lspatch_out_coexist_fix/mn_e3host_8071-439-lspatched.apk
+# Root cause + fix: clone host mn_clean_origin was signed a40da80a; LSPatch sigbypass(-l 2) reports
+#   the HOST's original signature at runtime, so certBind read a40da80a -> A2 cert mismatch -> scatter.
+#   Fix = re-sign the clone host with official jks (e3e13a49) FIRST, then LSPatch (-k official jks).
+#   Just setting LSPatch -k to official is NOT enough (file sig right, runtime certBind still a40da80a).
+# Verified by: old AI (architect/review line, Cursor, Vchat guard_native-AK53)
+
+== BEFORE fix (broken, pid 13000/16610) ==
+07-01 04:11:31 NCL [native] certBind set sha256[0..3]=a40da80a
+07-01 04:11:31 NCL [A2SIG] not installed: cert mismatch (re-signed -> scatter)
+
+== AFTER fix (live capture, pid 23735) ==
+07-01 04:27:04.543 20082 20082 I NCL     : [A2SIG] installed (self=com.tencent.mn, der=751B)
+07-01 04:27:13.739 20327 20327 I NCL     : [native:push] init=true role=2(expect 2=PUSH) hidden=true
+07-01 04:29:09.281 20082 23728 I NCL     : [hb] registry after seed summary=schema=r8071_v1 ver=8.0.71 entries=5 [conv.list adapter=kc5.v0] [moments.feed adapter=e2] [contact.address adapter=ik3.t0] [search.gateway] [a2.sig] recipeOk=true
+07-01 04:29:09.281 20082 23728 I NCL     : [hb] synced tier=1 lease=1782854950 risk=姝ｅ父
+07-01 04:29:09.514 20082 23728 I NCL     : [hb] health report sent=true result=OK lease=姝ｅ父 risk=CLEAN registry=ready
+07-01 04:29:09.806 20082 23730 I NCL     : [hb] registry after seed summary=schema=r8071_v1 ver=8.0.71 entries=5 [conv.list adapter=kc5.v0] [moments.feed adapter=e2] [contact.address adapter=ik3.t0] [search.gateway] [a2.sig] recipeOk=true
+07-01 04:29:09.807 20082 23730 I NCL     : [hb] synced tier=1 lease=1782854950 risk=姝ｅ父
+07-01 04:29:10.079 20082 23730 I NCL     : [hb] health report sent=true result=OK lease=姝ｅ父 risk=CLEAN registry=ready
+07-01 04:29:22.511 23735 23735 I NCL     : [native] certBind set sha256[0..3]=e3e13a49
+07-01 04:29:22.522 23735 23735 I NCL     : [native] role=1 (expect 1=MAIN)
+07-01 04:29:22.618 23735 23735 I NCL     : [hb] cached envelope seed=ok
+07-01 04:29:23.202 23735 23735 I NCL     : [A2SIG] installed (self=com.tencent.mn, der=751B)
+07-01 04:29:24.656 23735 23856 I NCL     : [hb] registry after seed summary=schema=r8071_v1 ver=8.0.71 entries=5 [conv.list adapter=kc5.v0] [moments.feed adapter=e2] [contact.address adapter=ik3.t0] [search.gateway] [a2.sig] recipeOk=true
+07-01 04:29:24.657 23735 23856 I NCL     : [hb] synced tier=1 lease=1782854965 risk=姝ｅ父
+07-01 04:29:24.915 23735 23856 I NCL     : [hb] health report sent=true result=OK lease=姝ｅ父 risk=CLEAN registry=ready

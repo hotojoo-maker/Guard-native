@@ -19,7 +19,7 @@
 | 日期 | 决策 | 真源 |
 |------|------|------|
 | 2026-06-12 | D-017：官替 / 共存同一固定 keystore（`ca421ec3` debug） | `DECISION_LOG.md` D-017 |
-| 2026-06-29 | cert-sync v1：官替 → `e3e13a49`、共存 → `8f47a47a`，两套印章两套配方 | `DECISION_LOG.md` D-018；服务器 zxmqq.shop L1 |
+| 2026-06-29 | cert-sync v1：官替 → `e3e13a49`、共存 → `8f47a47a`，两套印章两套配方 | 无独立 D 号（阶段性，并入 `DECISION_LOG.md` D-026 撤回段；D-018 是 A2、勿混）；服务器 zxmqq.shop L1 |
 | **2026-06-30** | **cert-converge v2：回合为一套配方**（共存 release 改用 `e3e13a49` official jks + 共用 `registry_cipher.inc` + 服务器 cert_prefix 合并） | `DECISION_LOG.md` D-026；服务器 L1（本页 §4.2） |
 | **2026-06-30** | **cert binding 输入源改读宿主整包**（`ModuleMain.bindSigningCert` / `CompatProbe.checkSignature` / `GuardRuntime.isAntiBanReady` / `antiBanGateSelfTest` 4 处从读 `sModulePath` 改读 `app.getApplicationInfo().sourceDir`）—— 修 LSPatch metaloader 重打包模块时换 keystore（`ca421ec3`）导致 cert mismatch / registry 散沙 | `DECISION_LOG.md` D-027；`FAILURE_LOG.md` F-43 |
 
