@@ -1,0 +1,6 @@
+[CSO-PROBE] hooked executeByName (1 overloads)
+[CSO-PROBE] hooked executeByPath (1 overloads)
+[CSO-PROBE] hooked nativeInitialize
+[CSO-PROBE] hooked preloadAllInternal
+[CSO-PROBE] hooked FileOutputStream(/cso/)
+[CSO-PROBE] probe ready (observe-only). 触发：新装冷启 / 登录 / 放置一阵让它查更。

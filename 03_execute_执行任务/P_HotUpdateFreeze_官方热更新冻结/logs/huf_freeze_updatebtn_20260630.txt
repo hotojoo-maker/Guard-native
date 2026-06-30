@@ -1,0 +1,1048 @@
+﻿--------- beginning of main
+06-30 22:12:59.140 26323 26499 I NCL     : [MF] addAll firstItem=z15.zs6 size=1
+06-30 22:12:59.597  5973  6215 D PowerKeeper.FrozenApp: onBatteryChanged plug=true mBatteryPlugged=2
+06-30 22:12:59.597  5973  6242 D PowerCheckerService: onBatteryChanged, mBatteryLevel = 100, status = 2, level = 100, plug = 2, scale = 100
+06-30 22:12:59.597  4206  4206 D NfcService: Received android.intent.action.BATTERY_CHANGED
+06-30 22:12:59.598  2540  2540 D BatteryController: onReceive: Intent = Intent { act=android.intent.action.BATTERY_CHANGED flg=0x60000010 (has extras) } action = android.intent.action.BATTERY_CHANGED
+06-30 22:12:59.598  2540  2540 D KeyguardUpdateMonitor: received broadcast android.intent.action.BATTERY_CHANGED
+06-30 22:12:59.600  2963  2963 D DeviceStatisticsService: chargerType=2 batteryLevel=100 totalBatteryCapacity=3251700
+06-30 22:12:59.600  4585  4585 I BatteryInfoReceiver: ACTION_BATTERY_CHANGED
+06-30 22:12:59.707  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:12:59.708  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:12:59.708  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:12:59.709  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:12:59.945 29808 29834 I encent.mm:patc: Waiting for a blocking GC ProfileSaver
+06-30 22:12:59.970 29808 29834 I encent.mm:patc: WaitForGcToComplete blocked ProfileSaver on HeapTrim for 24.869ms
+06-30 22:13:00.002  2540  2540 D KeyguardUpdateMonitor: received broadcast android.intent.action.TIME_TICK
+06-30 22:13:00.002  2540  2540 D KeyguardUpdateMonitor: handleTimeUpdate
+06-30 22:13:00.590  1209 11385 D CompatibilityInfo: mCompatibilityFlags - 0
+06-30 22:13:00.590  1209 11385 D CompatibilityInfo: applicationDensity - 440
+06-30 22:13:00.590  1209 11385 D CompatibilityInfo: applicationScale - 1.0
+06-30 22:13:00.590   966   992 I vendor.qti.hardware.servicetracker@1.2-service: startService() is called for servicecom.tencent.mm/.hotpatch.LegacyTinkerCore$PatchService
+06-30 22:13:00.591   966   992 I vendor.qti.hardware.servicetracker@1.2-service: destroyService is called for service : com.tencent.mm/com.tencent.tinker.lib.service.TinkerPatchService
+06-30 22:13:00.604   966   992 I vendor.qti.hardware.servicetracker@1.2-service: destroyService is called for service : com.tencent.mm/.hotpatch.LegacyTinkerCore$PatchService
+06-30 22:13:00.608  4155  4155 D IMReply:Notif: onNotificationPosted onNotificationRemoved sbn = 8341
+06-30 22:13:00.609  2540  2540 D NotifBadge: update app badge num: com.tencent.mm/,num=0,isAllowed=true,userId=0
+06-30 22:13:00.609  1209  4812 W ActivityManager: Sending non-protected broadcast android.intent.action.APPLICATION_MESSAGE_UPDATE from system 2540:com.android.systemui/1000 pkg com.android.systemui. Callers=
+06-30 22:13:00.610  1209  4243 D MiuiMultiWindowAdapter: MiuiMultiWindowAdapter::getFreeformBlackList::sSmallWindowBlackList = [com.miui.securitycenter, com.miui.weather2, com.miui.miservice, com.android.calendar, com.xiaomi.calendar, com.android.contacts, com.miui.mishare.connectivity, com.android.settings, com.android.printspooler, com.miui.backup, com.miui.huanji, com.miui.calculator, com.android.deskclock, com.android.thememanager, com.mfashiongallery.emag, com.miui.virtualsim, com.miui.smarttravel, com.mi.health, com.android.camera, com.lbe.security.miui, com.miui.cleanmaster, com.miui.newhome, com.miui.voiceassist, com.android.phone, com.miui.yellowpage, com.android.updater, com.miui.tsmclient, com.miui.securitycore, com.xiaomi.account, com.xiaomi.shop, com.xiaomi.smarthome, com.mipay.wallet, com.xiaomi.youpin, com.xiaomi.hm.health, com.miui.bugreport, com.xiaomi.mibrain.speech, com.xiaomi.mimoji, com.xiaomi.scanner, com.duokan.phone.remotecontroller, com.miui.hybrid, com.android.incallui, com.miui.video, com.miui.videoplayer, com.miui.player, com.miui.fm, com.miui.packageinstaller, com.mi.android.globallauncher, com.mi.android.globallauncher-poco, com.google.android.dialer, com.google.android.apps.magazines, com.miui.compass, com.miui.greenguard, com.kiteguard, com.google.android.apps.prodcasts, com.google.ar.lens, com.xiangkan.android, com.android.bankabc, com.sohu.inputmethod.sogou, com.tencent.mtt, com.shyz.toutiao, com.netease.mc.mi, com.outfit7.talkingtomgoldrun.mi, com.doudz.mi, com.wepie.snake.new.mi, cn.jj, com.standddz002.mi, com.miHoYo.bh3.mi, com.qqgame.hlddz, com.happyelements.AndroidAnimal, com.minitech.miniworld.TMobile.mi, com.mfp.jelly.xiaomi, com.lilithgames.afk.mi, com.tencent.peng, com.teenpatti.hd.gold, blockpuzzle.jewelgames.jewelslegend, com.playgendary.tanks, com.chillingo.robberybobfree.android.row, com.episodeinteractive.android.catalog, com.playrix.township, com.ansangha.drdriving, com.google.android.youtube, com.gbits.atm.mi, com.tencent.tetris, com.sukhavati.gotoplaying.bubble.BubbleShooter.mint, com.block.puzzle.game.hippo.mi, com.youzu.bs.mi, com.appsomniacs.da2, com.miHoYo.Yuanshen, com.baidu.BaiduMap, com.google.android.googlequicksearchbox]
+06-30 22:13:00.610   966   992 I vendor.qti.hardware.servicetracker@1.2-service: Activity state is changed to : 0
+06-30 22:13:00.611   966   992 I vendor.qti.hardware.servicetracker@1.2-service: Activity state is changed to : 0
+06-30 22:13:00.611   948   948 I ANDR-PERF-LM: LMPerfGlue: perfmodule_submit_request() 132: perfmodule_submit_request()
+06-30 22:13:00.611   948   948 I ANDR-PERF-LM: Core: getInstance() 84: LM getInstance
+06-30 22:13:00.611   948   948 I ANDR-PERF-LM: WQ: push() 59: LMTriggerQ push() size=0
+06-30 22:13:00.611   948   948 I ANDR-PERF-LM: WQ: push() 61: LMTriggerQ push() done size=1
+06-30 22:13:00.611   948   980 I ANDR-PERF-LM: WQ: pop() 42: LMTriggerQ pop() done size=0
+06-30 22:13:00.611   948   980 I ANDR-PERF-LM: Core: lmMain() 381: Calling runAsync for AdaptLaunch
+06-30 22:13:00.611   948   980 I ANDR-PERF-LM: Core: lmMain() 391: runAsync for AdaptLaunch returned
+06-30 22:13:00.611   948   980 I ANDR-PERF-LM: Core: lmMain() 373: Waiting on trigger Queue
+06-30 22:13:00.611   948   980 I ANDR-PERF-LM: WQ: pop() 31: LMTriggerQ pop() size=0
+06-30 22:13:00.612  2809  2918 I Launcher.ApplicationsMessage: onReceive true
+06-30 22:13:00.612  2809  2918 I Launcher.ApplicationsMessage: update com.tencent.mm/ to null
+06-30 22:13:00.613  1209  4243 D CompatibilityInfo: mCompatibilityFlags - 0
+06-30 22:13:00.613  1209  4243 D CompatibilityInfo: applicationDensity - 440
+06-30 22:13:00.613  1209  4243 D CompatibilityInfo: applicationScale - 1.0
+06-30 22:13:00.614   948   948 I ANDR-PERF-LM: LMPerfGlue: perfmodule_submit_request() 132: perfmodule_submit_request()
+06-30 22:13:00.614   948   948 I ANDR-PERF-LM: Core: getInstance() 84: LM getInstance
+06-30 22:13:00.614   948   948 I ANDR-PERF-LM: WQ: push() 59: LMTriggerQ push() size=0
+06-30 22:13:00.614   948   948 I ANDR-PERF-LM: WQ: push() 61: LMTriggerQ push() done size=1
+06-30 22:13:00.614   966   992 I vendor.qti.hardware.servicetracker@1.2-service: Activity state is changed to : 2
+06-30 22:13:00.615  1209  4243 D ActivityTrigger: ActivityTrigger activityPauseTrigger 
+06-30 22:13:00.615   948   948 I ANDR-PERF-LM: LMPerfGlue: perfmodule_submit_request() 132: perfmodule_submit_request()
+06-30 22:13:00.615   948   948 I ANDR-PERF-LM: Core: getInstance() 84: LM getInstance
+06-30 22:13:00.615   948   948 I ANDR-PERF-LM: WQ: push() 59: LMTriggerQ push() size=1
+06-30 22:13:00.615   948   948 I ANDR-PERF-LM: WQ: push() 61: LMTriggerQ push() done size=2
+06-30 22:13:00.616   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: Activity state is changed to : 3
+06-30 22:13:00.616   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: Activity state is changed to : 3
+06-30 22:13:00.616   948   980 I ANDR-PERF-LM: WQ: pop() 42: LMTriggerQ pop() done size=1
+06-30 22:13:00.616   948   980 I ANDR-PERF-LM: Core: lmMain() 381: Calling runAsync for GameOptimization
+06-30 22:13:00.616   948   980 D ANDR-PERF-LM: Feature: lookup() 101: Feature Name = AppClassifier, total featuers = 3, featureFound = 1
+06-30 22:13:00.617   948   980 D ANDR-PERF-LM: Feature: getData() 112: data.data = 1
+06-30 22:13:00.618   948   980 I ANDR-PERF-LM: Core: lmMain() 391: runAsync for GameOptimization returned
+06-30 22:13:00.618   948   980 I ANDR-PERF-LM: Core: lmMain() 373: Waiting on trigger Queue
+06-30 22:13:00.618   948   980 I ANDR-PERF-LM: WQ: pop() 31: LMTriggerQ pop() size=1
+06-30 22:13:00.618   948   980 I ANDR-PERF-LM: WQ: pop() 42: LMTriggerQ pop() done size=0
+06-30 22:13:00.618   948   980 I ANDR-PERF-LM: Core: lmMain() 381: Calling runAsync for GameOptimization
+06-30 22:13:00.618   948   980 D ANDR-PERF-LM: Feature: lookup() 101: Feature Name = AppClassifier, total featuers = 3, featureFound = 1
+06-30 22:13:00.618   948   980 D ANDR-PERF-LM: Feature: getData() 112: data.data = 1
+06-30 22:13:00.618   948   980 I ANDR-PERF-LM: Core: lmMain() 391: runAsync for GameOptimization returned
+06-30 22:13:00.618   948   980 I ANDR-PERF-LM: Core: lmMain() 373: Waiting on trigger Queue
+06-30 22:13:00.618   948   980 I ANDR-PERF-LM: WQ: pop() 31: LMTriggerQ pop() size=0
+06-30 22:13:00.627   966   992 I vendor.qti.hardware.servicetracker@1.2-service: bindService is called for service : com.tencent.mm/com.google.android.gms.measurement.AppMeasurementService and for client com.tencent.mm
+06-30 22:13:00.627   966   992 I vendor.qti.hardware.servicetracker@1.2-service: total connections for service : com.tencent.mm/com.google.android.gms.measurement.AppMeasurementServiceare :1
+06-30 22:13:00.627   966   992 I vendor.qti.hardware.servicetracker@1.2-service: total connections for client : com.tencent.mmare :9
+06-30 22:13:00.627  1209  3117 D CompatibilityInfo: mCompatibilityFlags - 0
+06-30 22:13:00.627  1209  3117 D CompatibilityInfo: applicationDensity - 440
+06-30 22:13:00.627  1209  3117 D CompatibilityInfo: applicationScale - 1.0
+06-30 22:13:00.628   966   992 I vendor.qti.hardware.servicetracker@1.2-service: startService() is called for servicecom.tencent.mm/com.google.android.gms.measurement.AppMeasurementService
+06-30 22:13:00.647   966   992 I vendor.qti.hardware.servicetracker@1.2-service: Activity state is changed to : 4
+06-30 22:13:00.647   966   992 I vendor.qti.hardware.servicetracker@1.2-service: Activity state is changed to : 4
+06-30 22:13:00.647   948   948 I ANDR-PERF-LM: LMPerfGlue: perfmodule_submit_request() 132: perfmodule_submit_request()
+06-30 22:13:00.647   948   948 I ANDR-PERF-LM: Core: getInstance() 84: LM getInstance
+06-30 22:13:00.647   948   948 I ANDR-PERF-LM: WQ: push() 59: LMTriggerQ push() size=0
+06-30 22:13:00.647   948   948 I ANDR-PERF-LM: WQ: push() 61: LMTriggerQ push() done size=1
+06-30 22:13:00.647   966   966 I vendor.qti.hardware.servicetracker@1.2-service: Activity state is changed to : 2
+06-30 22:13:00.647   948   980 I ANDR-PERF-LM: WQ: pop() 42: LMTriggerQ pop() done size=0
+06-30 22:13:00.647   948   980 I ANDR-PERF-LM: Core: lmMain() 381: Calling runAsync for GameOptimization
+06-30 22:13:00.647   948   980 D ANDR-PERF-LM: Feature: lookup() 101: Feature Name = AppClassifier, total featuers = 3, featureFound = 1
+06-30 22:13:00.648   948   980 D ANDR-PERF-LM: Feature: getData() 112: data.data = 1
+06-30 22:13:00.648   948   980 I ANDR-PERF-LM: Core: lmMain() 391: runAsync for GameOptimization returned
+06-30 22:13:00.648   948   980 I ANDR-PERF-LM: Core: lmMain() 373: Waiting on trigger Queue
+06-30 22:13:00.648   948   980 I ANDR-PERF-LM: WQ: pop() 31: LMTriggerQ pop() size=0
+06-30 22:13:00.648   948   948 I ANDR-PERF-LM: LMPerfGlue: perfmodule_submit_request() 132: perfmodule_submit_request()
+06-30 22:13:00.648   948   948 I ANDR-PERF-LM: Core: getInstance() 84: LM getInstance
+06-30 22:13:00.648   948   948 I ANDR-PERF-LM: WQ: push() 59: LMTriggerQ push() size=0
+06-30 22:13:00.648   948   948 I ANDR-PERF-LM: WQ: push() 61: LMTriggerQ push() done size=1
+06-30 22:13:00.648   948   980 I ANDR-PERF-LM: WQ: pop() 42: LMTriggerQ pop() done size=0
+06-30 22:13:00.648   948   980 I ANDR-PERF-LM: Core: lmMain() 381: Calling runAsync for AdaptLaunch
+06-30 22:13:00.648   948   980 I ANDR-PERF-LM: MetaMeter: isValidAsync() 194: AsyncInfo: hintID = 4225
+06-30 22:13:00.648   948   980 I ANDR-PERF-LM: hintType: 102
+06-30 22:13:00.648   948   980 I ANDR-PERF-LM: isPrimary = 0
+06-30 22:13:00.648   948   980 I ANDR-PERF-LM: MetaMeter: isValidAsync() 203: Invalid (hintID,hintType,appName,duration,appPID,appThreadTID) = (4225, 102,com.tencent.mm,26323,1209,4812)
+06-30 22:13:00.648   948   980 E ANDR-PERF-LM: MetaMeter: handleAsync() 164: AdaptLaunch Invalid Async
+06-30 22:13:00.648   948   980 I ANDR-PERF-LM: Core: lmMain() 391: runAsync for AdaptLaunch returned
+06-30 22:13:00.648   948   980 I ANDR-PERF-LM: Core: lmMain() 373: Waiting on trigger Queue
+06-30 22:13:00.648   948   980 I ANDR-PERF-LM: WQ: pop() 31: LMTriggerQ pop() size=0
+06-30 22:13:00.649  1209  4812 D CompatibilityInfo: mCompatibilityFlags - 0
+06-30 22:13:00.649  1209  4812 D CompatibilityInfo: applicationDensity - 440
+06-30 22:13:00.649  1209  4812 D CompatibilityInfo: applicationScale - 1.0
+06-30 22:13:00.649  1209  2442 I MiuiNetworkPolicyQosUtils: onActivityChanged pre:ComponentInfo{com.tencent.mm/com.tencent.mm.ui.LauncherUI},cur:ComponentInfo{com.tencent.mm/com.tencent.mm.ui.AlertActivity},data=true
+06-30 22:13:00.650  4585 16479 I BeautyService: beaty service exit
+06-30 22:13:00.650   966   966 I vendor.qti.hardware.servicetracker@1.2-service: Activity state is changed to : 2
+06-30 22:13:00.650   966   966 I vendor.qti.hardware.servicetracker@1.2-service: Activity state is changed to : 2
+06-30 22:13:00.652  4585  5410 I GuardService: notifyChange! preName = ComponentInfo{com.tencent.mm/com.tencent.mm.ui.LauncherUI}; curName = ComponentInfo{com.tencent.mm/com.tencent.mm.ui.AlertActivity}
+06-30 22:13:00.657 26323 26323 E Instrumentation: Uninitialized ActivityThread, likely app-created Instrumentation, disabling AppComponentFactory
+06-30 22:13:00.657 26323 26323 E Instrumentation: java.lang.Throwable
+06-30 22:13:00.657 26323 26323 E Instrumentation: 	at android.app.Instrumentation.getFactory(Instrumentation.java:1263)
+06-30 22:13:00.657 26323 26323 E Instrumentation: 	at android.app.Instrumentation.newActivity(Instrumentation.java:1254)
+06-30 22:13:00.657 26323 26323 E Instrumentation: 	at com.tencent.mm.splash.SplashHackInstrumentation.newActivity(Unknown Source:153)
+06-30 22:13:00.657 26323 26323 E Instrumentation: 	at android.app.ActivityThread.performLaunchActivity(ActivityThread.java:3444)
+06-30 22:13:00.657 26323 26323 E Instrumentation: 	at android.app.ActivityThread.handleLaunchActivity(ActivityThread.java:3700)
+06-30 22:13:00.657 26323 26323 E Instrumentation: 	at android.app.servertransaction.LaunchActivityItem.execute(LaunchActivityItem.java:85)
+06-30 22:13:00.657 26323 26323 E Instrumentation: 	at android.app.servertransaction.TransactionExecutor.executeCallbacks(TransactionExecutor.java:135)
+06-30 22:13:00.657 26323 26323 E Instrumentation: 	at android.app.servertransaction.TransactionExecutor.execute(TransactionExecutor.java:95)
+06-30 22:13:00.657 26323 26323 E Instrumentation: 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2136)
+06-30 22:13:00.657 26323 26323 E Instrumentation: 	at android.os.Handler.dispatchMessage(Handler.java:106)
+06-30 22:13:00.657 26323 26323 E Instrumentation: 	at java.lang.reflect.Method.invoke(Native Method)
+06-30 22:13:00.657 26323 26323 E Instrumentation: 	at DJC.I.txliLS.kcxIIS.VsdZYI.xG.HookBridge.invokeOriginalMethod(Native Method)
+06-30 22:13:00.657 26323 26323 E Instrumentation: 	at J.callback(Unknown Source:194)
+06-30 22:13:00.657 26323 26323 E Instrumentation: 	at LSPHooker_.dispatchMessage(Unknown Source:11)
+06-30 22:13:00.657 26323 26323 E Instrumentation: 	at android.os.Looper.loop(Looper.java:236)
+06-30 22:13:00.657 26323 26323 E Instrumentation: 	at android.app.ActivityThread.main(ActivityThread.java:8060)
+06-30 22:13:00.657 26323 26323 E Instrumentation: 	at java.lang.reflect.Method.invoke(Native Method)
+06-30 22:13:00.657 26323 26323 E Instrumentation: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:656)
+06-30 22:13:00.657 26323 26323 E Instrumentation: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:967)
+06-30 22:13:00.664 26323 26528 D ViewContentFactory: initViewContentFetcherClass
+06-30 22:13:00.664 26323 26528 I ContentCatcher: ViewContentFetcher : ViewContentFetcher
+06-30 22:13:00.664 26323 26528 D ViewContentFactory: createInterceptor took 0ms
+06-30 22:13:00.668 26323 26323 D DecorView[]: getWindowModeFromSystem  windowmode is 1
+06-30 22:13:00.668 26323 26323 D DecorView: createDecorCaptionView windowingMode:1 mWindowMode 1 isFullscreen: true
+06-30 22:13:00.683 26323 26323 D DecorView: createDecorCaptionView windowingMode:1 mWindowMode 1 isFullscreen: true
+06-30 22:13:00.687  2540  2540 D StatusBar: disable<e i a s b h r c s > disable2<q i n >
+06-30 22:13:00.688  1209  1247 D CompatibilityInfo: mCompatibilityFlags - 0
+06-30 22:13:00.688  1209  1247 D CompatibilityInfo: applicationDensity - 440
+06-30 22:13:00.688  1209  1247 D CompatibilityInfo: applicationScale - 1.0
+06-30 22:13:00.712 26323 26323 I NCL     : [UI:RAW] com.tencent.mm.ui.AlertActivity
+06-30 22:13:00.712 26323 26323 I NCL     : [UI] page=com.tencent.mm.ui.AlertActivity activity=com.tencent.mm.ui.AlertActivity
+06-30 22:13:00.720 26323 26323 D DecorView[]: getWindowModeFromSystem  windowmode is 1
+06-30 22:13:00.722  2809  2809 D RecentsImpl: mActivityStateObserver com.tencent.mm.ui.AlertActivity
+06-30 22:13:00.723  2809  2809 W RecentsImpl: onResumed className=com.tencent.mm.ui.AlertActivity   mIsInAnotherPro=false
+06-30 22:13:00.723  2809  3064 W RecentsImpl: disableBackStubWindow    disableTouch=false
+06-30 22:13:00.723  2809  3064 D RecentsImpl: showBackStubWindow  mHasNavigationBar=true   mDisabledByDriveMode=false
+06-30 22:13:00.723  2809  3064 W GestureStubView: adaptRotation   currentRotation=0   mRotation=0
+06-30 22:13:00.723  2809  3064 D GestureStubView: resetRenderProperty: showGestureStub
+06-30 22:13:00.723  2809  3064 D GestureStubView: showGestureStub
+06-30 22:13:00.723  2809  3064 W GestureStubView: adaptRotation   currentRotation=0   mRotation=0
+06-30 22:13:00.724  2809  3064 D GestureStubView: resetRenderProperty: showGestureStub
+06-30 22:13:00.724  2809  3064 D GestureStubView: showGestureStub
+06-30 22:13:00.724  2809  3065 D RecentsImpl: showNavStubView
+06-30 22:13:00.725 26323 26323 I NCL     : [SU] view attached class=com.tencent.mm.ui.widget.MMEditText id=0x7f0913f9
+06-30 22:13:00.725 26323 26323 I NCL     : [SU] watcher installed id=0x7f0913f9
+06-30 22:13:00.725  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:00.726  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:00.726  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:00.727  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:00.730  2540  2540 D StatusBar: disable<e i a s b h r c s > disable2<q i n >
+06-30 22:13:00.735  2809  3064 D GestureStubView: gatherTransparentRegion: need render w:54  h:1404
+06-30 22:13:00.738  2809  3064 D GestureStubView: gatherTransparentRegion: need render w:54  h:1404
+06-30 22:13:00.759  2540  3560 D NdkImageReader: acquireImageLocked: Producer buffer usage: 333, doesn't cover all usage bits AImageReader configured: 100003
+06-30 22:13:00.761   948   948 I ANDR-PERF-LM: LMPerfGlue: perfmodule_submit_request() 132: perfmodule_submit_request()
+06-30 22:13:00.761   948   948 I ANDR-PERF-LM: Core: getInstance() 84: LM getInstance
+06-30 22:13:00.761   948   948 I ANDR-PERF-LM: WQ: push() 59: LMTriggerQ push() size=0
+06-30 22:13:00.761   948   948 I ANDR-PERF-LM: WQ: push() 61: LMTriggerQ push() done size=1
+06-30 22:13:00.761   948   980 I ANDR-PERF-LM: WQ: pop() 42: LMTriggerQ pop() done size=0
+06-30 22:13:00.761   948   980 I ANDR-PERF-LM: Core: lmMain() 373: Waiting on trigger Queue
+06-30 22:13:00.761   948   980 I ANDR-PERF-LM: WQ: pop() 31: LMTriggerQ pop() size=0
+06-30 22:13:00.763  1209  1244 I ActivityTaskManager: Displayed com.tencent.mm/.ui.AlertActivity: +152ms
+06-30 22:13:00.763   948   948 I ANDR-PERF-LM: LMPerfGlue: perfmodule_submit_request() 132: perfmodule_submit_request()
+06-30 22:13:00.763   948   948 I ANDR-PERF-LM: Core: getInstance() 84: LM getInstance
+06-30 22:13:00.763   948   948 D ANDR-PERF-LM: Feature: lookup() 101: Feature Name = AppClassifier, total featuers = 3, featureFound = 1
+06-30 22:13:00.763   948   948 D ANDR-PERF-LM: Feature: getData() 112: data.data = 1
+06-30 22:13:00.763   948   948 I ANDR-PERF-LM: FeedbackAPI: getFeedback() 60: app:com.tencent.mm feature:AppClassifier feedback = 1
+06-30 22:13:00.768  2540  2540 D StatusBar: disable<e i a s b h r c s > disable2<q i n >
+06-30 22:13:00.770  2540  3560 D NdkImageReader: acquireImageLocked: Producer buffer usage: 333, doesn't cover all usage bits AImageReader configured: 100003
+06-30 22:13:00.771  2540  2598 D CommandQueue: setStatus: setStatus: what = 0, action = upate_specail_mode, ext = Bundle[mParcelledData.dataSize=96][pkg = com.tencent.mm[enable_config = false
+06-30 22:13:00.772  2540  2773 D MiuiPhoneStatusBarPolicy: updateManagedProfile: secondSpace = false
+06-30 22:13:00.781  2809  3065 D NavStubView: gatherTransparentRegion: need render w:1080  h:83
+06-30 22:13:00.781  2809  3065 W NavStubView: onComputeInternalInsets  bounds=Rect(0, 0 - 1080, 83)   mHideGestureLine=false   mIsShowNavBar=true
+06-30 22:13:00.781  2809  3064 D GestureStubView: gatherTransparentRegion: need render w:54  h:1404
+06-30 22:13:00.781  2809  3064 D GestureStubView: gatherTransparentRegion: need render w:54  h:1404
+06-30 22:13:00.785  2540  2540 D StatusBar: disable<e i a s b h r c s > disable2<q i n >
+06-30 22:13:00.786  1209  4812 W ActivityManager: Sending non-protected broadcast com.android.systemui.fullscreen.statechange from system 2540:com.android.systemui/1000 pkg com.android.systemui. Callers=
+06-30 22:13:00.786  1209  4812 W ActivityManager: Sending non-protected broadcast com.android.systemui.fullscreen.statechange from system 2540:com.android.systemui/1000 pkg com.android.systemui. Callers=
+06-30 22:13:00.788  2540  3560 D NdkImageReader: acquireImageLocked: Producer buffer usage: 333, doesn't cover all usage bits AImageReader configured: 100003
+06-30 22:13:00.800  2540  2540 D ControllerPanelWindowView: onApplyWindowInsets: 
+06-30 22:13:00.805  2540  3560 D NdkImageReader: acquireImageLocked: Producer buffer usage: 333, doesn't cover all usage bits AImageReader configured: 100003
+06-30 22:13:00.821  2540  3560 I chatty  : uid=1000(system) com.android.systemui identical 1 line
+06-30 22:13:00.836  2540  3560 D NdkImageReader: acquireImageLocked: Producer buffer usage: 333, doesn't cover all usage bits AImageReader configured: 100003
+06-30 22:13:00.999  2540  2613 D AppMiniWindowManager: onForegroundWindowChanged: com.tencent.mm
+06-30 22:13:01.019  2540  3560 D NdkImageReader: acquireImageLocked: Producer buffer usage: 333, doesn't cover all usage bits AImageReader configured: 100003
+06-30 22:13:01.078  2540  3560 D NdkImageReader: acquireImageLocked: Producer buffer usage: 333, doesn't cover all usage bits AImageReader configured: 100003
+06-30 22:13:01.132  2540  2540 W TouchableRegionManager: onHeadsUpPinnedModeChanged
+06-30 22:13:01.135  2540  2540 D BlurLayerHolder: unregister android.view.ViewRootImpl@47ad2e2
+06-30 22:13:01.136  1043  2943 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+06-30 22:13:01.142  2540  3484 D MiBridge: requestCpuHighFreq---- uid: 1000 level: 1 timeoutms:2000
+06-30 22:13:01.143  1570  1582 W MiuiBooster: "MiuiBoosterService requestCpuHighFreq: 1000, 1, 2000"
+06-30 22:13:01.143  1570  1582 W MiuiBooster: "requestCpuHighFreq,final level:1,final timeoutms:2000"
+06-30 22:13:01.143  1570  1582 W MiuiBooster: "perf_hint_hc start"
+06-30 22:13:01.143  1570  1582 W MiuiBooster: "big_core_value[level-1]:4095"
+06-30 22:13:01.143  1570  1582 W MiuiBooster: "little_core_value[level-1]:4095"
+06-30 22:13:01.143  1570  1582 W MiuiBooster: "prime_core_value[level - 1]:4095"
+06-30 22:13:01.143  1570  1582 W MiuiBooster: "perf_handle:2097"
+06-30 22:13:01.144  2540  3484 D MiBridge: requestCpuHighFreq handle: 1
+06-30 22:13:01.144  2540  3484 D CpuBoostUtil: boostCpuToMax:0
+06-30 22:13:01.301  2540  3484 D MiBridge: cancelCpuHighFreq---uid: 1000
+06-30 22:13:01.301  2540  3484 D MiBridge: cancelCpuHighFreq ret: 0
+06-30 22:13:01.301  2540  3484 D CpuBoostUtil: cancelCpuHighFreq:0
+06-30 22:13:01.316  1209  5421 D systemui_boost: notification panel visible=false
+06-30 22:13:01.316  1209  5421 D systemui_boost: ui thread tid=2540
+06-30 22:13:01.316  1209  5421 D systemui_boost: render thread tid=3208
+06-30 22:13:01.316  1209  5421 D systemui_boost: thread tid=2540, priority is set to 0
+06-30 22:13:01.316  1209  5421 D systemui_boost: thread tid=3208, priority is set to -4
+06-30 22:13:01.316  1209  5421 D systemui_boost: ui thread and render thread are reset
+06-30 22:13:01.318  2540  2540 D StatusBar: disable<e i a s b h r c s > disable2<q i n >
+06-30 22:13:01.751  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:01.752  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:01.752  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:01.754  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+--------- beginning of system
+06-30 22:13:02.178  1209  3116 I ActivityManager: Force stopping com.tencent.mm appid=10300 user=0: clear data
+06-30 22:13:02.179  1209  3116 I Process : Sending signal. PID: 29808 SIG: 19
+06-30 22:13:02.180  1209  3116 I Process : Sending signal. PID: 26595 SIG: 19
+06-30 22:13:02.180  1209  3116 I Process : Sending signal. PID: 26323 SIG: 19
+06-30 22:13:02.183  1209  3116 I ActivityManager: Killing 26595:com.tencent.mm:push/u0a300 (adj 100): stop com.tencent.mm due to clear data
+06-30 22:13:02.183  1209  3116 I Process : PerfMonitor : current process sending signal quiet. PID: 26595 SIG: 9
+06-30 22:13:02.184   948   948 I ANDR-PERF-LM: LMPerfGlue: perfmodule_submit_request() 132: perfmodule_submit_request()
+06-30 22:13:02.184   948   948 I ANDR-PERF-LM: Core: getInstance() 84: LM getInstance
+06-30 22:13:02.184   948   948 I ANDR-PERF-LM: WQ: push() 59: LMTriggerQ push() size=0
+06-30 22:13:02.184   948   948 I ANDR-PERF-LM: WQ: push() 61: LMTriggerQ push() done size=1
+06-30 22:13:02.185   948   980 I ANDR-PERF-LM: WQ: pop() 42: LMTriggerQ pop() done size=0
+06-30 22:13:02.185  1209  1249 I Process : PerfMonitor : current process killing process group. PID: 26595
+06-30 22:13:02.185   948   980 I ANDR-PERF-LM: Core: lmMain() 373: Waiting on trigger Queue
+06-30 22:13:02.185   948   980 I ANDR-PERF-LM: WQ: pop() 31: LMTriggerQ pop() size=0
+06-30 22:13:02.186   966   966 I vendor.qti.hardware.servicetracker@1.2-service: killProcess is called for pid : 26595
+06-30 22:13:02.186   966   966 I vendor.qti.hardware.servicetracker@1.2-service: process with pid 26595 is service
+06-30 22:13:02.186   966   966 I vendor.qti.hardware.servicetracker@1.2-service: size of client connections for client: com.tencent.mmafter removal is 8
+06-30 22:13:02.186   966   966 I vendor.qti.hardware.servicetracker@1.2-service: process with pid 26595 is service
+06-30 22:13:02.186   966   966 I vendor.qti.hardware.servicetracker@1.2-service: size of client connections for client: com.tencent.mmafter removal is 7
+06-30 22:13:02.186   966   966 I vendor.qti.hardware.servicetracker@1.2-service: process with pid 26595 is service
+06-30 22:13:02.186   966   966 I vendor.qti.hardware.servicetracker@1.2-service: size of client connections for client: com.tencent.mmafter removal is 6
+06-30 22:13:02.186   966   966 I vendor.qti.hardware.servicetracker@1.2-service: size of client connections for client: com.tencent.mm:pushafter removal is 2
+06-30 22:13:02.186   966   966 I vendor.qti.hardware.servicetracker@1.2-service: size of client connections for client: com.tencent.mm:patchafter removal is 0
+06-30 22:13:02.186   966   966 I vendor.qti.hardware.servicetracker@1.2-service: process with pid 26595 is client
+06-30 22:13:02.186   966   966 I vendor.qti.hardware.servicetracker@1.2-service: size of service connections for service: com.tencent.mm/.ipcinvoker.wx_extension.service.MainProcessIPCServiceafter removal is 0
+06-30 22:13:02.186   966   966 I vendor.qti.hardware.servicetracker@1.2-service: size of service connections for service: com.tencent.mm/.service.ProcessService$MMProcessServiceafter removal is 1
+06-30 22:13:02.186   966   966 I vendor.qti.hardware.servicetracker@1.2-service: removing client with pid 26595process namecom.tencent.mm:push
+06-30 22:13:02.187   966   966 I vendor.qti.hardware.servicetracker@1.2-service: destroyService is called for service : com.tencent.mm/.ipcinvoker.wx_extension.service.MainProcessIPCService
+06-30 22:13:02.187   966   966 I vendor.qti.hardware.servicetracker@1.2-service: destroyService is called for service : com.tencent.mm/com.tencent.matrix.lifecycle.supervisor.SupervisorService
+06-30 22:13:02.187   966   966 I vendor.qti.hardware.servicetracker@1.2-service: destroyService is called for service : com.tencent.mm/.booter.CoreService
+06-30 22:13:02.188   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: destroyService is called for service : com.tencent.mm/.ipcinvoker.wx_extension.service.PushProcessIPCService
+06-30 22:13:02.188  5336  5427 I com.xiaomi.xms: oneway function results will be dropped but finished with status UNKNOWN_TRANSACTION and parcel size 0
+06-30 22:13:02.188  1209  3116 W ANRStateManager: clear state, but process isn't exist. hash=130725631 uid=10300 pid=26595 state=16
+06-30 22:13:02.189  1209  3116 I ActivityManager: Killing 26323:com.tencent.mm/u0a300 (adj 0): stop com.tencent.mm due to clear data
+06-30 22:13:02.189  1209  3116 I Process : PerfMonitor : current process sending signal quiet. PID: 26323 SIG: 9
+06-30 22:13:02.197   948   948 I ANDR-PERF-LM: LMPerfGlue: perfmodule_submit_request() 132: perfmodule_submit_request()
+06-30 22:13:02.197   948   948 I ANDR-PERF-LM: Core: getInstance() 84: LM getInstance
+06-30 22:13:02.197   948   948 I ANDR-PERF-LM: WQ: push() 59: LMTriggerQ push() size=0
+06-30 22:13:02.197   948   948 I ANDR-PERF-LM: WQ: push() 61: LMTriggerQ push() done size=1
+06-30 22:13:02.197   948   980 I ANDR-PERF-LM: WQ: pop() 42: LMTriggerQ pop() done size=0
+06-30 22:13:02.197   948   980 I ANDR-PERF-LM: Core: lmMain() 373: Waiting on trigger Queue
+06-30 22:13:02.197   948   980 I ANDR-PERF-LM: WQ: pop() 31: LMTriggerQ pop() size=0
+06-30 22:13:02.198   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: killProcess is called for pid : 26323
+06-30 22:13:02.198   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: process with pid 26323 is service
+06-30 22:13:02.198   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: process with pid 26323 is service
+06-30 22:13:02.198   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: size of client connections for client: com.tencent.mmafter removal is 5
+06-30 22:13:02.198   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: process with pid 26323 is service
+06-30 22:13:02.198   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: size of client connections for client: com.tencent.mmafter removal is 4
+06-30 22:13:02.198   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: process with pid 26323 is client
+06-30 22:13:02.198   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: size of service connections for service: com.tencent.soter.soterserver/.SoterServiceafter removal is 0
+06-30 22:13:02.198   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: size of service connections for service: com.tencent.mm/com.tencent.tinker.lib.service.TinkerPatchForeServiceafter removal is 0
+06-30 22:13:02.198   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: removing client with pid 26323process namecom.tencent.mm
+06-30 22:13:02.199   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: destroyService is called for service : com.tencent.mm/.service.ProcessService$MMProcessService
+06-30 22:13:02.199   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: destroyService is called for service : com.tencent.mm/org.chromium.content.app.SandboxedProcessService0:3
+06-30 22:13:02.199   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: destroyService is called for service : com.tencent.mm/.plugin.webview.stub.WebViewStubService
+06-30 22:13:02.200  1209  3116 I ActivityManager: Killing 29654:com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:3/u0a300i25 (adj 0): isolated not needed
+06-30 22:13:02.200  1209  3116 I Process : PerfMonitor : current process sending signal quiet. PID: 29654 SIG: 9
+06-30 22:13:02.201   948   948 I ANDR-PERF-LM: LMPerfGlue: perfmodule_submit_request() 132: perfmodule_submit_request()
+06-30 22:13:02.201   948   948 I ANDR-PERF-LM: Core: getInstance() 84: LM getInstance
+06-30 22:13:02.201   948   948 I ANDR-PERF-LM: WQ: push() 59: LMTriggerQ push() size=0
+06-30 22:13:02.201   948   948 I ANDR-PERF-LM: WQ: push() 61: LMTriggerQ push() done size=1
+06-30 22:13:02.202   948   980 I ANDR-PERF-LM: WQ: pop() 42: LMTriggerQ pop() done size=0
+06-30 22:13:02.202   948   980 I ANDR-PERF-LM: Core: lmMain() 373: Waiting on trigger Queue
+06-30 22:13:02.202   948   980 I ANDR-PERF-LM: WQ: pop() 31: LMTriggerQ pop() size=0
+06-30 22:13:02.202   966   966 I vendor.qti.hardware.servicetracker@1.2-service: destroyService is called for service : com.tencent.mm/com.tencent.tinker.lib.service.TinkerPatchForeService
+06-30 22:13:02.203   966   966 I vendor.qti.hardware.servicetracker@1.2-service: destroyService is called for service : com.tencent.soter.soterserver/.SoterService
+06-30 22:13:02.203   966   966 I vendor.qti.hardware.servicetracker@1.2-service: destroyService is called for service : com.tencent.mm/com.google.android.gms.measurement.AppMeasurementService
+06-30 22:13:02.204  1209  3116 W ANRStateManager: clear state, but process isn't exist. hash=90674648 uid=10300 pid=26323 state=16
+06-30 22:13:02.204  1209  3116 W ActivityTaskManager: Force removing ActivityRecord{ff2c44f u0 com.tencent.mm/.ui.AlertActivity t100 f}}: app died, no saved state
+06-30 22:13:02.204  4449  4449 V SoterService: onDestroy
+06-30 22:13:02.204   966   992 I vendor.qti.hardware.servicetracker@1.2-service: Activity state is changed to : 9
+06-30 22:13:02.204   966   992 I chatty  : uid=1000(system) HwBinder:966_2 identical 1 line
+06-30 22:13:02.204   966   992 I vendor.qti.hardware.servicetracker@1.2-service: Activity state is changed to : 9
+06-30 22:13:02.211  2540  2613 D CommandQueue: setStatus: setStatus: what = 0, action = upate_specail_mode, ext = Bundle[mParcelledData.dataSize=96][pkg = com.tencent.mm[enable_config = true
+06-30 22:13:02.211  2540  2540 D StatusBar: disable<e i a s b h r c s > disable2<q i n >
+06-30 22:13:02.219  1209  3116 W ActivityTaskManager: Force removing ActivityRecord{f47379 u0 com.tencent.mm/.ui.LauncherUI t100 f}}: app died, no saved state
+06-30 22:13:02.221   966   992 I vendor.qti.hardware.servicetracker@1.2-service: Activity state is changed to : 9
+06-30 22:13:02.222   966   992 I chatty  : uid=1000(system) HwBinder:966_2 identical 1 line
+06-30 22:13:02.224   966   992 I vendor.qti.hardware.servicetracker@1.2-service: Activity state is changed to : 9
+06-30 22:13:02.242   948   948 I ANDR-PERF-LM: LMPerfGlue: perfmodule_submit_request() 132: perfmodule_submit_request()
+06-30 22:13:02.242   948   948 I ANDR-PERF-LM: Core: getInstance() 84: LM getInstance
+06-30 22:13:02.242   948   948 I ANDR-PERF-LM: WQ: push() 59: LMTriggerQ push() size=0
+06-30 22:13:02.242   948   948 I ANDR-PERF-LM: WQ: push() 61: LMTriggerQ push() done size=1
+06-30 22:13:02.242   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: Activity state is changed to : 2
+06-30 22:13:02.244   948   980 I ANDR-PERF-LM: WQ: pop() 42: LMTriggerQ pop() done size=0
+06-30 22:13:02.244   948   980 I ANDR-PERF-LM: Core: lmMain() 381: Calling runAsync for GameOptimization
+06-30 22:13:02.245   948   980 D ANDR-PERF-LM: Feature: lookup() 101: Feature Name = AppClassifier, total featuers = 3, featureFound = 1
+06-30 22:13:02.246   948   980 D ANDR-PERF-LM: Feature: getData() 112: data.data = 0
+06-30 22:13:02.247   948   980 I ANDR-PERF-LM: Core: lmMain() 391: runAsync for GameOptimization returned
+06-30 22:13:02.247   948   980 I ANDR-PERF-LM: Core: lmMain() 373: Waiting on trigger Queue
+06-30 22:13:02.247   948   980 I ANDR-PERF-LM: WQ: pop() 31: LMTriggerQ pop() size=0
+06-30 22:13:02.247  4585  5410 I ProcessMonitor: onForegroundInfoChanged: ForegroundInfo{mForegroundPackageName='com.miui.home', mForegroundUid=10085, mForegroundPid=2809, mLastForegroundPackageName='com.tencent.mm', mLastForegroundUid=10300, mLastForegroundPid=26323, mMultiWindowForegroundPackageName='null', mMultiWindowForegroundUid=-1, mFlags=0}
+06-30 22:13:02.248  4585  5410 I GameBoosterService: onForegroundInfoChanged: Cur=com.miui.home	 last=com.tencent.mm
+06-30 22:13:02.248  1209  2442 I MiuiNetworkPolicyQosUtils: onActivityChanged pre:ComponentInfo{com.tencent.mm/com.tencent.mm.ui.AlertActivity},cur:ComponentInfo{com.miui.home/com.miui.home.launcher.Launcher},data=true
+06-30 22:13:02.248  5973  6012 D PerfEngineController: ForegroundInfo{mForegroundPackageName='com.miui.home', mForegroundUid=10085, mForegroundPid=2809, mLastForegroundPackageName='com.tencent.mm', mLastForegroundUid=10300, mLastForegroundPid=26323, mMultiWindowForegroundPackageName='null', mMultiWindowForegroundUid=-1, mFlags=0}
+06-30 22:13:02.249  4585  4646 I BeautyService: beaty service exit
+06-30 22:13:02.250  1209  3116 I Timeline: Timeline: App_transition_ready time:77152134
+06-30 22:13:02.250  5973  6079 I ThermalInfoCollector: collectForgroundAppsInfo
+06-30 22:13:02.250  5999  6040 I GST     : forePkg: com.miui.home, preForePkg: com.tencent.mm
+06-30 22:13:02.250  1209  3116 I ActivityManager: Killing 29808:com.tencent.mm:patch/u0a300 (adj 0): stop com.tencent.mm due to clear data
+06-30 22:13:02.250   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: Activity state is changed to : 2
+06-30 22:13:02.252  5973  6213 D BrightSocialScenario: restroCtrl len=0
+06-30 22:13:02.252  4585  5410 D GameBoosterService: onGameStatusChange foreground:ForegroundInfo{mForegroundPackageName='com.miui.home', mForegroundUid=10085, mForegroundPid=2809, mLastForegroundPackageName='com.tencent.mm', mLastForegroundUid=10300, mLastForegroundPid=26323, mMultiWindowForegroundPackageName='null', mMultiWindowForegroundUid=-1, mFlags=0}
+06-30 22:13:02.252  4585  5410 I GameBoosterService: onForegroundInfoChanged: Exit
+06-30 22:13:02.252  4585  5410 I VideoBoxUtils: isSupportVideoBox: false
+06-30 22:13:02.252  4585  5410 I VideoToolBoxService: onForegroundInfoChanged: Exit Vtb
+06-30 22:13:02.261  4585 15115 I GuardService: notifyChange! preName = ComponentInfo{com.tencent.mm/com.tencent.mm.ui.AlertActivity}; curName = ComponentInfo{com.miui.home/com.miui.home.launcher.Launcher}
+06-30 22:13:02.261  3599  3670 I octvm_power: power mode [home] start 1782828782
+06-30 22:13:02.262  3599  3670 E octvm   : open /sys/class/power_supply/battery/status error, Permission denied
+06-30 22:13:02.262  3599  3670 I octvm_drv: common drv: get_current_battery_uAh will return 0
+06-30 22:13:02.262  3599  3670 I octvm_power: Action: set_bcbc_cust_state(disable) for [foreground_change]
+06-30 22:13:02.262   614   614 E SELinux : avc:  denied  { find } for interface=vendor.xiaomi.hardware.displayfeature::IDisplayFeature sid=u:r:mcd:s0 pid=3599 scontext=u:r:mcd:s0 tcontext=u:object_r:hal_displayfeature_xiaomi_hwservice:s0 tclass=hwservice_manager permissive=0
+06-30 22:13:02.247  3599  3599 W Binder:3599_1: type=1400 audit(0.0:8197): avc: denied { search } for name="battery" dev="sysfs" ino=70624 scontext=u:r:mcd:s0 tcontext=u:object_r:vendor_sysfs_battery_supply:s0 tclass=dir permissive=0
+06-30 22:13:02.257  3599  3599 W Binder:3599_1: type=1400 audit(0.0:8198): avc: denied { search } for name="battery" dev="sysfs" ino=70624 scontext=u:r:mcd:s0 tcontext=u:object_r:vendor_sysfs_battery_supply:s0 tclass=dir permissive=0
+06-30 22:13:02.263  3599  3670 E octvm_drv_xm: platform_set_bcbc_cust_state IDisplayFeature getService failed
+06-30 22:13:02.263  3599  3670 E octvm_power: Action set_bcbc_cust_state failed.
+06-30 22:13:02.263  3599  3670 I octvm_power: Action: set_lcd_mode(default) for [foreground_change]
+06-30 22:13:02.263  1209  3117 I Timeline: Timeline: App_transition_ready time:77152148
+06-30 22:13:02.263   614   614 E SELinux : avc:  denied  { find } for interface=vendor.xiaomi.hardware.displayfeature::IDisplayFeature sid=u:r:mcd:s0 pid=3599 scontext=u:r:mcd:s0 tcontext=u:object_r:hal_displayfeature_xiaomi_hwservice:s0 tclass=hwservice_manager permissive=0
+06-30 22:13:02.264  1209  3116 I Process : PerfMonitor : current process sending signal quiet. PID: 29808 SIG: 9
+06-30 22:13:02.265  2809  2809 D Launcher.Lifecycle: onStart:UserHandle{0},7230153,false
+06-30 22:13:02.266  2809  3371 I RenderThread: RenderThread resumed
+06-30 22:13:02.266  2809  3371 I RenderThread: All controllers paused.
+06-30 22:13:02.266  2809  3371 I RenderThread: RenderThread paused, waiting for signal
+06-30 22:13:02.266   948   948 I ANDR-PERF-LM: LMPerfGlue: perfmodule_submit_request() 132: perfmodule_submit_request()
+06-30 22:13:02.266   948   948 I ANDR-PERF-LM: Core: getInstance() 84: LM getInstance
+06-30 22:13:02.266   948   948 I ANDR-PERF-LM: WQ: push() 59: LMTriggerQ push() size=0
+06-30 22:13:02.266   948   948 I ANDR-PERF-LM: WQ: push() 61: LMTriggerQ push() done size=1
+06-30 22:13:02.266   948   980 I ANDR-PERF-LM: WQ: pop() 42: LMTriggerQ pop() done size=0
+06-30 22:13:02.266   948   980 I ANDR-PERF-LM: Core: lmMain() 373: Waiting on trigger Queue
+06-30 22:13:02.266   948   980 I ANDR-PERF-LM: WQ: pop() 31: LMTriggerQ pop() size=0
+06-30 22:13:02.267  4716  5174 D LauncherOverlay: setActivityState:1
+06-30 22:13:02.267  3599  3670 E octvm_drv_xm: platform_set_lcd_mode IDisplayFeature getService failed
+06-30 22:13:02.267  3599  3670 E octvm   : open /sys/class/power_supply/battery/status error, Permission denied
+06-30 22:13:02.267  3599  3670 I octvm_drv: common drv: get_current_battery_uAh will return 0
+06-30 22:13:02.267  3599  3670 I octvm_power: onPowerModeChanged[home] called
+06-30 22:13:02.267 17116 17141 D LauncherOverlay: setActivityState:1
+06-30 22:13:02.268  5973  6137 I ThermalSwitchHandler: writeThermalId success id=0
+06-30 22:13:02.270  2809  3160 D MiBridge: requestCpuHighFreq---- uid: 10085 level: 1 timeoutms:500
+06-30 22:13:02.271  1209 11385 I Timeline: Timeline: App_transition_ready time:77152155
+06-30 22:13:02.271  1570  1582 W MiuiBooster: "MiuiBoosterService requestCpuHighFreq: 10085, 1, 500"
+06-30 22:13:02.271  1570  1582 W MiuiBooster: "requestCpuHighFreq,final level:1,final timeoutms:500"
+06-30 22:13:02.271  1570  1582 W MiuiBooster: "perf_hint_hc start"
+06-30 22:13:02.271  1570  1582 W MiuiBooster: "big_core_value[level-1]:4095"
+06-30 22:13:02.271  1570  1582 W MiuiBooster: "little_core_value[level-1]:4095"
+06-30 22:13:02.271  1570  1582 W MiuiBooster: "prime_core_value[level - 1]:4095"
+06-30 22:13:02.272  1570  1582 W MiuiBooster: "perf_handle:2099"
+06-30 22:13:02.272  2809  3160 D MiBridge: requestCpuHighFreq handle: 1
+06-30 22:13:02.272  2809  3160 D Launcher_CPUBooster: boostCpuToMax:0
+06-30 22:13:02.273  2809  2809 D Launcher.Lifecycle: onResume:UserHandle{0},7230153,false
+06-30 22:13:02.274  4716  5174 D LauncherOverlay: setActivityState:3
+06-30 22:13:02.274 17116 17141 D LauncherOverlay: setActivityState:3
+06-30 22:13:02.275  2809  2809 D Launcher.XOutUtils: canRecommendScreenShow, isShowXout=false
+06-30 22:13:02.275  2809  2809 D Launcher.XOutUtils: canRecommendScreenShow, isShowXout=false
+06-30 22:13:02.275  2809  2809 D Launcher.RecommendController: folder display and try to request recommend list
+06-30 22:13:02.277  2809  3371 I RenderThread: RenderThread resumed
+06-30 22:13:02.277  2809  3371 I RenderThread: All controllers paused.
+06-30 22:13:02.277  2809  3371 I RenderThread: RenderThread paused, waiting for signal
+06-30 22:13:02.278  4716  4716 I AssistHolderView.Content: forceFitSystemWindows pb = 0
+06-30 22:13:02.278  4716  4716 E RecyclerView: No adapter attached; skipping layout
+06-30 22:13:02.278  4716  4716 W AssistHolderView.Content: scrollAssistBgViewWithRecyclerScroll: display or shortcuts not prepared
+06-30 22:13:02.278  1209  3116 W ANRStateManager: clear state, but process isn't exist. hash=117310840 uid=10300 pid=29808 state=16
+06-30 22:13:02.278   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: killProcess is called for pid : 29808
+06-30 22:13:02.278   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: process with pid 29808 is client
+06-30 22:13:02.278   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: removing client with pid 29808process namecom.tencent.mm:patch
+06-30 22:13:02.282  1209  3116 I WindowManager:   Force finishing activity ActivityRecord{ff2c44f u0 com.tencent.mm/.ui.AlertActivity t100 f} isExiting}
+06-30 22:13:02.282  1209  3116 W ActivityTaskManager: Duplicate finish request for r=ActivityRecord{ff2c44f u0 com.tencent.mm/.ui.AlertActivity t100 f} isExiting}
+06-30 22:13:02.285  4716  4716 D LauncherOverlay.Window: onStart
+06-30 22:13:02.285  4716  4716 D LauncherOverlay.Window: onResume
+06-30 22:13:02.288  1209  2398 I MiuiNetworkPolicy: updateUidState uid = 99025, uidState = 19
+06-30 22:13:02.288  1209  2398 I MiuiNetworkPolicy: removeUidState uid = 10300
+06-30 22:13:02.288  1209  2398 I MiuiNetworkPolicyTrafficLimit: updateWhiteListUidForMobileTraffic uid=10300,add=false
+06-30 22:13:02.288  1209  2398 I MiuiNetworkPolicy: updateUidState uid = 10111, uidState = 3
+06-30 22:13:02.288  1209  2398 I MiuiNetworkPolicyTrafficLimit: updateWhiteListUidForMobileTraffic uid=10111,add=true
+06-30 22:13:02.288  1209  2398 I MiuiNetworkPolicy: updateUidState uid = 10085, uidState = 2
+06-30 22:13:02.288  1209  2398 I MiuiNetworkPolicyTrafficLimit: updateWhiteListUidForMobileTraffic uid=10085,add=true
+06-30 22:13:02.288  1209  2398 I MiuiNetworkPolicy: updateUidState uid = 10076, uidState = 3
+06-30 22:13:02.288  1209  2398 I MiuiNetworkPolicyTrafficLimit: updateWhiteListUidForMobileTraffic uid=10076,add=true
+06-30 22:13:02.289   754  2656 E traffic : remove TrafficMobileLimiter whitelist 10300
+06-30 22:13:02.289  5973  6012 D UidObserver: onUidGone entry uid = 10300
+06-30 22:13:02.289  1209  1239 I Timeline: Timeline: App_transition_ready time:77152174
+06-30 22:13:02.292  2809  2918 D StatusBarController: handleMessage: flag 800000  disable false
+06-30 22:13:02.292  1209  2398 D MiuiNetworkPolicyTrafficLimit: updateWhiteListUidForMobileTraffic rst=true
+06-30 22:13:02.292   754  2656 E traffic : add TrafficMobileLimiter whitelist 10111
+06-30 22:13:02.294  1209  2398 D MiuiNetworkPolicyTrafficLimit: updateWhiteListUidForMobileTraffic rst=true
+06-30 22:13:02.294   754  2656 E traffic : add TrafficMobileLimiter whitelist 10085
+06-30 22:13:02.296  1209  2398 D MiuiNetworkPolicyTrafficLimit: updateWhiteListUidForMobileTraffic rst=true
+06-30 22:13:02.297   754  2656 E traffic : add TrafficMobileLimiter whitelist 10076
+06-30 22:13:02.297  5555  5898 D AppOpsAdapter: using permission notify! 32 , groundState 0 , suggestNoticePermUse false
+06-30 22:13:02.298  1209  1247 I ActivityManager: Force stopping com.tencent.mm appid=10300 user=-1: clearApplicationUserData
+06-30 22:13:02.299  1209  2398 D MiuiNetworkPolicyTrafficLimit: updateWhiteListUidForMobileTraffic rst=true
+06-30 22:13:02.306  5336  5427 I com.xiaomi.xms: oneway function results will be dropped but finished with status UNKNOWN_TRANSACTION and parcel size 0
+06-30 22:13:02.307  4155  4792 D ActivityUtils: packageNameComponentInfo{com.miui.home/com.miui.home.launcher.Launcher}
+06-30 22:13:02.307  2540  2540 D StatusBar: disable<e i a s b h r c s > disable2<q i n >
+06-30 22:13:02.309  5336 14945 I com.xiaomi.xms: oneway function results will be dropped but finished with status UNKNOWN_TRANSACTION and parcel size 0
+06-30 22:13:02.311  1043  1149 D Layer   : ---setAlpha Launcher=1.000000
+06-30 22:13:02.311  1209  5421 I Timeline: Timeline: App_transition_ready time:77152195
+06-30 22:13:02.316  2809  2809 D RecentsContainer: onApplyWindowInsets, insets=WindowInsets{
+06-30 22:13:02.316  2809  2809 D RecentsContainer:     statusBars=Insets{left=0, top=75, right=0, bottom=0} max=Insets{left=0, top=75, right=0, bottom=0} vis=true
+06-30 22:13:02.316  2809  2809 D RecentsContainer:     navigationBars=Insets{left=0, top=0, right=0, bottom=44} max=Insets{left=0, top=0, right=0, bottom=44} vis=true
+06-30 22:13:02.316  2809  2809 D RecentsContainer:     =Insets{left=0, top=0, right=0, bottom=0} max=null vis=false
+06-30 22:13:02.316  2809  2809 D RecentsContainer:     ime=Insets{left=0, top=0, right=0, bottom=0} max=null vis=false
+06-30 22:13:02.316  2809  2809 D RecentsContainer:     systemGestures=Insets{left=0, top=75, right=0, bottom=44} max=Insets{left=0, top=75, right=0, bottom=44} vis=true
+06-30 22:13:02.316  2809  2809 D RecentsContainer:     mandatorySystemGestures=Insets{left=0, top=75, right=0, bottom=44} max=Insets{left=0, top=75, right=0, bottom=44} vis=true
+06-30 22:13:02.316  2809  2809 D RecentsContainer:     tappableElement=Insets{left=0, top=75, right=0, bottom=44} max=Insets{left=0, top=75, right=0, bottom=44} vis=true
+06-30 22:13:02.316  2809  2809 D RecentsContainer:     displayCutout=Insets{left=0, top=75, right=0, bottom=0} max=Insets{left=0, top=75, right=0, bottom=0} vis=true
+06-30 22:13:02.316  2809  2809 D RecentsContainer:     windowDecor=null max=null vis=false
+06-30 22:13:02.316  2809  2809 D RecentsContainer:     cutout=DisplayCutout{insets=Rect(0, 75 - 0, 0) waterfall=Insets{left=0, top=0, right=0, bottom=0} boundingRect={Bounds=[Rect(0, 0 - 0, 0), Rect(463, 0 - 617, 75), Rect(0, 0 - 0, 0), Rect(0, 0 - 0, 0)]}}
+06-30 22:13:02.316  2809  2809 D RecentsContainer:     }, rotation=0
+06-30 22:13:02.318  2809  3064 D GestureStubView: gatherTransparentRegion: need render w:54  h:1404
+06-30 22:13:02.318  2809  3064 D GestureStubView: gatherTransparentRegion: need render w:54  h:1404
+06-30 22:13:02.323  1043  1043 D SurfaceFlinger: Launcher Changed hasLauncher=1
+06-30 22:13:02.332  2809  2809 D ScreenView_ScreenView: dispatchDraw:0
+06-30 22:13:02.332  2809  2809 D ScreenView_Workspace: dispatchDraw:1080
+06-30 22:13:02.333  2809  2809 D ScreenView_HotSeats: dispatchDraw:0
+06-30 22:13:02.335  2540  2540 D StatusBar: disable<e i a s b h r c s > disable2<q i n >
+06-30 22:13:02.341  2809  3065 D NavStubView: gatherTransparentRegion: need render w:1080  h:83
+06-30 22:13:02.341  2809  3065 W NavStubView: onComputeInternalInsets  bounds=Rect(0, 0 - 1080, 83)   mHideGestureLine=false   mIsShowNavBar=true
+06-30 22:13:02.343  1043  1226 D Layer   : ---setAlpha Launcher=1.000000
+06-30 22:13:02.343  1209  1239 I Timeline: Timeline: App_transition_ready time:77152228
+06-30 22:13:02.348  1570  1581 E MiuiBoosterServer: "recv error , fd:11 ret:0 errno:0"
+06-30 22:13:02.348  1570  1581 E MiuiBoosterServer: "LocalSocketServer EVENT_ERROR: uid:10300 path:"
+06-30 22:13:02.349  1043  1226 D Layer   : ---setAlpha Launcher=1.000000
+06-30 22:13:02.350  2673  2673 I Zygote  : Process 29654 exited due to signal 9 (Killed)
+06-30 22:13:02.352  1209  5230 W AudioService.PlaybackActivityMonitor: client died
+06-30 22:13:02.354  1043  2943 D Layer   : ---setAlpha Launcher=1.000000
+06-30 22:13:02.354  1209  1232 I Timeline: Timeline: App_transition_ready time:77152239
+06-30 22:13:02.359 17116 17116 D LauncherOverlay.Window: onStart
+06-30 22:13:02.359 17116 17116 D LauncherOverlay.Window: onResume
+06-30 22:13:02.359 17116 17116 D Entertain:Fragment: onResume: onResume
+06-30 22:13:02.361  2809  2809 D Launcher_WallpaperUtils: changeStatusBarMode:false
+06-30 22:13:02.361  2809  2809 D RecentsImpl: mActivityStateObserver com.miui.home.launcher.Launcher
+06-30 22:13:02.361  2809  2809 W RecentsImpl: onResumed className=com.miui.home.launcher.Launcher   mIsInAnotherPro=false
+06-30 22:13:02.362  1209  4146 E TaskPersister: File error accessing recents directory (directory doesn't exist?).
+06-30 22:13:02.364   755   755 I Zygote  : Process 26595 exited due to signal 9 (Killed)
+06-30 22:13:02.365  1209  1249 I libprocessgroup: Successfully killed process cgroup uid 10300 pid 26595 in 180ms
+06-30 22:13:02.366  1209  1249 I Process : PerfMonitor : current process killing process group. PID: 26323
+06-30 22:13:02.372  1043  2943 D Layer   : ---setAlpha Launcher=1.000000
+06-30 22:13:02.373  1209  1247 I WindowManager:   Force finishing activity ActivityRecord{ff2c44f u0 com.tencent.mm/.ui.AlertActivity t100 f} isExiting}
+06-30 22:13:02.373  1209  1247 W ActivityTaskManager: Duplicate finish request for r=ActivityRecord{ff2c44f u0 com.tencent.mm/.ui.AlertActivity t100 f} isExiting}
+06-30 22:13:02.376  1043  2943 D Layer   : ---setAlpha Launcher=1.000000
+06-30 22:13:02.377   948   948 I ANDR-PERF-LM: LMPerfGlue: perfmodule_submit_request() 132: perfmodule_submit_request()
+06-30 22:13:02.378   948   948 I ANDR-PERF-LM: Core: getInstance() 84: LM getInstance
+06-30 22:13:02.378   948   948 I ANDR-PERF-LM: WQ: push() 59: LMTriggerQ push() size=0
+06-30 22:13:02.378   948   948 I ANDR-PERF-LM: WQ: push() 61: LMTriggerQ push() done size=1
+06-30 22:13:02.378   948   980 I ANDR-PERF-LM: WQ: pop() 42: LMTriggerQ pop() done size=0
+06-30 22:13:02.378   948   980 I ANDR-PERF-LM: Core: lmMain() 373: Waiting on trigger Queue
+06-30 22:13:02.378   948   980 I ANDR-PERF-LM: WQ: pop() 31: LMTriggerQ pop() size=0
+06-30 22:13:02.377  2508  2619 D ImageWallpaperRenderer: OFFSET  x: 1.0  y: 0.0
+06-30 22:13:02.383  1209  5411 I Timeline: Timeline: App_transition_ready time:77152268
+06-30 22:13:02.387  1043  1226 D Layer   : ---setAlpha Launcher=1.000000
+06-30 22:13:02.389  2540  7488 D CommandQueue: setStatus: setStatus: what = 0, action = upate_specail_mode, ext = Bundle[mParcelledData.dataSize=92][pkg = com.miui.home[enable_config = true
+06-30 22:13:02.392  2809  2809 W RecentsImpl: updateFsgWindowVisibilityState   isEnter=false   typeFrom=typefrom_home   isOpen=true   mIsInAnotherPro=false   mIsStatusBarExpansion=false
+06-30 22:13:02.394  2809  2809 W RecentsImpl: getTopActivity from observer.   cn=ComponentInfo{com.miui.home/com.miui.home.launcher.Launcher}
+06-30 22:13:02.394  2809  3065 D RecentsImpl: showNavStubView
+06-30 22:13:02.394  2809  3064 D RecentsImpl: hideBackStubWindow
+06-30 22:13:02.394  2809  2809 D LauncherClient.Service: service already connected:com.miui.personalassistant
+06-30 22:13:02.399   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: killProcess is called for pid : 29654
+06-30 22:13:02.400  1209  9717 W ANRStateManager: clear state, but process isn't exist. hash=236924081 uid=99025 pid=29654 state=16
+06-30 22:13:02.406   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: bindService is called for service : com.miui.analytics/.onetrack.OneTrackService and for client com.miui.home
+06-30 22:13:02.406   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: total connections for service : com.miui.analytics/.onetrack.OneTrackServiceare :18
+06-30 22:13:02.406   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: total connections for client : com.miui.homeare :3
+06-30 22:13:02.407  2809  2809 D Launcher.Lifecycle: onWindowFocusChanged:true,UserHandle{0},7230153,false
+06-30 22:13:02.407  2809  2809 D Launcher_UnlockAnimationStateMachine: onWindowFocus:IDLE
+06-30 22:13:02.407   692   692 W Binder:692_2: type=1400 audit(0.0:8199): avc: denied { open } for path="/sys/devices/platform/soc/171c0000.slim/tavil-slim-pgd/wakeup/wakeup50" dev="sysfs" ino=83463 scontext=u:r:system_suspend:s0 tcontext=u:object_r:sysfs:s0 tclass=dir permissive=0
+06-30 22:13:02.420   692   699 E android.system.suspend@1.0-service: Error opening kernel wakelock stats for: wakeup50: Permission denied
+06-30 22:13:02.432  1209  5421 W ActivityManager: Sending non-protected broadcast com.android.systemui.fullscreen.statechange from system 2540:com.android.systemui/1000 pkg com.android.systemui. Callers=
+06-30 22:13:02.436  1209  1236 W Looper  : Slow dispatch took 127ms android.ui h=com.android.server.am.ActivityManagerService$UiHandler c=null m=31
+06-30 22:13:02.433  1209  5421 W ActivityManager: Sending non-protected broadcast com.android.systemui.fullscreen.statechange from system 2540:com.android.systemui/1000 pkg com.android.systemui. Callers=
+06-30 22:13:02.438  2540  2540 D ControllerPanelWindowView: onApplyWindowInsets: 
+06-30 22:13:02.440  5336 14945 I com.xiaomi.xms: oneway function results will be dropped but finished with status UNKNOWN_TRANSACTION and parcel size 0
+06-30 22:13:02.441  5973  7471 D UidObserver: onUidGone entry uid = 99025
+06-30 22:13:02.441  1209  2398 I MiuiNetworkPolicy: removeUidState uid = 99025
+06-30 22:13:02.441  1209  2398 I MiuiNetworkPolicy: updateUidState uid = 10152, uidState = 3
+06-30 22:13:02.444  2540  2540 D StatusBar: disable<e i a s b h r c s > disable2<q i n >
+06-30 22:13:02.452  2540  2540 D NotifBadge: recevie broadbcast ACTION_APPLICATION_MESSAGE_QUERY, requestFirstTime=false
+06-30 22:13:02.457  2540  2773 D MiuiPhoneStatusBarPolicy: updateManagedProfile: secondSpace = false
+06-30 22:13:02.474  1209  1209 W Looper  : Slow dispatch took 184ms main h=com.android.server.job.controllers.QuotaController$QcHandler c=null m=3
+06-30 22:13:02.475  1209  1235 W Looper  : Slow dispatch took 179ms android.fg h=com.android.server.AppStateTracker$MyHandler c=null m=0
+06-30 22:13:02.475  2809  3191 E Launcher.Transfer: transfer is closed
+06-30 22:13:02.482  1209  1239 I Timeline: Timeline: App_transition_stopped time:77152366
+06-30 22:13:02.491  2809  2809 E RotationHelper: setCurrentTransitionRequest: request=0
+06-30 22:13:02.492  1570  1581 E MiuiBoosterServer: "recv error , fd:12 ret:0 errno:0"
+06-30 22:13:02.492  1570  1581 E MiuiBoosterServer: "LocalSocketServer EVENT_ERROR: uid:10300 path:"
+06-30 22:13:02.533  2508  2619 D ImageWallpaperRenderer: OFFSET  x: 1.0  y: 0.0
+06-30 22:13:02.553  2508  2619 I chatty  : uid=10139(com.miui.miwallpaper) ImageWallpaper identical 2 lines
+06-30 22:13:02.570  2508  2619 D ImageWallpaperRenderer: OFFSET  x: 1.0  y: 0.0
+06-30 22:13:02.586  1209  1249 E libprocessgroup: Failed to kill process cgroup uid 10300 pid 26323 in 220ms, 1 processes remain
+06-30 22:13:02.587  1209  1249 I Process : PerfMonitor : current process killing process group. PID: 29654
+06-30 22:13:02.587  1209  1249 I libprocessgroup: Successfully killed process cgroup uid 99025 pid 29654 in 0ms
+06-30 22:13:02.587  1209  1249 I Process : PerfMonitor : current process killing process group. PID: 29808
+06-30 22:13:02.587  2508  2619 D ImageWallpaperRenderer: OFFSET  x: 1.0  y: 0.0
+06-30 22:13:02.620  2508  2619 I chatty  : uid=10139(com.miui.miwallpaper) ImageWallpaper identical 2 lines
+06-30 22:13:02.637  2508  2619 D ImageWallpaperRenderer: OFFSET  x: 1.0  y: 0.0
+06-30 22:13:02.640  1570  1581 E MiuiBoosterServer: "recv error , fd:10 ret:0 errno:0"
+06-30 22:13:02.640  1570  1581 E MiuiBoosterServer: "LocalSocketServer EVENT_ERROR: uid:10300 path:"
+06-30 22:13:02.642  1209  5411 W AudioService.PlaybackActivityMonitor: client died
+06-30 22:13:02.643  1209 12534 W WindowManager: Cannot find window which accessibility connection is added to
+06-30 22:13:02.643  1209  4260 W WindowManager: Cannot find window which accessibility connection is added to
+06-30 22:13:02.643  1209  4243 W WindowManager: Cannot find window which accessibility connection is added to
+06-30 22:13:02.643  1209  4812 W WindowManager: Cannot find window which accessibility connection is added to
+06-30 22:13:02.643  1209  1238 W ActivityManager: setHasOverlayUi called on unknown pid: 26323
+06-30 22:13:02.643  1209  3117 W WindowManager: Cannot find window which accessibility connection is added to
+06-30 22:13:02.646  1209  1231 W WindowManager: Cannot find window which accessibility connection is added to
+06-30 22:13:02.654  2508  2619 D ImageWallpaperRenderer: OFFSET  x: 1.0  y: 0.0
+06-30 22:13:02.661   755   755 I Zygote  : Process 29808 exited due to signal 9 (Killed)
+06-30 22:13:02.662   755   755 I Zygote  : Process 26323 exited due to signal 9 (Killed)
+06-30 22:13:02.664  1209  1249 I libprocessgroup: Successfully killed process cgroup uid 10300 pid 29808 in 77ms
+06-30 22:13:02.669  1209  1425 W BpBinder: PerfMonitor binderTransact :  time=354ms interface=android.os.IInstalld code=7
+06-30 22:13:02.670  1553  1553 D installd: Found valid user 999
+06-30 22:13:02.670  1553  1553 D installd: Found valid user 10
+06-30 22:13:02.670  2508  2619 D ImageWallpaperRenderer: OFFSET  x: 1.0  y: 0.0
+06-30 22:13:02.671  1555  1555 I keystore: clear_uid 10300
+06-30 22:13:02.674 30119 30121 I cmd     : oneway function results will be dropped but finished with status OK and parcel size 4
+06-30 22:13:02.674 30119 30119 W BpBinder: PerfMonitor binderTransact :  time=498ms interface=android.content.pm.IPackageManager code=1598246212
+06-30 22:13:02.675  4693  4693 D AggregateListener: notifyAction action:android.intent.action.PACKAGE_RESTARTED
+06-30 22:13:02.675  4693  4693 D AggregateListener: onPackageRestarted packageName:com.tencent.mm
+06-30 22:13:02.677  4716  4716 I PackageInstallReceiver: action = android.intent.action.PACKAGE_DATA_CLEARED packageName = com.tencent.mm
+06-30 22:13:02.678  2809  2809 D Launcher.Model: LauncherAppsCallback onShortcutsChanged|com.tencent.mm|UserHandle{0}
+06-30 22:13:02.678  5555  5770 I AppOpsAdapter: start apply permission record!, writeAll:false
+06-30 22:13:02.678  5555  5770 I DatabaseUtil: writeApplyOperatorDetailInfo
+06-30 22:13:02.679  3024  3024 D CarrierSvcBindHelper: No carrier app for: 0
+06-30 22:13:02.679  1209  1247 D CompatibilityInfo: mCompatibilityFlags - 0
+06-30 22:13:02.679  1209  1247 D CompatibilityInfo: applicationDensity - 440
+06-30 22:13:02.679  1209  1247 D CompatibilityInfo: applicationScale - 1.0
+06-30 22:13:02.680  4206  4206 D RegisteredServicesCache:  Reading service state data always from file
+06-30 22:13:02.680  3024  3024 E PhoneInterfaceManager: [PhoneIntfMgr] getCarrierPackageNamesForIntentAndPhone: No UICC
+06-30 22:13:02.680  3024  3024 D CarrierSvcBindHelper: No carrier app for: 1
+06-30 22:13:02.680  4206  4206 D RegisteredServicesCache: ServiceStateFileVersion=1.0
+06-30 22:13:02.680  4206  4206 E RegisteredServicesCache: Next Tag=services
+06-30 22:13:02.680  4206  4206 E RegisteredServicesCache: 1invalidateCache:WriteServiceStateToFile
+06-30 22:13:02.680  4206  4206 E RegisteredServicesCache:  Writing service state Data Always
+06-30 22:13:02.686  5555  5770 I DatabaseUtil: writeApplyOperatorDetailInfo
+06-30 22:13:02.687  2508  2619 D ImageWallpaperRenderer: OFFSET  x: 1.0  y: 0.0
+06-30 22:13:02.688  1209  3116 D CompatibilityInfo: mCompatibilityFlags - 0
+06-30 22:13:02.688  1209  3116 D CompatibilityInfo: applicationDensity - 440
+06-30 22:13:02.688  1209  3116 D CompatibilityInfo: applicationScale - 1.0
+06-30 22:13:02.688  5336  5336 W PushService: [Tid:2] onStart() with intent.Action = com.xiaomi.xmsf.push.PACKAGE_DATA_CLEARED, chid = null, pkg = null|null
+06-30 22:13:02.689  5336  5659 W PushService: [Tid:357] [Job] Handle intent action = com.xiaomi.xmsf.push.PACKAGE_DATA_CLEARED
+06-30 22:13:02.690  5336  5659 W PushService: [Tid:357] [PullDownLog] PullDownManager cancelMessage enter
+06-30 22:13:02.691  5555  5770 I DatabaseUtil: writeApplyOperatorDetailInfo
+06-30 22:13:02.692  1209  5424 D CompatibilityInfo: mCompatibilityFlags - 0
+06-30 22:13:02.692  1209  5424 D CompatibilityInfo: applicationDensity - 440
+06-30 22:13:02.692  1209  5424 D CompatibilityInfo: applicationScale - 1.0
+06-30 22:13:02.692  4206  4206 E RegisteredAidCache: updateRoutingLocked(): enter...
+06-30 22:13:02.692  4206  4206 D NfcService: defaultAidRoute : 315
+06-30 22:13:02.692  4206  4206 D NfcService: GetDefaultRouteLoc  :1
+06-30 22:13:02.692  4206  4206 D NfcService: defaultAidRoute : 315
+06-30 22:13:02.692  4206  4206 D NfcService: GetDefaultRouteLoc  :1
+06-30 22:13:02.692  4206  4206 E AidRoutingManager: Size of routing table970
+06-30 22:13:02.692  4206  4206 E RegisteredAidCache: updateRoutingLocked(): exit...
+06-30 22:13:02.692  4206  4206 D RegisteredNfcFServicesCache: Service unchanged, not updating
+06-30 22:13:02.693   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: bindService is called for service : com.android.providers.media.module/com.android.providers.media.MediaService and for client system
+06-30 22:13:02.693  1209  5422 D CompatibilityInfo: mCompatibilityFlags - 0
+06-30 22:13:02.693  1209  5422 D CompatibilityInfo: applicationDensity - 440
+06-30 22:13:02.693   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: total connections for service : com.android.providers.media.module/com.android.providers.media.MediaServiceare :1
+06-30 22:13:02.693  1209  5422 D CompatibilityInfo: applicationScale - 1.0
+06-30 22:13:02.693   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: total connections for client : systemare :22
+06-30 22:13:02.694   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: startService() is called for servicecom.android.providers.media.module/com.android.providers.media.MediaService
+06-30 22:13:02.694  1209  4237 D CompatibilityInfo: mCompatibilityFlags - 0
+06-30 22:13:02.694  1209  4237 D CompatibilityInfo: applicationDensity - 440
+06-30 22:13:02.694  1209  4237 D CompatibilityInfo: applicationScale - 1.0
+06-30 22:13:02.695  2809  3064 D GestureStubView: hideGestureStub
+06-30 22:13:02.695  5555  5770 I DatabaseUtil: writeApplyOperatorDetailInfo
+06-30 22:13:02.695  1209  2398 I MiuiNetworkPolicy: updateUidState uid = 10084, uidState = 11
+06-30 22:13:02.695  2809  3064 D GestureStubView: hideGestureStub
+06-30 22:13:02.696  4555  8165 I MediaProvider: Begin Intent { act=android.intent.action.PACKAGE_DATA_CLEARED dat=package:com.tencent.mm flg=0x1000010 cmp=com.android.providers.media.module/com.android.providers.media.MediaService (has extras) }
+06-30 22:13:02.696  4555  8165 D MediaProvider: Deleted 0 Android/media items belonging to com.tencent.mm on /data/user/0/com.android.providers.media.module/databases/external.db
+06-30 22:13:02.697  1209  5424 D CompatibilityInfo: mCompatibilityFlags - 0
+06-30 22:13:02.697  1209  5424 D CompatibilityInfo: applicationDensity - 440
+06-30 22:13:02.697  1209  5424 D CompatibilityInfo: applicationScale - 1.0
+06-30 22:13:02.698  4555  8165 I MediaProvider: End Intent { act=android.intent.action.PACKAGE_DATA_CLEARED dat=package:com.tencent.mm flg=0x1000010 cmp=com.android.providers.media.module/com.android.providers.media.MediaService (has extras) }
+06-30 22:13:02.699  1209  5424 D CompatibilityInfo: mCompatibilityFlags - 0
+06-30 22:13:02.699  1209  5424 D CompatibilityInfo: applicationDensity - 440
+06-30 22:13:02.699  1209  5424 D CompatibilityInfo: applicationScale - 1.0
+06-30 22:13:02.700  1209  2398 I MiuiNetworkPolicy: updateUidState uid = 10084, uidState = 19
+06-30 22:13:02.700   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: unbindService is called for service : com.android.providers.media.module/com.android.providers.media.MediaService and for client system
+06-30 22:13:02.700   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: size of service connections for service: com.android.providers.media.module/com.android.providers.media.MediaServiceafter removal is 0
+06-30 22:13:02.700   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: size of client connections for client: systemafter removal is 21
+06-30 22:13:02.700   966 11593 I vendor.qti.hardware.servicetracker@1.2-service: destroyService is called for service : com.android.providers.media.module/com.android.providers.media.MediaService
+06-30 22:13:02.701  1209  3116 D CompatibilityInfo: mCompatibilityFlags - 0
+06-30 22:13:02.701  1209  3116 D CompatibilityInfo: applicationDensity - 440
+06-30 22:13:02.701  1209  3116 D CompatibilityInfo: applicationScale - 1.0
+06-30 22:13:02.703 26181 26181 I VSC-AppInstallReceiver: action: android.intent.action.PACKAGE_DATA_CLEARED, packageName: com.tencent.mm
+06-30 22:13:02.704  2809  2809 D ScreenView_Workspace: dispatchDraw:1080
+06-30 22:13:02.706  2809  3064 D GestureStubView: gatherTransparentRegion: need render w:54  h:1404
+06-30 22:13:02.714  2809  3064 D GestureStubView: gatherTransparentRegion: need render w:54  h:1404
+06-30 22:13:02.715  5019  5789 D AD-PLUGIN-AdReceiver: onReceive android.intent.action.PACKAGE_DATA_CLEARED
+06-30 22:13:02.717  2508  2619 D ImageWallpaperRenderer: OFFSET  x: 1.0  y: 0.0
+06-30 22:13:02.721  2508  2619 D ImageWallpaperRenderer: OFFSET  x: 1.0  y: 0.0
+06-30 22:13:02.724  5555 30127 I com.lbe.security.service.provider.WakePathDatabaseUtil: getDefaultAutoStartApps
+06-30 22:13:02.737  2508  2619 D ImageWallpaperRenderer: OFFSET  x: 1.0  y: 0.0
+06-30 22:13:02.741  5555 30127 I com.lbe.security.service.provider.WakePathDatabaseUtil: writeWakePathWhiteList
+06-30 22:13:02.746  5555 30127 I com.lbe.security.service.provider.WakePathDatabaseUtil: getWakePathWhiteList: whiteList.size=5
+06-30 22:13:02.747  1209  5422 I WakePathChecker: MIUILOG-WAKEPATH pushWakePathWhiteList: userId=0 size=5
+06-30 22:13:02.754  2508  2619 D ImageWallpaperRenderer: OFFSET  x: 1.0  y: 0.0
+06-30 22:13:02.757  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:02.758  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:02.758  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:02.759  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:02.770  2508  2619 D ImageWallpaperRenderer: OFFSET  x: 1.0  y: 0.0
+06-30 22:13:03.073  2508  2619 I chatty  : uid=10139(com.miui.miwallpaper) ImageWallpaper identical 18 lines
+06-30 22:13:03.090  2508  2619 D ImageWallpaperRenderer: OFFSET  x: 1.0  y: 0.0
+06-30 22:13:03.096  2540  2725 D NetworkController.MobileSignalController(1): onDataActivity: direction=3
+06-30 22:13:03.097  2540  2725 D NetworkController.MobileSignalController(1): notifyListeners mConfig.alwaysShowNetworkTypeIcon=false  getNetworkType:13/LTE voiceNetType=13/LTE showDataIcon=true mConfig.alwaysShowDataRatIcon=false icons.mDataType=2131232605 mConfig.showVolteIcon=false isVolteSwitchOn=false volteIcon=0 mConfig.showVowifiIcon=false
+06-30 22:13:03.101  1209  2443 W SchedBoost: SchedBoost begin: proc: 2809/3090, mode: 2 aff:[4, 5, 6]
+06-30 22:13:03.105  2508  2619 D ImageWallpaperRenderer: OFFSET  x: 1.0  y: 0.0
+06-30 22:13:03.121  2508  2619 I chatty  : uid=10139(com.miui.miwallpaper) ImageWallpaper identical 1 line
+06-30 22:13:03.139  2508  2619 D ImageWallpaperRenderer: OFFSET  x: 1.0  y: 0.0
+06-30 22:13:03.142   948   948 I ANDR-PERF-LM: LMPerfGlue: perfmodule_submit_request() 132: perfmodule_submit_request()
+06-30 22:13:03.142   948   948 I ANDR-PERF-LM: Core: getInstance() 84: LM getInstance
+06-30 22:13:03.142   948   948 D ANDR-PERF-LM: Feature: lookup() 101: Feature Name = AppClassifier, total featuers = 3, featureFound = 1
+06-30 22:13:03.142  1209  2443 W SchedBoost: SchedBoost continue: proc: 2809/3090
+06-30 22:13:03.142   948   948 D ANDR-PERF-LM: Feature: getData() 112: data.data = 0
+06-30 22:13:03.143   948   948 I ANDR-PERF-LM: FeedbackAPI: getFeedback() 60: app:com.miui.home feature:AppClassifier feedback = 0
+06-30 22:13:03.143   948   948 I ANDR-PERF-LM: LMPerfGlue: perfmodule_submit_request() 132: perfmodule_submit_request()
+06-30 22:13:03.143   948   948 I ANDR-PERF-LM: Core: getInstance() 84: LM getInstance
+06-30 22:13:03.143   948   948 I ANDR-PERF-LM: WQ: push() 59: LMTriggerQ push() size=0
+06-30 22:13:03.143   948   948 I ANDR-PERF-LM: WQ: push() 61: LMTriggerQ push() done size=1
+06-30 22:13:03.143   948   980 I ANDR-PERF-LM: WQ: pop() 42: LMTriggerQ pop() done size=0
+06-30 22:13:03.143   948   980 I ANDR-PERF-LM: Core: lmMain() 373: Waiting on trigger Queue
+06-30 22:13:03.143   948   980 I ANDR-PERF-LM: WQ: pop() 31: LMTriggerQ pop() size=0
+06-30 22:13:03.143   948   948 I ANDR-PERF-LM: LMPerfGlue: perfmodule_submit_request() 132: perfmodule_submit_request()
+06-30 22:13:03.143   948   948 I ANDR-PERF-LM: Core: getInstance() 84: LM getInstance
+06-30 22:13:03.143   948   948 D ANDR-PERF-LM: Feature: lookup() 101: Feature Name = AppClassifier, total featuers = 3, featureFound = 1
+06-30 22:13:03.143   948   948 D ANDR-PERF-LM: Feature: getData() 112: data.data = 0
+06-30 22:13:03.143   948   948 I ANDR-PERF-LM: FeedbackAPI: getFeedback() 60: app:com.miui.home feature:AppClassifier feedback = 0
+06-30 22:13:03.155  2508  2619 D ImageWallpaperRenderer: OFFSET  x: 1.0  y: 0.0
+06-30 22:13:03.223  2508  2619 I chatty  : uid=10139(com.miui.miwallpaper) ImageWallpaper identical 4 lines
+06-30 22:13:03.239  2508  2619 D ImageWallpaperRenderer: OFFSET  x: 1.0  y: 0.0
+06-30 22:13:03.242   948   948 I ANDR-PERF-LM: LMPerfGlue: perfmodule_submit_request() 132: perfmodule_submit_request()
+06-30 22:13:03.242   948   948 I ANDR-PERF-LM: Core: getInstance() 84: LM getInstance
+06-30 22:13:03.242   948   948 D ANDR-PERF-LM: Feature: lookup() 101: Feature Name = AppClassifier, total featuers = 3, featureFound = 1
+06-30 22:13:03.242   948   948 D ANDR-PERF-LM: Feature: getData() 112: data.data = 0
+06-30 22:13:03.242   948   948 I ANDR-PERF-LM: FeedbackAPI: getFeedback() 60: app:com.miui.home feature:AppClassifier feedback = 0
+06-30 22:13:03.242   948   948 I ANDR-PERF-LM: LMPerfGlue: perfmodule_submit_request() 132: perfmodule_submit_request()
+06-30 22:13:03.242   948   948 I ANDR-PERF-LM: Core: getInstance() 84: LM getInstance
+06-30 22:13:03.242   948   948 I ANDR-PERF-LM: WQ: push() 59: LMTriggerQ push() size=0
+06-30 22:13:03.242   948   948 I ANDR-PERF-LM: WQ: push() 61: LMTriggerQ push() done size=1
+06-30 22:13:03.242   948   980 I ANDR-PERF-LM: WQ: pop() 42: LMTriggerQ pop() done size=0
+06-30 22:13:03.242   948   980 I ANDR-PERF-LM: Core: lmMain() 373: Waiting on trigger Queue
+06-30 22:13:03.242   948   980 I ANDR-PERF-LM: WQ: pop() 31: LMTriggerQ pop() size=0
+06-30 22:13:03.243  4620  4620 I ViewRootImpl: setProcessHaveFloating
+06-30 22:13:03.243   948   948 I ANDR-PERF-LM: LMPerfGlue: perfmodule_submit_request() 132: perfmodule_submit_request()
+06-30 22:13:03.243   948   948 I ANDR-PERF-LM: Core: getInstance() 84: LM getInstance
+06-30 22:13:03.243   948   948 D ANDR-PERF-LM: Feature: lookup() 101: Feature Name = AppClassifier, total featuers = 3, featureFound = 1
+06-30 22:13:03.243   948   948 D ANDR-PERF-LM: Feature: getData() 112: data.data = 0
+06-30 22:13:03.243   948   948 I ANDR-PERF-LM: FeedbackAPI: getFeedback() 60: app:com.miui.home feature:AppClassifier feedback = 0
+06-30 22:13:03.243  1209  2443 W SchedBoost: SchedBoost continue: proc: 2809/3090
+06-30 22:13:03.244   948   948 I ANDR-PERF-LM: LMPerfGlue: perfmodule_submit_request() 132: perfmodule_submit_request()
+06-30 22:13:03.244   948   948 I ANDR-PERF-LM: Core: getInstance() 84: LM getInstance
+06-30 22:13:03.244   948   948 I ANDR-PERF-LM: WQ: push() 59: LMTriggerQ push() size=0
+06-30 22:13:03.244   948   948 I ANDR-PERF-LM: WQ: push() 61: LMTriggerQ push() done size=1
+06-30 22:13:03.244   948   980 I ANDR-PERF-LM: WQ: pop() 42: LMTriggerQ pop() done size=0
+06-30 22:13:03.244   948   980 I ANDR-PERF-LM: Core: lmMain() 373: Waiting on trigger Queue
+06-30 22:13:03.244   948   980 I ANDR-PERF-LM: WQ: pop() 31: LMTriggerQ pop() size=0
+06-30 22:13:03.245   948   948 I ANDR-PERF-LM: LMPerfGlue: perfmodule_submit_request() 132: perfmodule_submit_request()
+06-30 22:13:03.245   948   948 I ANDR-PERF-LM: Core: getInstance() 84: LM getInstance
+06-30 22:13:03.245   948   948 D ANDR-PERF-LM: Feature: lookup() 101: Feature Name = AppClassifier, total featuers = 3, featureFound = 1
+06-30 22:13:03.245   948   948 D ANDR-PERF-LM: Feature: getData() 112: data.data = 0
+06-30 22:13:03.245   948   948 I ANDR-PERF-LM: FeedbackAPI: getFeedback() 60: app:com.miui.home feature:AppClassifier feedback = 0
+06-30 22:13:03.257  2508  2619 D ImageWallpaperRenderer: OFFSET  x: 1.0  y: 0.0
+06-30 22:13:03.343  4620  4620 I ViewRootImpl: clearProcessHaveFloating_handler
+06-30 22:13:03.357  2508  2619 I chatty  : uid=10139(com.miui.miwallpaper) ImageWallpaper identical 6 lines
+06-30 22:13:03.373  2508  2619 D ImageWallpaperRenderer: OFFSET  x: 1.0  y: 0.0
+06-30 22:13:03.376  1043  1043 W SurfaceFlingerInspector: slow HwComposer, duration=5s, total=167, timeOut=70, Max=22ms, timeOutAvg=12ms.
+06-30 22:13:03.389  2508  2619 D ImageWallpaperRenderer: OFFSET  x: 1.0  y: 0.0
+06-30 22:13:03.691  2508  2619 I chatty  : uid=10139(com.miui.miwallpaper) ImageWallpaper identical 18 lines
+06-30 22:13:03.708  2508  2619 D ImageWallpaperRenderer: OFFSET  x: 1.0  y: 0.0
+06-30 22:13:03.719  5555 11412 D IdProviderImpl: getVAID
+06-30 22:13:03.724  2508  2619 D ImageWallpaperRenderer: OFFSET  x: 1.0  y: 0.0
+06-30 22:13:03.742  2508  2619 I chatty  : uid=10139(com.miui.miwallpaper) ImageWallpaper identical 1 line
+06-30 22:13:03.758  2508  2619 D ImageWallpaperRenderer: OFFSET  x: 1.0  y: 0.0
+06-30 22:13:03.763  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:03.763  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:03.764  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:03.765  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:03.775  2508  2619 D ImageWallpaperRenderer: OFFSET  x: 1.0  y: 0.0
+06-30 22:13:04.025  2508  2619 I chatty  : uid=10139(com.miui.miwallpaper) ImageWallpaper identical 15 lines
+06-30 22:13:04.041  2508  2619 D ImageWallpaperRenderer: OFFSET  x: 1.0  y: 0.0
+06-30 22:13:04.043  5555 30133 I com.lbe.security.service.provider.WakePathDatabaseUtil: getDefaultAutoStartApps
+06-30 22:13:04.053  5555  5622 W System  : A resource failed to call end. 
+06-30 22:13:04.058  2508  2619 D ImageWallpaperRenderer: OFFSET  x: 1.0  y: 0.0
+06-30 22:13:04.061  5555 30133 I com.lbe.security.service.provider.WakePathDatabaseUtil: writeWakePathWhiteList
+06-30 22:13:04.066  5555 30133 I com.lbe.security.service.provider.WakePathDatabaseUtil: getWakePathWhiteList: whiteList.size=5
+06-30 22:13:04.067  1209  3116 I WakePathChecker: MIUILOG-WAKEPATH pushWakePathWhiteList: userId=0 size=5
+06-30 22:13:04.074  2508  2619 D ImageWallpaperRenderer: OFFSET  x: 1.0  y: 0.0
+06-30 22:13:04.092  2508  2619 I chatty  : uid=10139(com.miui.miwallpaper) ImageWallpaper identical 1 line
+06-30 22:13:04.092  2508  2619 D ImageWallpaperRenderer: OFFSET  x: 1.0  y: 0.0
+06-30 22:13:04.789  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:04.790  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:04.791  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:04.793  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:05.111  2540  2725 D NetworkController.MobileSignalController(1): onDataActivity: direction=0
+06-30 22:13:05.114  2540  2725 D NetworkController.MobileSignalController(1): notifyListeners mConfig.alwaysShowNetworkTypeIcon=false  getNetworkType:13/LTE voiceNetType=13/LTE showDataIcon=true mConfig.alwaysShowDataRatIcon=false icons.mDataType=2131232605 mConfig.showVolteIcon=false isVolteSwitchOn=false volteIcon=0 mConfig.showVowifiIcon=false
+06-30 22:13:05.223   966   992 I vendor.qti.hardware.servicetracker@1.2-service: unbindService is called for service : com.android.permissioncontroller/.permission.service.PermissionControllerServiceImpl and for client system
+06-30 22:13:05.224   966   992 I vendor.qti.hardware.servicetracker@1.2-service: size of service connections for service: com.android.permissioncontroller/.permission.service.PermissionControllerServiceImplafter removal is 0
+06-30 22:13:05.224   966   992 I vendor.qti.hardware.servicetracker@1.2-service: size of client connections for client: systemafter removal is 20
+06-30 22:13:05.225   966   992 I vendor.qti.hardware.servicetracker@1.2-service: destroyService is called for service : com.android.permissioncontroller/.permission.service.PermissionControllerServiceImpl
+06-30 22:13:05.227  1209  2398 I MiuiNetworkPolicy: updateUidState uid = 10219, uidState = 10
+06-30 22:13:05.229  1209  2398 I MiuiNetworkPolicy: updateUidState uid = 10219, uidState = 19
+06-30 22:13:05.459  4693  4749 W fication:remot: Reducing the number of considered missed Gc histogram windows from 599 to 100
+06-30 22:13:05.504  1209  4146 E TaskPersister: File error accessing recents directory (directory doesn't exist?).
+06-30 22:13:05.808  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:05.809  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:05.809  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:05.810  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:06.835  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:06.837  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:06.837  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:06.840  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:07.559  1209  1247 D CompatibilityInfo: mCompatibilityFlags - 0
+06-30 22:13:07.559  1209  1247 D CompatibilityInfo: applicationDensity - 440
+06-30 22:13:07.559  1209  1247 D CompatibilityInfo: applicationScale - 1.0
+06-30 22:13:07.560  1209  2398 I MiuiNetworkPolicy: updateUidState uid = 10301, uidState = 11
+06-30 22:13:07.569  1209  2398 I MiuiNetworkPolicy: updateUidState uid = 10301, uidState = 19
+06-30 22:13:07.800  2540  2540 D BatteryController: onReceive: Intent = Intent { act=android.intent.action.BATTERY_CHANGED flg=0x60000010 (has extras) } action = android.intent.action.BATTERY_CHANGED
+06-30 22:13:07.800  2540  2540 D KeyguardUpdateMonitor: received broadcast android.intent.action.BATTERY_CHANGED
+06-30 22:13:07.801  4206  4206 D NfcService: Received android.intent.action.BATTERY_CHANGED
+06-30 22:13:07.804  4585  4585 I BatteryInfoReceiver: ACTION_BATTERY_CHANGED
+06-30 22:13:07.806  5973  6215 D PowerKeeper.FrozenApp: onBatteryChanged plug=true mBatteryPlugged=2
+06-30 22:13:07.806  5973  6242 D PowerCheckerService: onBatteryChanged, mBatteryLevel = 100, status = 2, level = 100, plug = 2, scale = 100
+06-30 22:13:07.807  2963  2963 D DeviceStatisticsService: chargerType=2 batteryLevel=100 totalBatteryCapacity=3251500
+06-30 22:13:07.858  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:07.860  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:07.860  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:07.863  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:08.247  1209  2443 D SchedBoost: thread tid=2809, priority is set to -10
+06-30 22:13:08.248  1209  2443 W SchedBoost: has reset SchedAffinity ui thread: 2809
+06-30 22:13:08.248  1209  2443 D SchedBoost: thread tid=3090, priority is set to -10
+06-30 22:13:08.248  1209  2443 W SchedBoost: has reset SchedAffinity render thread: 3090
+06-30 22:13:08.248  1209  2443 W SchedBoost: SchedBoost end: proc: 2809/3090 5145 aff:[0, 1, 2, 3, 4, 5, 6, 7]
+06-30 22:13:08.868  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:08.870  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:08.870  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:08.873  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:09.351  5973  5973 I PowerKeeperBackgroundService: onStartCommand()
+06-30 22:13:09.352  5973  5973 I PowerKeeperService: onAlarm
+06-30 22:13:09.898  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:09.899  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:09.900  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:09.902  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:10.927  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:10.929  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:10.929  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:10.932  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:11.957  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:11.959  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:11.959  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:11.962  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:12.987  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:12.989  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:12.989  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:12.991  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:14.016  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:14.018  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:14.018  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:14.021  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:14.143   692   699 E android.system.suspend@1.0-service: Error opening kernel wakelock stats for: wakeup50: Permission denied
+06-30 22:13:14.127   692   692 W Binder:692_2: type=1400 audit(0.0:8200): avc: denied { open } for path="/sys/devices/platform/soc/171c0000.slim/tavil-slim-pgd/wakeup/wakeup50" dev="sysfs" ino=83463 scontext=u:r:system_suspend:s0 tcontext=u:object_r:sysfs:s0 tclass=dir permissive=0
+06-30 22:13:15.045  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:15.047  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:15.048  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:15.050  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:15.086  2540  2725 D NetworkController.MobileSignalController(1): onSignalStrengthsChanged signalStrength=SignalStrength:{mCdma=CellSignalStrengthCdma: cdmaDbm=2147483647 cdmaEcio=2147483647 evdoDbm=2147483647 evdoEcio=2147483647 evdoSnr=2147483647 miuiLevel=0 level=0,mGsm=CellSignalStrengthGsm: rssi=2147483647 ber=2147483647 mTa=2147483647 miuiLevel=0 mLevel=0,mWcdma=CellSignalStrengthWcdma: ss=2147483647 ber=2147483647 rscp=2147483647 ecno=2147483647 miuiLevel=0 level=0,mTdscdma=CellSignalStrengthTdscdma: rssi=2147483647 ber=2147483647 rscp=2147483647 miuiLevel=0 level=0,mLte=CellSignalStrengthLte: rssi=-67 rsrp=-91 rsrq=-7 rssnr=20 cqi=2147483647 ta=2147483647 miuiLevel=5 level=4 parametersUseForLevel=0,mNr=CellSignalStrengthNr:{ csiRsrp = 2147483647 csiRsrq = 2147483647 csiSinr = 2147483647 ssRsrp = 2147483647 ssRsrq = 2147483647 ssSinr = 2147483647 miuiLevel = 0 level = 0 parametersUseForLevel = 0 },primary=CellSignalStrengthLte} level=4
+06-30 22:13:15.087  2540  2725 D NetworkController.MobileSignalController(1): updateTelephonySignalStrength: hasService=true ss=SignalStrength:{mCdma=CellSignalStrengthCdma: cdmaDbm=2147483647 cdmaEcio=2147483647 evdoDbm=2147483647 evdoEcio=2147483647 evdoSnr=2147483647 miuiLevel=0 level=0,mGsm=CellSignalStrengthGsm: rssi=2147483647 ber=2147483647 mTa=2147483647 miuiLevel=0 mLevel=0,mWcdma=CellSignalStrengthWcdma: ss=2147483647 ber=2147483647 rscp=2147483647 ecno=2147483647 miuiLevel=0 level=0,mTdscdma=CellSignalStrengthTdscdma: rssi=2147483647 ber=2147483647 rscp=2147483647 miuiLevel=0 level=0,mLte=CellSignalStrengthLte: rssi=-67 rsrp=-91 rsrq=-7 rssnr=20 cqi=2147483647 ta=2147483647 miuiLevel=5 level=4 parametersUseForLevel=0,mNr=CellSignalStrengthNr:{ csiRsrp = 2147483647 csiRsrq = 2147483647 csiSinr = 2147483647 ssRsrp = 2147483647 ssRsrq = 2147483647 ssSinr = 2147483647 miuiLevel = 0 level = 0 parametersUseForLevel = 0 },primary=CellSignalStrengthLte} displayInfo=TelephonyDisplayInfo {network=LTE, override=NONE}
+06-30 22:13:15.087  2540  2725 D NetworkController.MobileSignalController(1): NotQcom5G, signal level = 5
+06-30 22:13:15.098  2540  2725 D NetworkController.MobileSignalController(1): onDataActivity: direction=0
+06-30 22:13:15.098  2540  2725 I chatty  : uid=1000(system) SysUiBg identical 1 line
+06-30 22:13:15.106  2540  2725 D NetworkController.MobileSignalController(1): onDataActivity: direction=0
+06-30 22:13:15.107  2540  2725 D NetworkController.MobileSignalController(1): onDataActivity: direction=4
+06-30 22:13:15.998  4206  4206 D NfcService: Received android.intent.action.BATTERY_CHANGED
+06-30 22:13:15.999  5973  6215 D PowerKeeper.FrozenApp: onBatteryChanged plug=true mBatteryPlugged=2
+06-30 22:13:16.000  5973  6242 D PowerCheckerService: onBatteryChanged, mBatteryLevel = 100, status = 2, level = 100, plug = 2, scale = 100
+06-30 22:13:16.001  4585  4585 I BatteryInfoReceiver: ACTION_BATTERY_CHANGED
+06-30 22:13:16.002  2963  2963 D DeviceStatisticsService: chargerType=2 batteryLevel=100 totalBatteryCapacity=3251900
+06-30 22:13:16.002  2540  2540 D BatteryController: onReceive: Intent = Intent { act=android.intent.action.BATTERY_CHANGED flg=0x60000010 (has extras) } action = android.intent.action.BATTERY_CHANGED
+06-30 22:13:16.003  2540  2540 D KeyguardUpdateMonitor: received broadcast android.intent.action.BATTERY_CHANGED
+06-30 22:13:16.067  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:16.069  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:16.070  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:16.072  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:17.096  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:17.098  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:17.098  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:17.100  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:18.123  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:18.125  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:18.126  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:18.128  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:19.153  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:19.154  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:19.155  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:19.158  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:20.183  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:20.185  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:20.186  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:20.188  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:20.344  4585  5797 I TrafficManageService: mina mTrafficStatsReceiver onReceive
+06-30 22:13:21.211  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:21.213  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:21.213  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:21.216  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:22.241  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:22.243  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:22.244  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:22.246  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:23.271  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:23.272  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:23.273  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:23.275  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:24.193  4206  4206 D NfcService: Received android.intent.action.BATTERY_CHANGED
+06-30 22:13:24.195  1209  2386 I android_os_HwBinder: HwBinder: Starting thread pool for getting: vendor.xiaomi.hardware.micharge@1.0::IMiCharge/default
+06-30 22:13:24.196   999 20023 E vendor.xiaomi.hardware.micharge@1.0-service: Failed to open node /sys/class/power_supply/wireless/reverse_chg_mode
+06-30 22:13:24.196   999 20023 I vendor.xiaomi.hardware.micharge@1.0-service: ReadFilePathValue path = /sys/class/power_supply/wireless/reverse_chg_mode value = 
+06-30 22:13:24.196  2540  2540 D BatteryController: onReceive: Intent = Intent { act=android.intent.action.BATTERY_CHANGED flg=0x60000010 (has extras) } action = android.intent.action.BATTERY_CHANGED
+06-30 22:13:24.196  2540  2540 D KeyguardUpdateMonitor: received broadcast android.intent.action.BATTERY_CHANGED
+06-30 22:13:24.196  4585  4585 I BatteryInfoReceiver: ACTION_BATTERY_CHANGED
+06-30 22:13:24.198  2963  2963 D DeviceStatisticsService: chargerType=2 batteryLevel=100 totalBatteryCapacity=3252400
+06-30 22:13:24.198  5973  6215 D PowerKeeper.FrozenApp: onBatteryChanged plug=true mBatteryPlugged=2
+06-30 22:13:24.198  5973  6242 D PowerCheckerService: onBatteryChanged, mBatteryLevel = 100, status = 2, level = 100, plug = 2, scale = 100
+06-30 22:13:24.198  1209  2386 I android_os_HwBinder: HwBinder: Starting thread pool for getting: vendor.xiaomi.hardware.micharge@1.0::IMiCharge/default
+06-30 22:13:24.198   999 20023 E vendor.xiaomi.hardware.micharge@1.0-service: Failed to open node /sys/class/power_supply/bms/fastcharge_mode
+06-30 22:13:24.199   999 20023 I vendor.xiaomi.hardware.micharge@1.0-service: ReadFilePathValue path = /sys/class/power_supply/bms/fastcharge_mode value = 
+06-30 22:13:24.299  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:24.301  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:24.301  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:24.303  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:24.864  1209  2398 I MiuiNetworkPolicy: updateUidState uid = 1000, uidState = 0
+06-30 22:13:25.328  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:25.330  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:25.330  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:25.333  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:26.355  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:26.357  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:26.358  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:26.360  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:27.377  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:27.379  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:27.380  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:27.382  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:28.392  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:28.394  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:28.394  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:28.397  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:29.421  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:29.422  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:29.423  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:29.425  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:30.447  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:30.449  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:30.449  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:30.452  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:31.477  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:31.479  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:31.480  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:31.482  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:32.395  4585  4585 I BatteryInfoReceiver: ACTION_BATTERY_CHANGED
+06-30 22:13:32.397  2963  2963 D DeviceStatisticsService: chargerType=2 batteryLevel=100 totalBatteryCapacity=3252900
+06-30 22:13:32.397  5973  6215 D PowerKeeper.FrozenApp: onBatteryChanged plug=true mBatteryPlugged=2
+06-30 22:13:32.398  5973  6242 D PowerCheckerService: onBatteryChanged, mBatteryLevel = 100, status = 2, level = 100, plug = 2, scale = 100
+06-30 22:13:32.398  2540  2540 D BatteryController: onReceive: Intent = Intent { act=android.intent.action.BATTERY_CHANGED flg=0x60000010 (has extras) } action = android.intent.action.BATTERY_CHANGED
+06-30 22:13:32.399  2540  2540 D KeyguardUpdateMonitor: received broadcast android.intent.action.BATTERY_CHANGED
+06-30 22:13:32.399  4206  4206 D NfcService: Received android.intent.action.BATTERY_CHANGED
+06-30 22:13:32.503  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:32.506  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:32.506  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:32.509  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:33.533  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:33.535  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:33.536  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:33.538  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:34.563  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:34.565  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:34.565  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:34.568  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:35.593  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:35.594  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:35.595  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:35.598  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:36.623  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:36.624  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:36.625  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:36.628  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:37.652  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:37.654  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:37.655  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:37.658  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:38.683  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:38.684  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:38.685  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:38.688  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:39.712  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:39.714  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:39.715  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:39.718  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:40.315  2540  2725 D NetworkController.MobileSignalController(1): onSignalStrengthsChanged signalStrength=SignalStrength:{mCdma=CellSignalStrengthCdma: cdmaDbm=2147483647 cdmaEcio=2147483647 evdoDbm=2147483647 evdoEcio=2147483647 evdoSnr=2147483647 miuiLevel=0 level=0,mGsm=CellSignalStrengthGsm: rssi=2147483647 ber=2147483647 mTa=2147483647 miuiLevel=0 mLevel=0,mWcdma=CellSignalStrengthWcdma: ss=2147483647 ber=2147483647 rscp=2147483647 ecno=2147483647 miuiLevel=0 level=0,mTdscdma=CellSignalStrengthTdscdma: rssi=2147483647 ber=2147483647 rscp=2147483647 miuiLevel=0 level=0,mLte=CellSignalStrengthLte: rssi=-59 rsrp=-91 rsrq=-11 rssnr=20 cqi=2147483647 ta=2147483647 miuiLevel=5 level=4 parametersUseForLevel=0,mNr=CellSignalStrengthNr:{ csiRsrp = 2147483647 csiRsrq = 2147483647 csiSinr = 2147483647 ssRsrp = 2147483647 ssRsrq = 2147483647 ssSinr = 2147483647 miuiLevel = 0 level = 0 parametersUseForLevel = 0 },primary=CellSignalStrengthLte} level=4
+06-30 22:13:40.316  2540  2725 D NetworkController.MobileSignalController(1): updateTelephonySignalStrength: hasService=true ss=SignalStrength:{mCdma=CellSignalStrengthCdma: cdmaDbm=2147483647 cdmaEcio=2147483647 evdoDbm=2147483647 evdoEcio=2147483647 evdoSnr=2147483647 miuiLevel=0 level=0,mGsm=CellSignalStrengthGsm: rssi=2147483647 ber=2147483647 mTa=2147483647 miuiLevel=0 mLevel=0,mWcdma=CellSignalStrengthWcdma: ss=2147483647 ber=2147483647 rscp=2147483647 ecno=2147483647 miuiLevel=0 level=0,mTdscdma=CellSignalStrengthTdscdma: rssi=2147483647 ber=2147483647 rscp=2147483647 miuiLevel=0 level=0,mLte=CellSignalStrengthLte: rssi=-59 rsrp=-91 rsrq=-11 rssnr=20 cqi=2147483647 ta=2147483647 miuiLevel=5 level=4 parametersUseForLevel=0,mNr=CellSignalStrengthNr:{ csiRsrp = 2147483647 csiRsrq = 2147483647 csiSinr = 2147483647 ssRsrp = 2147483647 ssRsrq = 2147483647 ssSinr = 2147483647 miuiLevel = 0 level = 0 parametersUseForLevel = 0 },primary=CellSignalStrengthLte} displayInfo=TelephonyDisplayInfo {network=LTE, override=NONE}
+06-30 22:13:40.316  2540  2725 D NetworkController.MobileSignalController(1): NotQcom5G, signal level = 5
+06-30 22:13:40.591  4206  4206 D NfcService: Received android.intent.action.BATTERY_CHANGED
+06-30 22:13:40.591  4585  4585 I BatteryInfoReceiver: ACTION_BATTERY_CHANGED
+06-30 22:13:40.592  5973  6215 D PowerKeeper.FrozenApp: onBatteryChanged plug=true mBatteryPlugged=2
+06-30 22:13:40.592  5973  6242 D PowerCheckerService: onBatteryChanged, mBatteryLevel = 100, status = 2, level = 100, plug = 2, scale = 100
+06-30 22:13:40.594  2963  2963 D DeviceStatisticsService: chargerType=2 batteryLevel=100 totalBatteryCapacity=3253400
+06-30 22:13:40.594  2540  2540 D BatteryController: onReceive: Intent = Intent { act=android.intent.action.BATTERY_CHANGED flg=0x60000010 (has extras) } action = android.intent.action.BATTERY_CHANGED
+06-30 22:13:40.595  2540  2540 D KeyguardUpdateMonitor: received broadcast android.intent.action.BATTERY_CHANGED
+06-30 22:13:40.740  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:40.740  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:40.741  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:40.741  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:41.763  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:41.765  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:41.765  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:41.768  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:42.792  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:42.794  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:42.795  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:42.798  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:43.556  4206  4206 D NfcService: Received android.intent.action.BATTERY_CHANGED
+06-30 22:13:43.559  5973  6215 D PowerKeeper.FrozenApp: onBatteryChanged plug=true mBatteryPlugged=2
+06-30 22:13:43.559  5973  6242 D PowerCheckerService: onBatteryChanged, mBatteryLevel = 100, status = 2, level = 100, plug = 2, scale = 100
+06-30 22:13:43.560  2540  2540 D BatteryController: onReceive: Intent = Intent { act=android.intent.action.BATTERY_CHANGED flg=0x60000010 (has extras) } action = android.intent.action.BATTERY_CHANGED
+06-30 22:13:43.562  2540  2540 D KeyguardUpdateMonitor: received broadcast android.intent.action.BATTERY_CHANGED
+06-30 22:13:43.563  2963  2963 D DeviceStatisticsService: chargerType=2 batteryLevel=100 totalBatteryCapacity=3253600
+06-30 22:13:43.563  4585  4585 I BatteryInfoReceiver: ACTION_BATTERY_CHANGED
+06-30 22:13:43.821  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:43.823  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:43.823  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:43.826  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:44.838  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:44.840  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:44.840  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:44.843  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:45.438  2540  2725 D NetworkController.MobileSignalController(1): onSignalStrengthsChanged signalStrength=SignalStrength:{mCdma=CellSignalStrengthCdma: cdmaDbm=2147483647 cdmaEcio=2147483647 evdoDbm=2147483647 evdoEcio=2147483647 evdoSnr=2147483647 miuiLevel=0 level=0,mGsm=CellSignalStrengthGsm: rssi=2147483647 ber=2147483647 mTa=2147483647 miuiLevel=0 mLevel=0,mWcdma=CellSignalStrengthWcdma: ss=2147483647 ber=2147483647 rscp=2147483647 ecno=2147483647 miuiLevel=0 level=0,mTdscdma=CellSignalStrengthTdscdma: rssi=2147483647 ber=2147483647 rscp=2147483647 miuiLevel=0 level=0,mLte=CellSignalStrengthLte: rssi=-63 rsrp=-91 rsrq=-7 rssnr=20 cqi=2147483647 ta=2147483647 miuiLevel=5 level=4 parametersUseForLevel=0,mNr=CellSignalStrengthNr:{ csiRsrp = 2147483647 csiRsrq = 2147483647 csiSinr = 2147483647 ssRsrp = 2147483647 ssRsrq = 2147483647 ssSinr = 2147483647 miuiLevel = 0 level = 0 parametersUseForLevel = 0 },primary=CellSignalStrengthLte} level=4
+06-30 22:13:45.438  2540  2725 D NetworkController.MobileSignalController(1): updateTelephonySignalStrength: hasService=true ss=SignalStrength:{mCdma=CellSignalStrengthCdma: cdmaDbm=2147483647 cdmaEcio=2147483647 evdoDbm=2147483647 evdoEcio=2147483647 evdoSnr=2147483647 miuiLevel=0 level=0,mGsm=CellSignalStrengthGsm: rssi=2147483647 ber=2147483647 mTa=2147483647 miuiLevel=0 mLevel=0,mWcdma=CellSignalStrengthWcdma: ss=2147483647 ber=2147483647 rscp=2147483647 ecno=2147483647 miuiLevel=0 level=0,mTdscdma=CellSignalStrengthTdscdma: rssi=2147483647 ber=2147483647 rscp=2147483647 miuiLevel=0 level=0,mLte=CellSignalStrengthLte: rssi=-63 rsrp=-91 rsrq=-7 rssnr=20 cqi=2147483647 ta=2147483647 miuiLevel=5 level=4 parametersUseForLevel=0,mNr=CellSignalStrengthNr:{ csiRsrp = 2147483647 csiRsrq = 2147483647 csiSinr = 2147483647 ssRsrp = 2147483647 ssRsrq = 2147483647 ssSinr = 2147483647 miuiLevel = 0 level = 0 parametersUseForLevel = 0 },primary=CellSignalStrengthLte} displayInfo=TelephonyDisplayInfo {network=LTE, override=NONE}
+06-30 22:13:45.439  2540  2725 D NetworkController.MobileSignalController(1): NotQcom5G, signal level = 5
+06-30 22:13:45.867  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:45.869  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:45.869  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:45.871  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:46.897  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:46.899  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:46.899  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:46.901  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:47.926  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:47.927  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:47.928  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:47.930  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:48.789  4585  4585 I BatteryInfoReceiver: ACTION_BATTERY_CHANGED
+06-30 22:13:48.790  4206  4206 D NfcService: Received android.intent.action.BATTERY_CHANGED
+06-30 22:13:48.791  5973  6215 D PowerKeeper.FrozenApp: onBatteryChanged plug=true mBatteryPlugged=2
+06-30 22:13:48.792  2963  2963 D DeviceStatisticsService: chargerType=2 batteryLevel=100 totalBatteryCapacity=3253900
+06-30 22:13:48.792  5973  6242 D PowerCheckerService: onBatteryChanged, mBatteryLevel = 100, status = 2, level = 100, plug = 2, scale = 100
+06-30 22:13:48.793  2540  2540 D BatteryController: onReceive: Intent = Intent { act=android.intent.action.BATTERY_CHANGED flg=0x60000010 (has extras) } action = android.intent.action.BATTERY_CHANGED
+06-30 22:13:48.794  2540  2540 D KeyguardUpdateMonitor: received broadcast android.intent.action.BATTERY_CHANGED
+06-30 22:13:48.954  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:48.957  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:48.957  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:48.960  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:49.983  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:49.985  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:49.986  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:49.989  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:50.557  2540  2725 D NetworkController.MobileSignalController(1): onSignalStrengthsChanged signalStrength=SignalStrength:{mCdma=CellSignalStrengthCdma: cdmaDbm=2147483647 cdmaEcio=2147483647 evdoDbm=2147483647 evdoEcio=2147483647 evdoSnr=2147483647 miuiLevel=0 level=0,mGsm=CellSignalStrengthGsm: rssi=2147483647 ber=2147483647 mTa=2147483647 miuiLevel=0 mLevel=0,mWcdma=CellSignalStrengthWcdma: ss=2147483647 ber=2147483647 rscp=2147483647 ecno=2147483647 miuiLevel=0 level=0,mTdscdma=CellSignalStrengthTdscdma: rssi=2147483647 ber=2147483647 rscp=2147483647 miuiLevel=0 level=0,mLte=CellSignalStrengthLte: rssi=-55 rsrp=-90 rsrq=-10 rssnr=21 cqi=2147483647 ta=2147483647 miuiLevel=5 level=4 parametersUseForLevel=0,mNr=CellSignalStrengthNr:{ csiRsrp = 2147483647 csiRsrq = 2147483647 csiSinr = 2147483647 ssRsrp = 2147483647 ssRsrq = 2147483647 ssSinr = 2147483647 miuiLevel = 0 level = 0 parametersUseForLevel = 0 },primary=CellSignalStrengthLte} level=4
+06-30 22:13:50.557  2540  2725 D NetworkController.MobileSignalController(1): updateTelephonySignalStrength: hasService=true ss=SignalStrength:{mCdma=CellSignalStrengthCdma: cdmaDbm=2147483647 cdmaEcio=2147483647 evdoDbm=2147483647 evdoEcio=2147483647 evdoSnr=2147483647 miuiLevel=0 level=0,mGsm=CellSignalStrengthGsm: rssi=2147483647 ber=2147483647 mTa=2147483647 miuiLevel=0 mLevel=0,mWcdma=CellSignalStrengthWcdma: ss=2147483647 ber=2147483647 rscp=2147483647 ecno=2147483647 miuiLevel=0 level=0,mTdscdma=CellSignalStrengthTdscdma: rssi=2147483647 ber=2147483647 rscp=2147483647 miuiLevel=0 level=0,mLte=CellSignalStrengthLte: rssi=-55 rsrp=-90 rsrq=-10 rssnr=21 cqi=2147483647 ta=2147483647 miuiLevel=5 level=4 parametersUseForLevel=0,mNr=CellSignalStrengthNr:{ csiRsrp = 2147483647 csiRsrq = 2147483647 csiSinr = 2147483647 ssRsrp = 2147483647 ssRsrq = 2147483647 ssSinr = 2147483647 miuiLevel = 0 level = 0 parametersUseForLevel = 0 },primary=CellSignalStrengthLte} displayInfo=TelephonyDisplayInfo {network=LTE, override=NONE}
+06-30 22:13:50.557  2540  2725 D NetworkController.MobileSignalController(1): NotQcom5G, signal level = 5
+06-30 22:13:51.013  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:51.016  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:51.017  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:51.019  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:52.043  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:52.045  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:52.047  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:52.049  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:53.073  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:53.075  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:53.077  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:53.079  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:53.118  2540  2725 D NetworkController.MobileSignalController(1): onSignalStrengthsChanged signalStrength=SignalStrength:{mCdma=CellSignalStrengthCdma: cdmaDbm=2147483647 cdmaEcio=2147483647 evdoDbm=2147483647 evdoEcio=2147483647 evdoSnr=2147483647 miuiLevel=0 level=0,mGsm=CellSignalStrengthGsm: rssi=2147483647 ber=2147483647 mTa=2147483647 miuiLevel=0 mLevel=0,mWcdma=CellSignalStrengthWcdma: ss=2147483647 ber=2147483647 rscp=2147483647 ecno=2147483647 miuiLevel=0 level=0,mTdscdma=CellSignalStrengthTdscdma: rssi=2147483647 ber=2147483647 rscp=2147483647 miuiLevel=0 level=0,mLte=CellSignalStrengthLte: rssi=-65 rsrp=-91 rsrq=-8 rssnr=21 cqi=2147483647 ta=2147483647 miuiLevel=5 level=4 parametersUseForLevel=0,mNr=CellSignalStrengthNr:{ csiRsrp = 2147483647 csiRsrq = 2147483647 csiSinr = 2147483647 ssRsrp = 2147483647 ssRsrq = 2147483647 ssSinr = 2147483647 miuiLevel = 0 level = 0 parametersUseForLevel = 0 },primary=CellSignalStrengthLte} level=4
+06-30 22:13:53.118  2540  2725 D NetworkController.MobileSignalController(1): updateTelephonySignalStrength: hasService=true ss=SignalStrength:{mCdma=CellSignalStrengthCdma: cdmaDbm=2147483647 cdmaEcio=2147483647 evdoDbm=2147483647 evdoEcio=2147483647 evdoSnr=2147483647 miuiLevel=0 level=0,mGsm=CellSignalStrengthGsm: rssi=2147483647 ber=2147483647 mTa=2147483647 miuiLevel=0 mLevel=0,mWcdma=CellSignalStrengthWcdma: ss=2147483647 ber=2147483647 rscp=2147483647 ecno=2147483647 miuiLevel=0 level=0,mTdscdma=CellSignalStrengthTdscdma: rssi=2147483647 ber=2147483647 rscp=2147483647 miuiLevel=0 level=0,mLte=CellSignalStrengthLte: rssi=-65 rsrp=-91 rsrq=-8 rssnr=21 cqi=2147483647 ta=2147483647 miuiLevel=5 level=4 parametersUseForLevel=0,mNr=CellSignalStrengthNr:{ csiRsrp = 2147483647 csiRsrq = 2147483647 csiSinr = 2147483647 ssRsrp = 2147483647 ssRsrq = 2147483647 ssSinr = 2147483647 miuiLevel = 0 level = 0 parametersUseForLevel = 0 },primary=CellSignalStrengthLte} displayInfo=TelephonyDisplayInfo {network=LTE, override=NONE}
+06-30 22:13:53.118  2540  2725 D NetworkController.MobileSignalController(1): NotQcom5G, signal level = 5
+06-30 22:13:54.102  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:54.104  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:54.104  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:54.107  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:55.131  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:55.133  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:55.134  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:55.137  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:56.160  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:56.162  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:56.162  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:56.165  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:56.313  4817 30137 D IdProviderImpl: getOAID
+06-30 22:13:56.979  4206  4206 D NfcService: Received android.intent.action.BATTERY_CHANGED
+06-30 22:13:56.980  4585  4585 I BatteryInfoReceiver: ACTION_BATTERY_CHANGED
+06-30 22:13:56.983  5973  6215 D PowerKeeper.FrozenApp: onBatteryChanged plug=true mBatteryPlugged=2
+06-30 22:13:56.984  5973  6242 D PowerCheckerService: onBatteryChanged, mBatteryLevel = 100, status = 2, level = 100, plug = 2, scale = 100
+06-30 22:13:56.984  2963  2963 D DeviceStatisticsService: chargerType=2 batteryLevel=100 totalBatteryCapacity=3254400
+06-30 22:13:56.984  2540  2540 D BatteryController: onReceive: Intent = Intent { act=android.intent.action.BATTERY_CHANGED flg=0x60000010 (has extras) } action = android.intent.action.BATTERY_CHANGED
+06-30 22:13:56.985  2540  2540 D KeyguardUpdateMonitor: received broadcast android.intent.action.BATTERY_CHANGED
+06-30 22:13:57.189  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:57.191  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:57.191  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:57.193  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:57.581  1209  1247 D CompatibilityInfo: mCompatibilityFlags - 0
+06-30 22:13:57.581  1209  1247 D CompatibilityInfo: applicationDensity - 440
+06-30 22:13:57.581  1209  1247 D CompatibilityInfo: applicationScale - 1.0
+06-30 22:13:57.583  1209  2398 I MiuiNetworkPolicy: updateUidState uid = 10301, uidState = 11
+06-30 22:13:57.600  1209  2398 I MiuiNetworkPolicy: updateUidState uid = 10301, uidState = 19
+06-30 22:13:58.205  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:58.207  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:58.207  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:58.209  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
+06-30 22:13:58.225  2540  2725 D NetworkController.MobileSignalController(1): onSignalStrengthsChanged signalStrength=SignalStrength:{mCdma=CellSignalStrengthCdma: cdmaDbm=2147483647 cdmaEcio=2147483647 evdoDbm=2147483647 evdoEcio=2147483647 evdoSnr=2147483647 miuiLevel=0 level=0,mGsm=CellSignalStrengthGsm: rssi=2147483647 ber=2147483647 mTa=2147483647 miuiLevel=0 mLevel=0,mWcdma=CellSignalStrengthWcdma: ss=2147483647 ber=2147483647 rscp=2147483647 ecno=2147483647 miuiLevel=0 level=0,mTdscdma=CellSignalStrengthTdscdma: rssi=2147483647 ber=2147483647 rscp=2147483647 miuiLevel=0 level=0,mLte=CellSignalStrengthLte: rssi=-59 rsrp=-91 rsrq=-12 rssnr=21 cqi=2147483647 ta=2147483647 miuiLevel=5 level=4 parametersUseForLevel=0,mNr=CellSignalStrengthNr:{ csiRsrp = 2147483647 csiRsrq = 2147483647 csiSinr = 2147483647 ssRsrp = 2147483647 ssRsrq = 2147483647 ssSinr = 2147483647 miuiLevel = 0 level = 0 parametersUseForLevel = 0 },primary=CellSignalStrengthLte} level=4
+06-30 22:13:58.226  2540  2725 D NetworkController.MobileSignalController(1): updateTelephonySignalStrength: hasService=true ss=SignalStrength:{mCdma=CellSignalStrengthCdma: cdmaDbm=2147483647 cdmaEcio=2147483647 evdoDbm=2147483647 evdoEcio=2147483647 evdoSnr=2147483647 miuiLevel=0 level=0,mGsm=CellSignalStrengthGsm: rssi=2147483647 ber=2147483647 mTa=2147483647 miuiLevel=0 mLevel=0,mWcdma=CellSignalStrengthWcdma: ss=2147483647 ber=2147483647 rscp=2147483647 ecno=2147483647 miuiLevel=0 level=0,mTdscdma=CellSignalStrengthTdscdma: rssi=2147483647 ber=2147483647 rscp=2147483647 miuiLevel=0 level=0,mLte=CellSignalStrengthLte: rssi=-59 rsrp=-91 rsrq=-12 rssnr=21 cqi=2147483647 ta=2147483647 miuiLevel=5 level=4 parametersUseForLevel=0,mNr=CellSignalStrengthNr:{ csiRsrp = 2147483647 csiRsrq = 2147483647 csiSinr = 2147483647 ssRsrp = 2147483647 ssRsrq = 2147483647 ssSinr = 2147483647 miuiLevel = 0 level = 0 parametersUseForLevel = 0 },primary=CellSignalStrengthLte} displayInfo=TelephonyDisplayInfo {network=LTE, override=NONE}
+06-30 22:13:58.226  2540  2725 D NetworkController.MobileSignalController(1): NotQcom5G, signal level = 5
+06-30 22:13:59.231  4529  4651 E Relinker: loadLibrary, linkError=so file not exist, path=/system/priv-app/Browser/lib/arm/libxl_stat.so	[SourceFile:12]
+06-30 22:13:59.233  4529  4651 E Relinker: Does not exist in the APK	[SourceFile:14]
+06-30 22:13:59.233  4529  4651 E Relinker: unpackLibrary, Exception=lib/armeabi/libxl_stat.so	[SourceFile:38]
+06-30 22:13:59.236  4529  4651 E Relinker: loadLibrary exception=dlopen failed: library "/data/user/0/com.android.browser/app_lib/libxl_stat.so" not found	[SourceFile:21]
