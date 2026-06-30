@@ -13,7 +13,12 @@ import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.Editable;
 import android.text.InputType;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.TextWatcher;
+import android.text.style.RelativeSizeSpan;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -1397,14 +1402,17 @@ public class SettingsEntry {
                     ViewGroup.LayoutParams.MATCH_PARENT));
             panel.requestFocus();
             sOverlayActive = true;  // P_SE5: 让 TriggerGuard 各 enterHidden 跳过
-            // 未授权(SPEC §3 #1 首装/白嫖) = 零弹：不强弹激活框，密友设置页可看
-            //   （per-row 门控已禁用付费动作 + 显"请先完成授权"，引导付费靠页面本身；
-            //    用户点「授权状态」行可手动拉起激活框）。授权后才跑：更新/续费预警/断网>72h 重验。
+            // 授权态：跑 更新通知 / 续费预警 / 断网>72h 重验。
+            // 未授权 / 到期 / 封停（非影子期）：进功能页弹引导（#1，用户拍板改 D-018 旧「零弹」口径）。
+            //   只在用户主动进本功能页时弹，不全局「打开即弹」、不误伤普通微信用户；
+            //   蜜罐影子期是另一套逻辑（RiskState / RiskPromptController），不走这里。
             if (isActivationReady(activity)) {
                 showUpdateNoticeIfNeeded(activity);
                 showRenewReminderIfNeeded(activity);   // #3 到期前 7 天每天功能页预警续费
                 // S3b-B：进设置页 = 算账检查点。断网 >72h 强制重验，失败→撤销+提示。
                 maybeStaleReverify(activity, decor);
+            } else {
+                showAuthGuidePrompt(activity);          // #1 未授权/到期/封停 → 引导激活/续费/客服
             }
             Log.i(TAG, "[SET:overlay] shown state="
                     + StateMachine.getInstance().getStateName());
@@ -1676,9 +1684,26 @@ public class SettingsEntry {
                     }
                 }, fakeLocOut));
         sFakeLocLabelRef = new WeakReference<>(fakeLocOut[0]);
-        // E3 修改零钱 / 余额装X暂不在设置页展示。
-        // content.addView(buildSwitchRow(activity, "余额装X",
-        //         "功能更新中", false, null));
+        // 改余额显示（E3）：全局伪造钱包/零钱余额数字（纯显示层，不碰真钱/支付）；
+        // 门控 isVipAuthorized() && isEditBalanceEnabled() && 已填自定义金额（留空=不改）；不绑 H/V。
+        content.addView(buildSwitchRow(activity, "改余额显示",
+                "全局伪造钱包/零钱余额（仅显示，不碰真钱）",
+                br.isEditBalanceEnabled(),
+                new CompoundButton.OnCheckedChangeListener() {
+                    @Override public void onCheckedChanged(CompoundButton b, boolean checked) {
+                        br.setEditBalanceEnabled(checked);
+                        Log.i(TAG, "[SET:overlay] editBal=" + checked);
+                    }
+                }));
+        // 自定义金额：点击填数字（方案②末两位自动为小数）→ Bridge.setFakeBalanceYuan；留空=不生效。
+        final TextView[] fakeBalOut = new TextView[1];
+        content.addView(buildButtonRow(activity, "自定义金额",
+                fakeBalanceLabel(br),
+                new View.OnClickListener() {
+                    @Override public void onClick(View v) {
+                        showBalanceInputDialog(activity, fakeBalOut[0]);
+                    }
+                }, fakeBalOut));
         content.addView(buildNote(activity, "独家功能 · 请低调使用"));
 
         // ===== 通知（密友消息 + 来电 合并为一个小分组）=====
@@ -1772,26 +1797,175 @@ public class SettingsEntry {
         long daysLeft = (secs + 86399L) / 86400L;                    // 向上取整
         final String url = com.ghost.assist.core.AppConfig.SHOP_URL;
         String msg = "授权将在 " + daysLeft + " 天内到期。到期后密友功能会停用，请及时续费，避免使用中断。";
-        try {
-            AlertDialog.Builder b = new AlertDialog.Builder(activity)
-                    .setTitle("续费提醒")
-                    .setMessage(msg)
-                    .setNegativeButton("稍后", null);
-            if (url != null && !url.isEmpty()) {
-                b.setPositiveButton("去续费", new android.content.DialogInterface.OnClickListener() {
-                    @Override public void onClick(android.content.DialogInterface d, int w) {
+        // #3 续费提醒：改用统一风格卡片（与引流弹窗 FunnelPrompt 同款白色圆角）。
+        showStyledPrompt(activity, "续费提醒", msg, "去续费",
+                (url == null || url.isEmpty()) ? null : new Runnable() {
+                    @Override public void run() {
                         try {
                             activity.startActivity(new android.content.Intent(
                                     android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
                                     .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK));
                         } catch (Throwable ignored) {}
                     }
+                }, "稍后");
+    }
+
+    /**
+     * #1/#3 统一风格弹窗（白色圆角卡片，与 FunnelPrompt 同款；程序化构图、无宿主资源依赖）。
+     * primaryAction==null → 只显示次按钮（secondaryLabel）。点主按钮先关弹窗再跑动作。
+     * 纯 UI，fail-safe（异常只记日志、不崩、不碰微信本体）。
+     */
+    private static void showStyledPrompt(final Activity activity, String titleText, String messageText,
+                                         String primaryLabel, final Runnable primaryAction, String secondaryLabel) {
+        if (activity == null) return;
+        try {
+            LinearLayout card = new LinearLayout(activity);
+            card.setOrientation(LinearLayout.VERTICAL);
+            int pad = dp(activity, 24);
+            card.setPadding(pad, dp(activity, 30), pad, dp(activity, 24));
+            GradientDrawable bg = new GradientDrawable();
+            bg.setColor(Color.WHITE);
+            bg.setCornerRadius(dp(activity, 20));
+            card.setBackground(bg);
+
+            TextView title = new TextView(activity);
+            title.setText(titleText == null ? "温馨提示" : titleText);
+            title.setTextColor(0xFF1A1A1A);
+            title.setTextSize(18f);
+            title.getPaint().setFakeBoldText(true);
+            title.setGravity(Gravity.CENTER);
+            card.addView(title);
+
+            TextView msgView = new TextView(activity);
+            msgView.setText(messageText == null ? "" : messageText);
+            msgView.setTextColor(0xFF666666);
+            msgView.setTextSize(14f);
+            msgView.setLineSpacing(dp(activity, 7), 1.25f);
+            LinearLayout.LayoutParams msgLp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            msgLp.topMargin = dp(activity, 22);
+            msgView.setLayoutParams(msgLp);
+            card.addView(msgView);
+
+            LinearLayout row = new LinearLayout(activity);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            rowLp.topMargin = dp(activity, 28);
+            row.setLayoutParams(rowLp);
+
+            final AlertDialog dialog = new AlertDialog.Builder(activity)
+                    .setView(card).setCancelable(true).create();
+
+            TextView sec = makeStyledBtn(activity,
+                    secondaryLabel != null ? secondaryLabel : "知道了", 0xFFEFF3F8, 0xFF1A73E8);
+            sec.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) { try { dialog.dismiss(); } catch (Throwable ignored) {} }
+            });
+            row.addView(sec);
+
+            if (primaryAction != null && primaryLabel != null) {
+                ((LinearLayout.LayoutParams) sec.getLayoutParams()).rightMargin = dp(activity, 10);
+                TextView pos = makeStyledBtn(activity, primaryLabel, 0xFF1A73E8, Color.WHITE);
+                pos.setOnClickListener(new View.OnClickListener() {
+                    @Override public void onClick(View v) {
+                        try { dialog.dismiss(); } catch (Throwable ignored) {}
+                        try { primaryAction.run(); } catch (Throwable ignored) {}
+                    }
                 });
-            } else {
-                b.setPositiveButton("我知道了", null);
+                row.addView(pos);
             }
-            b.show();
-        } catch (Throwable ignored) {}
+            card.addView(row);
+
+            if (dialog.getWindow() != null) {
+                dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            }
+            dialog.show();
+            // 窄化卡片：默认 AlertDialog 偏宽显扁平，收到屏宽 78% 让卡片更竖、不扁（用户口径 2026-06-29）。
+            if (dialog.getWindow() != null) {
+                int w = (int) (activity.getResources().getDisplayMetrics().widthPixels * 0.78f);
+                dialog.getWindow().setLayout(w, ViewGroup.LayoutParams.WRAP_CONTENT);
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "[styledPrompt] fail: " + t);
+        }
+    }
+
+    private static TextView makeStyledBtn(Activity ctx, String text, int bgColor, int textColor) {
+        TextView b = new TextView(ctx);
+        b.setText(text);
+        b.setTextColor(textColor);
+        b.setTextSize(15f);
+        b.setGravity(Gravity.CENTER);
+        b.setPadding(0, dp(ctx, 14), 0, dp(ctx, 14));
+        GradientDrawable g = new GradientDrawable();
+        g.setColor(bgColor);
+        g.setCornerRadius(dp(ctx, 24));
+        b.setBackground(g);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        b.setLayoutParams(lp);
+        b.setClickable(true);
+        return b;
+    }
+
+    /**
+     * #1 未授权/到期/封停 进功能页引导弹窗（蜜罐影子期是另一套逻辑、不走这里）。
+     * 三态分别给「去激活 / 去续费 / 联系客服」入口；只在用户进本功能页时弹，不全局打开即弹。
+     */
+    private static void showAuthGuidePrompt(final Activity activity) {
+        if (activity == null) return;
+        try {
+            final String url = com.ghost.assist.core.AppConfig.SHOP_URL;
+            final Runnable openShop = new Runnable() {
+                @Override public void run() {
+                    try {
+                        activity.startActivity(new android.content.Intent(
+                                android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
+                                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK));
+                    } catch (Throwable ignored) {}
+                }
+            };
+            if (EnvelopeStore.isCardRevoked()) {
+                showStyledPrompt(activity, "授权已停用",
+                        "当前授权已停用（封停 / 退款撤销）。如有疑问请联系客服处理。",
+                        "联系客服", openShop, "稍后");
+            } else if (EnvelopeStore.isLicenseExpired()) {
+                showStyledPrompt(activity, "授权已到期",
+                        "授权已到期，密友功能已暂停。续费后即可继续使用。",
+                        "去续费", openShop, "稍后");
+            } else {
+                // 未授权（未激活）：直接弹授权码输入框，省掉多余的「请先完成授权」引导卡（用户口径 2026-06-29）。
+                showActivationDialog(activity, null, "auth-guide");
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "[authGuide] fail: " + t);
+        }
+    }
+
+    /**
+     * #2 激活成功后自重启宿主：launcher intent + AlarmManager 拉起 + 杀进程。
+     * 由用户点「立即重启」触发（前台发起，可拉起）；让 registry/隐藏链全新初始化、当场生效。
+     */
+    private static void restartHost(Context ctx) {
+        if (ctx == null) return;
+        try {
+            android.content.Intent i = ctx.getPackageManager().getLaunchIntentForPackage(ctx.getPackageName());
+            if (i != null) {
+                i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+                        | android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                int flags = android.app.PendingIntent.FLAG_CANCEL_CURRENT;
+                if (android.os.Build.VERSION.SDK_INT >= 23) flags |= android.app.PendingIntent.FLAG_IMMUTABLE;
+                android.app.PendingIntent pi = android.app.PendingIntent.getActivity(ctx, 0x2026, i, flags);
+                android.app.AlarmManager am =
+                        (android.app.AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE);
+                if (am != null) am.set(android.app.AlarmManager.RTC, System.currentTimeMillis() + 300L, pi);
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "[restart] schedule fail: " + t);
+        }
+        try { android.os.Process.killProcess(android.os.Process.myPid()); } catch (Throwable ignored) {}
+        System.exit(0);
     }
 
     private static void showUpdateNoticeIfNeeded(final Activity activity) {
@@ -2140,6 +2314,185 @@ public class SettingsEntry {
         dialog.show();
     }
 
+    /** 自定义余额金额标签：空 = 未填（不生效）提示，否则显示已填金额。 */
+    private static String fakeBalanceLabel(Bridge br) {
+        String v = br.getFakeBalanceYuan();
+        return (v == null || v.isEmpty()) ? "未填（不生效）" : v;
+    }
+
+    /**
+     * 自定义余额金额输入弹窗（卡片风格，与项目授权弹窗统一外观）。
+     * 交互：输入框打「原始数字」（光标流畅、不改写），上方预览区实时渲染成「元.角分」效果；
+     * 保存「元」字符串到 Bridge.setFakeBalanceYuan；留空 → 清空（FakeBalance 不生效，显示真实余额）。
+     */
+    private static void showBalanceInputDialog(final Activity activity, final TextView valueView) {
+        final Bridge br = Bridge.getInstance();
+
+        final LinearLayout box = new LinearLayout(activity);
+        box.setOrientation(LinearLayout.VERTICAL);
+        int pad = dp(activity, 18);
+        box.setPadding(pad, dp(activity, 16), pad, dp(activity, 14));
+        GradientDrawable cardBg = new GradientDrawable();
+        cardBg.setColor(Color.argb(226, 255, 255, 255));
+        cardBg.setCornerRadius(dp(activity, 22));
+        box.setBackground(cardBg);
+
+        TextView title = new TextView(activity);
+        title.setText("自定义余额金额");
+        title.setTextColor(Color.parseColor("#1C1C1E"));
+        title.setTextSize(18f);
+        title.getPaint().setFakeBoldText(true);
+        title.setGravity(Gravity.CENTER);
+        box.addView(title, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        TextView hint = new TextView(activity);
+        hint.setText("末尾两个数字，永远被渲染为小数");
+        hint.setTextColor(Color.parseColor("#666666"));
+        hint.setTextSize(13f);
+        hint.setGravity(Gravity.CENTER);
+        hint.setLineSpacing(dp(activity, 2), 1.0f);
+        LinearLayout.LayoutParams hintLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        hintLp.topMargin = dp(activity, 8);
+        box.addView(hint, hintLp);
+
+        // 预览区：把输入的原始数字实时渲染成「元.角分」显示效果（所见即所得）。
+        final TextView preview = new TextView(activity);
+        preview.setTextColor(Color.parseColor("#07A85C"));
+        preview.setTextSize(20f);
+        preview.getPaint().setFakeBoldText(true);
+        preview.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams previewLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        previewLp.topMargin = dp(activity, 12);
+        box.addView(preview, previewLp);
+
+        // 输入框：纯数字「原始数据」，不实时改写（光标流畅）。
+        final EditText input = new EditText(activity);
+        input.setInputType(InputType.TYPE_CLASS_NUMBER);
+        input.setSingleLine(true);
+        input.setHint("输入数字，如 8888888");
+        input.setTextSize(16f);
+        input.setGravity(Gravity.CENTER);
+        GradientDrawable inputBg = new GradientDrawable();
+        inputBg.setColor(Color.parseColor("#F2F2F7"));
+        inputBg.setCornerRadius(dp(activity, 12));
+        inputBg.setStroke(1, Color.parseColor("#E1E1E6"));
+        input.setBackground(inputBg);
+        input.setPadding(dp(activity, 14), 0, dp(activity, 14), 0);
+        LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(activity, 48));
+        ilp.topMargin = dp(activity, 14);
+        box.addView(input, ilp);
+
+        final Runnable refresh = new Runnable() {
+            @Override public void run() {
+                String raw = input.getText() != null ? input.getText().toString() : "";
+                String yuan = formatCentsToYuan(raw);
+                if (yuan.isEmpty()) {
+                    preview.setText("请输入数字");
+                    return;
+                }
+                String prefix = "显示效果：";
+                SpannableString sp = new SpannableString(prefix + "\u00a5" + yuan);
+                sp.setSpan(new RelativeSizeSpan(0.6f), 0, prefix.length(),
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE); // 「显示效果：」小字，¥金额保持大字
+                preview.setText(sp);
+            }
+        };
+        input.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) {}
+            @Override public void onTextChanged(CharSequence s, int a, int b, int c) {}
+            @Override public void afterTextChanged(Editable s) { refresh.run(); }
+        });
+        // 预填：已存 "88888.88" → 还原成原始数字串 "8888888" 给输入框。
+        String saved = br.getFakeBalanceYuan();
+        if (saved != null && !saved.isEmpty()) {
+            String digits = saved.replaceAll("[^0-9]", "");
+            input.setText(digits);
+            input.setSelection(digits.length());
+        }
+        refresh.run();
+
+        LinearLayout actions = new LinearLayout(activity);
+        actions.setOrientation(LinearLayout.HORIZONTAL);
+        actions.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams actionsLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        actionsLp.topMargin = dp(activity, 16);
+
+        Button cancel = new Button(activity);
+        cancel.setText("取消");
+        cancel.setTextColor(Color.parseColor("#1C1C1E"));
+        cancel.setTextSize(15f);
+        cancel.setAllCaps(false);
+        GradientDrawable cancelBg = new GradientDrawable();
+        cancelBg.setColor(Color.parseColor("#F2F2F7"));
+        cancelBg.setCornerRadius(dp(activity, 19));
+        cancel.setBackground(cancelBg);
+        LinearLayout.LayoutParams cancelLp = new LinearLayout.LayoutParams(
+                dp(activity, 120), dp(activity, 38));
+        cancelLp.rightMargin = dp(activity, 10);
+        actions.addView(cancel, cancelLp);
+
+        Button save = new Button(activity);
+        save.setText("保存");
+        save.setTextColor(Color.WHITE);
+        save.setTextSize(15f);
+        save.setAllCaps(false);
+        save.getPaint().setFakeBoldText(true);
+        GradientDrawable saveBg = new GradientDrawable();
+        saveBg.setColor(Color.parseColor("#07A85C"));
+        saveBg.setCornerRadius(dp(activity, 19));
+        save.setBackground(saveBg);
+        LinearLayout.LayoutParams saveLp = new LinearLayout.LayoutParams(
+                dp(activity, 120), dp(activity, 38));
+        actions.addView(save, saveLp);
+        box.addView(actions, actionsLp);
+
+        final AlertDialog dialog = new AlertDialog.Builder(activity).setView(box).create();
+        dialog.setCancelable(true);
+        cancel.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { dialog.dismiss(); }
+        });
+        save.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                String raw = input.getText() != null ? input.getText().toString() : "";
+                String yuan = formatCentsToYuan(raw); // "" = 留空 → 不生效
+                br.setFakeBalanceYuan(yuan);
+                if (valueView != null) valueView.setText(fakeBalanceLabel(br));
+                Log.i(TAG, "[SET:overlay] fakeBalance set=\"" + yuan + "\"");
+                Toast.makeText(activity, yuan.isEmpty() ? "已清空（显示真实余额）" : "金额已保存",
+                        Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
+            }
+        });
+        dialog.show();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            dialog.getWindow().setDimAmount(0.22f);
+            int width = (int) (activity.getResources().getDisplayMetrics().widthPixels * 0.82f);
+            dialog.getWindow().setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+    }
+
+    /**
+     * 纯数字串按「分」格式化成「元.角分」：取数字、限长防溢出、末两位为小数（parseLong 自动忽略前导零）。
+     * 例：8888888 → 88888.88；100 → 1.00；0 → 0.00；无数字 → ""。
+     */
+    private static String formatCentsToYuan(String raw) {
+        if (raw == null) return "";
+        String digits = raw.replaceAll("[^0-9]", "");
+        if (digits.isEmpty()) return "";
+        if (digits.length() > 15) digits = digits.substring(0, 15);
+        long cents;
+        try { cents = Long.parseLong(digits); } catch (Throwable t) { return ""; }
+        long yuan = cents / 100L;
+        long fen = cents % 100L;
+        return yuan + "." + (fen < 10 ? "0" + fen : Long.toString(fen));
+    }
+
     private static String activationStatusText(Context ctx) {
         try {
             if (ctx != null) EnvelopeStore.init(ctx.getApplicationContext());
@@ -2281,6 +2634,25 @@ public class SettingsEntry {
             }
         }
 
+        // #2 激活动效：小转圈 + "正在请求，请耐心等待"，激活中显示、结果后隐藏。
+        final LinearLayout progressRow = new LinearLayout(activity);
+        progressRow.setOrientation(LinearLayout.HORIZONTAL);
+        progressRow.setGravity(Gravity.CENTER);
+        progressRow.setVisibility(View.GONE);
+        android.widget.ProgressBar spinner = new android.widget.ProgressBar(activity);
+        LinearLayout.LayoutParams spLp = new LinearLayout.LayoutParams(dp(activity, 18), dp(activity, 18));
+        spLp.rightMargin = dp(activity, 8);
+        progressRow.addView(spinner, spLp);
+        TextView progressText = new TextView(activity);
+        progressText.setText("\u6b63\u5728\u8bf7\u6c42\uff0c\u8bf7\u8010\u5fc3\u7b49\u5f85\u2026"); // 正在请求，请耐心等待…
+        progressText.setTextColor(Color.parseColor("#666666"));
+        progressText.setTextSize(12f);
+        progressRow.addView(progressText);
+        LinearLayout.LayoutParams progLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        progLp.topMargin = dp(activity, 10);
+        box.addView(progressRow, progLp);
+
         LinearLayout actions = new LinearLayout(activity);
         actions.setOrientation(LinearLayout.HORIZONTAL);
         actions.setGravity(Gravity.CENTER);
@@ -2330,6 +2702,7 @@ public class SettingsEntry {
                 error.setVisibility(View.GONE);
                 activate.setEnabled(false);
                 activate.setText("\u6fc0\u6d3b\u4e2d..."); // 激活中...
+                progressRow.setVisibility(View.VISIBLE);   // #2 转圈：正在请求，请耐心等待
                 Toast.makeText(activity, "\u6b63\u5728\u6fc0\u6d3b...", Toast.LENGTH_SHORT).show();
                 new Thread(new Runnable() {
                     @Override public void run() {
@@ -2339,6 +2712,7 @@ public class SettingsEntry {
                             @Override public void run() {
                                 try {
                                     if (result.ok) {
+                                        progressRow.setVisibility(View.GONE);   // #2 成功收转圈
                                         if (statusView != null) {
                                             statusView.setText(activationStatusText(activity) + " \u203a");
                                         }
@@ -2348,19 +2722,16 @@ public class SettingsEntry {
                                         activate.setText("\u6fc0\u6d3b\u6210\u529f"); // 激活成功
                                         Log.i(TAG, "[SET:auth] activation ok source=" + source
                                                 + " state=" + NativeBridge.getAuthState());
-                                        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-                                            @Override public void run() {
-                                                dialog.dismiss();
-                                                try {
-                                                    ViewGroup decor = (ViewGroup) activity.getWindow().getDecorView();
-                                                    dismissOverlay(decor);
-                                                    showGuardOverlay(activity);
-                                                } catch (Throwable t) {
-                                                    Log.w(TAG, "[SET:auth] reopen overlay failed: " + t);
-                                                }
-                                            }
-                                        }, 500L);
+                                        // #2 成功后引导重启：重启让 registry / 隐藏链全新初始化、当场生效（免手动冷启）。
+                                        try { dialog.dismiss(); } catch (Throwable ignored) {}
+                                        showStyledPrompt(activity, "激活成功",
+                                                "授权已激活。点击重启，让密友隐藏等功能立即生效。",
+                                                "立即重启",
+                                                new Runnable() {
+                                                    @Override public void run() { restartHost(activity); }
+                                                }, "稍后");
                                     } else {
+                                        progressRow.setVisibility(View.GONE);   // #2 失败收转圈
                                         activate.setEnabled(true);
                                         activate.setText("\u7acb\u5373\u6fc0\u6d3b");
                                         showActivationError(error, box,
@@ -2371,6 +2742,7 @@ public class SettingsEntry {
                                                 + " msg=" + result.message);
                                     }
                                 } catch (Throwable t) {
+                                    progressRow.setVisibility(View.GONE);   // #2 异常收转圈
                                     activate.setEnabled(true);
                                     activate.setText("\u7acb\u5373\u6fc0\u6d3b");
                                     showActivationError(error, box,

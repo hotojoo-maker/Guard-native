@@ -404,6 +404,19 @@ public class Bridge {
         putString(KEY_FAKE_LABEL, "");
     }
 
+    // --- 改余额（E3，装b 模块，纯显示层）---
+    // ebon=开关(默认关)；ebvl=假余额(String 存，元，如 "88888.88"；空=不生效，FakeBalance 显示真实余额)。
+    // hook WcPayMoneyLoadingView(字符串元) / KindaMoneyLoadingView(long 分) 把显示值换成它，不碰真钱/支付。
+    private static final String KEY_EDIT_BAL_ON  = "ebon";
+    private static final String KEY_EDIT_BAL_VAL = "ebvl";
+
+    public boolean isEditBalanceEnabled()           { return getBool(KEY_EDIT_BAL_ON, false); }
+    public void    setEditBalanceEnabled(boolean v) { putBool(KEY_EDIT_BAL_ON, v); }
+
+    /** 假余额（元，字符串，如 "88888.88"）。空 = 不生效（FakeBalance 显示真实余额）。 */
+    public String getFakeBalanceYuan()            { return getString(KEY_EDIT_BAL_VAL, ""); }
+    public void   setFakeBalanceYuan(String yuan) { putString(KEY_EDIT_BAL_VAL, yuan != null ? yuan.trim() : ""); }
+
     // --- Item field dump（每个类名保留最新一条，互不覆盖）---
     private final java.util.LinkedHashMap<String, String> mItemDumps = new java.util.LinkedHashMap<>();
 
