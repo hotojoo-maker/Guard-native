@@ -7,7 +7,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.ghost.assist.BuildConfig;
+import com.ghost.assist.core.AppConfig;
 import com.ghost.assist.core.Bridge;
 import com.ghost.assist.core.GuardRuntime;
 import com.ghost.assist.core.RefreshBus;
@@ -105,7 +105,7 @@ public class SearchFilter {
                 && !sRenderHook.isEmpty()
                 && !sExtractorProfile.isEmpty()
                 && !sScope.isEmpty();
-        boolean fbOk = BuildConfig.DEBUG && "getView".equals(recipe("__no_such_key__", "getView"));
+        boolean fbOk = AppConfig.isDevBuild() && "getView".equals(recipe("__no_such_key__", "getView"));
         Log.i(TAG, "[SF] recipes gateway=" + sGateway
                 + " adapterFamily=" + sAdapterFamily
                 + " renderHook=" + sRenderHook

@@ -1,7 +1,5 @@
 package com.ghost.assist.core;
 
-import com.ghost.assist.BuildConfig;
-
 /**
  * GuardRuntime — single entry point for hook recipes (class/field names).
  *
@@ -45,7 +43,7 @@ public final class GuardRuntime {
      * switch is build-time only so R8 can strip debug fallback literals.
      */
     public static boolean isStrictRecipeMode() {
-        return !BuildConfig.DEBUG;
+        return !AppConfig.isDevBuild();
     }
 
     /**

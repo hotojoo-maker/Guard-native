@@ -120,6 +120,31 @@ public class AppConfig {
     public boolean isProdMode() { return mMode == Mode.PROD; }
     public boolean isDevMode()  { return mMode == Mode.DEV; }
 
+    // --- Debug-gate facade -------------------------------------------------
+    // One named outlet per intent so call sites stop hand-rolling
+    // BuildConfig.DEBUG / isDebugEnabled() (and OR-ing them). Audit/red-team
+    // can grep these three names to enumerate the release debug surface.
+    /**
+     * Compile-time gate: true only in debug builds. R8 (release uses
+     * proguard-android-optimize) inlines BuildConfig.DEBUG=false and strips the
+     * guarded branch — use for anything that must never reach a customer build
+     * (self-tests, KDF vectors, forced-state entry points).
+     */
+    public static boolean isDevBuild()     { return BuildConfig.DEBUG; }
+
+    /**
+     * Runtime gate: DEV/HONEY diagnostic mode. May be true in a release build —
+     * use for diagnostics that should react to the running mode, not the build.
+     */
+    public static boolean isDiagnostics()  { return getInstance().isDebugEnabled(); }
+
+    /**
+     * Debug build OR runtime diagnostics — for surfaces startable either way
+     * (e.g. the local DebugServer). Replaces the hand-written
+     * {@code BuildConfig.DEBUG || isDebugEnabled()}.
+     */
+    public static boolean isDebugSurface() { return isDevBuild() || isDiagnostics(); }
+
     // --- Local dev mode: intercept but skip real hooking ---
     public boolean isLocalDevMode() { return mLocalDevMode; }
     public void setLocalDevMode(boolean enabled) {

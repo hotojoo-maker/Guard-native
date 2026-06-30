@@ -4,7 +4,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
-import com.ghost.assist.BuildConfig;
+import com.ghost.assist.core.AppConfig;
 import com.ghost.assist.core.Bridge;
 import com.ghost.assist.core.GuardRuntime;
 import com.ghost.assist.core.RefreshBus;
@@ -93,7 +93,7 @@ public class ContactFilter {
                 && !ADDR_ITEM_CLS.isEmpty()
                 && !ADDR_Z3_CLS.isEmpty()
                 && !WXID_GETTER.isEmpty();
-        boolean fbOk = BuildConfig.DEBUG && "ik3.t0".equals(recipe("__no_such_key__", "ik3.t0"));
+        boolean fbOk = AppConfig.isDevBuild() && "ik3.t0".equals(recipe("__no_such_key__", "ik3.t0"));
         Log.i(TAG, "[CTF] recipes adapter=" + ADDR_ADAPTER + " item=" + ADDR_ITEM_CLS
                 + " contact=" + ADDR_Z3_CLS + " getter=" + WXID_GETTER
                 + " live=" + ADDR_LIVE_LIST + " fallbackSelfTest=" + (fbOk ? "ok" : "FAIL")

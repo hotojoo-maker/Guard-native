@@ -4,7 +4,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
-import com.ghost.assist.BuildConfig;
+import com.ghost.assist.core.AppConfig;
 import com.ghost.assist.core.Bridge;
 import com.ghost.assist.core.InterceptCounter;
 import com.ghost.assist.core.RefreshBus;
@@ -139,7 +139,7 @@ public class ConvFilter {
         L1_METHODS        = recipeArr("l1_methods", L1_METHODS);
         L2_METHOD         = recipe("l2_method", L2_METHOD);
         sRecipesResolved = true;
-        boolean fbOk = BuildConfig.DEBUG && "kc5.v0".equals(recipe("__no_such_key__", "kc5.v0"));
+        boolean fbOk = AppConfig.isDevBuild() && "kc5.v0".equals(recipe("__no_such_key__", "kc5.v0"));
         boolean ready = !MVVMLIST_CLASS.isEmpty()
                 && !ADAPTER_CLASS_71.isEmpty()
                 && WXID_GETTER_NAMES.length > 0;

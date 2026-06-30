@@ -139,7 +139,7 @@ public final class RiskState {
      * 真检测链（蜜罐绊线 / 离线>144h）属段2/段3；段1 先用它验「funnel→弹窗→跳转」闭环。
      */
     public static synchronized void debugForceFunnel() {
-        if (!com.ghost.assist.BuildConfig.DEBUG) return;
+        if (!AppConfig.isDevBuild()) return;
         sLevel = Level.TAMPER_FUNNEL;
         Log.i(TAG, "[risk] DEBUG force funnel (debug-only)");
     }
