@@ -227,8 +227,8 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         //      Route B/D-020：闸 = 本地模块证书完整性 + 时间闸（首装72h/失效7天，fail-open）；
         //      只读闸出口 + 各子信号（ANTIBAN-GATE tag），不门控隐私、不改 isActive。
         if (BuildConfig.DEBUG) {
-            com.ghost.assist.core.GuardRuntime.antiBanGateSelfTest(TAG, app, hostApkPath(app));   // 2026-06-30 改读宿主整包
-            com.ghost.assist.core.GuardRuntime.antiBanBranchSelfTest(TAG);   // D-020 时间闸全分支纯函数自测（②新装/④封停超时）
+            com.ghost.assist.core.AntiBanGate.antiBanGateSelfTest(TAG, app, hostApkPath(app));   // 2026-06-30 改读宿主整包；AntiBanGate 拆类(2026-06-29)
+            com.ghost.assist.core.AntiBanGate.antiBanBranchSelfTest(TAG);   // D-020 时间闸全分支纯函数自测（②新装/④封停超时）
         }
 
         // 6.7. A2 防封签名轴安装（Route B / D-020）：门控 = 本地 cert 完整性 + 时间闸。
@@ -236,7 +236,7 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         //      封停72h内 / 官方授时无值 fail-open）即装、保号；重签散沙、超窗撤。逆序线 fail-open（拿不准=装）。
         //      A2 是独立加法，只动自身包签名返回，不连坐隐私 isActive()、不进已验证 hook。
         try {
-            if (com.ghost.assist.core.GuardRuntime.isAntiBanReady(app, hostApkPath(app))) {   // 2026-06-30 改读宿主整包
+            if (com.ghost.assist.core.AntiBanGate.isAntiBanReady(app, hostApkPath(app))) {   // 2026-06-30 改读宿主整包；AntiBanGate 拆类(2026-06-29)
                 com.ghost.assist.core.A2SignatureSpoof.install(lpparam);
                 com.ghost.assist.core.A2PkgPathSpoof.install(lpparam);   // A2 包名/路径轴（仅共存，internal self!=官方包名 判定，官替自动跳过）
             } else {

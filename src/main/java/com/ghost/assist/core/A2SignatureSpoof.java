@@ -27,7 +27,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
  *   • 零环境读取（不读 ro.boot.*、不枚举包）（红线#3）。
  *   • 独立新类，不进任何已验证隐私 hook 回调体（红线#5）。
  *
- * 安装：由 ModuleMain 在 GuardRuntime.isAntiBanReady(ctx, modulePath) 为 true 时
+ * 安装：由 ModuleMain 在 AntiBanGate.isAntiBanReady(ctx, modulePath) 为 true 时
  * 调用（Route B：闸 = 本地模块证书完整性）。实现对齐研究线已 L1 验证的 dimcollect
  * SPOOF 路径（spoofSigningInfo / replaceSignatureArrays），不另发明。
  */
@@ -55,7 +55,7 @@ public final class A2SignatureSpoof {
 
     /**
      * Install the signature-axis spoof. The caller (ModuleMain) MUST gate this
-     * with GuardRuntime.isAntiBanReady(ctx, modulePath) (Route B: local
+     * with AntiBanGate.isAntiBanReady(ctx, modulePath) (Route B: local
      * module-cert integrity). The official DER is now a local constant
      * (OFFICIAL_DER_HEX, a public value); the null guard below is purely
      * defensive (a malformed hex would skip install rather than crash).
