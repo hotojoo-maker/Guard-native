@@ -359,18 +359,34 @@
 
 ---
 
-### 14. 屏蔽官方更新（B7：更新红点 + 点击下载拦截）
+### 14. 屏蔽官方更新（B7：红点 + 三条热更新通道冻结）
 
-> 锁 8.0.71 重新打包，防用户被官方更新红点/按钮诱导升级（升级 → 8071 hook 全失效、模块不兼容）。
+> 锁 8.0.71 重新打包，防用户被官方更新诱导升级（升级 → 8071 hook 全失效、模块不兼容），并防官方静默热更新推新检测 / 改 hook 依赖类。
+> 机制研究真源：`防封_反检测线/证据/HOTUPDATE_8071_20260622.md`；落地任务：`03_execute_执行任务/P_HotUpdateFreeze_官方热更新冻结/`。
 
-| 项 | 内容 |
-|------|------|
-| **8.0.71 状态** | 🟡 红点屏蔽代码实装（效果待红点场景验证）；**点击「检查更新」→ 系统后台下载 APK 拦截未实现（缺口）** |
-| **红点屏蔽（已实装）** | `moduleB/UpdateGuard.java` hook `fl4.o`（更新红点 DI 容器，实现 `gl4.e`）的所有 0-param boolean getter（`Sh`=关于微信红点 / `Th`=检查更新红点 / `Wh`=完整 APK 更新）→ 返 false → 设置页红点消失；开关 `AppConfig.isUpdateRedDotEnabled`；日志 `[UG]` |
-| **⚠️ 效果待验** | 当前设备无红点，无法区分「屏蔽生效」vs「官方本无新版本/推送」；需官方推更新红点场景对照（开 B7 无红点 / 关 B7 有红点）才能确认 |
-| **⚠️ 缺口（用户 2026-06-30 反馈）** | 点击「检查更新/更新」按钮 → 微信仍在**系统后台下载新版 APK**；当前 UpdateGuard 只断红点 getter、**未拦截下载行为** → 待开发（需调研下载触发入口：DownloadManager / 微信自有下载器 / 更新按钮 onClick） |
-| **调研锚点（FINDINGS 2026-05-21）** | UI 类 `com.tencent.mm.ui.setting.SettingsAboutMicroMsgUI`；入口 `SettingsUI.P7()`；红点容器 `fl4.o`（8.0.66 对应 `gd4.o`） |
-| **项目代码** | `moduleB/UpdateGuard.java`（ModuleMain install；TAG `[UG]`） |
+**两层：**
+
+| 层 | 模块（TAG） | 管什么 |
+|----|------|--------|
+| UI 红点 | `moduleB/UpdateGuard.java`（`[UG]`） | `fl4.o` 0-param bool getter（`Sh`/`Th`/`Wh`）→false → 设置页红点消失；开关 `isUpdateRedDotEnabled` |
+| 通道冻结 | `moduleB/HotUpdateFreeze.java`（`[HUF]`） | 三条热更新通道源头 no-op；开关 `AppConfig.isHotFreezeEnabled` **默认 true（生产锁版本）**，置 false 可临时观测 |
+
+**三条热更新通道（jadx 8.0.71 实读 L2 + 装机 L1，小米9/官方包 8071，2026-06-30）：**
+
+| 通道 | hook 点 | 动作 | L1 证据 |
+|------|---------|------|------|
+| ① Tinker 热补丁（静默 DEX/SO） | `p53.j.b(Map)` 查更入口（叠加 `m53.d0.j(boolean)`/`m53.d0.d(File)`） | freeze 时 setResult no-op，源头断查更 | ✅ `[HUF] tinker p53.j.b → blocked`，下游 d0.j/d 未 fired，微信正常登录（`logs/huf_updatebtn_live_20260630.txt`） |
+| ② 整包客户端更新（关于微信→检查更新→后台下载新 APK） | `fl4.o.Wg(boolean,boolean,boolean)`=checkMMdiffUpdatePatchPkgVersion；`fl4.o.Bg(Context,String)`=checkAndShowInstallPatchDialog | freeze 时 no-op，不查更 / 不弹装包框 | ✅ `[HUF] fullapk fl4.o.Wg → blocked`，点「检查更新」不再后台下载（`logs/huf_fullapk_blocked_20260630.txt`） |
+| ③ libcso（SO 热补丁容器） | `ip.g.a(Application,String)` | **仅观测不拦**：libcso 兼微信正常加载自带 SO（新装时 cso-p 线程预载 `libbspatch_utils`/`libhpatchz` 走 `CsoLoader.preloadAllInternal`），整条冻会误伤；真要冻的「远程下载段」(G3) 未定位 | ⚠️ observe：预载实跑；`ip.g.a` 未 fired（预载走 preloadAllInternal 另一入口） |
+
+**关键约束：**
+- 全程只 hook Java 方法、不碰 native → 与 F-23 无关；libcso native(mprotect) 干预禁。
+- **A2×Tinker 交叉（L3）**：A2 把签名 spoof 成官方后，Tinker `ShareSecurityCheck` 验签可能转通过 → 重开通道 → **上 A2 必同时冻 Tinker**。
+- LSPatch 共存零副作用：模块在 base.apk、非 tinker patch，断新 patch 不卸模块。
+- 字段写法证伪：`z.f176124s` / `g45.c.f246162e`（官方自带「blocked by assist」闸）运行时 NoSuchField（Tinker classloader 分裂）→ 走方法钩。
+- 诚实口径：无 L1 证明官方已经此推过新检测 → **预防性冻结**。
+- 调研锚点（FINDINGS 2026-05-21）：UI 类 `com.tencent.mm.ui.setting.SettingsAboutMicroMsgUI`；入口 `SettingsUI.P7()`；红点容器 `fl4.o`（8.0.66 对应 `gd4.o`）。
+- 项目代码：`moduleB/UpdateGuard.java`（红点）+ `moduleB/HotUpdateFreeze.java`（通道）；ModuleMain install。
 
 ---
 

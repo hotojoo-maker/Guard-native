@@ -1,8 +1,9 @@
 ---
+icon: ✅
+cn: 质检门控
 name: guard-review_质检门控
 description: Guard Native 质检门控——P任务自审(轻档) + 发版门控(重档) + 文档盘点/冲突检测/调研任务。P任务完成后用轻档；发版/合并前用重档；发现文档矛盾/路径错误时用资料功能。
 ---
-
 > ⚠️ 输出前自查：禁止错别字、黑话、客户看不懂的话。
 
 # guard-review — 质检门控（三合一）
@@ -47,7 +48,7 @@ grep 代码是否有被禁模式：
 - `notifyItemRange` → F-13~15
 - `ro.boot.` → 铁律5
 - `JniHook` / 微信自身 SO 加载 / 第三方底层注入 / 非模块自有 `System.loadLibrary` → F-23
-- 允许：模块自有 `libguardcore.so` 正常加载（当前 `native_core` 路线）；但不得加载微信自身 SO，不得接 `JNI_OnLoad` 注入链，不得 hook 微信 native 方法
+- 允许：模块自有 `libguardcore.so` 正常加载（当前 `native_core` 路线）；但不得加载微信自身 SO，不得接 `JNI_OnLoad` 注入链，不得重碰微信 native 方法
 - 敏感词 `vip` `hide` `catfish` `wechat` → §5.8
 
 ### ② 自洽性

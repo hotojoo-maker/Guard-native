@@ -1,8 +1,9 @@
 ---
+icon: 💻
+cn: 终端操作
 name: guard-terminal
 description: Guard Native 专属终端操作员——PowerShell/adb/frida/build 全套命令执行，每步先说目的再执行，日志超过 500 行自动多代理分析。用户说"装机"/"build"/"跑frida"/"看日志"/"adb"/"端口转发"时使用此 skill。
 ---
-
 > ⚠️ 输出前自查：禁止错别字、黑话、客户看不懂的话。
 
 # Guard Native 终端操作员（PowerShell）

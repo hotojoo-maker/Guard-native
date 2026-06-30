@@ -147,7 +147,7 @@
 | B4  | 返回键 → 隐藏 | VISIBLE→HIDDEN | 🚫 **默认关闭**（`TriggerGuard.B4_BACK_KEY_ENABLED=false`，D-022）：`dispatchKeyEvent`/`KEYCODE_BACK` 被 MIUI 边缘滑动手势误触 → 解锁后入口被隐藏（入口 bug 根因）；「离开微信才藏」由 B2 覆盖。L1 `P_AntiBanGate/logs/verify_b4off_20260629.txt` | `TriggerGuard.installBackKeyHook` 实际 hook `dispatchKeyEvent`（非 onBackPressed）；手势设备无法区分内部返回，故关 | ⭐ |
 | B5  | 锁屏 → 自动隐藏（解锁后**不**自动显形） | VISIBLE→HIDDEN | ✅ 用户确认已验证（2026-06-01） | `TriggerGuard.java` ACTION_SCREEN_OFF | ⭐ |
 | B6  | 主界面放大镜输入 111111 → 解锁显形 | HIDDEN→VISIBLE | ✅ **8071 已验** | `SearchUnlock.java` FTS 搜索页 TextWatcher | ⭐⭐ |
-| B7  | 屏蔽官方更新（红点 + 点击下载） | — | 🟡 红点屏蔽代码实装（`fl4.o` getter→false，效果待红点场景验）；**点击更新→系统后台下载 拦截未实现**（缺口，用户 2026-06-30 反馈） | `UpdateGuard.java` hook `fl4.o` 0-param bool getter（Sh/Th/Wh）→false（开关 `isUpdateRedDotEnabled`，`[UG]`）；下载拦截待调研入口 | ⭐⭐ |
+| B7  | 屏蔽官方更新（红点 + 三条热更新通道冻结） | — | 🟡 红点屏蔽(`UpdateGuard`)；✅ **通道冻结 L1 已验**（2026-06-30 官方包 8071）：Tinker 查更 `p53.j.b`→blocked、整包更新 `fl4.o.Wg`→blocked（点检查更新不再后台下载）；libcso 兼正常 SO 加载故仅观测 | `UpdateGuard.java`(红点 `[UG]`)＋`HotUpdateFreeze.java`(通道 `[HUF]`/`isHotFreezeEnabled` **默认开**)；详权威 §14 | ⭐⭐ |
 
 **下一步**：当前 v1 不再以 P22 普通消息通知 + 铃声功能 / P18 KPI 作为阻塞；二者分别转 v1.1 / 正式发布门控补跑。搜索高亮归 UI 优化（旧称 P26C，号已归「隐藏指定通讯录标签」，见 PROJECT_INDEX §零）。
 

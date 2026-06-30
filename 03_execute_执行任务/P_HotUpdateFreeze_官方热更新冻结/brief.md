@@ -1,8 +1,15 @@
 # brief · P_HotUpdateFreeze D3 落地设计
 
-> 2026-06-30。**设计稿（未落码）**。证据级：jadx 8.0.71 实读（L2）。
+> 2026-06-30 设计稿（原始 libcso+Tinker 两通道）。证据级：jadx 8.0.71 实读（L2）。
 > jadx 源：`I:\apk2\_3__D_wechat_ban\jadx_8071\sources\`
 > 机制真源：`防封_反检测线\证据\HOTUPDATE_8071_20260622.md`（只链不复制）
+
+> **落地更新（2026-07-01，与本设计稿的偏差，以此为准）**：
+> 1. **加了第 3 通道「整包客户端更新」**：`fl4.o.Wg(boolean,boolean,boolean)`（checkMMdiffUpdatePatchPkgVersion）+ `fl4.o.Bg(Context,String)`（checkAndShowInstallPatchDialog）→ no-op。L1 实证「点检查更新不再后台下载」。
+> 2. **libcso 改「仅观测不拦」**：实证 libcso 兼微信正常加载自带 SO（cso-p 预载 libbspatch/libhpatchz），整条冻会误伤 → `ip.g.a` 只 log 不拦；真远程段（G3）未定位，留待专项。
+> 3. **字段写法证伪**：`z.f176124s` / `g45.c.f246162e` 运行时 NoSuchField（Tinker classloader 分裂）→ 弃，全走方法钩。
+> 4. **生产默认开**：`AppConfig.isHotFreezeEnabled` 默认 true（去掉测试期 FORCE_FREEZE）。
+> 5. **已 V1.6 装机验证**：官替 + 共存 两版 `[HUF] mode=FREEZE` + Tinker/整包 blocked，详 `result.md`。
 
 ---
 

@@ -484,7 +484,7 @@ SearchUnlock（口令命中）
 □ AUTH_TAMPERED → PiracyNotice 引流弹窗 + 功能全关？
 □ v1 放行逻辑（MISMATCH/NO_LICENSE 仍注册 hook）是否有明确注释，不误解为"已授权"？
 □ isVipAuthorized() 是否仍接 `EnvelopeStore.isAuthorizedNow()`，没有被临时 hardcode true/false？
-  （v1.1 授权闭环已落地；现状以 `PROTECTION_MAP.md` §10.6 为准）
+  （v1.6 授权闭环已落地；现状以 `PROTECTION_MAP.md` §10.6 为准）
 □ DebugServer 写操作是否全部加了 isAuthOk() 门控？
   覆盖：apiSetFeature / apiSetNotifyPolicy / apiTrigger(show/toggle/unlock)
         apiSetMode / apiHidden(POST) / apiSetMyWxid(POST)
@@ -520,7 +520,7 @@ SearchUnlock（口令命中）
 ```
 □ C++ 是否只做：badge拦截 / 授权校验 / 反篡改 / 进程角色判断 / killSwitch？
 □ C++ 是否没有操作：RecyclerView / MvvmList / notifyDataSetChanged / 微信 DB / UI？
-□ C++ 是否没有 native hook 微信 SO（F-23 铁律）？
+□ C++ 是否没有重碰微信 native（F-23 铁律）？
 □ 主进程 Filter 链（ConvFilter/MomentsFilter/ContactFilter）是否只读 Java StateMachine.isActive()（铁律30）？
 □ :push 进程是否只读 NativeBridge.shouldBlockBadge()（铁律30）？
 □ NativeBridge 方法是否全部有 isAvailable() 前置检查？
@@ -630,7 +630,7 @@ BLOCK 原因: [如有，必填]
 
 | 简化项 | 当前 v1 状态 | v2 计划 |
 |-------|------------|--------|
-| `isVipAuthorized()` | ✅ 已接 `EnvelopeStore.isAuthorizedNow()`（v1.1 授权闭环；**不再是 stub**，详见 `PROTECTION_MAP §10.6`） | — |
+| `isVipAuthorized()` | ✅ 已接 `EnvelopeStore.isAuthorizedNow()`（v1.6 授权闭环；**不再是 stub**，详见 `PROTECTION_MAP §10.6`） | — |
 | ACCOUNT_MISMATCH / DEVICE_MISMATCH | 放行（hook 仍注册）| v2 真正拦截 |
 | killSwitch | stub，永远 false | 接入 miyou-server 真实接口 |
 | 蜜罐 | 未实现 | v2+ 引入假入口 |

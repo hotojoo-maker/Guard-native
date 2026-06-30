@@ -244,13 +244,14 @@
       <a class="on" data-page="devices"><span class="ico">🗂️</span> 设备列表</a>
       <a data-page="cards"><span class="ico">🎫</span> 卡密列表</a>
       <a data-page="versions"><span class="ico">🧩</span> 版本状态</a>
+      <a data-page="agents"><span class="ico">👥</span> 分销代理</a>
       <div class="navsep"></div>
       <a data-jump="sec-threshold"><span class="ico">🎚️</span> 阈值调节</a>
       <a data-jump="sec-shadow"><span class="ico">🫧</span> 影子观察</a>
       <a data-jump="sec-stages"><span class="ico">🏷️</span> 阶段说明</a>
       <a onclick="toast('审计日志为 demo 占位（不落库）','warn')"><span class="ico">📜</span> 审计日志</a>
     </nav>
-    <div class="side-foot">纯前端 demo · 假数据<br>不连服务器 · 不动主仓代码<br><span style="color:var(--ink2)">微信 8.0.71 · v1</span></div>
+    <div class="side-foot">纯前端 demo · 假数据<br>不连服务器 · 不动主仓代码<br><span style="color:var(--ink2)">官方包 8.0.71 · v1</span></div>
   </aside>
 
   <main class="main">
@@ -258,7 +259,7 @@
       <h1>防封授权闸 · 风控总台</h1>
       <span class="demo-tag">DEMO</span>
       <div class="grow"></div>
-      <span class="pill"><span class="dot"></span> 在线（模型 Claude Opus 4.8）</span>
+      <span class="pill"><span class="dot"></span> 在线</span>
       <span class="pill" id="clock">--:--:--</span>
     </div>
     <div class="ribbon"><span>⚠️</span><div><b>给指挥看的样子货（mockup）</b>：全部假数据 + 前端模拟，按钮只弹提示。<b>不连真服务器、不改 miyou-server、不动主仓代码</b>。</div></div>
@@ -267,6 +268,7 @@
       <div class="tab on" data-page="devices" onclick="switchPage('devices')">🗂️ 设备列表 <span class="cnt" id="tabc-dev"></span></div>
       <div class="tab" data-page="cards" onclick="switchPage('cards')">🎫 卡密列表 <span class="cnt" id="tabc-card"></span></div>
       <div class="tab" data-page="versions" onclick="switchPage('versions')">🧩 版本状态 <span class="cnt" id="tabc-ver"></span></div>
+      <div class="tab" data-page="agents" onclick="switchPage('agents')">👥 分销代理 <span class="cnt" id="tabc-agent"></span></div>
     </div>
 
     <!-- ===== PAGE: devices ===== -->
@@ -354,6 +356,19 @@
       <section class="card">
         <h2>📦 按 release 看阶段分布 <span class="muted">⚪新 🔵建 🟢稳 🟠蜜 🔴改</span></h2>
         <div class="vgrid" id="verGrid"></div>
+      </section>
+    </section>
+
+    <!-- ===== PAGE: agents（分销 / 代理管理） ===== -->
+    <section class="page hide" id="page-agents">
+      <div class="kpi" id="agent-kpi"></div>
+      <section class="card">
+        <h2>👥 分销 / 代理管理 <span class="muted">管理员设默认 → 下发给代理；代理端只读不可改</span></h2>
+        <div class="shadow-note" style="color:var(--accent2);background:rgba(79,124,255,.08);border-color:rgba(79,124,255,.3)">🔒 一机一码（一卡一密绑 1 台）全局固定 · 不提供选项；下表「开卡额度 / 解绑窗口」按代理设默认，代理端不可改。</div>
+        <div class="tablewrap"><table><thead><tr>
+          <th>代理 / 分销</th><th>渠道</th><th>角色</th><th>状态</th><th>开卡额度</th><th>一机一码</th><th>解绑窗口</th><th>名下卡</th><th>名下设备</th><th style="width:60px">操作</th>
+        </tr></thead><tbody id="agentBody"></tbody></table></div>
+        <div style="margin-top:12px"><button class="btn primary" onclick="addAgent()">+ 新增代理 / 分销</button></div>
       </section>
     </section>
   </main>
@@ -786,11 +801,64 @@ function renderVersions(){
   $('#tabc-ver').textContent=[...new Set(DATA.map(d=>d.release))].length;
 }
 
+/* ============================================================ 分销 / 代理管理（管理员设默认 → 下发代理，代理端只读不可改） ============================================================ */
+let AGENTS_ADMIN=[
+ {id:'代理A',ch:'chA',role:'代理',enabled:true,quotaUsed:6,quotaTotal:30,cards:7,devices:6,unbindEnabled:true,unbindDays:5},
+ {id:'分销B',ch:'chB',role:'分销',enabled:true,quotaUsed:2,quotaTotal:10,cards:2,devices:2,unbindEnabled:true,unbindDays:5},
+ {id:'代理C',ch:'chC',role:'代理',enabled:false,quotaUsed:0,quotaTotal:20,cards:5,devices:5,unbindEnabled:false,unbindDays:0},
+];
+function renderAgents(){
+  const C=(k,v,s,cls)=>`<div class="stat ${cls||''}"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s||''}</div></div>`;
+  const ag=AGENTS_ADMIN.filter(a=>a.role==='代理').length, di=AGENTS_ADMIN.filter(a=>a.role==='分销').length;
+  const left=AGENTS_ADMIN.reduce((s,a)=>s+Math.max(0,a.quotaTotal-a.quotaUsed),0);
+  const cards=AGENTS_ADMIN.reduce((s,a)=>s+a.cards,0), devs=AGENTS_ADMIN.reduce((s,a)=>s+a.devices,0);
+  $('#agent-kpi').innerHTML=[
+    C('代理',ag,'渠道方','accent'),C('分销',di,'','v-stable'),
+    C('剩余总额度',left,'可开卡','v-ok'),C('名下卡',cards,'全渠道',''),C('名下设备',devs,'全渠道',''),
+  ].join('');
+  $('#agentBody').innerHTML=AGENTS_ADMIN.map(a=>`<tr class="${a.enabled?'':'banned-row'}">
+    <td data-label="代理"><b>${esc(a.id)}</b></td>
+    <td data-label="渠道"><span class="mono">${a.ch}</span></td>
+    <td data-label="角色"><span class="badge ${a.role==='代理'?'b-building':'b-stable'}">${a.role}</span></td>
+    <td data-label="状态">${a.enabled?'<span class="badge cs-active">启用</span>':'<span class="badge cs-banned">停用</span>'}</td>
+    <td data-label="开卡额度"><b>${a.quotaUsed}</b> / ${a.quotaTotal} <span class="linklike" onclick="agentEdit('${a.id}','quota')">改</span></td>
+    <td data-label="一机一码"><span class="sub">1 台（固定）</span></td>
+    <td data-label="解绑窗口">${a.unbindEnabled?a.unbindDays+' 天内':'<span class="sub">不可解绑</span>'} <span class="linklike" onclick="agentEdit('${a.id}','unbind')">改</span></td>
+    <td data-label="名下卡">${a.cards}</td>
+    <td data-label="名下设备">${a.devices}</td>
+    <td data-label="操作" style="text-align:center"><button class="actbtn" onclick="toggleAgent('${a.id}')">${a.enabled?'停用':'启用'}</button></td>
+  </tr>`).join('');
+  const t=$('#tabc-agent');if(t)t.textContent=AGENTS_ADMIN.length;
+}
+function agentEdit(id,field){
+  const a=AGENTS_ADMIN.find(x=>x.id===id);if(!a)return;
+  const inner=field==='quota'
+    ?`<label class="fld">开卡总额度（张）</label><input type="text" id="agIn" value="${a.quotaTotal}">`
+    :`<label class="confirm-check"><input type="checkbox" id="agChk" ${a.unbindEnabled?'checked':''}> 允许该代理在窗口内自助解绑</label><label class="fld">解绑窗口（激活后 N 天内）</label><input type="text" id="agIn" value="${a.unbindDays}">`;
+  $('#tdModal').innerHTML=`<h3>${field==='quota'?'改开卡额度':'改解绑窗口'} · ${esc(a.id)}</h3>
+    <div class="desc">管理员设默认 → 下发给代理；<b>代理端只读不可改</b>。一机一码（绑 1 台）全局固定，不在此设。（demo 仅前端）</div>
+    ${inner}
+    <div class="modal-actions" style="margin-top:16px"><button class="btn ghost" onclick="$('#tdScrim').classList.remove('show')">取消</button>
+    <button class="btn primary" onclick="agentSave('${id}','${field}')">保存</button></div>`;
+  $('#tdScrim').classList.add('show');
+}
+function agentSave(id,field){
+  const a=AGENTS_ADMIN.find(x=>x.id===id);if(!a)return;
+  const v=parseInt(($('#agIn').value||'').trim(),10);
+  if(isNaN(v)||v<0){toast('请输入非负整数','warn');return;}
+  if(field==='quota')a.quotaTotal=v; else{a.unbindEnabled=$('#agChk').checked;a.unbindDays=v;}
+  $('#tdScrim').classList.remove('show');renderAgents();
+  toast(`（demo 模拟）已保存 ${a.id} 的${field==='quota'?'开卡额度':'解绑窗口'} — 仅前端`,'ok');
+}
+function toggleAgent(id){const a=AGENTS_ADMIN.find(x=>x.id===id);if(!a)return;a.enabled=!a.enabled;renderAgents();toast(`（demo 模拟）${a.id} ${a.enabled?'已启用':'已停用'}`,a.enabled?'ok':'bad');}
+function addAgent(){toast('（demo）新增代理/分销：填 渠道 + 角色 + 开卡额度 + 解绑窗口（一机一码固定绑1台）','warn');}
+
 /* ============================================================ 页切换 / 导航 / 时钟 ============================================================ */
 function switchPage(p){currentPage=p;
   $$('.tab').forEach(t=>t.classList.toggle('on',t.dataset.page===p));
   $$('.nav a[data-page]').forEach(a=>a.classList.toggle('on',a.dataset.page===p));
-  ['devices','cards','versions'].forEach(x=>$('#page-'+x).classList.toggle('hide',x!==p));
+  ['devices','cards','versions','agents'].forEach(x=>$('#page-'+x).classList.toggle('hide',x!==p));
+  if(p==='agents')renderAgents();
   hideMenu();hidePop();syncBatch();window.scrollTo({top:0,behavior:'smooth'});}
 $$('.nav a[data-page]').forEach(a=>a.addEventListener('click',()=>switchPage(a.dataset.page)));
 $$('.nav a[data-jump]').forEach(a=>a.addEventListener('click',()=>{switchPage('devices');setTimeout(()=>document.getElementById(a.dataset.jump)?.scrollIntoView({behavior:'smooth',block:'start'}),60);}));
@@ -806,7 +874,7 @@ setInterval(clock,1000);clock();
 function toast(msg,type='ok'){const el=document.createElement('div');el.className='toast '+type;el.innerHTML=msg;$('#toasts').appendChild(el);
   setTimeout(()=>{el.style.opacity='0';el.style.transform='translateX(20px)';setTimeout(()=>el.remove(),250);},3200);}
 
-function renderAll(){renderDevKpi();renderTable();renderChart(passLine,false);renderShadow();renderCardKpi();renderCards();renderVersions();syncBatch();}
+function renderAll(){renderDevKpi();renderTable();renderChart(passLine,false);renderShadow();renderCardKpi();renderCards();renderVersions();renderAgents();syncBatch();}
 function boot(){renderFilters();renderCardFilters();renderLegend();renderAll();switchPage('devices');}
 boot();
 </script>

@@ -45,7 +45,7 @@
 | 安装来源 | `installerPackageName=android`（sideload/adb，非应用商店） |
 | 签名 | 非腾讯原签（重签 LSPatch 包） |
 
-**说明**：`com.tencent.mm` 在此设备上 = **官替 LSPatch 包**，不是官方微信（崩溃栈含 `org.lsposed.lspatch.*` 为铁证）。
+**说明**：`com.tencent.mm` 在此设备上 = **官替 LSPatch 包**，不是官方包（崩溃栈含 `org.lsposed.lspatch.*` 为铁证）。
 
 ---
 

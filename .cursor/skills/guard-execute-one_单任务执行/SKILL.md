@@ -1,8 +1,9 @@
 ---
+icon: 🔧
+cn: 单任务执行
 name: guard-execute-one_单任务执行
 description: Guard Native 执行——写代码/跑脚本/设备调试/单个 P 任务。从 TASK_BOARD 领到 P 任务后立即用这个 skill。调试时必须与用户交互，禁止盲猜。
 ---
-
 > ⚠️ 输出前自查：禁止错别字、黑话、客户看不懂的话。
 
 # guard-execute — 执行
@@ -72,7 +73,7 @@ description: Guard Native 执行——写代码/跑脚本/设备调试/单个 P 
 
 | # | 铁律 | 出处 |
 |---|------|------|
-| F-23 | 禁止 JniHook/JNI_OnLoad | 微信强制下线实证 |
+| F-23 | 禁重碰 native（JNI_OnLoad 注入） | 微信强制下线实证 |
 | F-24 | 禁止 extends Service | Service not found 实证 |
 | F-25 | XposedHelpers 调用必须 `catch (Throwable)` | init 静默中断实证 |
 | F-26 | hook protobuf 方法用 `getMethods()` + `XposedBridge.hookMethod` | NoSuchMethodError |
@@ -86,7 +87,7 @@ description: Guard Native 执行——写代码/跑脚本/设备调试/单个 P 
 - 代码路径：`src/main/java/com/ghost/assist/<模块>/`
 - 禁止敏感词：`vip` `hide` `pirate` `wechat` `catfish` `myauth` `wmiyou`
 - 类名/方法名/MMKV key 全部 seed 化短哈希
-- 参考 `./refs/MainEntry.java` `./refs/UserControll.java`，类名必须重写
+- 参考 `docs/isolation/MainEntry.java` `docs/isolation/UserControll.java`，类名必须重写
 
 ---
 

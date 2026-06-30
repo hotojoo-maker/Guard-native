@@ -176,7 +176,7 @@ android {
             debuggable true
         }
         release {
-            // signingConfig 由 flavor 决定：official→guardOfficialRelease, coexist→guardCoexistRelease。
+            // signingConfig 由 flavor 决定：official + coexist 共用 guardOfficialRelease（一套配方 e3e13a49）；guardCoexistRelease 已退役。
             minifyEnabled true
             shrinkResources false   // keep xposed_init asset
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'

@@ -1,7 +1,7 @@
 # 钥匙加固设计（W 一机一密 + 重放绑定）
 
 > **定位**：registry 钥匙派生加固的**单一真源**。本稿**合并并取代** `W_DERIVE_DESIGN`（W 一机一密）+ `P_RB1/DESIGN`（重放绑定）+ `S3a0`（服务器种子折 key 机制），三者 2026-06-24 减法删除、核心已并入本稿；S3a0 的「S_rel 三方同源」发版铁律不在本稿，见 服务器运维 skill（`release_id` 同源）+ 安全官 skill「发布/共存版加密铁律」，完整配方 = `docs/RELEASE_RECIPE契约.md`；**更早版本见 git history**。
-> **状态**：🟡 牙③ W_dev batch0/1 已落码+装机 L1（commit `caf2142`：`derive_wrap_key`/`setDeviceMaterial`/双试 unwrap；全局 W 仍作回退、Batch2/3 未做）；牙④ a 案（§3）⬜ 未落码。落码前双官审（授权检查官 + 安全官）+ git 快照 + 分步装机回归。
+> **状态（2026-06-27 晚回正 · G91 核账，证据 = git log + `I:\miyou-server\REVIEW_2026-06-27.md` §A）**：牙③ W_dev batch0/1 已落码+装机 L1（commit `caf2142`：`derive_wrap_key`/`setDeviceMaterial`/双试 unwrap；全局 W 仍作回退）；**Batch2（服务器按设备 wrap）已部署主节点**（prod KDF 自检过，灰度② 进行中，dm 回填 ~25%）；**Batch3（删全局 W）未做**，冻结待 dm ≥90% + 观察窗（REVIEW §B）；**牙④ a 案（§3）已落码**（commit `f6cc31b` + 负向单测 `c5597b1`，2026-06-27）。改码前双官审（授权检查官 + 安全官）+ git 快照 + 分步装机回归。
 > **上层总图**：`../P_AntiBanGate_防封授权闸/DESIGN.md`（统一风控引擎）。本稿是其 §5「A2 料进加密链 / 钥匙加密」的下钻。
 > **规则铁律**：三端对账 / Key 来源准则 / fail-closed 散沙 等**铁律真源 = 安全官 skill**（本稿引用、不复写）。
 > **命名规约**：官方包 / 原版 / 灌官方值（不写品牌名，详 `CLAUDE.md` 词表）。
@@ -18,11 +18,11 @@ registry 钥匙（`derive_registry_key`）= 4 颗钥匙牙咬合的**与门**，
 |---|---|---|---|
 | ① | 模块签名证书 SHA-256 | ✅ 现役（A-step2）| 重打包重签 → 钥匙错 |
 | ② | 服务器种子 S_rel | ✅ 现役（prod_server_lock）| 没服务器种子 → 解不出 |
-| ③ | 设备指纹（W 一机一密）| 🟡 batch0/1 已落（`caf2142`）；Batch2/3 待 | 抽一台 SO 通杀所有机 |
-| ④ | 信封摘要（重放绑定）| ⬜ 本稿补 | 录个旧/过期信封重放 |
+| ③ | 设备指纹（W 一机一密）| 🟡 batch0/1 已落（`caf2142`）+ Batch2 服务器已部署主节点（2026-06-27，灰度② dm~25%）；Batch3 删全局 W 待（dm≥90%）| 抽一台 SO 通杀所有机 |
+| ④ | 信封摘要（重放绑定）| ✅ a 案已落码（2026-06-27，commit `f6cc31b`/`c5597b1`：SO 比 `expire_at`、不折静态 key）| 录个旧/过期信封重放 |
 
 > 钥匙**外面**另有 3 道独立牙（已落地/规划落点不在本稿）：Ed25519 验签 · 弹窗 canary · 蜜罐 canary。
-> 现役 = 2 颗钥匙牙 + 外围 3 道 = 5 道；满配 = 4 颗钥匙牙 + 外围 3 道 = 7 道。
+> 现役（2026-06-27）= 牙①cert + 牙②S_rel + 牙④expire（3 颗已落）+ 牙③ 灰度②（全局 W 未删、部分生效）+ 外围 3 道；满配 = 4 颗钥匙牙 + 外围 3 道 = 7 道（差牙③ Batch3 收口）。
 
 ---
 
@@ -70,7 +70,8 @@ for i in 0..15:
 **最终形（a 案）**：
 
 - **静态 registry key 只折稳定料**：`cert + S_rel + device(牙③) + release`（随发行线 / 设备稳定，不随续约变）。续约不动 key、不重生 `registry_cipher.inc`。
-- **expire / 重放在 SO 层用可信时间检查**：`unwrap_server_seed` 成功后，SO 比 `expire_at <= trusted_now`（`LeaseClock.trustedNow()`，**已接官方授时 floor 防冻结**，见 `P_AntiBanGate/DESIGN §6` 双授时源）→ 过期则不应用种子 / 散沙。`trusted_now` 抗冻是这条有牙的前提：否则冻住时钟就永不过期。
+- **expire / 重放在 SO 层用可信时间检查**：`unwrap_server_seed` 成功后，SO 比 `expire_at <= trusted_now`（`LeaseClock.trustedNow()`）→ 过期则不应用种子 / 散沙。`trusted_now` 抗冻是这条有牙的前提：否则冻住时钟就永不过期。
+  - ⚠️ **抗冻现状校正（L1 2026-06-27 · G92，证据 `../P_AntiBanGate_防封授权闸/recon/convtime_L1_evidence_20260627.log`）**：官方授时 floor 的真锚点 = **`jy0.hd.b()`**（微信 `MicroMsg.TimeHelper`，L1 实证**改表杀不掉**；`hd.c()` 跟墙钟、禁用；非 `field_conversationTime`）。但 **`LeaseClock.noteOfficialTime` 当前未落码**（DESIGN §6 已校正，旧称「已接官方授时 floor」作废）→ `trustedNow()` 现仅靠「我方服务器 `sn` + elapsedRealtime + `maxTrusted`」抗冻，**对「未对我方服务器 / 未授权」场景退回墙钟、可冻（gap）**。补接 `jy0.hd.b()` 后，牙④ 抗冻才对未授权也成立。jy0.hd **登录依赖**（全新装 / 未登录无值 → fail-open）。
 - 重放：过期 `k` 被上面拒；有效期内重放同一 `k` = 仍有效、无害（**不需 nonce 账本**）。
 
 **联动（缺一不可）**：① 服务器 `expire_at` 进 Ed25519 签名 → ② Java 验签后把 `expire_at` 下推 SO（`setEnvelopeExpiry`）→ ③ SO unwrap 后比 `trusted_now` floor，过期散沙。**不动静态 registry key、不重生 cipher**（续约只换 `k`）。
@@ -100,6 +101,8 @@ for i in 0..15:
 | ① 铺路双试 | 加 `setDeviceMaterial` + 双试（先 W_dev 后全局 W）+ 每次补报 `dm` | 收到即自校验 + upsert `dm`；**仍只发全局 W 信封** | 在 | 仅「客户端已支持、待切」 |
 | ② 按设备切 | 不变（双试认两种）| 对已回填 `dm` 的设备改发 **W_dev 信封**；其余仍全局 W | 在 | 仍**不得**称「真锁终局」 |
 | ③ 收口锁定 | **删** `g_wk_lo/hi` + 双试里全局 W 分支，只剩 W_dev | **停发**全局 W 信封 | 删 | 「W 一机一密落袋」（仍非「服务器真锁终局」）|
+
+> 🟢 当前位置（2026-06-27 晚回正 · G91）：① 已落（客户端 `caf2142`）；**② 进行中 —— 服务器主节点已部署、对已回填 dm 的设备发 W_dev 信封，dm 回填 ~25%**；③ 未做（冻结待 dm≥90% + 观察窗）。证据真源 = `I:\miyou-server\REVIEW_2026-06-27.md` §A/§B。
 
 - 切 ③ 前置：绝大多数活跃设备已回填 `dm`（服务器看板核账）+ ② 稳定一个观察窗口。
 - ③ 与 V3 发行线绑同一套本地 AI 发版流程（每发行线重生成 cipher + 装机回归），对齐 `PROTECTION_MAP §10.6 ②③`「删 fallback = 重签即死」。

@@ -1,3 +1,5 @@
+> **已作废 2026-06-29，仅留考古** — 本手册为早期给外部 AI 的项目全景导出副本，形态/版本/铁律计数均已过时（仍写「LSPosed Xposed 模块」「FAILURE_LOG F-01~F-31」，必读表第 7 行 `docs/HOOK_POINTS.md` 已迁移断链）。真入口以 `CLAUDE.md` + `PROJECT_INDEX.md` 为准；本文件 2026-06-29 归档至 `07_archive_归档/`，仅供考古。
+
 # Guard Native — 项目全景手册（给 ChatGPT / 外部 AI 用）
 
 > **用途**：把本文件整份粘贴给网页版 ChatGPT，即可快速接手 Guard Native 项目。  

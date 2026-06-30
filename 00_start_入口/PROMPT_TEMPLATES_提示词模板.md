@@ -125,7 +125,7 @@ v<N> 准备<进主线 | 发版 | 改 APK>。
 请：
 1. 先 grep FAILURE_LOG.md 看是不是 F-XX 失败档案之一
 2. 看 docs/HOOK_MAP_8071_AUTHORITATIVE.md（8071）；历史见 docs/archive/INDEX.md
-3. 看 refs/MainEntry.java 看 Catfish 怎么做的
+3. 看 docs/isolation/MainEntry.java 看 Catfish 怎么做的
 4. 如以上都不行 → 派 T 调研任务到 04_review_审稿复核/T_TASKS/
 
 不要建议尝试 FAILURE_LOG 已禁的方案。

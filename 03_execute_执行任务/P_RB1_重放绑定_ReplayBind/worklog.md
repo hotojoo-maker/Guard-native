@@ -1,0 +1,27 @@
+# P_RB1 worklog
+
+- 2026-06-26 22:xx ｜ Vchat `服务器维护ai-1`(F18) ｜ 服务器运维 ｜ 块A 服务器后台收尾：
+  - RB1 Batch2（牙③ W_dev）**收尾**：出《部署清单与改后审_Batch2+块A_20260626.md》（含与块A/kill 耦合部署告警）。
+  - 块A spec§7 四能力**本地落码**：`customer_audit_log` 表（SCHEMA §3.5 文档先行）+ 激活判重(`DEVICE_ALREADY_BOUND`+设备短码) + 查史 + 审计搜索 + ban 审计。
+  - 🔴kill 一键停用**真生效**：`get_release_gate` + `activate_card`/`/guard/envelope` 发行线门控（fail-safe 不误伤旧线）。
+  - 改动文件：`I:\miyou-server\` 的 `SCHEMA.md`/`db.py`/`server.py` + 新增 `customer_ops_selftest.py`。
+  - 验证：`py_compile` 过；`customer_ops_selftest.py` 18/18 ALL_PASS（临时库，未碰 data/auth.db）。
+  - 未做：部署远端 / 真机回归（无服务器预算，待预算）；客服后台 HTML UI（薄接口优先，DoD 不含）。
+- 2026-06-26 续 ｜ #4 退款撤闸（SPEC§3#6 · RefundPush 服务器侧）：
+  - 字段对齐：客户端 `AuthEnvelopeVerifier.rf` / `EnvelopeStore.K_REFUNDED` 已锁定 `rf` 位（L2 代码证），服务器照发。
+  - 落码：`cards.refunded_at` 列（SCHEMA 先行）+ `refund_card` + `verify_token.refunded` + `activate` 拒退款卡 + `crypto_utils` 信封 `rf=1`+散沙(复用decoy) + `server.py /admin/api/cards/refund` + 审计 `card_refund`。
+  - 设计稿：`P_AntiBanGate/退款撤闸_RefundPush_服务器侧设计_20260626.md`（含块B 待落对齐清单 + 送安全官复审）。
+  - 验证：`customer_ops_selftest.py` **25/25 ALL_PASS**；py_compile 过；0 lint。
+  - 待办：改 envelope/crypto **送安全官复审**；客户端块B `markRefunded` 落码；部署+真机待预算。
+- 2026-06-27 ｜ Vchat `guard_native-F37` ｜ 安全官复核（只读对码）｜ 防破解/加密进度二次复核（应用户「再复核一遍」，逐条对代码核、非只信文档）：
+  - 主线结论与 R5/PROTECTION_MAP/KeyHardening 一致，**65% 成立**：牙①cert✅(`config_crypto.cpp:494`)、牙②prod_server_lock✅(`registry_cipher.inc:5`)、牙③W一机一密🟡(双试 `:448-468`，**全局W `:367-368` 仍在**)、牙④重放/过期⬜(`unwrap_server_seed:434-470` 无 expire 检查 + NativeBridge 无 `setEnvelopeExpiry`)；授权门✅(`StateMachine:93-101`+`GuardRuntime:57`)、Ed25519-only✅(`AuthEnvelopeVerifier:49/191`)、D8 release 兜底全空✅但内联 5 处仍在(`ContactDiscoveryHook:459`/`ContactLabelHideGuard:31`/`MomentsFilter:66/68/70`)。
+  - 3 处小漂移（非功能，已回正进 R5 §⑤ #7~#9 + PROTECTION_MAP §10.10 + 本条）：
+    - ① SO 注释滞后：`config_crypto.cpp:357/416/557` 写「Batch0 未接 unwrap」，实际 `:448` 已双试 W_dev（.cpp 注释待修，属 SO 源、待用户点头）。
+    - ② **退款撤闸客户端链已落码**（超前本 worklog 06-26「待落」）：`markRefunded():193` + `applyVerifiedEnvelope` rf=1→撤 `:107` + `isAuthorizedNow` 查 `isRefunded():147`；**服务器 rf push 仍暂缓未建**（`EnvelopeStore:172`）；仍待送安全官复审 + 部署/真机（待预算）。
+    - ③ D-018(06-26)：A2 防封门改吊本地完整性 cert，不再吊授权/server seed（`GuardRuntime:116-119`）。
+  - 未改任何代码（含 .cpp 注释）；仅回正 3 份 .md（用户 F37 明确同意）。
+- 2026-06-27 晚 ｜ Vchat `guard_native-G91` ｜ 安全官（防破解审查）｜ Batch2/3 文档漂移回正（用户明确同意）：
+  - 触发：用户问「删全局 W（牙③收口）灰度方案」+「Batch2 昨晚是否真部署」。git log + `I:\miyou-server\REVIEW_2026-06-27.md` §A 核出：**Batch2 服务器侧 2026-06-27 已部署主节点 `zxmqq.shop`**（prod KDF 自检 ==`18ad22f0…` + 冒烟全绿；备节点 `miyou.lol` 未购）；**牙④ a 案已落码**（commit `f6cc31b` + 负向单测 `c5597b1`）。
+  - 旧文 3 处仍写「Batch2 未部署/待预算/冻结」「牙④未落码」= 漂移，已回正（单一真源统一指向 `REVIEW_2026-06-27.md` §A/§B）：① `施工提示词_Batch3 §0 门控#1`+footer ② `部署清单与改后审_Batch2 §0`+§2 标题 ③ `钥匙加固_KeyHardening设计 §0`+牙③④表+§25 现役计数+§5 当前位置。
+  - 结论回正：删全局 W（Batch3）真卡点 = **dm 回填率 25%→≥90% + 观察窗 1–2 周（非预算）**；真机 `W_dev` `recipeOk=true` 的 L1 仍待补。本轮未改任何代码。
+  - 扩面回正（同 G91，用户续点「顺手扫」）：另 3 处同款旧态也回正——① 安全官 skill（`.cursor`）§Key 来源准则 + §阶段计划 1F/1G（牙④✅、Batch2 已部署主节点）② `PROTECTION_MAP §10.7 P1#1`（牙④✅）③ `R5_加密进度核查`（加三次回正 note + P1F-W/P1G/E9 三表格行）。⚠️ `.claude` 镜像 skill 未同步（需 `sync_skills.ps1`；因当前另有在改 skill 故未盲跑，留用户定）。

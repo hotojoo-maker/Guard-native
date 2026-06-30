@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>防封控制台 · 精简版（假数据 · 纯前端 · 悬停/点击展开）</title>
+<style>
+  :root{
+    --bg:#0f141c; --panel:#161c26; --panel2:#1b222e; --line:#283040;
+    --ink:#e6eaf0; --ink2:#9aa6b8; --ink3:#6b7689;
+    --accent:#5b8cff;
+    --new:#8b95a6; --build:#d9a441; --stable:#4cc38a; --honey:#e0913a; --tamper:#e5615a;
+    --ok:#4cc38a; --warn:#d9a441; --bad:#e5615a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:"PingFang SC","Microsoft YaHei","Segoe UI",system-ui,sans-serif;background:var(--bg);
+    color:var(--ink);font-size:13.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .mono{font-family:ui-monospace,Consolas,monospace;font-variant-numeric:tabular-nums}
+  .sub{color:var(--ink3);font-size:11.5px}
+  .muted{color:var(--ink2);font-weight:400;font-size:12px}
+
+  /* topbar */
+  header{position:sticky;top:0;z-index:30;background:var(--panel);border-bottom:1px solid var(--line);
+    display:flex;align-items:center;gap:12px;padding:12px 18px}
+  header .logo{width:30px;height:30px;border-radius:8px;background:var(--accent);display:grid;place-items:center;
+    font-weight:700;color:#0b1018}
+  header b{font-size:15px} header small{display:block;color:var(--ink3);font-size:11px}
+  .tag{font-size:10.5px;font-weight:700;color:#0b1018;background:var(--warn);padding:2px 7px;border-radius:5px}
+  .grow{flex:1}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink2);
+    background:var(--panel2);border:1px solid var(--line);padding:4px 10px;border-radius:6px}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--ok)}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:16px 18px 80px}
+  .ribbon{background:rgba(217,164,65,.08);border:1px solid rgba(217,164,65,.28);color:#e9c98a;
+    border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:12px}
+
+  /* tabs */
+  .tabs{display:flex;gap:4px;margin-bottom:14px;border-bottom:1px solid var(--line)}
+  .tab{padding:9px 16px;cursor:pointer;color:var(--ink2);font-size:13.5px;border-bottom:2px solid transparent;margin-bottom:-1px}
+  .tab.on{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+  .tab .c{color:var(--ink3);font-size:11.5px}
+
+  /* kpi strip */
+  .kpi{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .stat{flex:1;min-width:96px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:9px 12px}
+  .stat .k{font-size:11px;color:var(--ink2)} .stat .v{font-size:20px;font-weight:700;margin:1px 0}
+  .stat .s{font-size:10.5px;color:var(--ink3)}
+
+  /* filters */
+  .filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+  select,input[type=text]{background:var(--panel);color:var(--ink);border:1px solid var(--line);
+    border-radius:6px;padding:6px 9px;font-size:12.5px}
+  .chip{font-size:11.5px;color:var(--ink2);background:var(--panel);border:1px solid var(--line);
+    border-radius:14px;padding:4px 10px;cursor:pointer;user-select:none}
+  .chip.on{color:var(--ink);border-color:var(--accent);background:rgba(91,140,255,.12)}
+
+  /* device list — compact rows that expand */
+  .list{display:flex;flex-direction:column;gap:6px}
+  .row{background:var(--panel);border:1px solid var(--line);border-radius:9px;transition:border-color .15s}
+  .row:hover,.row.pin{border-color:var(--accent)}
+  .row.shadow{border-left:3px solid var(--honey)}
+  .row.tamper{border-left:3px solid var(--tamper)}
+  .head{display:flex;align-items:center;gap:12px;padding:10px 12px;cursor:pointer}
+  .head .id{min-width:140px}
+  .head .id b{font-size:13.5px}
+  .form{font-size:11px;padding:1px 7px;border-radius:5px;border:1px solid var(--line);white-space:nowrap}
+  .form.official{color:#9cc2ff;border-color:rgba(91,140,255,.4)} .form.coexist{color:#8fe0b6;border-color:rgba(76,195,138,.4)}
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;padding:2px 8px;border-radius:12px;white-space:nowrap}
+  .badge::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+  .b-new{color:var(--new);background:rgba(139,149,166,.14)} .b-build{color:var(--build);background:rgba(217,164,65,.14)}
+  .b-stable{color:var(--stable);background:rgba(76,195,138,.14)} .b-honey{color:var(--honey);background:rgba(224,145,58,.14)}
+  .b-tamper{color:var(--tamper);background:rgba(229,97,90,.14)}
+  .a2{font-size:11px;padding:1px 7px;border-radius:5px}
+  .a2.feed{color:#8fe0b6;background:rgba(76,195,138,.12)} .a2.sand{color:var(--ink3);background:rgba(139,149,166,.12)}
+  .mini{width:74px}
+  .mini .bar{height:5px;background:var(--panel2);border-radius:3px;position:relative;overflow:hidden;border:1px solid var(--line)}
+  .mini .bar i{position:absolute;left:0;top:0;bottom:0;display:block}
+  .mini .pl{position:absolute;top:-1px;bottom:-1px;width:1px;background:var(--ink2)}
+  .mini .n{font-size:10px;color:var(--ink3);margin-top:2px}
+  .head .arrow{margin-left:auto;color:var(--ink3);transition:transform .15s;font-size:12px}
+  .row.pin .arrow{transform:rotate(90deg);color:var(--accent)}
+
+  /* detail — revealed on hover or pin */
+  .detail{max-height:0;overflow:hidden;transition:max-height .25s ease;border-top:1px solid transparent}
+  .row.pin .detail{max-height:1600px;border-top-color:var(--line)}
+  .detail-in{padding:12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .blk h4{margin:0 0 7px;font-size:12px;color:var(--ink2);font-weight:600}
+  dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:12px}
+  dt{color:var(--ink3)} dd{margin:0;text-align:right}
+  dd.bad{color:var(--bad)} dd.warn{color:var(--warn)} dd.ok{color:var(--ok)}
+
+  /* multi-track timeline */
+  .tl{grid-column:1/-1}
+  .track{display:grid;grid-template-columns:96px 1fr 150px;gap:10px;align-items:center;margin:5px 0;font-size:11px}
+  .track .lab{color:var(--ink2)}
+  .segbar{position:relative;height:18px;background:var(--panel2);border:1px solid var(--line);border-radius:5px;display:flex;overflow:hidden}
+  .seg{flex:1;border-right:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:9.5px;color:var(--ink3);white-space:nowrap;overflow:hidden}
+  .seg:last-child{border-right:0}
+  .seg.fill{background:rgba(91,140,255,.18);color:#bcd0ff}
+  .seg.warnfill{background:rgba(217,164,65,.20);color:#f0d49a}
+  .seg.badfill{background:rgba(229,97,90,.20);color:#f3b4b0}
+  .cursor{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--accent);box-shadow:0 0 0 2px rgba(91,140,255,.25)}
+  .track .rt{color:var(--ink2);text-align:right;font-size:10.5px}
+
+  .ops{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:7px;padding-top:10px;border-top:1px solid var(--line)}
+  .btn{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer}
+  .btn:hover{border-color:var(--accent)} .btn.danger{color:#f3b4b0;border-color:rgba(229,97,90,.4)}
+  .pinhint{font-size:10.5px;color:var(--ink3);align-self:center;margin-left:auto}
+
+  .shadow-note{font-size:11.5px;color:#e9c98a;background:rgba(224,145,58,.08);border:1px solid rgba(224,145,58,.25);
+    border-radius:6px;padding:7px 10px;margin:0 14px 4px}
+
+  .toasts{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;z-index:99}
+  .toast{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;
+    padding:9px 13px;font-size:12.5px;max-width:340px;animation:s .2s ease}
+  .toast.warn{border-left-color:var(--warn)} .toast.bad{border-left-color:var(--bad)} .toast.ok{border-left-color:var(--ok)}
+  @keyframes s{from{transform:translateX(16px);opacity:0}to{transform:translateX(0);opacity:1}}
+  .hide{display:none!important}
+  @media(max-width:760px){
+    header{padding:10px 12px;gap:8px}
+    .wrap{padding:12px 12px 80px}
+    .ribbon{font-size:11.5px;padding:8px 10px}
+    .tab{padding:9px 12px}
+    .stat{min-width:calc(50% - 4px)}
+    .filters input[type=text]{flex:1 0 100%}
+    .head{flex-wrap:wrap;gap:8px 10px;padding:12px;position:relative;padding-right:34px}
+    .head .id{flex:1 0 100%;min-width:0}
+    .head .arrow{position:absolute;right:12px;top:12px;margin:0}
+    .mini{flex:1 0 100%;width:auto}
+    .detail-in{grid-template-columns:1fr;gap:12px}
+    .track{grid-template-columns:60px 1fr}
+    .track .rt{grid-column:1/-1;text-align:left;padding-left:60px;margin-top:-2px}
+    .btn{padding:10px 14px}
+    dl{grid-template-columns:auto 1fr}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">盾</div>
+  <div><b>防封控制台</b><small>Guard Native · 风控后台 · 精简版</small></div>
+  <span class="tag">DEMO</span>
+  <div class="grow"></div>
+  <span class="pill"><span class="dot"></span> 在线</span>
+  <span class="pill mono" id="clock">--:--:--</span>
+</header>
+
+<div class="wrap">
+  <div class="ribbon">⚠️ <b>样子货（mockup）</b>：全部假数据 + 前端模拟，按钮只弹提示。不连真服务器、不动主仓代码。<b>点击任一行展开 / 收起详情</b>。</div>
+
+  <div class="tabs">
+    <div class="tab on" data-page="devices" onclick="switchPage('devices')">设备 <span class="c" id="c-dev"></span></div>
+    <div class="tab" data-page="cards" onclick="switchPage('cards')">卡密 <span class="c" id="c-card"></span></div>
+    <div class="tab" data-page="versions" onclick="switchPage('versions')">版本</div>
+  </div>
+
+  <!-- DEVICES -->
+  <section id="page-devices">
+    <div class="kpi" id="dev-kpi"></div>
+    <div class="filters">
+      <select id="f-form"><option value="">全部形态</option><option value="official">官替</option><option value="coexist">共存</option></select>
+      <input type="text" id="f-search" placeholder="搜 设备 / 卡密 / wxid" />
+      <div id="f-stages" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+      <div class="grow"></div>
+      <span class="chip" onclick="resetF()">重置</span>
+    </div>
+    <div class="list" id="devlist"></div>
+    <div class="sub" id="rowcount" style="margin-top:8px"></div>
+  </section>
+
+  <!-- CARDS -->
+  <section id="page-cards" class="hide">
+    <div class="kpi" id="card-kpi"></div>
+    <div class="list" id="cardlist"></div>
+  </section>
+
+  <!-- VERSIONS -->
+  <section id="page-versions" class="hide">
+    <div class="kpi" id="ver-kpi"></div>
+    <div class="list" id="verlist"></div>
+  </section>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+/* ===== 阶段 ===== */
+const STAGES={
+  new:     {name:'新设备期', cls:'new',    desc:'刚装、信任分低（默认起评 60%）',           hb:'密集 2–3min/次（抓激活）',      lease:'短租约 · 待累积'},
+  building:{name:'建立信任期',cls:'build',  desc:'攒分中，信任分往上爬',                    hb:'中频 10–30min/次',             lease:'短租约 · 逐步升长'},
+  stable:  {name:'稳定期',   cls:'stable',  desc:'信任分≥及格线、稳定（后台仍可封停）',     hb:'稀疏 1–2h/次（封顶6h）',        lease:'长租约 30天 · 可续'},
+  honeypot:{name:'蜜罐期',   cls:'honey',   desc:'碰到假诱饵、影子观察中（装死放饵）',      hb:'升频 10min/次',                lease:'影子期 7天 · 延迟引流'},
+  tampered:{name:'确认改包', cls:'tamper',  desc:'铁证篡改（重签/canary）→ 永久标签',       hb:'影子租约期照常',               lease:'影子租约 7天 · 到期不续命'},
+};
+const CSTAT={inactive:{t:'未激活'},active:{t:'已激活'},banned:{t:'已封停'},expired:{t:'已过期'}};
+
+/* ===== 假数据 · 设备（8 台代表，覆盖 5 阶段）===== */
+const DATA=[
+ {id:'D8A3F1C2',card:'GD-7K2M-QX4',wxid:'wxid_a1b29x',form:'official',release:'r71.4',channel:'直营',region:'广东·深圳',ip:'120.85.12.40',schema:'g_7f3a',cert:'18c867f0',first:'2026-06-23 02:38',hb:'2026-06-23 02:59',stage:'new',age:0.4,seen:0,trust:60,risk:6,a2:'feed',popup:'none',lease:'短租约 7天',leaseLeft:7,leaseTot:7,anomaly:'—',online:true},
+ {id:'C1F94D60',card:'GD-3T8N-PA9',wxid:'wxid_c1f94d',form:'coexist',release:'r71.3c',channel:'代理A',region:'上海',ip:'58.246.x.x',schema:'g_2m8x',cert:'18c867f0',first:'2026-06-22 19:02',hb:'2026-06-23 02:40',stage:'building',age:8,seen:2,trust:48,risk:24,a2:'feed',popup:'login',lease:'短租约 7天',leaseLeft:6,leaseTot:7,anomaly:'未授权·登录砸门',online:true},
+ {id:'AA12CF80',card:'GD-1B9D-EH5',wxid:'wxid_aa12cf',form:'official',release:'r71.4',channel:'直营',region:'北京',ip:'124.79.x.x',schema:'g_a4qz',cert:'18c867f0',first:'2026-06-01 10:05',hb:'2026-06-23 02:49',stage:'stable',age:520,seen:30,trust:88,risk:4,a2:'feed',popup:'none',paid:true,lease:'长租约 30天 · 付费',leaseLeft:30,leaseTot:30,anomaly:'—',online:true},
+ {id:'F9A04B2D',card:'GD-5R7C-TN3',wxid:'wxid_f9a04b',form:'official',release:'r71.3',channel:'直营',region:'浙江·杭州',ip:'112.10.66.88',schema:'g_91kd',cert:'18c867f0',first:'2026-06-15 14:20',hb:'2026-06-23 02:58',stage:'stable',age:140,seen:9,trust:71,risk:7,a2:'feed',popup:'none',lease:'长租约 30天',leaseLeft:23,leaseTot:30,anomaly:'—',online:true},
+ {id:'90BE7F44',card:'GD-4W6L-QC2',wxid:'wxid_90be7f',form:'official',release:'r71.3',channel:'代理B',region:'四川·成都',ip:'39.144.x.x',schema:'g_2m8x',cert:'18c867f0',first:'2026-06-19 16:40',hb:'2026-06-23 02:20',stage:'honeypot',age:50,seen:4,trust:33,risk:66,a2:'feed',popup:'shadow',shadowState:'影子期 · 装死放饵（不弹）',hitAt:'2026-06-21 11:08',lease:'影子期 7天',leaseLeft:5,leaseTot:7,anomaly:'canary 命中',online:true},
+ {id:'7C5520E9',card:'GD-0X2F-MD8',wxid:'wxid_7c5520',form:'coexist',release:'r71.3c',channel:'分销C',region:'海外·香港',ip:'42.88.x.x',schema:'g_5h0w',cert:'9b2e44a1',first:'2026-06-14 08:12',hb:'2026-06-23 01:58',stage:'tampered',age:90,seen:6,trust:18,risk:93,a2:'feed',popup:'shadow',shadowState:'确认改包（重签+canary）· 默不作声',hitAt:'2026-06-20 22:41',lease:'影子租约 7天 · 到期不续命',leaseLeft:4,leaseTot:7,anomaly:'签名不符·重打包',online:true},
+ {id:'B0C3A8F5',card:'GD-2H5K-WZ1',wxid:'wxid_b0c3a8',form:'coexist',release:'r71.3c',channel:'闲鱼',region:'未知（代理）',ip:'223.104.x.x',schema:'g_5h0w',cert:'18c867f0',first:'2026-06-21 23:10',hb:'2026-06-22 22:15',stage:'new',age:26,seen:1,trust:60,risk:42,a2:'sand',popup:'dissolve',lease:'— 已撤',leaseLeft:0,leaseTot:7,anomaly:'超时未授权·已解体',online:false},
+ {id:'B7E14C29',card:'GD-5T2N-PH1',wxid:'wxid_b7e14c',form:'coexist',release:'r71.4c',channel:'分销C',region:'海外·新加坡',ip:'160.22.x.x',schema:'g_5h0w',cert:'18c867f0',first:'2026-06-21 20:40',hb:'2026-06-23 01:40',stage:'building',age:30,seen:2,trust:46,risk:28,a2:'feed',popup:'login',lease:'短租约 7天',leaseLeft:5,leaseTot:7,anomaly:'代理IP频繁切换',online:false},
+];
+
+/* ===== 假数据 · 卡密（6 张）===== */
+const CARDS=[
+ {id:'K-1B9D-****',customer:'李总 · 北京',note:'年付VIP',status:'active',form:'official',release:'r71.4',boundMax:1,boundWxid:'wxid_aa12cf',activate:'2026-06-01 10:05',expiry:'2026-07-25',remaining:32,stage:'stable',dev:'AA12CF80'},
+ {id:'K-6Q1V-****',customer:'赵老板 · 苏州',note:'可绑2台',status:'active',form:'official',release:'r71.4',boundMax:2,boundWxid:'wxid_a77b2e',activate:'2026-06-21 19:50',expiry:'2026-06-28',remaining:5,stage:'building',dev:'A77B2E13'},
+ {id:'K-1W9C-****',customer:'孙总 · 深圳',note:'续费提醒',status:'active',form:'official',release:'r71.4',boundMax:1,boundWxid:'wxid_e5b377',activate:'2026-06-05 09:50',expiry:'2026-06-26',remaining:3,stage:'stable',dev:'E5B3770D'},
+ {id:'K-2H5K-****',customer:'官网下单 · 待激活',note:'未使用',status:'inactive',form:'coexist',release:'r71.3c',boundMax:1,boundWxid:'—',activate:'—',expiry:'—',remaining:'—',stage:'—',dev:''},
+ {id:'K-7H2A-****',customer:'老客 · 过期未续',note:'到期未续费',status:'expired',form:'official',release:'r71.3',boundMax:1,boundWxid:'wxid_22e7c5',activate:'2026-04-01 10:00',expiry:'2026-06-10',remaining:-13,stage:'—',dev:'22E7C5A0'},
+ {id:'K-0X2F-****',customer:'疑似盗用 · 已封',note:'重打包·确认改包',status:'banned',form:'coexist',release:'r71.3c',boundMax:1,boundWxid:'wxid_7c5520',activate:'2026-06-14 08:12',expiry:'2026-07-14',remaining:'—',stage:'tampered',dev:'7C5520E9'},
+];
+
+/* ===== helpers ===== */
+const $=s=>document.querySelector(s);
+let passLine=60, activeStages=new Set();
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const effStage=d=>(d.stage==='building'||d.stage==='stable')?(d.trust>=passLine?'stable':'building'):d.stage;
+const riskCls=r=>r>=70?'bad':r>=35?'warn':'ok';
+function popLabel(p){return {none:'<span class="sub">无</span>',soft:'<span style="color:var(--warn)">软引流·可关</span>',
+  login:'<span style="color:var(--bad)">登录砸门·关不掉</span>',dissolve:'<span class="sub">已解体</span>',
+  shadow:'<span style="color:var(--honey)">影子·不弹</span>'}[p]||'—';}
+function stat(k,v,s,c){return `<div class="stat"><div class="k">${k}</div><div class="v" style="color:${c||'var(--ink)'}">${v}</div><div class="s">${s||''}</div></div>`;}
+
+/* ===== KPI ===== */
+function renderKpi(){
+  const sc={new:0,building:0,stable:0,honeypot:0,tampered:0}; DATA.forEach(d=>sc[effStage(d)]++);
+  const online=DATA.filter(d=>d.online).length;
+  $('#dev-kpi').innerHTML=[
+    stat('设备总数',DATA.length,`官替 ${DATA.filter(d=>d.form==='official').length} · 共存 ${DATA.filter(d=>d.form==='coexist').length}`,'var(--accent)'),
+    stat('在线',online,Math.round(online/DATA.length*100)+'%','var(--ok)'),
+    stat('新设备',sc.new,'抓激活','var(--new)'),
+    stat('建立信任',sc.building,'及格线'+passLine+'%','var(--build)'),
+    stat('稳定',sc.stable,'长租约','var(--stable)'),
+    stat('蜜罐',sc.honeypot,'影子','var(--honey)'),
+    stat('确认改包',sc.tampered,'永久标签','var(--tamper)'),
+  ].join('');
+  $('#c-dev').textContent=DATA.length; $('#c-card').textContent=CARDS.length;
+}
+
+/* ===== 多轨时间轴 ===== */
+function seg(txt,cls){return `<div class="seg ${cls||''}">${txt}</div>`;}
+function timeline(d){
+  const st=d.stage;
+  let tracks='';
+  // A2 防封授权闸
+  let a2cur = d.age<1?6 : d.age<2?28 : 62;
+  let a2note = d.age<1?`首装期 · 距软引流 ${Math.round((1-d.age)*60)}m`:
+               d.age<2?`软引流中 · 距登录砸门 ${Math.round((2-d.age)*60)}m`:
+               (d.popup==='dissolve'?'已解体 · A2 撤（散沙）':'登录砸门 · A2 仍开');
+  tracks+=`<div class="track"><span class="lab">防封闸 A2</span><div class="segbar">
+    ${seg('0–1h 首装',a2cur<20?'fill':'')}${seg('1–2h 软引流',a2cur>=20&&a2cur<50?'warnfill':'')}${seg('≥2h 登录砸门',a2cur>=50?'warnfill':'')}
+    <div class="cursor" style="left:${a2cur}%"></div></div><span class="rt">${a2note}</span></div>`;
+  // 心跳
+  const hbmap={new:[80,'起步 密集2-3m'],building:[55,'回落 10-30m'],stable:[30,'稳定 1-2h(封顶6h)'],honeypot:[70,'升频 10m 嫌疑'],tampered:[70,'影子期照常']};
+  const hb=hbmap[st]||[40,''];
+  tracks+=`<div class="track"><span class="lab">心跳</span><div class="segbar">
+    ${seg('密集')}${seg('回落')}${seg('稳定')}${seg('嫌疑')}<div class="cursor" style="left:${hb[0]}%"></div></div><span class="rt">${hb[1]} · CONN ${(d.risk/300).toFixed(2)}(<0.5)</span></div>`;
+  // 租约
+  const lp=d.leaseTot?Math.round((1-d.leaseLeft/d.leaseTot)*100):100;
+  tracks+=`<div class="track"><span class="lab">租约</span><div class="segbar">
+    <div class="seg fill" style="flex:${d.leaseLeft};">已用</div><div class="seg" style="flex:${Math.max(0,d.leaseTot-d.leaseLeft)}">剩</div>
+    <div class="cursor" style="left:${lp}%"></div></div><span class="rt">${d.leaseLeft>0?d.leaseLeft+'天 / 共'+d.leaseTot+'天':'已撤'}</span></div>`;
+  // 影子期（仅蜜罐/改包）
+  if(st==='honeypot'||st==='tampered'){
+    const sp=Math.round((1-d.leaseLeft/7)*100);
+    tracks+=`<div class="track"><span class="lab">影子期</span><div class="segbar">
+      <div class="seg badfill" style="flex:1">7天 不续命倒计时</div><div class="cursor" style="left:${sp}%"></div></div>
+      <span class="rt">剩 ${d.leaseLeft} 天 · 到期不续命</span></div>`;
+  }
+  return tracks;
+}
+
+/* ===== 设备行 ===== */
+function devRow(d){
+  const st=effStage(d), sm=STAGES[st], pass=d.trust>=passLine;
+  const certBad=d.cert!=='18c867f0';
+  return `<div class="row ${st==='honeypot'?'shadow':''} ${st==='tampered'?'tamper':''}" data-id="${d.id}">
+    <div class="head" onclick="togglePin('${d.id}',event)">
+      <div class="id"><b class="mono">${d.id}</b><div class="sub">${esc(d.wxid)}</div></div>
+      <span class="form ${d.form}">${d.form==='official'?'官替':'共存'} ${d.release}</span>
+      <span class="badge b-${sm.cls}">${sm.name}</span>
+      <div class="mini"><div class="bar"><i style="width:${Math.max(3,d.trust)}%;background:${pass?'var(--stable)':'var(--warn)'}"></i><span class="pl" style="left:${passLine}%"></span></div><div class="n">信任 ${d.trust} · 线${passLine}</div></div>
+      <span class="a2 ${d.a2}">${d.a2==='feed'?'给料':'散沙'}</span>
+      <span>${popLabel(d.popup)}</span>
+      ${d.online?'<span class="sub" style="color:var(--ok)">●在线</span>':'<span class="sub">○离线</span>'}
+      ${certBad?'<span class="sub" style="color:var(--bad)">签名不符</span>':''}
+      <span class="arrow">▸</span>
+    </div>
+    <div class="detail"><div class="detail-in">
+      <div class="blk"><h4>身份指纹</h4><dl>
+        <dt>卡密</dt><dd class="mono">${esc(d.card)}</dd>
+        <dt>渠道</dt><dd>${esc(d.channel)}</dd>
+        <dt>IP / 地区</dt><dd class="mono">${d.ip} · ${esc(d.region)}</dd>
+        <dt>schema</dt><dd class="mono">${d.schema}</dd>
+        <dt>cert 前缀</dt><dd class="mono ${certBad?'bad':''}">${d.cert}${certBad?' 不符':''}</dd>
+        <dt>A2 三轴</dt><dd>签名 ${certBad?'<span style="color:var(--bad)">✗</span>':'✓'} · android_id ✓ · 包名 ✓</dd>
+      </dl></div>
+      <div class="blk"><h4>信任 / 风险</h4><dl>
+        <dt>信任阶段</dt><dd>${sm.name}</dd>
+        <dt>信任分</dt><dd class="${pass?'ok':'warn'}">${d.trust} / 线 ${passLine}</dd>
+        <dt>风险分</dt><dd class="${riskCls(d.risk)}">${d.risk}</dd>
+        <dt>初次登录</dt><dd class="mono">${d.first}</dd>
+        <dt>最后心跳</dt><dd class="mono">${d.hb}</dd>
+        <dt>最近异常</dt><dd class="${/不符|解体/.test(d.anomaly)?'bad':(d.anomaly!=='—'?'warn':'')}">${esc(d.anomaly)}</dd>
+        ${d.shadowState?`<dt>影子状态</dt><dd class="warn">${esc(d.shadowState)}</dd>`:''}
+      </dl></div>
+      <div class="blk tl"><h4>多轨时间轴 <span class="muted">每段时间的进度 / 剩余（严格照 SPEC，设计only）</span></h4>${timeline(d)}</div>
+      <div class="ops">
+        <button class="btn" onclick="op('信任','${d.id}')">设为信任</button>
+        <button class="btn" onclick="op('改授权时间','${d.id}')">改授权时间</button>
+        <button class="btn" onclick="op('标可疑','${d.id}')">标可疑</button>
+        <button class="btn danger" onclick="op('封停','${d.id}')">封停</button>
+        <button class="btn danger" onclick="op('kill解体','${d.id}')">kill 解体</button>
+        <span class="pinhint">点击行标题展开 / 收起</span>
+      </div>
+    </div></div>
+  </div>`;
+}
+function filtered(){
+  const form=$('#f-form').value, q=$('#f-search').value.trim().toLowerCase();
+  return DATA.filter(d=>{
+    if(form&&d.form!==form)return false;
+    if(activeStages.size&&!activeStages.has(effStage(d)))return false;
+    if(q&&!(`${d.id} ${d.card} ${d.wxid} ${d.release} ${d.channel}`.toLowerCase().includes(q)))return false;
+    return true;
+  });
+}
+function renderDevices(){
+  const rows=filtered();
+  $('#devlist').innerHTML=rows.map(devRow).join('')||'<div class="sub" style="padding:20px;text-align:center">无匹配设备</div>';
+  $('#rowcount').textContent=`显示 ${rows.length} / ${DATA.length} 台`;
+}
+function renderStageChips(){
+  $('#f-stages').innerHTML=Object.entries(STAGES).map(([k,s])=>`<span class="chip" data-s="${k}" onclick="toggleStage('${k}')">${s.name}</span>`).join('');
+  syncChips();
+}
+function syncChips(){document.querySelectorAll('#f-stages .chip').forEach(c=>c.classList.toggle('on',activeStages.has(c.dataset.s)));}
+function toggleStage(k){activeStages.has(k)?activeStages.delete(k):activeStages.add(k);syncChips();renderDevices();}
+function resetF(){activeStages.clear();$('#f-form').value='';$('#f-search').value='';syncChips();renderDevices();}
+
+/* pin 展开（点击钉住，再点取消；悬停始终预览） */
+function togglePin(id,e){
+  const row=document.querySelector(`.row[data-id="${id}"]`);
+  if(!row)return; row.classList.toggle('pin');
+}
+
+/* ===== 卡密 ===== */
+function cardRow(c){
+  const stName=c.stage&&STAGES[c.stage]?STAGES[c.stage].name:'—';
+  const remCls=typeof c.remaining==='number'&&c.remaining<7?'bad':'';
+  return `<div class="row" data-id="${c.id}">
+    <div class="head" onclick="togglePin('${c.id}',event)">
+      <div class="id"><b class="mono">${c.id}</b><div class="sub">${esc(c.customer)}</div></div>
+      <span class="form ${c.form}">${c.form==='official'?'官替':'共存'} ${c.release}</span>
+      <span class="badge b-${c.status==='active'?'stable':c.status==='banned'?'tamper':c.status==='expired'?'build':'new'}">${CSTAT[c.status].t}</span>
+      <span class="sub">绑定 ${c.dev||'—'}</span>
+      <span class="${remCls}">${typeof c.remaining==='number'?(c.remaining<0?'已过期'+(-c.remaining)+'天':'剩'+c.remaining+'天'):'—'}</span>
+      <span class="arrow">▸</span>
+    </div>
+    <div class="detail"><div class="detail-in">
+      <div class="blk"><h4>卡信息</h4><dl>
+        <dt>备注</dt><dd>${esc(c.note)}</dd>
+        <dt>状态</dt><dd>${CSTAT[c.status].t}</dd>
+        <dt>可绑设备</dt><dd>${c.boundMax} 台</dd>
+        <dt>绑定 wxid</dt><dd class="mono">${esc(c.boundWxid)}</dd>
+        <dt>关联阶段</dt><dd>${stName}</dd>
+      </dl></div>
+      <div class="blk"><h4>周期</h4><dl>
+        <dt>激活时间</dt><dd class="mono">${c.activate}</dd>
+        <dt>到期时间</dt><dd class="mono">${c.expiry}</dd>
+        <dt>剩余</dt><dd class="${remCls}">${typeof c.remaining==='number'?(c.remaining<0?'已过期 '+(-c.remaining)+'天':c.remaining+'天'):'—'}</dd>
+      </dl></div>
+      <div class="ops">
+        <button class="btn" onclick="op('改到期','${c.id}')">改到期</button>
+        <button class="btn" onclick="op('补发','${c.id}')">补发</button>
+        <button class="btn danger" onclick="op('封卡','${c.id}')">封卡</button>
+        <button class="btn danger" onclick="op('解绑','${c.id}')">解绑设备</button>
+      </div>
+    </div></div>
+  </div>`;
+}
+function renderCards(){
+  $('#card-kpi').innerHTML=[
+    stat('卡密总数',CARDS.length,'',''),
+    stat('已激活',CARDS.filter(c=>c.status==='active').length,'','var(--ok)'),
+    stat('未激活',CARDS.filter(c=>c.status==='inactive').length,'','var(--new)'),
+    stat('已封停',CARDS.filter(c=>c.status==='banned').length,'','var(--tamper)'),
+    stat('已过期',CARDS.filter(c=>c.status==='expired').length,'','var(--build)'),
+  ].join('');
+  $('#cardlist').innerHTML=CARDS.map(cardRow).join('');
+}
+
+/* ===== 版本 ===== */
+function renderVersions(){
+  const rels=[...new Set(DATA.map(d=>d.release))].sort();
+  $('#ver-kpi').innerHTML=[
+    stat('release 数',rels.length,'',''),
+    stat('官替',DATA.filter(d=>d.form==='official').length,'🟦',''),
+    stat('共存',DATA.filter(d=>d.form==='coexist').length,'🟩',''),
+  ].join('');
+  $('#verlist').innerHTML=rels.map(r=>{
+    const ds=DATA.filter(d=>d.release===r);
+    const sc={new:0,building:0,stable:0,honeypot:0,tampered:0}; ds.forEach(d=>sc[effStage(d)]++);
+    return `<div class="row pin" data-id="ver-${r}"><div class="head" style="cursor:default">
+      <div class="id"><b class="mono">${r}</b><div class="sub">${ds.length} 台</div></div>
+      <span class="badge b-stable">稳 ${sc.stable}</span><span class="badge b-build">建 ${sc.building}</span>
+      <span class="badge b-new">新 ${sc.new}</span><span class="badge b-honey">蜜 ${sc.honeypot}</span><span class="badge b-tamper">改 ${sc.tampered}</span>
+      <span class="sub" style="margin-left:auto">MD5 身份：official_der 18c867f0…</span>
+    </div></div>`;
+  }).join('');
+}
+
+/* ===== 页面切换 / ops / clock ===== */
+function switchPage(p){
+  ['devices','cards','versions'].forEach(x=>{
+    $('#page-'+x).classList.toggle('hide',x!==p);
+    document.querySelector(`.tab[data-page="${x}"]`).classList.toggle('on',x===p);
+  });
+  if(p==='cards')renderCards(); if(p==='versions')renderVersions();
+}
+function op(name,id){toast(`【demo】对 ${id} 执行「${name}」——样子货，不连服务器、不落库`,'warn');}
+function toast(msg,cls){const t=document.createElement('div');t.className='toast '+(cls||'');t.textContent=msg;
+  $('#toasts').appendChild(t);setTimeout(()=>t.remove(),3600);}
+function clock(){const n=new Date();$('#clock').textContent=[n.getHours(),n.getMinutes(),n.getSeconds()].map(x=>String(x).padStart(2,'0')).join(':');}
+
+['input','change'].forEach(ev=>{document.addEventListener(ev,e=>{if(['f-form','f-search'].includes(e.target.id))renderDevices();});});
+renderKpi();renderStageChips();renderDevices();clock();setInterval(clock,1000);
+</script>
+</body>
+</html>

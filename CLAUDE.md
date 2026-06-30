@@ -112,7 +112,7 @@
 21. **必须 notifyDataSetChanged 时先清后通知**（不是先通知后清）
 22. **出包前跑 frida_stats.js 体检**（KPI 不增量，详 §七）
 23. **禁止注入微信 JNI 链**（F-23 实证：CodecLooper SIGSEGV + 微信强制下线）
-    - ❌ 仍然禁止：`dlopen` 微信自身 SO / 在微信 `JNI_OnLoad` 链中注入 / Hook 任何 native 方法 / `System.loadLibrary` 加载不属于模块自身的 SO
+    - ❌ 仍然禁止：`dlopen` 微信自身 SO / 在微信 `JNI_OnLoad` 链中注入 / 重碰 native（改返回/替换/广钩） / `System.loadLibrary` 加载不属于模块自身的 SO
     - ✅ 例外——模块自有 SO（动态库 `libguardcore.so`）：状态机 / AES-GCM（加密算法） / HMAC（消息签名算法） / 授权校验 / wxid 匹配 / 进程角色判断 / hidden 状态持久化
 24. **禁止模块用 startService / extends Service**（F-24：Service not found）— Notification 用 `NotificationManager.notify()`，悬浮窗用 `WindowManager.addView()`
 25. **所有 XposedHelpers.findAndHookMethod 必须 `catch (Throwable)`**（F-25：NoSuchMethodError 穿透 catch Exception 导致 init 静默中断）

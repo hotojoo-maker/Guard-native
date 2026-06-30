@@ -1,4 +1,6 @@
 ---
+icon: 🚫
+cn: 防封官
 name: guard-antiban_防封官
 description: Guard Native 防封官（反检测 / 防封号 / 检测面纵深 / 异常上报链 / 最新文档负责人）。专管"防封号、反环境检测"这一威胁面的最新知识与单一权威账：KPI 红线（verifiedbootstate/normsg/PROP/CONN）、LSPosed 进程白名单、libwechatnormsg 环境监测、签名校验 / hook 注入检测、异常上报明文、上报链路、换版本检测漂移、封号/未封实证、竞品样本防封对照。Use when the user mentions 防封、反检测、封号、会不会被封、检测面、异常上报、明文上报、protobuf、toProtoBuf、network 上报、verifiedbootstate、normsg、PROP/CONN 密度、frida_stats、KPI 红线、Matrix 反作弊、LSPosed 进程白名单、:push 进程边界、ro.boot、签名校验检测、hook 注入检测、libwechatnormsg、换版本检测、竞品样本防封对照、老版本底座、有效安全证据。不管反编译 / DRM / 加密（那归网络安全官）。
 ---
@@ -183,7 +185,7 @@ jadx_8071_out/classes9.dex.jadx
 
 - `CLAUDE.md` §三 反检测铁律 + §七 KPI 表
 - `guard-review_质检门控` §二⑤ `frida_stats` KPI 门控
-- `JIDE_ANDROID_ACC_STRIKE_MAPPING_20260617.md`（账号打击 / 环境检测方向纠偏 + B29~B56 附录链）—— **已纳入本角色**，作为防封 working doc 按附录累加
+- `07_archive_归档/JIDE_ANDROID_ACC_STRIKE_MAPPING_20260617.md`（账号打击 / 环境检测方向纠偏 + B29~B56 附录链）—— **已纳入本角色**，作为防封 working doc 按附录累加；2026-06-29 已归档 07_archive
 - `P18 KPI 基线`至今未建立（`CLAUDE.md` §七 自认 F-22 实质空转，是本角色第一优先补的洞）
 
 权威账落点（2026-06-21 SSOT 收口）：**防封研究结论（命脉/三轴/算法）唯一真源 = 研究线 `C:\Users\Me\Desktop\防封_反检测线\防封权威账_2026年6月.md`（§0–§十七）**；主线根目录 `ANTIBAN_MAP.md` 降级为**落地状态账**（只镜像主线接到哪 + 指回研究线权威账，不再并行维护研究结论）。研究命脉看研究线权威账，主线落地看 `ANTIBAN_MAP.md`；JIDE 附录 / logs / 外部报告只作为证据来源。
@@ -194,7 +196,7 @@ jadx_8071_out/classes9.dex.jadx
 
 - `CLAUDE.md` §三 / §七、`FAILURE_LOG.md`、`PROJECT_INDEX.md` §四
 - `ANTIBAN_MAP.md`（**防封官权威账**，最新水位线；结论先看这里）
-- `03_execute_执行任务/P_AntiBanGate_防封授权闸/PLAN.md`（**防封 × 授权 交叉线 · 「血管逻辑」**：首装宽限内授权 → 防封保活；超时从未授权 → `isAntiBanReady()` 让**防封散沙** → 宿主自然判非官方 = 用「被封」反制盗版。设计 / 状态机 / 风险见此。⚠️ 授权·激活·散沙**机制本体**归 `guard-security_网络安全官` + `PROTECTION_MAP.md`（那是「防破解」线）；本角色只认「**防封保护被门控**」这一防封面，交叉点见 PLAN §三 / §四。（⚠️ 2026-06-27 回正）**A2 签名轴已落主线 + live**（`A2SignatureSpoof`→`ModuleMain §6.7`，`[A2SIG] installed der=751B` L1）；本闸已挂上，门控 `isAntiBanReady=!isRefunded&&CompatProbe.isIntegrityIntact`(Route B/D-018)）
+- `03_execute_执行任务/P_AntiBanGate_防封授权闸/DESIGN.md`（原 `PLAN.md` 2026-06-30 减法删除、内容并入本文；**防封 × 授权 交叉线 · 「血管逻辑」**：首装宽限内授权 → 防封保活；超时从未授权 → `isAntiBanReady()` 让**防封散沙** → 宿主自然判非官方 = 用「被封」反制盗版。设计 / 状态机 / 风险见此。⚠️ 授权·激活·散沙**机制本体**归 `guard-security_网络安全官` + `PROTECTION_MAP.md`（那是「防破解」线）；本角色只认「**防封保护被门控**」这一防封面，交叉点见 PLAN §三 / §四。（⚠️ 2026-06-27 回正）**A2 签名轴已落主线 + live**（`A2SignatureSpoof`→`ModuleMain §6.7`，`[A2SIG] installed der=751B` L1）；本闸已挂上，门控 `isAntiBanReady=!isRefunded&&CompatProbe.isIntegrityIntact`(Route B/D-018)）
 - 工具脚本 `tools/`：`dump_mm_z3.js`（主调 `z3(0)`/`Y8` 设备指纹明文快照）、`dump_normsg_plaintext.js`（warm-attach hook 采集器明文）、`dump_wx_detect.js`（AccStrike/c29 快照）、`dump_normsg_native.js`（native 探针）、`dump_normsg_event_probe_v2_B56.js`（event 层明文/byte[]/stack）、`dump_normsg_f_run_loader_B56.js`（ClassLoader-aware f.run / WCProbe.m / c$p.ae-af 追踪，Java replacement 未接管时转 native/JNI 或静态切片）
 - L1 实证 log：`tools/normsg_dump_20260618.log`、`tools/normsg_mm_z3_B35_20260618.log`、`tools/normsg_sig_B35_20260618.log`、`tools/normsg_boot_probe_B35_20260618.log`、`tools/normsg_mm_z3_B56_cli_20260618.log`、`tools/normsg_sig_B56_cli_20260618.log`、`tools/normsg_boot_probe_B56_cli_20260618.log`、`tools/normsg_event_probe_v2_B56_20260618.log`
 
@@ -289,7 +291,7 @@ jadx_8071_out/classes9.dex.jadx
    - 客户端事实：装了 Guard(`com.ghost.assist`) 的 `com.tencent.mn` 上，c$p 实读到的签名仍是非官方 `e89b158e` → 即 A2(Java 喂官方) 当前**未覆盖 c$p 的读**。**服务器侧是否据此处罚未证**。
    - 复验：独立线 LSPosed 模块 `dimmod_v2` + logcat tag `DIMCOLLECT`，冷启动 `com.tencent.mn`（独立线产物，不在本仓）。
    - **★已实证 = (b)（2026-06-19 同日 SPOOF 复验，L1）**：dimmod_v2 开 SPOOF 把 `getPackageInfo(com.tencent.mn)` 的 `signatures[0]` 喂官方 DER 后，冷启动抓到 **`c$p.ad` 读到 `md5=18c867f0 len=751`（官方）并据此算 MD5=18c867f0**（喂前为 e89b158e）→ **c$p 经 `getPackageInfo`(Java) 读签名、未绕过；A2(Java hook 喂官方) 充分覆盖 c$p**。
-   - **可控阀门 = `getPackageInfo`**：它是 `c$p` / `t8.c0` / `plugin.normsg.u` 等签名读取者的共同上游，掐一处即覆盖全部 Java 签名读取；`c$p` 本体碰不得(F-23)，只掐其上游输入。
+   - **可控阀门 = `getPackageInfo`**：它是 `c$p` / `t8.c0` / `plugin.normsg.u` 等签名读取者的共同上游，掐一处即覆盖全部 Java 签名读取；`c$p` 本体不重碰(F-23)，只掐其上游输入。
    - 残留非签名面（签名喂官方不治）：`c$p.aa` 仍枚举 `com.topjohnwu.magisk`/`gsf`/`gms`/`vending`（环境 / root 软信号）；共存 `com.tencent.mn` 包名本身仍是身份 tell（官替占 `com.tencent.mm` 无此问题）。服务器侧是否据此处罚未证。
 
 ## 改前 / 巡检审查模板

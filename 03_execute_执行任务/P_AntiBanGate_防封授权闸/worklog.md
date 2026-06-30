@@ -4,11 +4,32 @@
 
 ---
 
+## 2026-06-29 · registry 单一真源归一（C5a 收口）— Devin 任务派发
+
+- **触发**：PROTECTION_MAP §P0-1 仍剩 MomentsFilter 5 处混淆字面量内联（`jw1.d` / `wq.c1` / `wq.y0` / `ii5.b` 等），`ConvFilter` / `ContactFilter` 已归一，本次收尾 MomentsFilter。
+- **执行者**：Devin（任务卡 `.devin/tasks/registry-unify-v1.md`）；文件白名单只含 `registry_8071.json` / `RegistryFallback.java` x2 / 三个 Filter / `gen_registry_fallback.py`。
+- **禁入文件**：`signing/**` / `registry_cipher*.inc` / `net/**` / `A2SignatureSpoof.java`。
+- **产出预期**：`registry_8071.json` `moments.feed` 补全混淆名 → `RegistryFallback` 重生成 → `MomentsFilter.resolveRecipes()` 覆盖 → `assembleOfficialDebug` 0 error → PR `devin/registry-unify-v1`。
+- **SSOT 更新**：PROTECTION_MAP §P0-1 / TASK_BOARD P_RegistryUnify 均已落档（🟡）。
+
+---
+
+## 2026-06-28 · 「退款」错名清除 + 撤销机制统一命名「封停/删卡撤销 / isCardRevoked」（用户拍板）
+
+- **触发**：用户指「不存在退款，应叫封停/删卡机制」。定名 = **封停/删卡撤销**（非「废除」——废除含永久义、与 D-020 可恢复矛盾；撤销三线 = 到期 / 封停删卡 / 篡改散沙）。
+- **代码符号统一**（6 Java，lint 净）：`isRefunded→isCardRevoked` · `markRefunded→markCardRevoked` · `getRefundedAt→getCardRevokedAt` · `debugSetRefunded→debugSetCardRevoked` · `K_REFUNDED→K_CARD_REVOKED` · `Envelope.refunded→cardRevoked` · `apiForceRefund→apiForceCardRevoke` · `/api/forcerefund→/api/forcecardrevoke`。涉 EnvelopeStore/AuthEnvelopeVerifier/GuardRuntime/DebugServer/RiskState/FakeLocation。
+- **保留不动**：信封 wire key `"rf"` + prefs 存储值 `"rf"`（跨 miyou-server 契约 + 升级不丢已落 latch）；服务器仓库历史符号（`cards.refunded_at` / `refund_card` / `/admin/api/cards/refund`）不动（另仓库）。
+- **文档落名**：术语词表 / SSOT(§3/§6/§8/§9) / DESIGN / DECISION_LOG(D-020) / PROTECTION_MAP / STATUS / guard-server skill；RefundPush 设计稿改名 `封停删卡撤销_CardRevoke_服务器侧设计_20260626.md`。
+- **未改（dated 历史/过程档·作记录保留·可缓）**：worklog 旧条目 / 块B草稿 / 红队压测任务书 / SPEC §4 / RB1 worklog+部署清单 / F68 / PLAN / tmp_wiki。
+- **待办**：`.claude/skills` 镜像跑 `sync_skills.ps1`（guard-server skill 已改 `.cursor` 主源）；装机回归（debug 端点 `/api/forcecardrevoke` 验「撤销立刻散」）。
+
+---
+
 ## 2026-06-23 · DESIGN 评估（架构师 C81）
 
 - 评估 `DESIGN.md`（统一风控引擎设计）：方向对；签名命脉成色 **L1+L2**（A2 签名轴 Java 可 hook + 喂官方 → c$p 读官方）。
 - 指出两处问题：① 时间口径 **72h/2h 自相矛盾**（DESIGN §2/§5 vs §4A）；② **KPI 基线缺**（P18 未建，F-22）。
-- 证据：`DESIGN.md`、`PLAN.md`、研究线 `防封权威账_2026年6月.md`。
+- 证据：`DESIGN.md`、研究线 `防封权威账_2026年6月.md`（原 `PLAN.md` 已于 2026-06-30 减法删除，git 历史可查）。
 
 ## 2026-06-23 · 配方卡 v0 → v1（C82，设计only）
 
@@ -134,7 +155,7 @@
 
 | 半 | 文件 | 干什么 | 状态 |
 |---|---|---|---|
-| **灌官方值（保号）** | `core/A2SignatureSpoof.java`（A2-1，本轮落） | `getPackageInfo` afterHook 喂官方 DER → 官方包自检「是官方」→ 号不被判账号异常 | 🟡 码已落·料已进明文源·**运行时空转**待 `.inc` per-release regen + 装机 |
+| **灌官方值（保号）** | `core/A2SignatureSpoof.java`（A2-1，本轮落） | `getPackageInfo` afterHook 喂官方 DER（熟料）→ 官方包自检读到熟料（官方态）= 保号 | 🟡 码已落·料已进明文源·**运行时空转**待 `.inc` per-release regen + 装机 |
 | **抓破解（防白嫖）** | `core/CompatProbe.java`（`checkSignature` + `check`） | 读**我们自己模块 APK** 签名证书，≠ 预期 `ca421ec3…`（=被重签=改过码）→ `RiskState.markTampered`→影子期7天→散沙+引流；并查诱饵 `PromoConfig` 绊线 | ✅ **装机 PASS**（PROTECTION_MAP §10.9，2026-06-12） |
 
 - 二者**不连坐、不同源、不同文件**：A2 灌值受 `isAntiBanReady` 闸；CompatProbe 抓破解走 `RiskState`（record-only 主链 + `markTampered`）。
@@ -149,8 +170,9 @@
 > 触发：用户问「有了官方授时是不是更稳」+「写入主线」。复稿 `DESIGN`/`配方卡` 时间模型后确认更稳，并定位官方授时源已在手。
 
 - **结论：更稳 ✅**——反白嫖命门 = 时间必须前进；当前仅我方服务器 `sn` 单源，盗版「屏蔽我方服务器 + 反复重启（`elapsedRealtime` 归零）」可冻住 `trustedNow` → 影子期永不到期 → 白嫖不死。官方授时独立于我方服务器，堵此洞。
-- **官方授时源已定位（L2 + 复用 L1）**：`ConvFilter.extractConvTime(item)` 读 `field_conversationTime`（每会话最近消息服务器盖戳时间，epoch ms；**Frida L1 实证 2026-05-29**，P_CF3 排序本就在用）。打开会话列表即有，零新增 hook / 零新增检测面（借官方眼睛）。
-- **接法（待落码 · 需点头 + 授权检查官）**：会话列表处理取 `max(extractConvTime)` → 新增 `LeaseClock.noteOfficialTime(ms)`（只抬 `max_trusted`、绝不降 + 未来上限兜底）；不动 ConvFilter 已验证过滤逻辑（铁律29）。`trustedNow = max(我方sn, 官方createTime) + elapsed`。
+- ~~**官方授时源已定位（L2 + 复用 L1）**：`ConvFilter.extractConvTime(item)` 读 `field_conversationTime`（每会话最近消息服务器盖戳时间，epoch ms；Frida L1 实证 2026-05-29，P_CF3 排序本就在用）。~~
+- ~~**接法（待落码）**：会话列表取 `max(extractConvTime)` → 新增 `LeaseClock.noteOfficialTime(ms)`（只抬 `max_trusted`、绝不降 + 未来上限兜底）。~~
+- ⚠️ **作废（2026-06-28）**：`field_conversationTime` 锚点已弃（要登录 + 有会话、空闲偏旧）。官方授时第二源真锚点 = **`jy0.hd.b()`**（微信 `MicroMsg.TimeHelper`，L1 实证**改表杀不掉**；`hd.c()` 跟墙钟、禁用），以 `DESIGN.md §6` / `A2接入设计稿 §5②` 为准。接法改为读 `jy0.hd.b()` → `LeaseClock.noteOfficialTime(ms)`（仍未落码）。
 - **写入主线**：本 worklog + `A2接入设计稿_签名轴 §5`（找授时点 待定→已定）+ `DESIGN.md §6`（双授时源防冻结）。设备 `609b4b18` + frida 在线（可选 L1 复证一条实值）。
 
 ## 2026-06-26b · A2 防封闸改吊本地完整性（Route B）— 任务启动 + 改前审查（执行/安全官/授权检查官 · Vchat guard_native-E87）
@@ -241,6 +263,18 @@
 2. 散沙扩面：DEBUG `forcefunnel`(进 TAMPER_FUNNEL) → 防撤回/定位/通知/未读失效；密友隐藏四链**仍生效**（不连坐）。
 3. T_soft：未授权冷启 → 首装记基准（首次不弹）；>1h 后冷启 → `unpaidSoft=true` `level=离线引流` → 软弹窗可关；A2 仍 `ready=true`。
 4. 不误伤正版：授权态 `level=正常`、四链+杂项全常态、无引流弹窗、0 崩溃。
+
+## 2026-06-28 配方卡时间模型对齐 D-020+A3（Vchat 配方卡对齐-A3 · 只改文档不碰代码）
+
+> 触发：配方卡停在 A51+C18（2026-06-24）旧口径，与 D-020（2026-06-27）+ A3 补丁冲突；SSOT/DESIGN 已对齐，配方卡是唯一未跟上的。流程：先只读对账 → Vchat 回报 → 用户拍 A3 补丁（封停/删卡=72h、仅自然到期=7天）后落改。
+
+**改 2 文件（只文档 · ReadLints 全零错）**：
+1. `配方卡_SPEC_v1.md`：顶部时间口径+铁律段重写；A 表删 `T_kill 影子期7天`、加 `首装未授权撤72h`+`服务器封停/删卡撤72h`、`自然到期续费宽限`明确仅7天、`T_login 2h 降v2`、`T_soft 1h` 标可选UI非撤闸；B `isAntiBanReady` 真值表重写为 11 分支（篡改立刻散/已授权/封停删卡72h宽限+撤/付费断网/自然到期7天宽限+撤/首装无授时fail-open/首装<72h/首装≥72h撤/可信时间异常fail-open，带「可恢复」列）；C②③验收口径 / E 成色 / F 版本表 / 待办段均改挂 D-020+A3。
+2. `配方卡_params.json`：删 `t_kill`、加 `unauth_revoke`(72h)+`card_revoke_grace`(72h)、`auth_expiry_grace` 改仅自然到期7天、`t_login` 标降v2、`truth_table.branches` 重写为 11 分支带 `recoverable`；顺手对齐 `conn_density_redline` meaning（原 json 误写"即停"，SPEC 为"非即停"）。
+
+**关键修正（A3 补丁，纠正 D-020 原文）**：封停/删卡 = **72h**（非 D-020 原文 7天），仅自然到期 = 7天；全局只两个宽限值 72h / 7天；撤后除篡改可重授权恢复（`isCardRevoked` latch 待改可恢复）。`未授权时间闸`（固定72h·官方授时 jy0.hd.b() 驱动）与 `篡改7天影子期`（D-019·RiskState 线）两条独立线、文档已显式标注别混。
+
+**纪律**：数值真源只配方卡一处（G10），机制引 SSOT §3 路径不复制正文；UTF-8 无 BOM；未碰代码/SO/registry/SSOT/DESIGN/术语词表。遗留待拍：`T_soft 1h` 去留（建议随 T_login 一并降 v2）。
 
 ## 待办（落代码前必过）
 

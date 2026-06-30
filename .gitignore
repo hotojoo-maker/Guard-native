@@ -99,6 +99,20 @@ tools/b56_static_index/
 /_stage_paths.txt
 /_archive_run.ps1
 
+# 根目录开发产物 / dump / 探针 / 截图 / 临时日志 scratch（留本地，不入库；2026-07-01 用户确认：只排除不删）
+/after_hide*.png
+/dump_*.py
+/dump_*.js
+/run_dump.py
+/probe_tmp.js
+/set_*.txt
+/set_dump.xml
+/verify_log.txt
+/logs_*.log
+/tmp_*.log
+/tmp_verify_*.py
+/tmp_modcmp/
+
 # M6a 朋友圈图标探针的大体积原始 dump / 截图（留本地，不入库；可重生成）
 **/dumpsys_*.txt
 **/gi_dump.txt
@@ -117,3 +131,11 @@ tmp_ssh_*.py
 # 直接过 CompatProbe 证书校验 + 证书绑定 registry，整套真锁作废。仅留本机 + 离线备份。
 signing/keystore.properties
 signing/*.jks
+
+# AuthMessagePassThrough 打包/解压产物（可重生成，留本地不入库；2026-07-01 用户确认：只排除不删）
+03_execute_执行任务/P_AuthMessagePassThrough/built.zip
+03_execute_执行任务/P_AuthMessagePassThrough/dev.zip
+03_execute_执行任务/P_AuthMessagePassThrough/unzip_built/
+03_execute_执行任务/P_AuthMessagePassThrough/unzip_dev/
+# APK 签名分片产物（.apk.idsig，可重生成）
+*.idsig

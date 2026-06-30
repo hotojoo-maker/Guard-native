@@ -48,3 +48,17 @@
 
 - 整体回退：`git log --oneline` 找到归档提交，`git revert <hash>`。
 - 单任务找回：`git mv 07_archive_归档/<P号> 03_execute_执行任务/<P号>`，或直接读 `07_archive_归档/<P号>/`。
+
+---
+
+## 探索期 hook 发现脚本归档（2026-06-29 · 探针归档官/窗口1）
+
+> 来源：第一次开发期为找 8.0.71 hook 点引入的 Frida 探针 + 竞品逆向探针，**找点已用完**。按「移不删」搬入 `07_archive_归档/tools/`（TOOLS_INDEX §八既定路径），**普通文件移动、未跑 git**。现行工具（防封官 `dump_*` / `s6_*` / `elf_imports`、KPI `frida_kpi_probe.js`、`check_classmap.ps1`）**未动**，仍在 `tools/`。合计 **72 个文件**。
+
+| 归档子目录 | 来源 | 数量 | 内容概览 |
+|------|------|:--:|------|
+| `07_archive_归档/tools/`（根） | `tools/` | 19 | `trace_*.js`（签名/包名/上报时序/红点/badge/wxid 探查 12）、`catfish_push_stack.js`、`trace_catfish_reddot.js`、`verify_maintabui_i.js`、`like_source_trace.js`、`run_probe.py`、`run_trace.py`、`tmp_trace_*` |
+| `07_archive_归档/tools/dynamic_crawler_动态爬虫/` | `02_tools_工具/dynamic_crawler_动态爬虫/` | 37 | 动态 hook 点发现器整目录：`probe_*.js`、`cat_revoke_*.js`、`crawler_core.js`、`search_crawler.js`、`moments_visibility_crawler.js`、`conv_refresh_probe*.js`、`chk_a2.js` / `probe_a2.js`、`README.md` |
+| `07_archive_归档/tools/quwei_miyou_probe/` | `tools/quwei_miyou_probe/` | 16 | 趣味/微密友竞品样本探针：`probe_quwei.*`、`probe_unread_*`、`patch_*`、`trace_*`、`QUWEI_MIYOU_PROBE.md` |
+
+> 未搬（待定）：`tools/dump_normsg_event_probe_v2_B56.js`——任务点名搬，但经查仍是**防封官现行工具**（`guard-antiban` skill · `ANTIBAN_MAP.md:224` · `JIDE_...:1630` 在引用），按「有引用就留」原则暂留 `tools/`，待定夺。

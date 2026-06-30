@@ -64,6 +64,7 @@ public final class EnvelopeClient {
         if ("DEVICE_LIMIT".equals(code)) return "设备数量已达上限，请联系客服";
         if ("RELEASE_KILLED".equals(code)) return "该版本已停用，请联系客服";
         if ("RELEASE_PAUSED".equals(code)) return "该版本暂停新激活，请联系客服";
+        if ("VERSION_KILLED".equals(code)) return "该版本已停用，请更新";
         if ("TOKEN_INVALID".equals(code)) return "授权已失效，请重新激活";
         if ("DEVICE_ABNORMAL".equals(code)) return "设备异常，请联系客服";
         return "授权异常，请联系客服";
@@ -99,6 +100,7 @@ public final class EnvelopeClient {
             body.put("device_id", deviceId == null ? "" : deviceId);
             body.put("dm", deviceMaterialHex());
             body.put("release_id", AppConfig.GUARD_RELEASE_ID);
+            body.put("app_version", AppConfig.GUARD_PRODUCT_VERSION);
         } catch (Throwable t) {
             return null;
         }

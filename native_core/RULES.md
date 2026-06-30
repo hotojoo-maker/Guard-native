@@ -12,7 +12,7 @@
 |---------|-----------|
 | `dlopen` 微信自身任何 SO | 铁律 23 F-23 |
 | 接入微信 `JNI_OnLoad` 链 | 铁律 23 F-23 |
-| Hook 微信任何 native 方法 | 铁律 23 |
+| 重碰微信 native 方法 | 铁律 23 |
 | 引入 Pine / bypassmm / shadowhook | 铁律 2（封号高暴露）|
 | `System.loadLibrary` 加载非模块自身 SO | 铁律 23 |
 | Hook `:sandboxed_process` / `:isolated_*` / `:appbrand*` | 铁律 6 |

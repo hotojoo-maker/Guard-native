@@ -27,7 +27,7 @@
 | 6 | A2 三轴 / 检测面实证 | `C:\Users\Me\Desktop\防封_反检测线\防封权威账_2026年6月.md`（外部研究线，只读引用） |
 | 7 | 授权门控 / 状态机 | [`docs/GUARD_GATE_TRUTH.md`](./docs/GUARD_GATE_TRUTH.md) + [`PROTECTION_MAP.md`](./PROTECTION_MAP.md) |
 
-> `A3-0` = **ARCHIVED 留档**，不作决策依据（`PLAN.md` / `进度安全盘点_v0` 已于 2026-06-30 减法删除；PLAN §A.5 共享常量禁区并入 `P_AntiBanGate/DESIGN.md` 附录 F）。
+> `PLAN.md` / `进度安全盘点_v0` / `A3-0` 均已于 2026-06-30 减法删除（git 可查）；原 PLAN §A.5 共享常量禁区并入 `P_AntiBanGate/DESIGN.md` 附录 F。
 
 ---
 

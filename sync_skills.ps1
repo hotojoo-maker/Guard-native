@@ -11,6 +11,8 @@
 #   Mirror 2 : .agents/skills/  (Devin native skill dir)
 #   Strategy : robocopy /MIR, idempotent (handles Chinese folder names via
 #              wide-char API; do NOT use Copy-Item — it mangles CJK names)
+#   Secrets  : /XF DEV_SECRETS.md — never mirror dev secrets into .agents/.claude
+#              (.agents is git-tracked); the GitHub token stays one copy under .cursor
 
 param(
     [switch]$Watch,
@@ -36,7 +38,7 @@ function Sync-Once {
     New-Item -ItemType Directory -Force -Path $Dst | Out-Null
     Write-Host ("[{0}] {1} -> {2}" -f (Get-Date -Format HH:mm:ss), $Src, $Dst) -ForegroundColor Cyan
 
-    robocopy $Src $Dst /MIR /NP /NS /NJH /NJS /NC /NDL | Out-Null
+    robocopy $Src $Dst /MIR /XF DEV_SECRETS.md /NP /NS /NJH /NJS /NC /NDL | Out-Null
 
     $count = (Get-ChildItem -Path $Dst -Recurse -Filter 'SKILL.md').Count
     Write-Host ("  -> synced {0} SKILL.md" -f $count) -ForegroundColor Green
