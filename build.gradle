@@ -113,9 +113,8 @@ android {
                 keyPassword keystoreProps.getProperty("guardOfficialKeyPassword")
             }
         }
-        // 共存 release 正式签名 — 独立 keystore（Q2 各一把）。
-        // ⚠ 此处仅“签名”就绪：registry_cipher.inc 当前按 official cert 生成，
-        //   coexist 运行时仍会 scatter；coexist 发版前须按其 cert 单独生成 per-flavor registry。
+        // 共存 release 独立签名 — 已退役（2026-06-30「一套配方」：共存改用官替同一把 e3e13a49）。
+        // 配置保留仅兼容历史 keystore.properties；productFlavors 已不再引用本 signingConfig。
         guardCoexistRelease {
             if (keystorePropsFile.exists()) {
                 storeFile file(keystoreProps.getProperty("guardCoexistStoreFile"))
@@ -144,15 +143,14 @@ android {
         }
         coexist {
             dimension "releaseLine"
-            signingConfig signingConfigs.guardCoexistRelease    // 共存 release 正式 key（8f47a47a）；debug 仍以 signingReport 为准
-            // 预期签名证书 SHA-256（共存）—— 独立 keystore 的证书。
-            // ⚠ registry_cipher.inc 当前仍按 official cert 生成，coexist 运行时 registry 会 scatter；
-            //   coexist 发版前须按此 cert 生成 per-flavor registry（见 tools/kdf_common.py + gen_registry_cipher.py）。
-            buildConfigField "String", "GUARD_EXPECTED_CERT", "\"8f47a47afde078c47713db78668e6ed9ab027bc9b86d58a9e646a1f3998d5685\""
+            // 一套配方（2026-06-30 用户拍板「同一套配方，方便维护」）：官替+共存共用同一把
+            // 正式签名 e3e13a49 + 同一份 registry_cipher.inc；共存独立 cert 8f47a47a 已退役。
+            signingConfig signingConfigs.guardOfficialRelease   // 共用官替正式 key（e3e13a49）
+            // 预期签名证书 SHA-256 = 官替同一把 e3e13a49（CompatProbe 读 BuildConfig.GUARD_EXPECTED_CERT）。
+            buildConfigField "String", "GUARD_EXPECTED_CERT", "\"e3e13a4974fe4c40432a583b11309edb4705c8a50b03f474d6b693817adecf36\""
             buildConfigField "String", "GUARD_WX_PKG", "\"com.tencent.mn\""
-            // 共存发行线 ID = android_8071_coexist（设计稿 + 服务器既有线；SSOT 口径 v1）。
-            // 服务器 release_lines 已登记 android_8071_coexist，须配 S_rel/W/registry_cipher/卡密同源；
-            // 换 cert/registry 后两版各自重生成、装机 recipeOk=true（docs/RELEASE_LINE_SSOT_发行线统一口径.md）。
+            // 共存发行线 ID 仍独立 = android_8071_coexist（防同机双装被判重复安装扣分）；
+            // 但服务器 S_rel 与官替同源 → 同一份 registry_cipher.inc 两版都能解（recipeOk=true）。
             buildConfigField "String", "GUARD_RELEASE_ID", "\"android_8071_coexist\""
             externalNativeBuild {
                 cmake {
@@ -247,4 +245,30 @@ dependencies {
 
     // RecyclerView compileOnly removed: WeChat ProGuards the class name,
     // causing NoClassDefFoundError at runtime. Use pure reflection instead.
+}
+
+// ── Release string-leak gate (硬闸, 2026-06-29) ────────────────────────────
+// After a release APK is assembled, scan it for leaked DEBUG / self-test /
+// unit-test artifacts (tools/check_release_strings.ps1). The scanner exits 1 on
+// a leak → this Exec task fails → the build breaks, so a release candidate can
+// never silently ship debug strings (machine-enforced, not "remember to run it").
+// Debug variants are intentionally NOT gated (they legitimately contain DEBUG
+// code). Windows/PowerShell only (this project is Windows-only; all tools/*.ps1).
+//
+// Override the scanned APK for ad-hoc / negative testing:
+//   gradlew checkStringLeakOfficialRelease -PstringGateApk=path\to\some.apk
+['official', 'coexist'].each { fl ->
+    def variant = "${fl.capitalize()}Release"   // OfficialRelease / CoexistRelease
+    def gate = tasks.register("checkStringLeak${variant}", Exec) {
+        group = 'verification'
+        description = "Scan the ${fl} release APK for leaked debug/test strings"
+        def apk = project.hasProperty('stringGateApk')
+                ? project.property('stringGateApk').toString()
+                : "${projectDir}/build/outputs/apk/${fl}/release/guard-native-${fl}-release.apk"
+        commandLine 'powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass',
+                '-File', "${projectDir}/tools/check_release_strings.ps1", '-Apk', apk
+    }
+    tasks.matching { it.name == "assemble${variant}" }.configureEach {
+        finalizedBy gate
+    }
 }

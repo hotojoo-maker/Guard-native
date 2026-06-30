@@ -27,27 +27,17 @@ namespace {
 // are GENERATED from registry_8071.json by tools/gen_registry_cipher.py (single
 // source of truth — no hand-maintained plaintext copy). decrypt_config() turns
 // it back into the registry JSON; tag mismatch / wrong key → scatter.
-// Per-flavor 选择：coexist 变体（com.tencent.mn）嵌 8f47a47a 绑定的 registry，官替嵌
-// e3e13a49 绑定的。CMake 按 GUARD_WX_PKG 定义 GUARD_REGISTRY_COEXIST；两 inc 符号名
-// 相同（kRegistry*），必须二选一（docs/RELEASE_LINE_SSOT_发行线统一口径.md）。
-#if defined(GUARD_REGISTRY_COEXIST)
-#include "registry_cipher_coexist.inc"
-#else
+// 一套配方（2026-06-30「同一套配方」决策）：官替+共存共用同一把 cert e3e13a49 + 同一份
+// registry_cipher.inc。共存独立 coexist inc 已退役（GUARD_REGISTRY_COEXIST 不再定义）。
 #include "registry_cipher.inc"
-#endif
 
 // C2: cert-only bootstrap endpoint blob (AUTH server domains). Generated from
 // native_core/bootstrap_endpoints.json by tools/gen_bootstrap_cipher.py.
 // Decrypted with derive_bootstrap_key() (no server seed) so endpoints are
 // available before any server handshake. See docs/HONEYPOT_蜜罐设计.md §4.
-// Per-flavor 选择（同上 registry）：bootstrap 也绑 cert，coexist 变体（com.tencent.mn）
-// 嵌 8f47a47a 绑定的引导段，官替嵌 e3e13a49 绑定的。漏了它 → coexist 解不开服务器地址
-// → bootstrapEndpoints count=0 → 连不上服务器。两 inc 符号名相同（kBootstrap*），二选一。
-#if defined(GUARD_REGISTRY_COEXIST)
-#include "bootstrap_cipher_coexist.inc"
-#else
+// 一套配方（同上）：bootstrap 也共用官替 e3e13a49 绑定的 bootstrap_cipher.inc；
+// coexist 独立引导段已退役。
 #include "bootstrap_cipher.inc"
-#endif
 
 #ifndef GUARD_REGISTRY_REQUIRES_SERVER_SEED
 #define GUARD_REGISTRY_REQUIRES_SERVER_SEED 0

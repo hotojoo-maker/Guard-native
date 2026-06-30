@@ -18,7 +18,7 @@ import java.util.Random;
  *
  * 节奏（用户 2026-06-11 锁定）：
  *   • 新装/probe (q=1)   : 10 ~ 30 min
- *   • 正常稳定 (q=0)     : 1 ~ 2 h
+ *   • 正常稳定 (q=0)     : 60 min（±15% 抖动 = 51~69 min）
  *   • 嫌疑/影子 (q>=2)   : 10 min（升频密集观察）
  *   • 硬封顶            : 6 h —— 任何档都不超过，保证封停/危险通告 ≤6h 下发
  *   • 全程随机抖动 ±15%  : 不走固定整点，避免成为反检测指纹
@@ -65,7 +65,7 @@ public final class GuardHeartbeat {
         } else if (tier == 1) {
             base = MIN_10 + (long) (RND.nextDouble() * (MIN_30 - MIN_10)); // 新装 10~30min
         } else {
-            base = HOUR_1 + (long) (RND.nextDouble() * (HOUR_2 - HOUR_1)); // 稳定 1~2h
+            base = HOUR_1; // 稳定 60min（±15% 抖动后 = 51~69min）
         }
         // 抖动 ±15%
         double jitter = 1.0 + (RND.nextDouble() * 0.30 - 0.15);
@@ -93,7 +93,11 @@ public final class GuardHeartbeat {
             if (e == null) {
                 if (isHardAuthError(EnvelopeClient.getLastErrorCode())) {
                     EnvelopeStore.clear();
-                    EnvelopeStore.saveAuthError(EnvelopeClient.authErrorText(EnvelopeClient.getLastErrorCode()));
+                    // 服务器下发的 message 优先（db.py 所有 error 响应都带 message），空才走客户端兜底文案。
+                    String srvMsg = EnvelopeClient.getLastErrorMessage();
+                    EnvelopeStore.saveAuthError((srvMsg == null || srvMsg.isEmpty())
+                            ? EnvelopeClient.authErrorText(EnvelopeClient.getLastErrorCode())
+                            : srvMsg);
                     Log.w(TAG, "[hb] hard auth error — token cleared");
                 }
                 Log.w(TAG, "[hb] envelope invalid — fail-closed");
@@ -225,8 +229,6 @@ public final class GuardHeartbeat {
     /**
      * 启动心跳循环：先同步一次，再按风险层自排下次（postDelayed + 后台网络）。
      * 幂等；重复调用只生效一次。
-     *
-     * ⚠️ 调用点应是 ModuleMain 冷启动（保护区，待审接入）；现作为骨架提供。
      */
     public static synchronized void start(final String deviceId,
                                           final String certHex, final String appVersion) {

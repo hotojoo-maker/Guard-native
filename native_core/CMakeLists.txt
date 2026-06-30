@@ -37,11 +37,9 @@ target_include_directories(guardcore PRIVATE include)
 # 把期望包名灌成编译期宏，guard_core.h 的 EXPECTED_PACKAGE 取它。
 target_compile_definitions(guardcore PRIVATE GUARD_EXPECTED_PACKAGE="${GUARD_WX_PKG}")
 
-# Per-flavor registry：共存包名 → 嵌 coexist registry（绑 8f47a47a）。registry_loader.cpp
-# 据此 #if 选 registry_cipher_coexist.inc vs registry_cipher.inc（SSOT 口径 v1）。
-if(GUARD_WX_PKG STREQUAL "com.tencent.mn")
-    target_compile_definitions(guardcore PRIVATE GUARD_REGISTRY_COEXIST=1)
-endif()
+# 一套配方（2026-06-30「同一套配方」决策）：官替+共存共用同一把 cert e3e13a49 + 同一份
+# registry_cipher.inc / bootstrap_cipher.inc。不再按包名分 per-flavor registry（GUARD_REGISTRY_COEXIST
+# 已退役）；共存仅包名(GUARD_WX_PKG=com.tencent.mn)与发行线(GUARD_RELEASE_ID)不同，配方同源。
 
 # DEBUG-only hooks: logging + KDF self-test. Defined ONLY when CMAKE_BUILD_TYPE
 # is Debug (AGP: debug→Debug, release→RelWithDebInfo). Never use -DGUARD_DEBUG

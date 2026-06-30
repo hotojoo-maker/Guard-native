@@ -201,7 +201,7 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
             NativeBridge.setAuthState(authResult);
             Log.i(TAG, "[auth] evaluate=" + authResult + " (v1 record-only, not gating)");
             com.ghost.assist.core.CompatProbe.check(app);  // 段2 蜜罐绊线：诱饵被改→markTampered→影子期
-            com.ghost.assist.core.CompatProbe.checkSignature(app, sModulePath);  // 段2 签名绊线：重签→markTampered→影子期
+            com.ghost.assist.core.CompatProbe.checkSignature(app, hostApkPath(app));  // 段2 签名绊线：重签→markTampered→影子期 (2026-06-30 改读宿主整包, 详见 bindSigningCert 注释)
             RiskState.Level riskLevel = RiskState.evaluate(app);
             Log.i(TAG, "[risk] level=" + riskLevel.label + " (v1 record-only, not gating)");
             RiskPromptController.maybeShow(app, "cold-start");
@@ -227,16 +227,16 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         //      Route B/D-020：闸 = 本地模块证书完整性 + 时间闸（首装72h/失效7天，fail-open）；
         //      只读闸出口 + 各子信号（ANTIBAN-GATE tag），不门控隐私、不改 isActive。
         if (BuildConfig.DEBUG) {
-            com.ghost.assist.core.GuardRuntime.antiBanGateSelfTest(TAG, app, sModulePath);
+            com.ghost.assist.core.GuardRuntime.antiBanGateSelfTest(TAG, app, hostApkPath(app));   // 2026-06-30 改读宿主整包
             com.ghost.assist.core.GuardRuntime.antiBanBranchSelfTest(TAG);   // D-020 时间闸全分支纯函数自测（②新装/④封停超时）
         }
 
         // 6.7. A2 防封签名轴安装（Route B / D-020）：门控 = 本地 cert 完整性 + 时间闸。
-        //      isAntiBanReady(app, sModulePath)——cert 完整 + 在时间窗内（授权中 / 首装72h内 / 失效7天内 /
+        //      isAntiBanReady(app, hostApkPath(app))——cert 完整 + 在时间窗内（授权中 / 首装72h内 / 失效7天内 /
         //      封停72h内 / 官方授时无值 fail-open）即装、保号；重签散沙、超窗撤。逆序线 fail-open（拿不准=装）。
         //      A2 是独立加法，只动自身包签名返回，不连坐隐私 isActive()、不进已验证 hook。
         try {
-            if (com.ghost.assist.core.GuardRuntime.isAntiBanReady(app, sModulePath)) {
+            if (com.ghost.assist.core.GuardRuntime.isAntiBanReady(app, hostApkPath(app))) {   // 2026-06-30 改读宿主整包
                 com.ghost.assist.core.A2SignatureSpoof.install(lpparam);
                 com.ghost.assist.core.A2PkgPathSpoof.install(lpparam);   // A2 包名/路径轴（仅共存，internal self!=官方包名 判定，官替自动跳过）
             } else {
@@ -330,14 +330,37 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
      * Logs only the first 4 bytes (so a release log doesn't hand out the full
      * bound value).
      */
+    /**
+     * 宿主整包 APK 路径 = 当前进程包名对应的 sourceDir。
+     *
+     * 用途: cert binding (NativeBridge.setBindingMaterial) / A2 闸 / 重签蜜罐都用这个,
+     * 不再用 sModulePath (LSPatch metaloader 重打包模块时换了 keystore -> 签名漂移)。
+     * sModulePath 保留语义不变, 仅 DebugServer 等"模块自验"场景继续用。
+     *
+     * 同进程查自己包名不受 Android 11+ package visibility 限制 (限制只对查别人的包)。
+     */
+    private static String hostApkPath(Application app) {
+        try {
+            return app.getApplicationInfo().sourceDir;
+        } catch (Throwable t) {
+            return "";
+        }
+    }
+
     private void bindSigningCert(Application app) {
         try {
-            // Read our OWN cert from the module APK file (sModulePath), NOT by
-            // package name: querying com.ghost.assist from inside com.tencent.mm
-            // is blocked by Android 11+ package visibility.
-            String path = sModulePath;
+            // 2026-06-30: 改读宿主整包 (sourceDir) 签名, 不再读 sModulePath。
+            // 历史读模块路径的设计在 LSPatch 形态下踩坑: LSPatch metaloader 在 extract
+            // 模块时会把内嵌的 modules/com.ghost.assist.apk 重打包到 cache/lspatch/...
+            // 那个新 APK 用 LSPatch 内置 debug keystore (ca421ec3) 重签, 与发版 release
+            // keystore (e3e13a49) 不一致 -> registry 派生 key mismatch -> 散沙。
+            // 宿主 sourceDir = LSPatch -k 用的 keystore (我方可控), 与生成 cipher 时使
+            // 用的 cert 同源, 跨 Debug/Release/LSPatch 形态都稳。
+            // 注: 同进程查自己包名 (app.getPackageName()) 不受 Android 11+ package
+            // visibility 限制 (老注释那条限制只针对查别人的包)。
+            String path = hostApkPath(app);
             if (path == null || path.isEmpty()) {
-                Log.w(TAG, "[native] certBind skipped: no module path");
+                Log.w(TAG, "[native] certBind skipped: no host apk path");
                 return;
             }
             android.content.pm.PackageManager pm = app.getPackageManager();
