@@ -89,9 +89,10 @@ Guard Native / Guard Pack 从 **1.0 正式发布**开始，同一客户包必须
 
 | 产物 | 当前签名 | 用途 |
 |------|----------|------|
-| `officialDebug` / `coexistDebug` 模块 APK | `ca421ec3` debug key | 只用于模块更新、公告、C2/心跳 smoke；因 `GUARD_EXPECTED_CERT` 仍按正式 cert 注入，registry/A2 会 cert mismatch/scatter |
-| `officialRelease` 模块 APK | `e3e13a49` official key | 官替正式发行候选 |
-| `coexistRelease` 模块 APK | **`e3e13a49` official key（v2 已合并）** | 共存正式发行候选；signingConfig 改指 `guardOfficialRelease` |
+| `officialDebug` / `coexistDebug` 模块 APK | `ca421ec3` debug key | 只用于模块更新、公告、C2/心跳 smoke；因 `GUARD_EXPECTED_CERT` 仍按正式 cert 注入，registry/A2 会 cert mismatch/scatter；**不可出货** |
+| `officialRelease` 模块 APK | `e3e13a49` official key | 官替正式发行候选（待装机 L1 实证 `certBind=e3e13a49 + recipeOk=true`，宿主仍需经步骤 0 重签否则同 F-43） |
+| `coexistRelease` 模块 APK | **`e3e13a49` official key（v2 已合并）** | 共存正式发行候选；signingConfig 改指 `guardOfficialRelease`；**宿主必须经步骤 0 重签**（克隆原始 `a40da80a` ≠ `e3e13a49`，sigbypass 会 bleed-through，详 F-43/D-030） |
+| `build/lspatch_out_rel/wx_host-439-lspatched.apk` 调试遗留 | `ca421ec3` debug key | 历史调试产物，**不可出货**；正式出货走 `02_tools_工具/lspatch_out/*-lspatched.apk` 或老 AI 修复路径 `build/lspatch_out_coexist_fix/mn_e3host_8071-439-lspatched.apk`（L1 实证 e3e13a49） |
 
 > v1 共存专用 `8f47a47a` keystore 已退役（jks 保留作历史，未引用于任何 buildType）。详见 SSOT §0.5 / §2 / §8。
 
@@ -122,24 +123,35 @@ Guard Native / Guard Pack 从 **1.0 正式发布**开始，同一客户包必须
 
 脚本完事会打印产物路径 + 下一步 3 行装机命令。脚本细节看 `tools/lspatch_pack.ps1` 头注。
 
-**手动 4 步（如不想用脚本 / 排错时）**：
+**手动 5 步（如不想用脚本 / 排错时；2026-07-01 D-030 加步骤 0）**：
+
+> ⚠️ **F-43/D-030 教训**：LSPatch `-l 2` sigbypass 运行时返回**宿主原始签名**，不是 LSPatch `-k`。光设 -k official 不够——克隆宿主必须**先 apksigner 重签**为 e3e13a49，再 LSPatch。否则装机后 `[native] certBind` 读到的是宿主原始（克隆 `a40da80a` / 官方原版 `0fe4ff85`）≠ EXPECTED `e3e13a49` → A2 不装、registry scatter、"授权异常"。
 
 ```text
+# 0. (D-030 新增) 把克隆宿主真正重签为 e3e13a49（仅克隆宿主 / 任何非 e3e13a49 签的宿主都要先跑）
+apksigner sign --ks signing/guard-native-official-release.jks \
+  --ks-pass pass:<storePass> --key-pass pass:<keyPass> --ks-key-alias guardofficial \
+  --out 02_tools_工具/mn_e3host_8071.apk \
+  02_tools_工具/mn_clean_origin_8071.apk
+#    验证：apksigner verify --print-certs 02_tools_工具/mn_e3host_8071.apk
+#    应看到 Signer #1 SHA-256 = e3e13a4974fe4c40...
+
 # 1. clean 重编共存 release 模块（必须 clean，否则 gradle 判 UP-TO-DATE 打进旧 dex）
 ./gradlew clean :assembleCoexistRelease
 #    产物：build/outputs/apk/coexist/release/guard-native-coexist-release.apk（GUARD_WX_PKG=com.tencent.mn，e3e13a49 签）
 #    自动跑 checkStringLeakCoexistRelease 硬闸（dex+SO 扫泄漏）
 
-# 2. LSPatch 重新打包进共存宿主（-k 必须用 official release keystore = e3e13a49）
-#    keystore 密码从 signing/keystore.properties 读（gitignore，不进源码）
-java -jar 02_tools_工具/lspatch.jar 02_tools_工具/mn_clean_origin_8071.apk \
+# 2. LSPatch 重新打包进重签后的共存宿主（用步骤 0 重签的宿主，不是原 mn_clean_origin）
+#    -k 同把 official release keystore；密码从 signing/keystore.properties 读
+java -jar 02_tools_工具/lspatch.jar 02_tools_工具/mn_e3host_8071.apk \
   -m build/outputs/apk/coexist/release/guard-native-coexist-release.apk \
   -l 2 -k signing/guard-native-official-release.jks <storePass> guardofficial <keyPass> \
   -o 02_tools_工具/lspatch_out -f
 #    校验日志：Embedding modules - com.ghost.assist
 #    产物：02_tools_工具/lspatch_out/<宿主名>-<versionCode>-lspatched.apk
-#    宿主整包签名 = e3e13a49（apksigner verify --print-certs 实测）→ ModuleMain.bindSigningCert
-#    读 hostApkPath(app)=app.getApplicationInfo().sourceDir 拿到 e3e13a49 = 与 registry 派生同源 → 解开
+#    LSPatch sigbypass 运行时返回宿主原始签名 = (步骤 0 重签后的) e3e13a49
+#    → ModuleMain.bindSigningCert 读 hostApkPath(app) 拿到 e3e13a49
+#    → 与 registry 派生同源 → 解开 → recipeOk=true
 
 # 3. 干净装机（绝不 install -r 覆盖；卸 + 重启清 dex/odex + 装）
 adb uninstall com.tencent.mn
@@ -149,13 +161,18 @@ adb install 02_tools_工具/lspatch_out/<上一步产物>.apk
 # 4. 用户桌面点开图标（禁 am start / monkey —— 会崩 metaloader）
 ```
 
-铁律（2026-06-29 实测踩坑固化 · 2026-06-30 cert merge 补强）：
+铁律（2026-06-29 实测踩坑固化 · 2026-06-30 cert merge 补强 · 2026-07-01 D-030 sigbypass 真相补强）：
 
 - **必 `clean`**：省 `clean` → gradle 判 UP-TO-DATE → 把旧模块打进包（表现：日志 self/cert 对不上、自测缺失）。
 - **必干净装**：`install -r` 覆盖 + `monkey`/`am start` 起 → 崩 LSPatch metaloader（`ExceptionInInitializerError`）；卸载 + 重启 + **桌面点开**才稳（详发版官 skill §坑4）。
 - 共存只动 `com.tencent.mn`，不碰官方 `com.tencent.mm`、也不碰其他克隆。
-- 官替版同理：flavor 换 `:assembleOfficialRelease`、宿主换原版微信 clean APK（`02_tools_工具/host_official_clean_8.0.71.apk`）、目标包换 `com.tencent.mm`、LSPatch `-k` 同一把 `guard-native-official-release.jks`（cert-converge v2 起两 flavor 共用 official keystore）。
-- **2026-06-30 cert binding 真相**（F-43 教训）：`bindSigningCert` 读宿主整包 sourceDir（即 LSPatch `-k` 用的 keystore），**不再**读模块自身 `sModulePath`——LSPatch metaloader 会把内嵌模块 APK 在 extract 时用 LSPatch 内置 debug keystore 重打包重签（实测 cert = `ca421ec3`），与发版 release keystore `e3e13a49` 不一致。改读宿主 sourceDir 后机制对所有 LSPatch 形态都稳。详 `DECISION_LOG.md` D-027 / `FAILURE_LOG.md` F-43。
+- 官替版同理：flavor 换 `:assembleOfficialRelease`、宿主用**重签后**的官方包（步骤 0 把 `02_tools_工具/host_official_clean_8.0.71.apk` 从 `0fe4ff85` 重签为 `e3e13a49`，再 LSPatch）、目标包换 `com.tencent.mm`、LSPatch `-k` 同一把 `guard-native-official-release.jks`。
+- **2026-07-01 cert binding 真相**（F-43/D-027/D-030 教训，三者合并理解）：
+  - ① `ModuleMain.bindSigningCert` 读宿主整包 sourceDir（D-027 改、不再读模块 `sModulePath`）—— 必要前提。
+  - ② **LSPatch `-l 2` sigbypass 运行时返回的是宿主原始签名，不是 LSPatch `-k`**（D-030 新增）—— 因此克隆宿主**必须先 apksigner 重签为 e3e13a49**，再 LSPatch。否则装机后 `[native] certBind` 读到的是宿主**原始**签名（克隆 `a40da80a` / 官方原版 `0fe4ff85`）≠ EXPECTED `e3e13a49` → A2 不装、registry scatter。
+  - ③ `apksigner verify --print-certs` 只看**文件级**签名，**不能证明运行时 cert binding** —— 必须 logcat 实证 `[native] certBind set sha256[0..3]=e3e13a49`。
+  - 详 `DECISION_LOG.md` D-027 + D-030 / `FAILURE_LOG.md` F-43。
+- **出货品质门禁（待建·建议起 P0 `verify_cert_chain` 四端硬闸）**：装机前比四端 cert 必须齐 `e3e13a49`：① 模块 release APK apksigner ② LSPatch 输出 APK apksigner ③ 装机后 logcat `certBind` ④ 服务器 `release_lines.cert_prefix`；任一不齐 BLOCK。当前作业靠人工核，易踩 F-43（老 AI 老共存包就是这样翻车的）。
 
 ### 下次发新版最短流程（先看这里）
 

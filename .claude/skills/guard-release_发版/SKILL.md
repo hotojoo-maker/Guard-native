@@ -66,7 +66,7 @@ description: Guard Native 发版官（发布 / 出包 / 官替版 / 共存版 / 
 - **D 服务器同步**（交 guard-server_服务器运维）：`config.py` 的 `GUARD_REL_KEYS[<id>].srel` 换同一新 s_rel + `release_lines` 登记（package_line/product_version）+ 部署主/备两节点。
 - **E 装机 L1 验证**：冷启动看 `available=true`、`role=1 MAIN`、`BATCH1_VERIFY PASS`；心跳后 `recipeOk=true`。日志落盘才算发布候选。
 
-## 六条坑（已实证，违反即翻车）
+## 七条坑（已实证，违反即翻车）
 
 1. **包名注入要连进程名**：`GUARD_WX_PKG` 不能只喂 `anti_tamper` 的 `EXPECTED_PACKAGE`，还必须驱动 `guard_core.h` 的 `PROCESS_MAIN`/`PROCESS_PUSH`。漏了 → 共存版 `role=UNKNOWN` + `BATCH1 FAIL` → 不报错但不隐藏。新增"按包名分支"的 native 常量一律从 `GUARD_EXPECTED_PACKAGE` 派生。
 2. **同 release_id 换 s_rel = 旧装机包散沙**。要"新版不影响老用户"必须用**新 release_id**（如 `android_8071_coexist`，需 flavor 专属 `GUARD_RELEASE_ID` + 独立 s_rel + 服务器加线）。
@@ -77,6 +77,7 @@ description: Guard Native 发版官（发布 / 出包 / 官替版 / 共存版 / 
    - 装官替前 `apksigner verify --print-certs` 比对手机现装 `com.tencent.mm` cert 与官替 release cert `e3e13a49`（v2 共存 release 同 `e3e13a49`；debug smoke = `ca421ec3`）。
    - 手机 `com.tencent.mm` 若 clean 未打补丁且 cert ≠ 我方官替 cert `e3e13a49`（609b4b18 = `0fe4ff85`）= 正版官方微信，该机测不了官替（`-r` 跨签名失败、卸正版丢数据），官替验证用另一台空机；该机用共存 `com.tencent.mn` 测。
    - 「官方原版 host APK」可能已是 LSPatched（含 `assets/lspatch/origin.apk`，再 LSPatch → 0 字节）；用其 `assets/lspatch/origin.apk` 作 clean host，或用真 clean 原版（root `host_official_com.tencent.mm_8.0.71.apk` 已 patched，`_8.0.70` clean 但版本不对）。
+7. **克隆宿主签名 bleed-through + LSPatch sigbypass**（F-43 / D-030，2026-07-01 实证）：LSPatch `-l 2` sigbypass 运行时返回的是**宿主原始签名**，**不是 LSPatch `-k`**。光设 -k official 不够 → 装机后 `[native] certBind` 读到的是宿主原始（克隆 `a40da80a` / 官方原版 `0fe4ff85`）≠ EXPECTED `e3e13a49` → A2 不装、registry scatter、"授权异常"。**克隆宿主必须先 `apksigner sign --ks signing/guard-native-official-release.jks` 真正重签为 e3e13a49**，再 LSPatch -k 同把 official。`apksigner verify --print-certs` 只看文件级、**不能证明运行时 cert binding**——必须 logcat 实证 `certBind=e3e13a49`。详 RELEASE_RULES 共存 5 步快查 step 0。
 
 ## 边界（不越权，交对应 skill）
 

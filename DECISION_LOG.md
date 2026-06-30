@@ -265,6 +265,21 @@
   - `.cursor/skills/guard-server_服务器运维/SKILL.md` 「Batch3 门禁」段 + `.cursor/skills/guard-security_网络安全官/SKILL.md` 「W 一机一密」段需同步去掉「dm 回填率 ≥ 90%」字眼。
 - **撤回**:撤回意味着保留 W_dev 双试 + 全局 W 回退,回到现状(无安全收益、有维护代价)。除非 prod 真出现规模化客户(数百~数千台)+ 需要保护渐进升级体验,否则不撤。
 
+### D-030：克隆宿主必须先 apksigner 重签为发版 cert，再 LSPatch（与 D-027 配对，F-43 完整修复）（2026-07-01）
+
+- **决策**：所有 LSPatch 重打包前的"克隆宿主 APK"（共存 `mn_clean_origin_8071.apk` / `host_coexist_com.tencent.mn_8.0.71.apk` 等，由 MT 管理器或别的工具改包名 + 自带任意签名）**必须先用 `apksigner sign --ks signing/guard-native-official-release.jks` 真正重签为 `e3e13a49`**，然后再喂给 LSPatch（`-k` 同把 official jks）。F-43 修复的另一半（前一半 = D-027 cert binding 改读宿主 sourceDir）。
+- **依据**：F-43 实证 LSPatch `-l 2` sigbypass 运行时 `PackageManager.getPackageInfo(host).signatures` 返回的是**宿主原始签名**（apksigner --print-certs 看到的"文件级 e3e13a49"被 sigbypass 旁路），**不是 LSPatch -k 那把**。因此光设 LSPatch -k official 是错的——只让文件级签名对上、运行时 cert binding 仍读到宿主原始（克隆残留 `a40da80a` 或官方原始 `0fe4ff85`）。L1 实证：装机 PID 23735（2026-07-01 04:29）老 AI 修复"克隆宿主先 official 重签"后 `[native] certBind=e3e13a49 + [A2SIG] installed + recipeOk=true`（详 `03_execute_执行任务/P_HotUpdateFreeze_官方热更新冻结/logs/coexist_verify_20260701.txt`）。
+- **L1 证据**：
+  - 共存出货包：`build/lspatch_out_coexist_fix/mn_e3host_8071-439-lspatched.apk`（老 AI 修，apksigner = e3e13a49，运行时 certBind = e3e13a49，装机 L1 全绿）。
+  - 错版对照：`02_tools_工具/lspatch_out/mn_clean_origin_8071-439-lspatched.apk`（直接 LSPatch -k 未重签宿主，apksigner = e3e13a49 但运行时 certBind = a40da80a）。
+  - 调试对照：`build/lspatch_out_rel/wx_host-439-lspatched.apk`（apksigner = ca421ec3，**不可出货**）。
+- **影响**：
+  - 流程：`docs/RELEASE_RULES.md` 共存/官替 4 步快查升级为 5 步（step 0 = `apksigner sign --ks` 重签宿主）；`tools/lspatch_pack.ps1` 一键脚本需加 `-RebindHost` 或类似 flag 自动跑步骤 0（待补，commit `2cd643c` 当前未含此步）。
+  - 文档：`docs/RELEASE_RULES.md` / `.cursor/skills/guard-release_发版/SKILL.md` 加坑 / `PROTECTION_MAP.md` §10.x 增 D-030 链路。
+  - 出货：未来"克隆宿主"流派（共存版、自改包名包）一律走此流程；"官方原版直接 LSPatch"流派（官替版用 `host_official_clean_8.0.71.apk`）**同样需要重签**（宿主原始 `0fe4ff85` ≠ `e3e13a49` → 同样 cert mismatch，详老 AI 提示「官替能跑说明它用的宿主已是 e3e13a49」需 L3 再核）。
+  - 硬闸：建议起 P0 `verify_cert_chain` 四端硬闸（apksigner 文件级 + logcat 运行时 + registry_cipher 派生 + 服务器 release_lines.cert_prefix），装前不齐就 BLOCK（老 AI 推荐入 drift ledger P0）。
+- **撤回**：除非 LSPatch 出新版本能让 `-k` 同时改写运行时 sigbypass 返回的签名（目前 v0.6.x 不能），否则不撤。
+
 ---
 
 ## 决策模板
