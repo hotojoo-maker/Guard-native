@@ -40,10 +40,16 @@ public final class EnvelopeClient {
     private static final int READ_TIMEOUT_MS = 8000;
     private static final String SCHEMA_ID = "r8071_v1";
     private static volatile String sLastErrorCode = "";
+    // 服务器下发的中文错误文案与设备短码（db.py 所有 error 响应都带 message；DEVICE_LIMIT 还带 device_short）。
+    // 由 activate() / fetchEnvelope() 在每次请求后回填，调用方读到即用，空串=未拿到（走客户端 authErrorText 兜底）。
+    private static volatile String sLastErrorMessage = "";
+    private static volatile String sLastDeviceShort = "";
 
     private EnvelopeClient() {}
 
-    public static String getLastErrorCode() { return sLastErrorCode; }
+    public static String getLastErrorCode()    { return sLastErrorCode; }
+    public static String getLastErrorMessage() { return sLastErrorMessage; }
+    public static String getLastDeviceShort()  { return sLastDeviceShort; }
 
     /**
      * 授权错误码 → 用户可见文案（合一：原 GuardActivation/GuardHeartbeat 各有一份私有副本，
@@ -59,6 +65,7 @@ public final class EnvelopeClient {
         if ("RELEASE_KILLED".equals(code)) return "该版本已停用，请联系客服";
         if ("RELEASE_PAUSED".equals(code)) return "该版本暂停新激活，请联系客服";
         if ("TOKEN_INVALID".equals(code)) return "授权已失效，请重新激活";
+        if ("DEVICE_ABNORMAL".equals(code)) return "设备异常，请联系客服";
         return "授权异常，请联系客服";
     }
 
@@ -96,6 +103,8 @@ public final class EnvelopeClient {
             return null;
         }
         sLastErrorCode = "";
+        sLastErrorMessage = "";
+        sLastDeviceShort = "";
         for (String base : AppConfig.guardServerList()) {
             String resp = post(base + "/api/v1/activate", body.toString());
             if (resp == null) continue;
@@ -105,7 +114,9 @@ public final class EnvelopeClient {
                     String token = j.optString("token", "");
                     if (!token.isEmpty()) return token;
                 } else {
-                    sLastErrorCode = j.optString("code", j.optString("status", ""));
+                    sLastErrorCode    = j.optString("code", j.optString("status", ""));
+                    sLastErrorMessage = j.optString("message", "");
+                    sLastDeviceShort  = j.optString("device_short", "");
                 }
             } catch (Throwable ignore) {
                 // malformed body → try next server
@@ -141,6 +152,8 @@ public final class EnvelopeClient {
             return null;
         }
         sLastErrorCode = "";
+        sLastErrorMessage = "";
+        sLastDeviceShort = "";
         for (String base : AppConfig.guardServerList()) {
             String resp = post(base + "/api/v1/guard/envelope", body.toString());
             if (resp == null) continue;
@@ -149,7 +162,9 @@ public final class EnvelopeClient {
                 if ("ok".equals(j.optString("status")) && j.has("envelope")) {
                     return j.getJSONObject("envelope").toString();
                 } else {
-                    sLastErrorCode = j.optString("code", j.optString("status", ""));
+                    sLastErrorCode    = j.optString("code", j.optString("status", ""));
+                    sLastErrorMessage = j.optString("message", "");
+                    sLastDeviceShort  = j.optString("device_short", "");
                 }
             } catch (Throwable ignore) {
                 // malformed body → try next server
@@ -195,6 +210,8 @@ public final class EnvelopeClient {
         }
 
         String prevError = sLastErrorCode;
+        String prevMsg = sLastErrorMessage;
+        String prevDev = sLastDeviceShort;
         try {
             for (String base : AppConfig.guardServerList()) {
                 String resp = post(base + "/api/v1/guard/health", body.toString());
@@ -209,6 +226,8 @@ public final class EnvelopeClient {
             return false;
         } finally {
             sLastErrorCode = prevError;
+            sLastErrorMessage = prevMsg;
+            sLastDeviceShort = prevDev;
         }
     }
 
