@@ -1,63 +1,81 @@
 'use strict';
-// SelectContactUI probe v5 — locate the adapter's backing data List (where item.u live).
-// ListView.getAdapter() -> unwrap HeaderViewListAdapter -> real adapter -> scan its
-// fields (incl. superclasses) for List types, dump size + elem0 class.
 function log(t) { console.log('[SCU] ' + t); }
-function cls(o) { try { return o ? o.getClass().getName() : 'null'; } catch (e) { return '?'; } }
-
 Java.perform(function () {
   var CL = 'com.tencent.mm.ui.contact.SelectContactUI', n = 0;
+  var JObject = Java.use('java.lang.Object');
   var JList = Java.use('java.util.List');
+  var Adapter = Java.use('android.widget.Adapter');
+  var ListView = Java.use('android.widget.ListView');
+  var HVLA = Java.use('android.widget.HeaderViewListAdapter');
+
+  function rClass(o) { try { return Java.cast(o, JObject).getClass(); } catch (e) { return null; } }
+  function rName(o) { if (o == null) return 'null'; var c = rClass(o); return c ? c.getName() : '?'; }
+
+  function dumpFields(o) {
+    var ac = rClass(o);
+    while (ac && ac.getName() !== 'java.lang.Object') {
+      var afs = ac.getDeclaredFields();
+      for (var j = 0; j < afs.length; j++) {
+        try {
+          afs[j].setAccessible(true);
+          var av = afs[j].get(o); var acn = rName(av);
+          if (acn.indexOf('List') >= 0 || acn.indexOf('Cursor') >= 0) {
+            var extra = '';
+            try { var lst = Java.cast(av, JList); extra = ' size=' + lst.size(); } catch (e2) {}
+            log('    [F] ' + ac.getName().split('.').pop() + '.' + afs[j].getName() + ' : ' + acn + extra);
+          }
+        } catch (e) {}
+      }
+      ac = ac.getSuperclass();
+    }
+  }
+
+  function dumpMethods(o) {
+    var ac = rClass(o);
+    while (ac && ac.getName() !== 'java.lang.Object' && ac.getName().indexOf('android.') !== 0) {
+      var ms = ac.getDeclaredMethods();
+      for (var i = 0; i < ms.length; i++) {
+        try {
+          var m = ms[i];
+          var ps = m.getParameterTypes(); var psn = [];
+          for (var k = 0; k < ps.length; k++) psn.push(ps[k].getName().split('.').pop());
+          var rt = m.getReturnType().getName();
+          var mark = (rt.indexOf('Cursor') >= 0) ? ' <== CURSOR' : '';
+          if (rt.indexOf('Cursor') >= 0 || ps.length === 0 || psn.join(',').indexOf('List') >= 0 || psn.join(',').indexOf('String') >= 0) {
+            log('    M ' + ac.getName().split('.').pop() + '.' + m.getName() + '(' + psn.join(',') + '):' + rt.split('.').pop() + mark);
+          }
+        } catch (e) {}
+      }
+      ac = ac.getSuperclass();
+    }
+  }
 
   Java.choose(CL, {
     onMatch: function (inst) {
       n++; log('=== SCU #' + n + ' ===');
-      var c = inst.getClass();
-      while (c && c.getName() !== 'java.lang.Object' && c.getName().indexOf('android.app.') !== 0) {
+      var c = rClass(inst);
+      while (c && c.getName() !== 'java.lang.Object') {
         var fs = c.getDeclaredFields();
         for (var i = 0; i < fs.length; i++) {
           try {
             fs[i].setAccessible(true);
-            var v = fs[i].get(inst); var cn = cls(v);
-            if (cn.indexOf('ListView') >= 0) {
-              var lv = Java.cast(v, Java.use('android.widget.ListView'));
+            var v = fs[i].get(inst); var cn = rName(v);
+            if (cn === 'android.widget.ListView') {
+              var lv = Java.cast(v, ListView);
               var adRaw = lv.getAdapter();
-              var ad = Java.cast(adRaw, Java.use('android.widget.Adapter'));
-              var rn = ad.getClass().getName();
-              log('adapterClass=' + rn);
-              if (rn.indexOf('HeaderViewListAdapter') >= 0) {
-                adRaw = Java.cast(adRaw, Java.use('android.widget.HeaderViewListAdapter')).getWrappedAdapter();
-                ad = Java.cast(adRaw, Java.use('android.widget.Adapter'));
-                log('wrappedClass=' + ad.getClass().getName());
-              }
-              var ac = ad.getClass();
-              while (ac && ac.getName() !== 'java.lang.Object') {
-                var afs = ac.getDeclaredFields();
-                for (var j = 0; j < afs.length; j++) {
-                  try {
-                    afs[j].setAccessible(true);
-                    var av = afs[j].get(ad); var acn = cls(av);
-                    if (acn.indexOf('List') >= 0) {
-                      var lst = Java.cast(av, JList);
-                      var sz = lst.size();
-                      log('  [DATA] ' + ac.getName().split('.').pop() + '.' + afs[j].getName() + ' : ' + acn + ' size=' + sz);
-                      if (sz > 0) {
-                        log('     elem0=' + cls(lst.get(0)));
-                        if (sz > 1) log('     elem1=' + cls(lst.get(1)));
-                        if (sz > 2) log('     elem2=' + cls(lst.get(2)));
-                      }
-                    }
-                  } catch (e) {}
-                }
-                ac = ac.getSuperclass();
-              }
+              if (adRaw == null) { log('adapter=null'); continue; }
+              var real = adRaw;
+              if (rName(adRaw).indexOf('HeaderViewListAdapter') >= 0) real = Java.cast(adRaw, HVLA).getWrappedAdapter();
+              log('realAdapter=' + rName(real));
+              log('  --- fields (List/Cursor) ---'); dumpFields(real);
+              log('  --- methods (cursor/0-arg/List/String) ---'); dumpMethods(real);
             }
-          } catch (e) {}
+          } catch (e) { log('ERR ' + e); }
         }
         c = c.getSuperclass();
       }
       log('=== end ===');
     },
-    onComplete: function () { if (n === 0) log('NO instance -- reopen the friend-select page'); else log('done'); }
+    onComplete: function () { if (n === 0) log('NO instance'); else log('done'); }
   });
 });
