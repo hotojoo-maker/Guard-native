@@ -217,10 +217,53 @@
 ---
 
 ### D-025：E3 改余额支持自定义金额（2026-06-30）
-- **决策**：E3 改余额从固定 888888.88 升级为用户自定义金额；开关开 + 已填金额才生效，留空显示真实余额。设置页输入弹窗改卡片风格（统一授权弹窗），输入原始数字 + 上方实时预览，末两位自动为小数。
+- **决策**：E3 改余额从固定 888888.88 升级为用户自定义金额；开关开 + 已填金额才生效，留空显示真实余额。设置页输入弹窗改卡片风格（统一授权弹窗），输入原始数字 + 上方实时预览,末两位自动为小数。
 - **依据**：用户 Vchat guard_native-FSJ88 拍板；授权检查官审 PASS；官替 debug 装机实测通过。
 - **影响**：`moduleE/FakeBalance.java`、`moduleB/SettingsEntry.java`、`core/Bridge.java`；`HOOKMAP §E E3` ⬜→✅。
 - **不撤回**：纯显示层 + 只读授权，不动状态机 / 授权写链。
+
+### D-026：cert-converge-v2 — 印章/配方回合为一套（取代 D-017/D-018 中的「两把印章」段）（2026-06-30）
+- **决策**：用户拍板把 cert-sync-v1（2026-06-29 D-018 阶段）的「**两把印章两套配方**」（官替 `e3e13a49` + 共存 `8f47a47a`）回合为「**一套配方**」：官替 / 共存 release 共用 `e3e13a49` official jks + 共用 `registry_cipher.inc` + 服务器 `release_lines` 两线 cert_prefix 合并为 `e3e13a49`。**身份区分仍保留**（release_id / package_name / package_line），仅加密层合并。
+- **依据**：① 命名 / cert / registry 散在 30+ 处 → "AI 一会儿这样一会儿那样"互打架（Vchat guard_native-MMK12 现场体验）；② 加密钥匙派生 = cert + S_rel，两线 S_rel 本就同源（`7255096e`）→ 一套配方对防破解强度无下降，反而显著降复杂度；③ 无真客户、无存量用户 → 现在合并代价最低；④ 后台仍按 release_id + package_line 区分官替 / 共存（同机双装不互 churn 仍走 same_line 保护）。
+- **L1 证据**：
+  - 服务器 zxmqq.shop 2026-06-30 21:52 UTC：`release_lines.android_8071_coexist.cert_prefix` `8f47a47a` → `e3e13a49`、同步对齐 `cert_sha256_fp` / `ed25519_key_id=e1` / `wrap_key_fingerprint=22b72751` / `min_supported_version=v1.2` / `lease_profile`（同官替）；备份 `/root/authdb_pre_certconv_20260630_215208.bak`；KDF selftest 镜像 == pinned vector。
+  - 客户端：`build.gradle` coexistRelease signingConfig 改指 `guardOfficialRelease`（上轮 AI 改）；CMake / registry_loader per-flavor 选择路径保留但两条分支同结果。
+- **影响**：
+  - 文档：`docs/RELEASE_LINE_SSOT_发行线统一口径.md` 整页重写为 v2；`docs/RELEASE_RULES.md` / `PROTECTION_MAP.md` / `04_review_审稿复核/CERT_RECON_证书对账表_20260629.md` / `docs/VERSION_UPGRADE_SOP.md` / `.cursor/skills/guard-release_发版/SKILL.md` / `.cursor/skills/guard-security_网络安全官/SKILL.md` 同步；`03_execute_执行任务/P_CertConverge_证书收敛/`（任务卡 + SSOT）标 DEPRECATED；`03_execute_执行任务/P_AntiBanGate_防封授权闸/共存差异清单.md` §2 缺口①标已闭合；`01_dispatch_总调度/CURRENT_PLAN.md` 同步。
+  - 代码：`signing/guard-native-coexist-release.jks` 退役（jks 保留作历史，未引用于任何 buildType）；`native_core/src/registry_cipher_coexist.inc` 物理仍在但运行时不引用（待头部加 DEPRECATED 注或归档）。
+  - 部署：手机上的 v1 老共存包（`8f47a47a` 签的）必须卸载 + 用 v2 新共存包（`e3e13a49` 签）重装，否则服务器派钥匙按 `e3e13a49` 算 → 老包 cert 不匹配 → recipeOk=false / TAMPER_SHADOW（散沙，预期）。
+  - 镜像：`.cursor/skills/` 改完跑 `powershell -File sync_skills.ps1` 同步到 `.claude/skills` + `.agents/skills`。
+- **撤回**：取代 D-017 中"官替/共存同一固定 keystore（debug `ca421ec3`）"和 D-018 阶段衍生的"两把印章两套配方"；本条**不撤** D-017 中"按版本轴 官替 / 共存 / 管理"分线的产品轴口径、也**不撤** D-018 中"A2 改吊本地完整性 + 本地 DER"的运行时口径——这两条都仍有效，只是签名层换回"同一把 release jks"。
+
+### D-027：cert binding 输入源 = 宿主整包 sourceDir（取代「读模块自身 APK」）（2026-06-30）
+- **决策**：`ModuleMain.bindSigningCert` / `CompatProbe.checkSignature` / `GuardRuntime.isAntiBanReady` / `antiBanGateSelfTest` 4 处入参从模块 APK 路径 `sModulePath` 改为宿主整包 sourceDir（`app.getApplicationInfo().sourceDir`，新加 `hostApkPath(app)` helper 收口）。`sModulePath` 字段保留语义不变，仅 `DebugServer` 等"模块自验"场景继续用。
+- **依据**：装机 L1 实证（2026-07-01 02:42 PID 16979）`[native] certBind set sha256[0..3]=ca421ec3` ≠ EXPECTED `e3e13a49`，PHASE1B~1E 全 FAIL、registry scatter、设置页报"授权异常"。`apksigner verify` 同时实测编译产物 + LSPatch 嵌入的 `assets/lspatch/modules/com.ghost.assist.apk` 文件级 sha256 = `ab5b646…`（与编译产物一字节不差）、cert = `e3e13a4974fe…` —— **嵌入文件未被改**；运行时 `sModulePath = param.modulePath` 拿到的却是 LSPatch metaloader 把内嵌模块 extract 到 `/data/user/0/com.tencent.mm/cache/lspatch/com.ghost.assist/2441763400.apk` 时重打包的新 APK，用 LSPatch 内置 debug keystore（`ca421ec3`）重签。改读宿主 sourceDir = LSPatch `-k` 那把 keystore（我方可控 = `e3e13a49`），与生成 cipher 时的 cert 同源 → registry 派生 key 一致 → 解开。同进程查自己包名不受 Android 11+ package visibility 限制（老注释那条限制只针对查别人的包）。
+- **L1 证据**：commit `a79f725`（4 处改动 + helper），`logs_activate_attempt_20260701.log` PID 16979 完整 NCL init 序列，apksigner verify --verbose 对 `assets/lspatch/modules/com.ghost.assist.apk` 输出。F-43 同步入库。
+- **影响**：
+  - 装机：release flavor 装机后 cert binding 拿到宿主 e3e13a49 → registry 解开 → recipeOk=true（待 V3 / 下次官替 release 装机闭环验证）。
+  - 现存机：同机老 LSPatch debug 包（cert=`ca421ec3` + 旧 registry 按 `ca421ec3` 派生）行为不受影响（它的宿主整包本就是 `ca421ec3`，仍同源）。
+  - 文档：`FAILURE_LOG.md` F-43 新增；`docs/RELEASE_RULES.md` / `PROTECTION_MAP.md` §10.x / `docs/GUARD_GATE_TRUTH.md` / `.cursor/skills/guard-security_网络安全官/SKILL.md` 同步 cert binding 输入源真相；`.cursor/skills/auth-gate_授权门控/SKILL.md` 同步 A2 闸 cert 输入源。
+- **撤回**：撤回意味着回到 `sModulePath` 读模块自身、release 形态再次散沙。除非 LSPatch 提供 `--keep-module-cert` 类选项或换非 LSPatch 注入工具，否则不撤。
+
+### D-028:心跳稳定档 = 固定 60min(取代 1~2h 随机)(2026-06-30)
+- **决策**:`GuardHeartbeat.nextIntervalMs` stable 档(tier=0)从 `HOUR_1 + RND.nextDouble() * (HOUR_2 - HOUR_1)`(1~2h 随机)改为 `HOUR_1`(固定 60min);±15% 抖动保留(实测 51~69min)。新装档(tier=1)10~30min + 嫌疑档(tier≥2)10min + 6h 硬封顶 **不变**。
+- **依据**:用户 2026-06-30 拍板加快封停 / 危险通告响应(原平均 90~120min → 平均 60min,封停信号触及上限 ≤1h)。tier 由服务器仍主导(嫌疑机走 10min 不变,运营仍能精细控)。
+- **影响**:
+  - 服务器 envelope/health 请求量约 1.5~2× 翻倍(稳定档),CONN 密度红线 0.5 仍有充分余量(prod 仅 2 台设备)。
+  - 代码:`GuardHeartbeat.java` 行 19+68 注释 + 实现各改 1 行,`HOUR_2` 常量(行 43)成死常量但留作未来扩档备用。
+  - 文档:`GuardHeartbeat.java` 顶部注释已同步,无外部文档强依赖此口径。
+- **撤回**:改回 1~2h 随机即可(单行回退)。
+
+### D-029:W_dev Batch 3(删全局 W)灰度门禁 = 服务器单方判定(取消"dm 回填率 ≥ 90%")(2026-06-30)
+- **决策**:W_dev Batch 3(删全局 W 回退)的灰度门禁从「活跃设备 dm 回填率 ≥ 90% + 观察窗 1~2 周 + 双 skill 共审 + 服务器先停发→客户端再删」简化为「**服务器单方判定**:`crypto_utils.py` 直接删 `w_b64` 全局 W 回退分支(无 dm 即拒发 envelope / 发 decoy),客户端 `config_crypto.cpp` 同步删双试 unwrap 中的全局 W 回退」。发点顺序仍 = **服务器先停发 → 客户端再出新包**(顺序不可反,防老包散沙夜爆)。
+- **依据**:
+  - prod 仅 2 台设备 / dm 回填率 100%(2026-06-30 22:30 实测)→ "灰度统计样本"无意义。
+  - 上线维护期 + 无规模化客户(0 真客户)→ "保护正版老用户体验"前置假设不成立(那是 SaaS 规模化客户假设的产物)。
+  - 安全收益保留:抽全局 W = 离线通杀所有信封,Batch 3 砍死这个攻击面。
+- **影响**:
+  - 落码归 `P_RB1_重放绑定_ReplayBind/钥匙加固_KeyHardening设计.md` 牙③ Batch 3 工作项(本决策仅调整灰度门禁口径,工程未落码、待 V3 新发行线时顺手推 = 可与 D-026 一套配方下一次共同生效)。
+  - `.cursor/skills/guard-server_服务器运维/SKILL.md` 「Batch3 门禁」段 + `.cursor/skills/guard-security_网络安全官/SKILL.md` 「W 一机一密」段需同步去掉「dm 回填率 ≥ 90%」字眼。
+- **撤回**:撤回意味着保留 W_dev 双试 + 全局 W 回退,回到现状(无安全收益、有维护代价)。除非 prod 真出现规模化客户(数百~数千台)+ 需要保护渐进升级体验,否则不撤。
 
 ---
 
