@@ -199,7 +199,7 @@
 | --- | ----------- | ------ |
 | E1  | 步数装b（WeRun） | ⬜ 资料待补 |
 | E2  | 伪装定位（全局伪造定位）| ✅ 装机 2026-06-07：hook `pz0.h.c` 注入 + 原生选点页设置；详见权威 §一.1 / `moduleE/FakeLocation.java` |
-| E3  | 改零钱显示       | ✅ 装机 2026-06-30：开关 + 自定义金额（末两位自动为小数）；门控 isVipAuthorized() && isEditBalanceEnabled() && 已填金额；详见 `moduleE/FakeBalance.java` + `moduleB/SettingsEntry.java` |
+| E3  | 改余额显示       | ✅ 自定义金额（末两位自动小数），装机 2026-06-30 |
 
 
 > AI 接手时**只看名字**，不要展开。等用户启动 v2 再调研。
