@@ -208,6 +208,14 @@
 
 ---
 
+### D-024：隐藏设置页「存储空间」入口（M6c）授权分支 = 有授权 + 隐身态（2026-06-30）
+- **决策**：新增「隐藏存储空间入口」功能（设置页 view 层隐藏），授权分支锁 `StateMachine.isVipAuthorized() && getState()!=VISIBLE`——有授权 + 隐身态(HIDDEN/UNLOCKING)才隐，无授权或显形态正常显示。**不做独立功能开关**（用户拍板）；**不绑 f1 密友总开关 / config 配方门**（对齐防撤回 f2 范式：杂项功能只绑授权防白嫖；存储空间隐藏非密友隐私链，绑 f1/config 反而会误判失效）。独立 Filter `moduleD/SettingsStorageHideGuard.java`，**不塞 SettingsEntry**（已 2000+ 行，触发拆代码红线）；只读 StateMachine 不写（Filter 边界）。
+- **依据**：用户 Vchat guard_native-FSJ87 拍板 2026-06-30。hook 点 Frida L1 实证（`set_viewtree.txt` + 截图 `after_hide3.png`）：`MainSettingsUI` > `WxRecyclerView#lqa`，每行 `TextView#title` text==存储空间 → 上溯 `#m7k` 取父 wrapper → `setVisibility(GONE)`+`layoutParams.height=0`（仅 GONE 留缝隙，必叠 height=0）。授权检查官改前/改后审 PASS。用户官替 debug LSPosed 装机实测：隐藏生效 + V→H 热切即时隐藏（RefreshBus 持 decorView 弱引用主线程重扫）。
+- **影响**：① 新增 `SettingsStorageHideGuard.java` + `ModuleMain` 注册（M6a 之后）。② 文档 `HOOKMAP.md §D M6c` + `docs/HOOK_MAP_8071_AUTHORITATIVE.md §6c`。③ 验证工具链留档：frida 17.x 需 `frida-compile` 打包 `frida-java-bridge`、微信主进程反 frida 枚举须 pid attach。
+- **不撤回**：纯新增 view 层隐藏 + 只读授权，不动状态机 / 授权写链 / 已验证 hook。
+
+---
+
 ## 决策模板
 
 ```markdown

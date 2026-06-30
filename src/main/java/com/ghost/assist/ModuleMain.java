@@ -243,6 +243,7 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         try {
             if (com.ghost.assist.core.GuardRuntime.isAntiBanReady(app, sModulePath)) {
                 com.ghost.assist.core.A2SignatureSpoof.install(lpparam);
+                com.ghost.assist.core.A2PkgPathSpoof.install(lpparam);   // A2 包名/路径轴（仅共存，internal self!=官方包名 判定，官替自动跳过）
             } else {
                 Log.i(TAG, "[A2SIG] not installed: cert mismatch (re-signed → scatter)");
             }
@@ -271,6 +272,8 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         MomentsRedDotGuard.install(lpparam);
         // M6a: 隐藏自己受限帖子的「可见分组」图标（app:id/pt），独立于密友过滤链
         com.ghost.assist.moduleD.MomentsGroupIconFilter.install(lpparam);
+        // 隐藏微信「设置」页「存储空间」入口行（授权 + 隐身态；只读 StateMachine）
+        com.ghost.assist.moduleD.SettingsStorageHideGuard.install(lpparam);
         UpdateGuard.install(lpparam);
         installForegroundFunnelTrigger(lpparam);  // 段1: 前台(onResume)触发引流弹窗（唯一出口 RiskPromptController）
         TriggerGuard.install(app);  // B1/B2/B5，Android API，不吃 lpparam

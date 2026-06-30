@@ -65,6 +65,7 @@
 | **NotifyPolicy（NotifyRouter）** | 密友提醒方式 OFF/VIBRATE/SOUND 三档，Bridge/MMKV 存储，默认 OFF | 🟡 v1.1 backlog | ⭐⭐⭐ | `moduleC/NotifyRouter.java`；静默/震动已有实证，普通消息完整链路与 SOUND 档铃声转 v1.1 |
 | **搜索框过滤 8.0.71**（主页放大镜 FTS） | `q2/f0.getView` → `tz2.u1/p0/s1` wxid/groupId → GONE + `lp.height=1` | 🟡 联系人 L1 已证；全场景待补 | ⭐⭐⭐ | 证据：`07_archive_归档/P1E_Filter读Registry/logs/search_anchor_verify_20260609.log`（联系人 blocked、普通群放行）+ `07_archive_归档/P20_搜索拦截/result.md`；详见权威 §8b |
 | **进程白名单**         | LSPosed 启动只 hook com.tencent.mm 主          | ⬜ 待实现      | ⭐⭐⭐⭐⭐  | F-16 铁律   |
+| **账号采集 SelfProfileCapture**（授权绑定基础设施，非过滤） | hook `TextView.setText` 按「微信号：」文本命中 → `Bridge.setMyAlias`(myal)；`EnvelopeClient.currentAcct` 随信封上报 `acct`(微信号优先/空则 wxid) → 服务器 `cur_acct` 绑定授权用户 | ✅ L1 2026-06-30（`[SPC] alias=`） | ⭐⭐⭐⭐ | wxid 自动链路缺失(refreshWxid stub)；细节 → 权威 §10 |
 
 > 📦 **❌ 已证伪 / 永久废弃拦截层**（L0 Proto `SnsObject.parseFrom` / PushFilter L4b·L4c / `x.a(f9)` / `NotificationItem.a` / `ss4.p` / `q2.j` / SearchFilter 5-hook，F-27 / F-32x·y·z 等）已移出本表、归档至 [`docs/archive/HOOKMAP_废弃拦截层_已证伪归档.md`](./docs/archive/HOOKMAP_废弃拦截层_已证伪归档.md)；失败根因见 [`FAILURE_LOG.md`](./FAILURE_LOG.md)。**历史不删只搬，禁止当可重试方案。**
 
@@ -139,12 +140,13 @@
 
 | #   | 功能 | 方向 | 状态 | Android 技术点 | 难度 |
 | --- | --- | --- | --- | --- | --- |
-| B1  | 摇一摇 → 立即隐藏（**默认关闭**，用户可开） | VISIBLE→HIDDEN | 🟡 代码已写；原 logcat 缺失，仅存验收记录 | `TriggerGuard.java` SensorManager TYPE_ACCELEROMETER；证据 `07_archive_归档/P20B_BTriggers_SearchUnlock/worklog.md`「2026-06-07 B1 摇一摇装机收口」段（验收叙述，非 logcat 原文） | ⭐⭐ |
+| B1  | 摇一摇 → 立即隐藏（**默认关闭**，用户可开） | VISIBLE→HIDDEN | ✅ **8071 已验**（L1 2026-06-30 共存版） | `TriggerGuard.java` SensorManager TYPE_ACCELEROMETER（gForce≥1.5≈15m/s²，冷却 1.5s）；L1：`[TG] B1 shake listener installed` → `[TG] B1-shake → enterHidden` → `[SF:sm] VISIBLE→HIDDEN`（需先显形态+开摇一摇开关） | ⭐⭐ |
 | B2  | 切后台/Home/手势上划（**切换后台 · 手势隐藏**）→ 自动隐藏（**默认开启**，不可关） | VISIBLE→HIDDEN | ✅ **8071 已验**（手势上划 L1 2026-06-30 共存版） | `TriggerGuard.java` ActivityLifecycleCallbacks(onActivityStopped) + CLOSE_SYSTEM_DIALOGS(fs_gesture/Home/Recent)；L1：`[TG] B2-close_dialogs(fs_gesture)→enterHidden` → `[SF:sm] VISIBLE→HIDDEN` → 密友 removed | ⭐ |
 | B3  | Home 键单独 → 并入 B2 | — | ❌ | 被 B2 的 CLOSE_SYSTEM_DIALOGS 覆盖，无需单独实现 | — |
 | B4  | 返回键 → 隐藏 | VISIBLE→HIDDEN | 🚫 **默认关闭**（`TriggerGuard.B4_BACK_KEY_ENABLED=false`，D-022）：`dispatchKeyEvent`/`KEYCODE_BACK` 被 MIUI 边缘滑动手势误触 → 解锁后入口被隐藏（入口 bug 根因）；「离开微信才藏」由 B2 覆盖。L1 `P_AntiBanGate/logs/verify_b4off_20260629.txt` | `TriggerGuard.installBackKeyHook` 实际 hook `dispatchKeyEvent`（非 onBackPressed）；手势设备无法区分内部返回，故关 | ⭐ |
 | B5  | 锁屏 → 自动隐藏（解锁后**不**自动显形） | VISIBLE→HIDDEN | ✅ 用户确认已验证（2026-06-01） | `TriggerGuard.java` ACTION_SCREEN_OFF | ⭐ |
 | B6  | 主界面放大镜输入 111111 → 解锁显形 | HIDDEN→VISIBLE | ✅ **8071 已验** | `SearchUnlock.java` FTS 搜索页 TextWatcher | ⭐⭐ |
+| B7  | 屏蔽官方更新（红点 + 点击下载） | — | 🟡 红点屏蔽代码实装（`fl4.o` getter→false，效果待红点场景验）；**点击更新→系统后台下载 拦截未实现**（缺口，用户 2026-06-30 反馈） | `UpdateGuard.java` hook `fl4.o` 0-param bool getter（Sh/Th/Wh）→false（开关 `isUpdateRedDotEnabled`，`[UG]`）；下载拦截待调研入口 | ⭐⭐ |
 
 **下一步**：当前 v1 不再以 P22 普通消息通知 + 铃声功能 / P18 KPI 作为阻塞；二者分别转 v1.1 / 正式发布门控补跑。搜索高亮归 UI 优化（旧称 P26C，号已归「隐藏指定通讯录标签」，见 PROJECT_INDEX §零）。
 
@@ -183,6 +185,7 @@
 | D2  | 密友点赞不显示 | ✅   | L0v4 `LinkedList.add` → `z15.e56.d` 阻断 |
 | D3  | 密友评论不显示 | ✅   | 同 D2 + `getCommentList()` after 过滤 |
 | M6a | 自己「仅可见分组」图标隐藏 | ✅ | view 层 `ViewStub.inflate` + `OnGlobalLayout` 扫 id=`pt`(0x7f090304)→GONE；**时间线/详情页 ✅ L1**（`[MGI] pt GONE` 2026-06-10）。个人相册页=Flutter(`MMFlutterViewActivity` 整页 texture，无原生 pt)→view hook 不可达，v1 不做(D-决策 A)。详见权威 §6a |
+| M6c | 隐藏设置页「存储空间」入口 | ✅ | view 层 `Activity.onResume`+`OnGlobalLayout` 扫 `MainSettingsUI`：`TextView#title` text==「存储空间」→ 上溯行主体 `#m7k` 取父 wrapper → `GONE`+`layoutParams.height=0`（无残留缝隙）；**授权门** `isVipAuthorized()&&getState()!=VISIBLE`（有授权+隐身态才隐=防白嫖；对齐 f2，不绑 f1/config）；RefreshBus 热切 V↔H 即时显隐。装机实证 2026-06-30（用户复验）。详见权威 §6c |
 
 
 **铁律**：D 模块默认全部 ON，傻瓜式安全。

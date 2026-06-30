@@ -143,9 +143,22 @@
 | **L2 标签存储** | `com.tencent.mm.storage.d4` 类 |
 | **L3 标签成员/搜索 item** | `ye5.j` → `ye5.j.d` 形如 `wxid_xxx-15-0`，去后缀 `-N-M` 得 wxid；代码 = `moduleD/ContactLabelMemberFilter.java`（日志 `[CLM:label]`，门控 isActive+allHiddenIds） |
 | **L4 Activity 拦截** | `ContactLabelManagerUI / MvvmContactListUI / LabelSearchUI` |
-| **项目代码** | ① 整标签入口/管理页隐藏（L1 `fc5.g` e=8 / L2 `d4` / L4 Activity，开关 hclb）= ✅ `moduleD/ContactLabelHideGuard.java`（2026-05-27 补 install）；② L3 标签内成员按 wxid 藏密友（门控 isActive+allHiddenIds）= ✅ `moduleD/ContactLabelMemberFilter.java`（2026-05-31 P_CV1 重构丢失后独立成模块，用户现场复验） |
+| **项目代码** | ① 整标签入口/管理页隐藏（L1 `fc5.g` e=8 / L2 `d4` / L4 Activity，开关 hcl）= ✅ `moduleD/ContactLabelHideGuard.java`（2026-05-27 补 install）；② L3 标签内成员按 wxid 藏密友（门控 isActive+allHiddenIds）= ✅ `moduleD/ContactLabelMemberFilter.java`（2026-05-31 P_CV1 重构丢失后独立成模块，用户现场复验） |
 | **存储** | MMKV: `hcl`（`Bridge.isHideContactLabelEnabled`） |
 | **来源** | `07_archive_归档/P19B_ContactLabel/result.md` |
+
+### 6c. 隐藏设置页「存储空间」入口
+
+| 项 | 内容 |
+|------|------|
+| **8.0.71 状态** | ✅ 装机实证 2026-06-30（用户现场复验：有授权 + 隐身态进设置页「存储空间」消失；V→H 即时隐藏） |
+| **目标** | 隐身态下隐藏微信「我 → 设置」页的「存储空间」入口行，避免暴露在用模块 |
+| **Frida L1 实证（view 树）** | `set_viewtree.txt`（2026-06-30，pid attach 7739；frida 17.x 需 `frida-compile` 打包 `frida-java-bridge`，微信主进程反 frida 枚举 → 改 **pid attach** 绕过；uiautomator dump 抓空层级走不通）：`MainSettingsUI` > `WxRecyclerView#lqa` > 每行 `LinearLayout#no-id` wrapper = [分组标题 `TextView#gzf` + 行主体 `LinearLayout#m7k`]；行标题 = `TextView#title` text==「存储空间」。截图 `after_hide3.png` |
+| **实现（SettingsStorageHideGuard）** | `Activity.onResume`(类名含 `SettingsUI`) 扫 decorView + 挂 `OnGlobalLayout` 节流 60ms 重扫；逐个 `getResourceEntryName==title` 的 TextView：是「存储空间」且该隐藏 → 上溯 `#m7k` 取父 wrapper → `setVisibility(GONE)` + `layoutParams.height=0`；其余行强制恢复 `VISIBLE`+`WRAP_CONTENT`（防 RecyclerView 复用继承 height=0 误伤别的行）。`RefreshBus` 回调持 decorView 弱引用，V↔H 切换主线程即时重扫（热切） |
+| **授权门控** | `StateMachine.isVipAuthorized() && getState()!=VISIBLE`（有授权 + 隐身态 HIDDEN/UNLOCKING 才隐；无授权或显形态正常显示）。绑授权 = 防白嫖，对齐防撤回 f2 范式，**不绑 f1 密友总开关 / config 配方门**（非密友隐私链，避免误判失效）。只读 StateMachine 不写（Filter 边界；授权检查官 2026-06-30 改前/改后审 PASS） |
+| **绕过的雷** | 不走 `onBindViewHolder`（8.0.71 设置 RV 0 命中，P_SE5）；不全局 hook `View.setVisibility`；仅 `GONE` 不够（RecyclerView item 不回收高度 → 留空白缝隙）→ 必须叠 `layoutParams.height=0` + `requestLayout` |
+| **项目代码** | `src/main/java/com/ghost/assist/moduleD/SettingsStorageHideGuard.java` + `ModuleMain` 注册（M6a 之后） |
+| **L1 证据** | `[SSH] installed (onResume sweep on *SettingsUI)` + `[SSH] 存储空间 row hidden`；官替 debug LSPosed 装机 2026-06-30，进程 `com.tencent.mm`（用户复验 V→H 即时隐藏） |
 
 ---
 
@@ -293,7 +306,7 @@
 
 | 触发 | 机制 | hook/监听 | 状态 |
 |------|------|-----------|------|
-| **B1 摇一摇** | SensorManager 加速度 ≥15m/s²（默认关，用户可开） | `setShakeEnabled` 注册 TYPE_ACCELEROMETER | 🟡 代码已写，无 L1 logcat |
+| **B1 摇一摇** | SensorManager 加速度 ≥15m/s²（gForce≥1.5，冷却 1.5s；默认关，用户可开） | `setShakeEnabled` 注册 TYPE_ACCELEROMETER | ✅ **L1 2026-06-30 共存版**（`[TG] B1-shake → enterHidden`，需先显形+开开关） |
 | **B2 切后台 · 手势隐藏** | ①前台计数 `onActivityStopped` 归 0 ②广播 `CLOSE_SYSTEM_DIALOGS`(fs_gesture/Home/Recent) → `enterHidden`（默认开，不可关） | `ActivityLifecycleCallbacks` + `BroadcastReceiver(ACTION_CLOSE_SYSTEM_DIALOGS)` | ✅ **L1 2026-06-30 共存版**（见下证据） |
 | **B3 Home 键** | 并入 B2（被 CLOSE_SYSTEM_DIALOGS 覆盖） | — | ❌ 不单独实现 |
 | **B4 返回键** | hook `Activity.dispatchKeyEvent` 吞 KEYCODE_BACK | `B4_BACK_KEY_ENABLED=false` | 🚫 默认关闭（D-022 入口 bug：MIUI 边缘滑动误触，由 B2 覆盖） |
@@ -343,6 +356,21 @@
 
 > 失败铁律：`SnsObject.parseFrom` Java hook 零命中（走 JNI/C++，F-27/F-28）；`getCommentList/getLikeUserList` 本体走 JNI 时用 `addAll/add` 拦截兜底。
 > **⚠️ 偏移修正**：本节 2026-06-30 补建——此前权威 §一 无 D1/D2/D3 朋友圈主过滤（仅 §8e 小红点 / §6a 仅可见分组图标）。
+
+---
+
+### 14. 屏蔽官方更新（B7：更新红点 + 点击下载拦截）
+
+> 锁 8.0.71 重新打包，防用户被官方更新红点/按钮诱导升级（升级 → 8071 hook 全失效、模块不兼容）。
+
+| 项 | 内容 |
+|------|------|
+| **8.0.71 状态** | 🟡 红点屏蔽代码实装（效果待红点场景验证）；**点击「检查更新」→ 系统后台下载 APK 拦截未实现（缺口）** |
+| **红点屏蔽（已实装）** | `moduleB/UpdateGuard.java` hook `fl4.o`（更新红点 DI 容器，实现 `gl4.e`）的所有 0-param boolean getter（`Sh`=关于微信红点 / `Th`=检查更新红点 / `Wh`=完整 APK 更新）→ 返 false → 设置页红点消失；开关 `AppConfig.isUpdateRedDotEnabled`；日志 `[UG]` |
+| **⚠️ 效果待验** | 当前设备无红点，无法区分「屏蔽生效」vs「官方本无新版本/推送」；需官方推更新红点场景对照（开 B7 无红点 / 关 B7 有红点）才能确认 |
+| **⚠️ 缺口（用户 2026-06-30 反馈）** | 点击「检查更新/更新」按钮 → 微信仍在**系统后台下载新版 APK**；当前 UpdateGuard 只断红点 getter、**未拦截下载行为** → 待开发（需调研下载触发入口：DownloadManager / 微信自有下载器 / 更新按钮 onClick） |
+| **调研锚点（FINDINGS 2026-05-21）** | UI 类 `com.tencent.mm.ui.setting.SettingsAboutMicroMsgUI`；入口 `SettingsUI.P7()`；红点容器 `fl4.o`（8.0.66 对应 `gd4.o`） |
+| **项目代码** | `moduleB/UpdateGuard.java`（ModuleMain install；TAG `[UG]`） |
 
 ---
 
