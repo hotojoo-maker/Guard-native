@@ -108,7 +108,7 @@
 | [`AGENTS.md`](./AGENTS.md) | Cursor / Claude Code 兼容入口 | — |
 | [`PROJECT_INDEX.md`](./PROJECT_INDEX.md) | 本文件 / 路径表 / 导航 | review |
 | [`HOOKMAP.md`](./HOOKMAP.md) | 6 模块功能总图 / 状态看板 | review |
-| [`TASK_BOARD.md`](./TASK_BOARD.md) | 4 窗口分工 / P 任务进度 | dispatch |
+| [`TASK_BOARD.md`](./TASK_BOARD.md) | P 任务进度 / 主线看板 | dispatch |
 | [`DECISION_LOG.md`](./DECISION_LOG.md) | 重大决策履历 | dispatch |
 | [`RISK_REGISTER.md`](./RISK_REGISTER.md) | 风险表 | risk-check |
 | [`FAILURE_LOG.md`](./FAILURE_LOG.md) | F-01~F-42 失败方案档案（F-42 最新：LSPatch A15 官替闪退，调查中）| review |
@@ -128,8 +128,8 @@ guard_native/
 ├── 根目录 (核心 md + 同步脚本)
 ├── .cursor/skills/       8 个角色 skill（核心4：总调度/执行/质检/终端 + 专项4：授权检查官/授权门控别名/网络安全官/git保姆；主目录，日常编辑这里）
 ├── .claude/skills/       8 个角色 skill（镜像，sync_skills.ps1 同步；以主目录大写 SKILL.md 为准）
-├── 00_start_入口/        新会话第一站（PROMPT_TEMPLATES）
-├── 01_dispatch_总调度/   CURRENT_PLAN / NEXT_STEP
+├── 00_start_入口/        新会话第一站（README）
+├── 01_dispatch_总调度/   CURRENT_PLAN
 ├── 02_tools_工具/        dynamic_crawler 等
 ├── 03_execute_执行任务/  P15 / P16 / P17 / P18 等
 ├── 04_review_审稿复核/   每个 P 任务的审稿报告 + T_TASKS 调研池 + CONFLICTS

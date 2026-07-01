@@ -1,4 +1,4 @@
-# TASK_BOARD — 任务看板（4 窗口 + P 任务进度）
+# TASK_BOARD — 任务看板（P 任务进度）
 
 > ⛔ **AI 读此文件的绝对铁律 / AI HARD RULES**
 > - ✅ = 有装机日志原文的才算完成，无日志不得推进"下一步"
@@ -8,7 +8,7 @@
 > 接手前看：[`docs/README.md`](./docs/README.md) + [`CLAUDE.md`](./CLAUDE.md) + [`HOOKMAP.md`](./HOOKMAP.md)
 > 防破解/防盗版总账（含上线前门控）：[`PROTECTION_MAP.md`](./PROTECTION_MAP.md)
 > **账实唯一权威（编号↔任务↔状态↔文件夹）：[`PROJECT_INDEX.md`](./PROJECT_INDEX.md) §零 功能总清单**。本看板若与之冲突，以 §零 为准。重复编号 **P25 / P26 / P26C**（同号两义）已在 §零 摊开，下方相应处已标注。
-> 更新时间：2026-06-29（相位收口：v1 探索期→上线维护期；旧 4 窗口已归档）
+> 更新时间：2026-07-01（相位收口：v1 探索期→上线维护期；旧 4 窗口已归档，§二/§三/§四 已减法收口）
 > **当前底座：微信 8.0.71**（D-014）
 > 维护人：guard-dispatch_总调度
 
@@ -28,63 +28,15 @@
 
 ---
 
-## 二、4 窗口任务详细（每个窗口的目标 + 必读 + 产出）
+## 二、P 任务现状（旧「4 窗口任务详细」已废弃）
+
+> 旧 W1-W4 任务详细已随相位收口废弃（去向见 §一）。**P 任务现状** → 本文件 §五 + [`PROJECT_INDEX.md`](./PROJECT_INDEX.md) §零。
 
 ---
 
-### 🟦 W1 B 模块触发器 + 搜索（P20B/P20）
+## 三、依赖 / 启动顺序（旧 W1-W4 依赖图已废弃）
 
-**状态**：P20 搜索 🟡（联系人 L1 已证，全场景待补）；P20B 触发器 🟡（B2/B5/B6 ✅；B1 🟡 logcat 待补；B4 因用户设备无返回键，按确认不阻塞；KPI 轻采样已记录，发版前重测）。
-
-**下一步**：
-1. P22 普通消息通知 + 铃声功能转 v1.1，不阻塞当前 v1。
-2. 搜索高亮归 UI 优化（旧称 P26C；号已归「隐藏指定通讯录标签」，见 §零），不阻塞 P20。
-
-**详情**：`07_archive_归档/P20_搜索拦截/result.md`、`07_archive_归档/P20B_BTriggers_SearchUnlock/worklog.md`、`docs/HOOK_MAP_8071_AUTHORITATIVE.md` §8b。
-
----
-
-### ✅ W2 朋友圈小红点 P21
-
-**状态**：✅ 主线收尾。Layer0b 已装机实证；P21B WithAll/bm live Cursor 过滤已装机；rm 代码同路径覆盖，后续有“与我的互动”入口时可补 L1，但不阻塞当前 v1。
-
-**下一步**：仅做证据归档/备用复验；不改 D1/D2/D3 已验 hook。
-
-**详情**：`07_archive_归档/P21_MomentsRedDot/worklog.md`、`HOOKMAP.md` §二。
-
----
-
-### ✅ W3 会话过滤（P17）
-
-**状态**：✅ 2026-05-20 装机验收通过，不动已验 hook。
-
-**详情**：`07_archive_归档/P17_会话LSPosed/result.md`、`docs/HOOK_MAP_8071_AUTHORITATIVE.md` §8a。
-
----
-
-### 🟧 W4 离线资料库采集（P18）
-
-**状态**：⬜ 本轮跳过。空白 LSPosed KPI 基线不作为当前 v1 阻塞项。
-
-**下一步**：后续进入正式发布门控或质检重档时再补跑 `frida_stats.js`；业务 Proto/网络采集按 P18 brief 另开。
-
-**详情**：`03_execute_执行任务/P18_离线采集/`、`TOOLS_INDEX.md`。
-
----
-
-## 三、依赖关系
-
-```
-W1 B触发+搜索 ─→ P22 普通消息通知/铃声转 v1.1；搜索高亮归 UI 优化（旧 P26C 号已归隐藏标签）
-W2 P21        ─→ P21 主线收尾；rm L1 / Layer2 / v18 tab badge 仅作备用复验
-W3 P17        ─→ 会话过滤已验收，不作为新任务入口
-W4 P18        ─→ 本轮跳过；正式发布门控再补 KPI
-```
-
-**当前启动顺序**：
-1. 先做文档/证据收敛与 git 快照，避免当前脏工作区继续漂。
-2. P22 普通消息通知 + 铃声功能转 v1.1。
-3. P18/KPI 基线本轮跳过；正式发布门控再补。
+> **当前主线 / 启动顺序** → §一 + [`01_dispatch_总调度/CURRENT_PLAN.md`](./01_dispatch_总调度/CURRENT_PLAN.md)。
 
 ---
 
@@ -92,12 +44,11 @@ W4 P18        ─→ 本轮跳过；正式发布门控再补 KPI
 
 | # | 规则 |
 |---|------|
-| 1 | 每窗口开工先改 §一 表"占用至"列 |
-| 2 | 只动自己 P 任务目录（`03_execute_执行任务/<你的P任务>/` 等；已归档任务见 `07_archive_归档/`）|
-| 3 | 改根目录看板（HOOKMAP / TASK_BOARD / FAILURE_LOG）前先 git pull |
-| 4 | 关任务前必跑 `frida_stats.js` 对比基线 |
-| 5 | 关任务前更新 [`HOOKMAP.md`](./HOOKMAP.md) 对应行 ⬜→🟡 或 🟡→✅ |
-| 6 | 每个窗口完成后写 5-10 行交接快照到 `04_review_审稿复核/W<N>_<日期>.md` |
+| 1 | 只动自己 P 任务目录（`03_execute_执行任务/<你的P任务>/` 等；已归档任务见 `07_archive_归档/`）|
+| 2 | 改根目录看板（HOOKMAP / TASK_BOARD / FAILURE_LOG）前先 git pull |
+| 3 | 关任务前必跑 `frida_stats.js` 对比基线 |
+| 4 | 关任务前更新 [`HOOKMAP.md`](./HOOKMAP.md) 对应行 ⬜→🟡 或 🟡→✅ |
+| 5 | 完成后写 5-10 行交接快照到 `04_review_审稿复核/`（窗口领取/命名走 dispatch skill「多 Vchat 窗口」）|
 
 ---
 
