@@ -1,7 +1,7 @@
 # PROJECT_INDEX — 项目导航 + 路径表
 
 > 所有路径在一处维护，SKILL.md 不写死路径，统一查本文件
-> 更新时间：2026-06-24（产品形态铁定 + 文档权威链；FAILURE_LOG 至 F-42）
+> 更新时间：2026-07-01（产品形态铁定 + 文档权威链；FAILURE_LOG 至 F-43）
 > 2026-06-10 增补 §零 功能总清单（编号 ↔ 任务 ↔ 状态 ↔ 文件夹）作为账实唯一权威，治理"看板与目录对不上"。
 
 ---
@@ -111,7 +111,7 @@
 | [`TASK_BOARD.md`](./TASK_BOARD.md) | P 任务进度 / 主线看板 | dispatch |
 | [`DECISION_LOG.md`](./DECISION_LOG.md) | 重大决策履历 | dispatch |
 | [`RISK_REGISTER.md`](./RISK_REGISTER.md) | 风险表 | risk-check |
-| [`FAILURE_LOG.md`](./FAILURE_LOG.md) | F-01~F-42 失败方案档案（F-42 最新：LSPatch A15 官替闪退，调查中）| review |
+| [`FAILURE_LOG.md`](./FAILURE_LOG.md) | F-01~F-43 失败方案档案（F-43 最新：克隆宿主签名 bleed-through→cert mismatch，修=先重签 e3e13a49，详 D-030）| review |
 | [`PROTECTION_MAP.md`](./PROTECTION_MAP.md) | **上线前防破解总账 / 四阶段路线图 / 发版门控** | security |
 | [`ANTIBAN_MAP.md`](./ANTIBAN_MAP.md) | **防封官权威账**：反检测 / 防封号最新水位线、证据等级、阻塞项 | antiban |
 | [`TOOLS_INDEX.md`](./TOOLS_INDEX.md) | 工具 / 脚本索引 | review |
@@ -299,7 +299,7 @@ I:/apk2_build/
 | 8071 某 hook 点怎么写 | [`./docs/HOOK_MAP_8071_AUTHORITATIVE.md`](./docs/HOOK_MAP_8071_AUTHORITATIVE.md) |
 | 8066 历史类名（仅 diff） | [`./docs/archive/INDEX.md`](./docs/archive/INDEX.md) |
 | Catfish 行为参考 | [`./docs/isolation/INDEX_COMPETITOR.md`](./docs/isolation/INDEX_COMPETITOR.md) |
-| 我能不能做 X | [`FAILURE_LOG.md`](./FAILURE_LOG.md) F-01~F-42 档案 + CLAUDE.md §三 29 条战略铁律 先查 |
+| 我能不能做 X | [`FAILURE_LOG.md`](./FAILURE_LOG.md) F-01~F-43 档案 + CLAUDE.md §三 29 条战略铁律 先查 |
 | Catfish 怎么做的 | [`./docs/isolation/MainEntry.java`](./docs/isolation/MainEntry.java) + [`UserControll.java`](./docs/isolation/UserControll.java) |
 | 历史版本对比 | 外部 `apk2/_4__samples/sample_history_research/VERSION_INDEX.md` |
 | 防封号边界 | 外部 `apk2/QE66_RESUME.md` + [`CLAUDE.md`](./CLAUDE.md) §六 KPI |
@@ -314,4 +314,4 @@ I:/apk2_build/
 1. 路径更新只改本文件，其他 md/SKILL.md 都引用本文件
 2. 新增外部资料时在 §四 加一行
 3. 内部新增目录在 §二 加节
-4. AI 接手发现路径错误 → 改本文件 + 在 `04_review_审稿复核/CONFLICTS.md` 记一笔（guard-review 资料功能）
+4. AI 接手发现路径错误 → 改本文件 + 在 `04_review_审稿复核/` 漂移账记一笔（guard-review 资料功能）
