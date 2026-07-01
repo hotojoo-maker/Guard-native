@@ -2,18 +2,19 @@
 name: skill
 cn: 总调度
 icon: •
-description: Guard Native 总调度——制定 P 任务计划/分配 4 窗口/接手新会话/更新 TASK_BOARD。新会话第一件事就是用这个 skill；分配任务时也用这个 skill。
+description: Guard Native 总调度——制定 P 任务计划/协调多 Vchat 窗口/接手新会话/更新 TASK_BOARD。新会话第一件事就是用这个 skill；分配任务时也用这个 skill。
 ---
 
 > ⚠️ 输出前自查：禁止错别字、黑话、客户看不懂的话。
 
 # guard-dispatch — 总调度
 
-## 🔐 固定签名铁律（所有角色必读）
-- 项目唯一固定签名文件：`signing/guard-native-debug.keystore`。
-- `build.gradle` 的 debug/release 必须都指向该文件；禁止依赖或重建 `~/.android/debug.keystore`。
-- `INSTALL_FAILED_UPDATE_INCOMPATIBLE` 必须先停、比对已装 APK 与固定 key 指纹，未经用户确认禁止卸载。
-- 缺少固定 key 时停止 build/装机；日志只能写当前 P 任务 `logs/`，禁止写进 docs/skill 目录。
+## 🔐 签名铁律（所有角色必读 · cert-converge v2 D-026）
+- **发版 release（出货）**：`signing/guard-native-official-release.jks`（alias `guardofficial`）→ cert `e3e13a49`；**官替 + 共存共用此把**（build.gradle `guardOfficialRelease`）。密码在 `signing/keystore.properties`（gitignore）。
+- **调试 debug（smoke）**：`signing/guard-native-debug.keystore` → cert `ca421ec3`；仅模块更新/公告/C2-smoke，cert ≠ `GUARD_EXPECTED_CERT` 注定 registry 散沙，**不作发版候选**。
+- 禁止依赖或重建 `~/.android/debug.keystore`。
+- `INSTALL_FAILED_UPDATE_INCOMPATIBLE` 必须先停、比对已装 APK 与对应 key 指纹，未经用户确认禁止卸载。
+- 缺少对应 keystore 时停止 build/装机；日志只能写当前 P 任务 `logs/`，禁止写进 docs/skill 目录。
 - 官替版和共存版是两条独立发行线；派发“发布/共存/签名/打包”任务前，先让执行窗口读 `docs/RELEASE_RULES.md`，不得临时猜包名或签名。
 
 ---
@@ -126,11 +127,11 @@ description: Guard Native 总调度——制定 P 任务计划/分配 4 窗口/�
 | 已废弃根路径 | `docs/CLASS_MAP_8066.md` 等 → 仅重定向，正文在 `docs/archive/wechat_8066/` |
 
 ### 2. 识别会话角色
-- 看 `TASK_BOARD.md` §一表中"占用至"列空的窗口 → 推荐用户进入
-- 用户没说窗口 → 默认进 W1 主开发
+- 确认本会话在三主线（①上线维护 ②按需加功能 ③版本适配，详 `CURRENT_PLAN.md`）里做哪块 / 领哪个 P 任务
+- 窗口标题按「多 Vchat 窗口并行派活」规约命名 `<角色>-<序号>`（见本 skill §多 Vchat 窗口并行派活）；旧固定 W1-W4 / 默认进 W1 已废弃
 
 ### 3. 领取 P 任务
-- 修改 `TASK_BOARD.md` §一对应行的"占用至"，填会话 ID + 截止时间
+- 在 `TASK_BOARD.md` / `PROJECT_INDEX.md §零` 认领对应 P 任务（§一表头 = 主线｜范围｜状态，已无"占用至"列）
 - 在 `01_dispatch_总调度/CURRENT_PLAN.md` 写 1-2 行当前计划
 
 ### 4. 任务过程
@@ -236,7 +237,7 @@ adb logcat -d 2>&1 | findstr "NCL"
 - 任何分歧 → 不自决，先问用户
 - 跨窗口共享数据 → 经过 `06_refs_参考资料/`
 - 失败教训 → 必须写进 `FAILURE_LOG.md`
-- **签名固定（防装机翻车，2026-06-01 立）**：项目应在 `build.gradle` 配固定 `signingConfig`（指向项目内/固定备份的 keystore），保证任何机器、任何会话编译出的包签名一致、能互相覆盖装。立项 / 换机 / 发版前必查；迁移机器时 `~/.android/debug.keystore` 必须一并带走，禁止让 Gradle 现场重建（重建 = 签名变 = 旧装机包覆盖不上，详见终端 skill §铁律 6）。
+- **签名一致性（防装机翻车，cert-converge v2 D-026 更正）**：`build.gradle` 已按 flavor 配 `signingConfig`——release = `guardOfficialRelease`（官替+共存共用 `e3e13a49`）/ debug = `guard-native-debug.keystore`（`ca421ec3`，仅 smoke）。立项 / 换机 / 发版前必查对应 keystore 存在；**禁止**依赖或让 Gradle 现场重建 `~/.android/debug.keystore`（重建 = 签名变 = 旧装机包覆盖不上，详见终端 skill §铁律 6）。
 
 ---
 

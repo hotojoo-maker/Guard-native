@@ -63,14 +63,14 @@ description: Guard Native 发版官（发布 / 出包 / 官替版 / 共存版 / 
 - **A 换 s_rel（可选）**：改 `release/secrets/<id>.json` 的 `s_rel_b64`（新随机 32B，W 不变）→ `python tools/gen_registry_cipher.py --recipe release/secrets/<id>.json` 重生成 `registry_cipher.inc`（确认 `GUARD_REGISTRY_REQUIRES_SERVER_SEED=1`）。两边指纹 `sha256(s_rel)[:8]` 对齐。
 - **B 出包**（**发版候选用 Release 变体**，cert-converge v2 D-026 起强制）：`./gradlew :assembleOfficialRelease`（`com.tencent.mm`）或 `:assembleCoexistRelease`（`com.tencent.mn`）。自动跑 `checkStringLeak{Official,Coexist}Release` 硬闸（dex+SO 扫泄漏）。Debug 变体只作模块更新 / 公告 / C2-smoke、cert mismatch 注定 scatter、**不作发版候选**。
 - **C LSPatch 重新打包**（**`-k` 必须用 official release keystore**，cert binding 改读宿主 sourceDir = `-k` 那把 = `e3e13a49`）：`java -jar 02_tools_工具/lspatch.jar <宿主APK> -m <对应flavor模块APK> -l 2 -k signing/guard-native-official-release.jks <storePass> guardofficial <keyPass> -o 02_tools_工具/lspatch_out -f`。密码从 `signing/keystore.properties` 读。校验日志 `Embedding modules - com.ghost.assist`，可拆包比对内嵌 `libguardcore.so` 哈希。**一键替代**：`.\tools\lspatch_pack.ps1 -Flavor <official|coexist> -BuildType release -Clean -Build`（commit `2cd643c`）。
-- **D 服务器同步**（交 guard-server_服务器运维）：`config.py` 的 `GUARD_REL_KEYS[<id>].srel` 换同一新 s_rel + `release_lines` 登记（package_line/product_version）+ 部署主/备两节点。
+- **D 服务器同步**（交 guard-server_服务器运维）：`config.py` 的 `GUARD_REL_KEYS[<id>].srel` 换同一新 s_rel + `release_lines` 登记（package_line/product_version）+ 部署主节点（备节点未购，`--all` 才带；详坑 3 / 服务器 skill L101）。
 - **E 装机 L1 验证**：冷启动看 `available=true`、`role=1 MAIN`、`BATCH1_VERIFY PASS`；心跳后 `recipeOk=true`。日志落盘才算发布候选。
 
 ## 七条坑（已实证，违反即翻车）
 
 1. **包名注入要连进程名**：`GUARD_WX_PKG` 不能只喂 `anti_tamper` 的 `EXPECTED_PACKAGE`，还必须驱动 `guard_core.h` 的 `PROCESS_MAIN`/`PROCESS_PUSH`。漏了 → 共存版 `role=UNKNOWN` + `BATCH1 FAIL` → 不报错但不隐藏。新增"按包名分支"的 native 常量一律从 `GUARD_EXPECTED_PACKAGE` 派生。
 2. **同 release_id 换 s_rel = 旧装机包散沙**。要"新版不影响老用户"必须用**新 release_id**（如 `android_8071_coexist`，需 flavor 专属 `GUARD_RELEASE_ID` + 独立 s_rel + 服务器加线）。
-3. **服务器 `config.py` 不在默认部署文件里**：`deploy_release_health.py` 只推 `server.py`/`db.py`；s_rel 在 `config.py`，要单独推 + 先核远端基线逐字节一致 + 远端备份 `config.py`+`auth.db`。
+3. **服务器 `config.py` 不在默认部署集里**：统一入口 `python deploy.py <preset> [--go]`（默认 DRY-RUN，自带快照/auth.db 备份/py_compile/冒烟/任一红自动回滚；`--all` 才带备节点、备机未购勿加）；`standard`/`code` 集**不含 `config.py`**（s_rel 在此），推配方用 `p1c` preset 单独推 + 先核远端基线逐字节一致 + 远端备份 `config.py`+`auth.db`。旧 `deploy_release_health.py` 已 DEPRECATED。
 4. **装机反复 install/卸载会出半损坏僵尸**（启动崩 LSPatch metaloader `NoClassDefFoundError` / 卸载报 `DELETE_FAILED_INTERNAL_ERROR`）→ **重启手机**清 dex/odex 状态再装。重启后仍每次崩（`ExceptionInInitializerError`→`NoClassDefFoundError`，崩到 `crashed too many times: killing`）= 代码/打包 bug，非 dex 缓存，查模块首个 static init（`Loading legacy module` 后、任何 `NCL` 日志前就崩）。
 5. **改包重签固有限制**：第三方 App 调起 / 跳转微信支付会失败（微信内支付正常）。需第三方支付跳转的客户走官方包；共存版定位 = 官方管支付跳转 + 共存版管隐私。
 6. **装机签名核对 + 设备状态**：

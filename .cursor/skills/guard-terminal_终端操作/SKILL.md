@@ -107,8 +107,8 @@ description: Guard Native 专属终端操作员——PowerShell/adb/frida/build 
 | `[SU] entry passcode matched` | 入口口令 `111111` 命中 | 紧接着应有 `H→V` 状态切换日志 |
 | `[CF:warmAll:BUS-V] expanded=N` | H→V 时 warm 出 N 个会话条目 | N ≥ 隐藏 id 数 |
 | `WXID-MISMATCH` | 群聊 wxid 抽取与 hidden id 不一致 | 配合 `using id as key` = 已修复 |
-| `AUTH_OK` / `AUTH_NO_LICENSE` / `AUTH_TAMPERED` | AuthGate 评估结果 | v1 期间 `isVipAuthorized` 是 stub → 永远 true |
-| `RiskGate SAFE_MODE` / `killSwitch` | 风险门触发，全链路静默 | 正版调试时永远不该出现 |
+| `AUTH_OK` / `AUTH_NO_LICENSE` / `AUTH_TAMPERED` | AuthGate 评估结果 | `isVipAuthorized` = `EnvelopeStore.isAuthorizedNow()`（token+Ed25519 信封+license 未过期）= 真授权门，非 stub |
+| `RiskGate` 高危 / `SAFE_MODE` | 风险门触发 / SO 散沙全链路静默 | 正版调试时永远不该出现（旧 `killSwitch` stub 已删、不再打印） |
 
 **关键提醒**：日志里 `state=V` ≠ 授权通过。**别在汇报里把"输了 111111 进 V 态"等同于"已激活授权"**——它们是两条不相干的链路。
 
