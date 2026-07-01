@@ -65,7 +65,7 @@
 文档层   ████████████ 100%   HOOK_POINTS / CLASS_MAP / FAILURE_LOG / 29 条铁律
 代码层   ███████████░  上线维护期·hook 点基本完成   ← 转「维护 + 加功能 + 版本适配」（详 CURRENT_PLAN）
 验证层   ████████████ 100%   D1/D2/D3 + 会话 + 通讯录 + 密群 装机已验
-试错层   ████████████ 100%   F-01~F-41 已验证失败方案归档 (FAILURE_LOG.md)
+试错层   ████████████ 100%   F-01~F-43 已验证失败方案归档 (FAILURE_LOG.md)
 ```
 
 **v1 hook 已稳定**（有日志原文）：D1/D2/D3 朋友圈 · 会话 V→H · 会话 H→V fresh-warm（普通有历史 hidden id）· 通讯录 · A2 密友导入 · A3 密群/密群导入 · P21 Layer0b + P21B WithAll/bm · P20 搜索（联系人/群聊密群/聊天记录关键词场景）· B1/B2/B5/B6 触发 · **C1 防撤回**（2026-05-31）· **CA 语音/视频来电拦截**（2026-05-29）· **C3 未读计数 UNREADFIX**（2026-06-06）· **E2 伪装订位**（2026-06-07）
@@ -77,7 +77,7 @@
 
 ## 三、29 条铁律（违反即停）
 
-完整清单 → [`FAILURE_LOG.md`](./FAILURE_LOG.md)（至 F-41，最新：F-41 后台标记正常不重置 tier/risk · F-40 重装顶爆假种子 recipeOk=false · F-39 CLH getMethod 命中父类误 finish · F-38 伪装订位坐标候选证伪）
+完整清单 → [`FAILURE_LOG.md`](./FAILURE_LOG.md)（至 F-43，最新：F-43 克隆宿主签名 bleed-through→cert mismatch（修=先重签 e3e13a49，D-030）· F-42 LSPatch A15 官替闪退（调查中）· F-41 后台标记正常不重置 tier/risk · F-40 重装顶爆假种子 recipeOk=false）
 
 ### 战略级
 1. **目标版本 8.0.71 锁定**（D-014）— 当前代码主线，禁止以 8.0.66/8.0.70 架构直搬
@@ -96,7 +96,7 @@
 7. **不调 ActivityManager.getRunningAppProcesses** — 沙箱进程无权限会 FATAL
 8. **verifiedbootstate 等 KPI = 出包前体检项**（非日常红线，详 §七）；守铁律5 零环境读取故不增量，硬轴 = 签名身份
 
-### 实现级（FAILURE_LOG F-01 ~ F-41 摘要）
+### 实现级（FAILURE_LOG F-01 ~ F-43 摘要）
 9. 禁止把 8.0.70 架构搬到 8.0.71（混淆名全变）
 10. 禁止用 h8.L9/g8.f 调用链（是消息处理链不是会话链）
 11. 禁止 WCDB rawQuery 兜底（微信自定义封装）

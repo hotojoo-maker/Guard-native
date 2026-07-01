@@ -86,6 +86,23 @@
 
 ---
 
+### 🟡 P2（补）— 文档债扫尾（2026-07-01 并入自 DOC_DEBT_MASTER_清单，该临时工单已删 · Vchat ML96）
+
+> DOC_DEBT_MASTER 的 P0（A2 live / E3 已装机 / F-42→F-43 / P_CertConverge·CONFLICTS 断链 / CLAUDE·guard-review）已闭合（commit `e724ee5`+`d2a38bf`，三 AI 交叉核）；其仍开的唯一项并入本账，避免再造竞争清单（G10）。
+
+| # | 项 | 证据（code-true） | 性质 | 状态 |
+|---|------|------|------|:--:|
+| P2-7 | 技能数矛盾：CLAUDE「10」漏防封官 / PROJECT_INDEX「8」/ 实际 11 项目 skill | `.cursor/skills` 17 目录（11 项目 + 6 通用）；`CLAUDE.md` §十 / `PROJECT_INDEX.md:130` | 文档对齐 | ⬜ |
+| P2-8 | `_CORE_现状真源/`（发版/授权/防封 3 页最新真源）没进 PROJECT_INDEX 权威链 / CLAUDE 入口 | grep `_CORE` 全仓仅自引；PROJECT_INDEX §负一 + CLAUDE 接手四步均无 | 权威链（需拍板层级）| ⬜ |
+| P2-9 | `build.gradle:90` 过时注释「共存 8f47a47a」≠ `:150` 实际 `e3e13a49`（`:116/:147` 已注退役）| build.gradle:90/116/147/150 | 【改代码·注释】 | ⬜ |
+| P2-10 | `nativeReloadState()` 文档有代码无（幽灵 API）| grep 仅 `.md`（CLAUDE + native_core/*.md），无 `.java/.cpp` | 【改代码 或 文档下线该 API】 | ⬜ |
+| P2-11 | 冷启动写死测试 wxid `wxid_lzd2va16jd1622` | `ModuleMain.java:429` + `native_core/src/wxid_matcher.cpp:28` | 【改代码·关 debug 档】 | ⬜ |
+| P2-12 | 体量：5 god file（`SettingsEntry` 3050…）+ 强制前置阅读链 ~80KB + 根目录 ~1.5GB / 全树 ~5GB dev 产物（APK/日志，gitignored 不入库、碍导航）| 新 AI 盘点（数字已复算）| 【拆分/清理·另立任务】 | ⬜ |
+
+> **镜像口径更正**（DOC_DEBT + 首个调查 AI 均认错对象）：非「`.claude` 缺 guard-server」（两镜像 17=17 均含 guard-server）；真实差异 = `.cursor` 多一个 `guard-git_保姆/DEV_SECRETS.md`（已 gitignore + `sync_skills.ps1 /XF` 故意排除，**无泄漏**，非漂移）。
+
+---
+
 ## 4. 机器层「统一」= 终极防漂（两道硬闸 · 待排期）
 
 > 文档层取齐口径靠纪律（会再漂）；机器层硬闸靠 build（不会漂）。这两道是把「结论」从「靠人记」变「靠机器拦」的根。
