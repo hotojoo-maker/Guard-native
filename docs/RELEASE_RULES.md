@@ -211,7 +211,7 @@ python tools/gen_registry_cipher.py --recipe release/secrets/<release_id>.json
 
 1. 在 `I:\miyou-server\config.py` 增加或更新同名 `GUARD_REL_KEYS[release_id]`，只同步 `s_rel/W` 所需材料，部署前先备份远端 `config.py` 和 `data/auth.db`。
 2. 在后台「高级设置 → 发版档案」登记同名 release：`package_line`、`product_version`、宿主包名、证书指纹、`S_rel/W` 指纹、registry hash。
-3. 部署主备服务器；注意常规 `deploy_release_health.py` 只推 `server.py/db.py`，涉及 `config.py` 的配方上传必须单独核对、备份、覆盖、重启。
+3. 部署走统一入口 `python deploy.py <preset> [--go]`（默认 DRY-RUN，自带快照/auth.db 备份/py_compile/冒烟/任一红自动回滚；旧 `deploy_release_health.py` 已 DEPRECATED）；`config.py`（配方 s_rel）不在 `standard`/`code` 集，用 `p1c` preset 单独推，先核远端基线一致 + 备份 + 覆盖 + 重启。
 4. 验证 `/api/v1/ping`、`/admin/api/releases`，再用测试卡取 envelope 实测 `s_rel` 指纹，不只看后台登记列。
 
 **D. 装机验收**
@@ -419,7 +419,7 @@ scatter 排查顺序：
 **C. 服务器同步（关键，别漏）**
 7. `I:\miyou-server\config.py` 的 `GUARD_REL_KEYS[<release_id>].srel_b64` 换成同一新 s_rel（`secrets.local` 同步）。
 8. `release_lines` 登记该线：`package_line`（hijack/coexist）、`product_version`、`s_rel_fingerprint` 等（后台「版本状态」可见、可分线管理、可独立 deprecate/kill）。
-9. 部署到主+备两节点：**注意 `deploy_release_health.py` 默认只推 `server.py`/`db.py`，不推 `config.py`（s_rel 在此）**；推 `config.py` 前先逐字节核对远端基线一致、远端备份 `config.py`+`auth.db`，再覆盖、`py_compile`、重启、`/api/v1/ping` 200。
+9. 部署走统一入口 `python deploy.py <preset> [--go]`（默认 DRY-RUN，自带快照/auth.db 备份/py_compile/冒烟/任一红自动回滚；旧 `deploy_release_health.py` 已 DEPRECATED；默认只主节点、`--all` 才带备节点=**备机未购勿加**）：**`standard`/`code` 集不含 `config.py`（s_rel 在此），用 `p1c` preset 单独推**；推前先逐字节核对远端基线一致、远端备份 `config.py`+`auth.db`，部署后 `/api/v1/ping` 200。
 10. 同 release_id 换 s_rel = 旧装机包散沙；要「新版不影响老用户」必须用**新 release_id**（如 `android_8071_coexist`，需 flavor 专属 `GUARD_RELEASE_ID` + 独立 s_rel + 服务器加线）。
 
 **D. 装机验证（L1，缺一不可）**
