@@ -269,7 +269,7 @@ StateMachine.isActive()                // 取中央总闸
 - `net/EnvelopeClient`：HTTPS 出站。`activate(卡密)→token`、`fetchEnvelope(token)→签名信封`；按 `AppConfig.guardServerList()` 主备 fallback；强制 https、连不上 / 证书错 = fail-closed。
 - `net/AuthEnvelopeVerifier`：**① Ed25519 验签（S4，2026-06-11 装机 PASS）**→ **② 确定性 sanity**（设备绑定 `sha256(deviceId)`、schema / 微信版本、key 材料存在、预过期租约）。`alg` 只接受 `Ed25519`，HS256/缺签名一律判废（fail-closed）。**仍故意不做 HMAC**（不放可伪造 secret 进客户端）；客户端只内置公钥（`ED25519_PUBLIC_B64`），私钥仅在 miyou-server `crypto_utils.GUARD_ED25519_PRIVATE_B64`（env 可覆盖）。验签库 `net.i2p.crypto:eddsa`（minSdk 27 无原生 Ed25519）。
 - `net/EnvelopeStore`：token / 信封 / license 到期 / 产品版本 `pv` / 更新通知 `up` 本地缓存；不存用户密友数据。
-- `net/GuardHeartbeat`：低频心跳 + 冷启动有 token 时启动；遇 `CARD_BANNED / CARD_DISABLED / CARD_EXPIRED / DEVICE_BANNED / TOKEN_INVALID` 清 token/envelope，网络失败不清，避免断网误杀。
+- `net/GuardHeartbeat`：低频心跳 + 冷启动有 token 时启动；遇硬错 7 码 `CARD_BANNED / CARD_DISABLED / CARD_EXPIRED / DEVICE_BANNED / TOKEN_INVALID / RELEASE_KILLED / VERSION_KILLED` 清 token/envelope（下次心跳/冷启动即撤授权），网络失败不清，避免断网误杀。
 - `net/GuardActivation`：设置页授权码激活入口；token 后必须立刻拉 envelope 成功才算激活成功。
 - `core/AppConfig`：`GUARD_SERVER_PRIMARY=https://zxmqq.shop`、`GUARD_SERVER_BACKUP=""`（备机槽留 `miyou.lol`）、`GUARD_PRODUCT_ID=quantum_wechat`、`GUARD_PRODUCT_VERSION=v1.6`（`BuildConfig.GUARD_PRODUCT_VERSION`，`build.gradle`）、`GUARD_RELEASE_ID` 按 flavor 注入（官替 `android_8071` / 共存 `android_8071_coexist`，`build.gradle:138/156`）。
 - `StateMachine.isVipAuthorized()`：已从 v1 stub 改为 `EnvelopeStore.isAuthorizedNow()`（token + verified envelope + license 未过期）。Filter 仍只读 `StateMachine.isActive()`，未直接接触服务器/风控。

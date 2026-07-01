@@ -139,3 +139,8 @@ signing/*.jks
 03_execute_执行任务/P_AuthMessagePassThrough/unzip_dev/
 # APK 签名分片产物（.apk.idsig，可重生成）
 *.idsig
+
+# F.4 侦察一次性解包产物（解包 mm/module APK，可重生成，绝不入 git；曾达 694MB）
+tmp_*_unzip/
+# P 任务大 .txt 验证日志（logs/ 目录，留本地不入库，同上方 03_execute *.log 规则）
+03_execute_执行任务/**/logs/
