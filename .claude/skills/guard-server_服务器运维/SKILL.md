@@ -206,7 +206,7 @@ release 状态语义：
 
 ## 部署铁律
 
-> 统一部署入口 = `python deploy.py`（默认 DRY-RUN 只读预检，`--go` 真部署；preset：standard/code/crypto/wdev/static）。内置：快照 + auth.db 备份 → 原子推送 → py_compile 中止 → 重启 → 冒烟(ping/KDF 向量/页面) → **任一红自动回滚**。旧 `deploy_*.py`（release_health/rb1_batch2/refund/ed25519/temp）已标 DEPRECATED，仅留历史/回滚参考。
+> 统一部署入口 = `python deploy.py`（默认 DRY-RUN 只读预检，`--go` 真部署；preset：standard/code/crypto/wdev/static/p1c；换 s_rel / 推 config.py 用 p1c）。内置：快照 + auth.db 备份 → 原子推送 → py_compile 中止 → 重启 → 冒烟(ping/KDF 向量/页面) → **任一红自动回滚**。旧 `deploy_*.py`（release_health/rb1_batch2/refund/ed25519/temp）已标 DEPRECATED，仅留历史/回滚参考。
 
 部署前：
 
