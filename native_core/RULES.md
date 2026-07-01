@@ -33,7 +33,6 @@
   ModuleMain.handleLoadPackage()
     └─→ System.loadLibrary("guardcore")     ← 模块 ClassLoader，不是微信
     └─→ NativeBridge.nativeInit(processName, packageName)
-    └─→ NativeBridge.nativeReloadState()
     └─→ 注册业务 hook（此时 C++ 已就绪）
 
 禁止路径：
@@ -52,7 +51,7 @@
 - 读取 `nativeIsHiddenWxid(wxid)` / `nativeIsHiddenGroup(groupId)`
 - 调用 `nativeShouldBlockBadge(wxid)` 判断是否拦截 badge 写入
 - 少量限流日志（LogLimiter，每 tag 每 30 秒 ≤ 1 条）
-- `nativeInit()` + `nativeReloadState()`（初始化）
+- `nativeInit()`（初始化）
 
 ### 禁止
 

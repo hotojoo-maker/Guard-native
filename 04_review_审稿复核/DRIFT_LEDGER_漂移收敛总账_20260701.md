@@ -92,10 +92,10 @@
 
 | # | 项 | 证据（code-true） | 性质 | 状态 |
 |---|------|------|------|:--:|
-| P2-7 | 技能数矛盾：CLAUDE「10」漏防封官 / PROJECT_INDEX「8」/ 实际 11 项目 skill | `.cursor/skills` 17 目录（11 项目 + 6 通用）；`CLAUDE.md` §十 / `PROJECT_INDEX.md:130` | 文档对齐 | ⬜ |
-| P2-8 | `_CORE_现状真源/`（发版/授权/防封 3 页最新真源）没进 PROJECT_INDEX 权威链 / CLAUDE 入口 | grep `_CORE` 全仓仅自引；PROJECT_INDEX §负一 + CLAUDE 接手四步均无 | 权威链（需拍板层级）| ⬜ |
-| P2-9 | `build.gradle:90` 过时注释「共存 8f47a47a」≠ `:150` 实际 `e3e13a49`（`:116/:147` 已注退役）| build.gradle:90/116/147/150 | 【改代码·注释】 | ⬜ |
-| P2-10 | `nativeReloadState()` 文档有代码无（幽灵 API）| grep 仅 `.md`（CLAUDE + native_core/*.md），无 `.java/.cpp` | 【改代码 或 文档下线该 API】 | ⬜ |
+| P2-7 | 技能数矛盾：CLAUDE「10」漏防封官 / PROJECT_INDEX「8」/ 实际 11 项目 skill | `.cursor/skills` 17 目录（11 项目 + 6 通用）；`CLAUDE.md` §十 / `PROJECT_INDEX.md:130` | 文档对齐 | ✅ 2026-07-02（复核纠偏：功能 skill=10 guard + 6 通用，CLAUDE §零/§十=10、PROJECT_INDEX:132=10、实测=10 三处一致；「8/11/漏防封官」系删 auth-gate 前旧态。空目录 `auth-gate_授权门控` 本轮已删；其 SKILL.md 删除仍待 git 提交）|
+| P2-8 | `_CORE_现状真源/`（发版/授权/防封 3 页最新真源）没进 PROJECT_INDEX 权威链 / CLAUDE 入口 | grep `_CORE` 全仓仅自引；PROJECT_INDEX §负一 + CLAUDE 接手四步均无 | 权威链层0（已拍：_CORE=先读现状层）| ✅ 2026-07-02（CLAUDE §一「接手顺序」+ PROJECT_INDEX 权威链层0 + 核心文档表 + AGENTS / docs README / dispatch skill 五处已接 _CORE；.claude 镜像已同步）|
+| P2-9 | `build.gradle:90` 过时注释「共存 8f47a47a」≠ `:150` 实际 `e3e13a49`（`:116/:147` 已注退役）| build.gradle:90/116/147/150 | 【改代码·注释】 | ✅ 2026-07-02（L90 注释改 v2：两线共用 e3e13a49、8f47a47a 已退役）|
+| P2-10 | `nativeReloadState()` 文档有代码无（幽灵 API）| grep 仅 `.md`（CLAUDE + native_core/*.md），无 `.java/.cpp` | 【改代码 或 文档下线该 API】 | ✅ 2026-07-02（下线 4 处假调用：CLAUDE 铁律27 / RULES ×2 / ARCHITECTURE；ROADMAP TODO 保留；code grep 0 命中已复核）|
 | P2-11 | 冷启动写死测试 wxid `wxid_lzd2va16jd1622` | `ModuleMain.java:429` + `native_core/src/wxid_matcher.cpp:28` | 【改代码·关 debug 档】 | ⬜ |
 | P2-12 | 体量：5 god file（`SettingsEntry` 3050…）+ 强制前置阅读链 ~80KB + 根目录 ~1.5GB / 全树 ~5GB dev 产物（APK/日志，gitignored 不入库、碍导航）| 新 AI 盘点（数字已复算）| 【拆分/清理·另立任务】 | ⬜ |
 

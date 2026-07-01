@@ -10,6 +10,7 @@
 
 | 顺序 | 文件 | 用途 |
 |:--:|------|------|
+| 0 | [`../_CORE_现状真源/`](../_CORE_现状真源/) | 授权/发版/防封「当前真源」浓缩页（碰对应域先读） |
 | 1 | [`GUARD_GATE_TRUTH.md`](./GUARD_GATE_TRUTH.md) | 门控 / 状态机 / 口令裁决 |
 | 2 | [`HOOK_MAP_8071_AUTHORITATIVE.md`](./HOOK_MAP_8071_AUTHORITATIVE.md) | **8071 hook 点权威事实** |
 | 3 | 根目录 [`HOOKMAP.md`](../HOOKMAP.md) + [`TASK_BOARD.md`](../TASK_BOARD.md) | 模块进度总图（注意文件头日期） |

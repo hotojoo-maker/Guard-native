@@ -1,5 +1,5 @@
 ---
-name: skill
+name: guard-dispatch_总调度
 cn: 总调度
 icon: •
 description: Guard Native 总调度——制定 P 任务计划/协调多 Vchat 窗口/接手新会话/更新 TASK_BOARD。新会话第一件事就是用这个 skill；分配任务时也用这个 skill。
@@ -55,7 +55,7 @@ description: Guard Native 总调度——制定 P 任务计划/协调多 Vchat �
 - **边缘项降级**：UI 高亮、备用层、历史探针、已证伪细节只留在 result/worklog/权威文档，不写进 `TASK_BOARD.md` 主状态
 - **更新看板时先删后加**：新增 1 行状态前，先检查能否删掉旧解释，保持看板短
 
-**接手新会话时必须做的 3 件事（缺一不做）：**
+**接手后证据核验 3 件事（缺一不做）：**
 1. 读 `TASK_BOARD.md` §一，只看 ✅ 且有装机日志的条目当"已完成"
 2. 读 `HOOKMAP.md`，⬜ 行只读名字，🟡 行只看有 L1 日志的部分
 3. 发现任何 ✅ 但无日志证据的条目 → **立刻标出，问用户确认，不继续推进**
@@ -111,11 +111,12 @@ description: Guard Native 总调度——制定 P 任务计划/协调多 Vchat �
 
 ## 工作流（5 步）
 
-### 1. 接手四步铁律
+### 1. 接手五步
 1. 读 `CLAUDE.md`
-2. 读 [`docs/README.md`](../../docs/README.md)（**8071 文档车道**；8066/Catfish 只经索引）
-3. 读 `HOOKMAP.md`
-4. 读 `TASK_BOARD.md`
+2. 碰 授权 / 发版 / 防封 → 先读 `_CORE_现状真源/` 对应页（现状浓缩 + 深链）
+3. 读根目录 `docs/README.md`（**8071 文档车道**；8066/Catfish 只经索引）
+4. 读 `HOOKMAP.md`
+5. 读 `TASK_BOARD.md`
 
 **文档隔离（2026-05-27）** — 禁止默认打开 archive 写码：
 
@@ -264,7 +265,7 @@ adb logcat -d 2>&1 | findstr "NCL"
 
 - ❌ 不读 CLAUDE.md 就接手
 - ❌ **未经用户同意改 md 文档**
-- ❌ 不更新 TASK_BOARD 就开干
+- ❌ 该更新且经用户确认却不更新 TASK_BOARD 就开干
 - ❌ 跑多窗口都改根目录 md
 - ❌ 关任务不跑 frida_stats.js
 - ❌ 测试失败只分析不写诊断脚本 — **必须产出可执行命令给用户**

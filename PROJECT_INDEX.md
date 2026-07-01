@@ -19,6 +19,7 @@
 
 | 层级 | 管什么 | 路径 |
 |:---:|---|---|
+| 0 先读现状 | 授权/发版/防封「当前真源」浓缩页（维护先读、深链下钻） | [`_CORE_现状真源/`](./_CORE_现状真源/) |
 | 1 | 产品形态 / 阶段 / 29 条铁律 | [`CLAUDE.md`](./CLAUDE.md) |
 | 2 | 功能账实 / 路径导航 | 本文 §零（本文件） |
 | 3 | hook 事实 / 拦截层状态 | [`HOOKMAP.md`](./HOOKMAP.md) + [`docs/HOOK_MAP_8071_AUTHORITATIVE.md`](./docs/HOOK_MAP_8071_AUTHORITATIVE.md) |
@@ -98,13 +99,14 @@
 
 ---
 
-## 一、根目录核心文档（15 份）
+## 一、根目录核心文档（16 份）
 
 > doc-audit / 资料员 / 文档员 三个角色已于 2026-05-27 合并入 **guard-review_质检门控** 的"资料功能"档。
 
 | 文件 | 作用 | 谁维护 |
 |------|------|--------|
 | [`CLAUDE.md`](./CLAUDE.md) | 主入口 / 29 条铁律 / 无分歧共识 | 所有人 |
+| [`_CORE_现状真源/`](./_CORE_现状真源/) | 授权/发版/防封「当前真源」浓缩页（维护先读、深链下钻） | auth-review / release / antiban |
 | [`docs/GUARD_GATE_TRUTH.md`](./docs/GUARD_GATE_TRUTH.md) | **门控口径**：状态机 / 授权门 / 口令入口 | dispatch |
 | [`AGENTS.md`](./AGENTS.md) | Cursor / Claude Code 兼容入口 | — |
 | [`PROJECT_INDEX.md`](./PROJECT_INDEX.md) | 本文件 / 路径表 / 导航 | review |
@@ -127,8 +129,8 @@
 ```
 guard_native/
 ├── 根目录 (核心 md + 同步脚本)
-├── .cursor/skills/       8 个角色 skill（核心4：总调度/执行/质检/终端 + 专项4：授权检查官/授权门控别名/网络安全官/git保姆；主目录，日常编辑这里）
-├── .claude/skills/       8 个角色 skill（镜像，sync_skills.ps1 同步；以主目录大写 SKILL.md 为准）
+├── .cursor/skills/       10 个 Guard 角色 skill + 6 个通用流程 skill（主目录，日常编辑这里）
+├── .claude/skills/       .cursor/skills 镜像，sync_skills.ps1 同步；以主目录大写 SKILL.md 为准
 ├── 00_start_入口/        新会话第一站（README）
 ├── 01_dispatch_总调度/   CURRENT_PLAN
 ├── 02_tools_工具/        dynamic_crawler 等

@@ -40,7 +40,7 @@
 | 角色 | 触发时机 | skill 路径 |
 |------|---------|-----------|
 | **授权检查官** | 动 状态机 / 授权 / 模块边界 / 过滤位置 / 拆代码 / 新增 Filter 链 前必审 | `.cursor/skills/guard-auth-review_授权检查官/SKILL.md` |
-| **授权门控**（= 授权检查官快捷别名，同一角色入口） | 同上，快捷入口 | `.cursor/skills/auth-gate_授权门控/SKILL.md` |
+| **防封官** | 防封 / 反检测 / 检测面 / KPI / Matrix / normsg / `ro.boot` / LSPosed 进程边界 前必审 | `.cursor/skills/guard-antiban_防封官/SKILL.md` |
 | **网络安全官** | 加密 / SO / DRM / 授权防护 / 服务器授权信封 / 蜜罐 / 改 vip 前 | `.cursor/skills/guard-security_网络安全官/SKILL.md` |
 | **发版官** | 发布 / 出包 / 官替版 / 共存版 / 换 s_rel / LSPatch 打包 / 装机验证（双版本出包流水线） | `.cursor/skills/guard-release_发版/SKILL.md` |
 | **服务器运维** | miyou-server / 卡密 / release_lines / envelope / S_rel·W / 版本状态后台 | `.cursor/skills/guard-server_服务器运维/SKILL.md` |
@@ -50,12 +50,17 @@
 
 ---
 
-## 一、接手三步铁律
+## 一、接手顺序
 
-1. 读完本文（10 分钟）
-2. 读 [`HOOKMAP.md`](./HOOKMAP.md) 知道当前在哪个功能、哪个模块、什么状态
-3. 读 [`TASK_BOARD.md`](./TASK_BOARD.md) 领取你这个窗口的任务
-4. 不读完不准动代码
+1. 读完本文 CLAUDE.md（10 分钟）
+2. 碰 授权 / 发版 / 防封 → 先读 [`_CORE_现状真源/`](./_CORE_现状真源/) 对应页（现状浓缩 + 深链）
+   - 授权 → [`_CORE_现状真源/授权_当前真源.md`](./_CORE_现状真源/授权_当前真源.md)
+   - 发版 → [`_CORE_现状真源/发版_当前真源.md`](./_CORE_现状真源/发版_当前真源.md)
+   - 防封 → [`_CORE_现状真源/防封_当前真源.md`](./_CORE_现状真源/防封_当前真源.md)
+3. 读 [`docs/README.md`](./docs/README.md)（8071 文档车道）
+4. 读 [`HOOKMAP.md`](./HOOKMAP.md) + [`TASK_BOARD.md`](./TASK_BOARD.md)
+5. 查路径 / 导航 → [`PROJECT_INDEX.md`](./PROJECT_INDEX.md)
+6. 不读完不准动代码
 
 ---
 
@@ -118,7 +123,7 @@
 25. **所有 XposedHelpers.findAndHookMethod 必须 `catch (Throwable)`**（F-25：NoSuchMethodError 穿透 catch Exception 导致 init 静默中断）
 26. **hook protobuf 类方法禁用 `findMethodExact`**（F-26：parseFrom 定义在父类，findMethodExact 不遍历继承链）→ 用 `getMethods()` + `XposedBridge.hookMethod()`
 27. **模块启动默认 HIDDEN（隐藏态），底层状态优先**（F-27）
-    - 安装任何业务 hook 前，必须先完成 `nativeInit()` + `nativeReloadState()`
+    - 安装任何业务 hook 前，必须先完成 `nativeInit()`
     - `:push` 进程内 hook 必须先判断 `nativeIsHidden()`；为 `false` 时直接短路返回
 28. **禁止以 `MvvmList.m(List,boolean)` 类级别 hook 作为朋友圈过滤入口**（F-28：8.0.71 朋友圈数据不走 m()，正确路径是 addAll 实例拦截）
 29. **禁止对已装机验证通过的 hook 点做任何未经用户同意的修改**（F-31：D1 h1() 被顺手优化后静默失效，无报错无崩溃只是不过滤。现状跑通 = 不动）
@@ -293,13 +298,14 @@ v4  2 月     底层 C++ 蜜罐 + 加盐字幕混合加密
 | **执行** | 写代码 / 跑脚本 / 设备调试（**必须与用户交互**，禁止盲猜） | `guard-execute-one_单任务执行` |
 | **审核** | P 任务自审（轻档）+ 发布门控（重档，含 KPI 红线） | `guard-review_质检门控` |
 | **终端** | PowerShell / adb / frida / build 全套命令 | `guard-terminal_终端操作` |
-| **授权检查官** | 大框架守门：状态机 / 授权 / 模块边界 / 过滤位置 / 拆-合代码决策 | `guard-auth-review_授权检查官`（别名入口 `auth-gate_授权门控`） |
+| **授权检查官** | 大框架守门：状态机 / 授权 / 模块边界 / 过滤位置 / 拆-合代码决策 | `guard-auth-review_授权检查官` |
+| **防封官** | 反检测 / 防封 / 检测面 / 异常上报链 / KPI 红线 | `guard-antiban_防封官` |
 | **网络安全官** | 客户端安全 / 加密配方 / DRM / 授权防护 / 服务器授权信封 / 蜜罐 | `guard-security_网络安全官` |
 | **发版官** | 发布出包流水线：官替/共存双版本 + 换 s_rel + LSPatch 打包 + 服务器同步 + 装机 L1（同一套签名/工具/流程/服务器） | `guard-release_发版` |
 | **服务器运维** | miyou-server 授权后台：卡密 / release_lines / envelope / S_rel·W / 版本状态 / 主备部署 | `guard-server_服务器运维` |
 | **git 保姆** | 替不懂 git 的用户跑命令：快照 / 备份 / 提交 / 回退 / 清 git 垃圾 | `guard-git_保姆` |
 
-> 共 **10 个 skill 文件夹**（核心 4 + 专项 6：授权检查官、网络安全官、发版官、服务器运维、git 保姆，外加授权门控别名）。`auth-gate_授权门控` 是 `guard-auth-review_授权检查官` 的快捷别名（同一角色，2 个入口文件夹）。**发版/发布/做官替/做共存 → 发版官**；服务器后台 → 服务器运维。
+> 共 **10 个 Guard 角色 skill**（核心 4 + 专项 6：授权检查官、防封官、网络安全官、发版官、服务器运维、git 保姆）。**发版/发布/做官替/做共存 → 发版官**；服务器后台 → 服务器运维。
 
 **调试铁律（执行角色核心）**：需要设备操作时，必须给用户一个明确指令，等结果回来再推进。禁止假设输出、禁止"估计 XXX"后直接改代码。
 **主目录**: `.cursor/skills/`（Cursor 日常用，统一 `SKILL.md` 大写）
