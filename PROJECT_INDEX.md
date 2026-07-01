@@ -49,6 +49,7 @@
 | 密友 / 密群批量导入 | P_IMPORT（A2/A3） | `07_archive_归档/P_IMPORT_密友密群导入` |
 | 来电拦截 + 通知拦截 + 未读计数过滤 | P22 / P_PF2 / P_NF4 | `03_execute_执行任务/P22_PushFilter` |
 | 伪装定位（全局伪造位置） | E2 | `07_archive_归档/E2_FakeLocation` |
+| 改余额显示（伪造钱包余额 UI，自定义金额末两位自动小数） | E3 | 代码 `src/main/java/com/ghost/assist/moduleE/FakeBalance.java`；装机 2026-06-30（见 `HOOKMAP.md` §E） |
 | 会话热切 V↔H（部分场景） | P_CV1 / P_ConvWarm / P26（热切版） | `07_archive_归档/P_CV1…`、`P_ConvWarm`、`P26_好友热切fresh触发` |
 | B 触发：摇一摇 / 切后台 / 锁屏 / 搜索解锁 | P20B（B1/B2/B5/B6） | `07_archive_归档/P20B_BTriggers_SearchUnlock` |
 | 朋友圈"可见分组"图标隐藏 | M6a | `07_archive_归档/M6a_MomentsGroupIcon`；时间线/详情页 `pt GONE` L1（2026-06-10），个人相册页=Flutter 无原生 pt、v1 不做。详见 `HOOKMAP.md` M6a 行 / 权威 §6a |
@@ -79,7 +80,7 @@
 
 | 任务 | 编号 | 状态 | 文件夹 / 说明 |
 |------|------|------|--------|
-| 统一风控引擎（防封授权闸 × A2 三轴 × 蜜罐 / 引流 / 延迟弹窗 canary）| P_AntiBanGate | 🟡 A2-1 签名轴码已落(未提交,快照 5dd0a52 之上)·改前+改后双审 WARN(2026-06-23/06-25)·**闸空转**(registry 缺 official_der→恒 false→不装)·待装机；其余轴(android_id/包名)+完整时间闸仍设计 only | `03_execute_执行任务/P_AntiBanGate_防封授权闸/`（DESIGN + PLAN + worklog 2026-06-25；归属 网络安全官 + 防封官）|
+| 统一风控引擎（防封授权闸 × A2 三轴 × 蜜罐 / 引流 / 延迟弹窗 canary）| P_AntiBanGate | 🟡 A2 签名轴(A2SignatureSpoof) + 包名轴(A2PkgPathSpoof,仅共存) ✅ live(`OFFICIAL_DER_HEX`→reboot `[A2SIG] installed`，ModuleMain §6.7 闸 true 时装)·改前+改后双审 WARN(2026-06-23/06-25)；android_id 轴 design-only 未落码；完整时间闸 L2 待 L1 | `03_execute_执行任务/P_AntiBanGate_防封授权闸/`（DESIGN + PLAN + worklog；归属 网络安全官 + 防封官）|
 | normsg 三轴身份上报实证（封号根因 = k33 包名 / k49 数据路径 / k18 签名 MD5 明文上报）| P_ANTIBAN_B36 | ✅ 研究结论 L1（frida / tcpdump 实抓 2026-06-18）| `07_archive_归档/P_ANTIBAN_B36_normsg三轴/result.md`（防封官研究产物；命脉真源在外部防封线）|
 | 重放绑定 ReplayBind（SO envelope 摘要折入 key 派生，堵 W 静态明文缝）| P_RB1 | ⬜ 未开工（仅排期，P1 加固项）| `03_execute_执行任务/P_RB1_重放绑定_ReplayBind/钥匙加固_KeyHardening设计.md`（来源 PROTECTION_MAP §10.7）|
 
@@ -87,7 +88,7 @@
 
 | 重复号 | ① 已完成 / 归档（不改名） | ② 计划 / 另一义（还没做或活跃用此义） |
 |--------|------------------------|------------------------|
-| **A2** | 密友列表（数据层 + 导入 UI，P_IMPORT，✅ 已装机；HOOKMAP §A / 权威 §3） | 防封授权闸「A2 三轴 / A2-1 签名轴」（`03_execute_执行任务/P_AntiBanGate_防封授权闸`，代码 `core/A2SignatureSpoof.java` / `core/A2PkgPathSpoof.java`，🟡 空转待装机·活跃用此义） |
+| **A2** | 密友列表（数据层 + 导入 UI，P_IMPORT，✅ 已装机；HOOKMAP §A / 权威 §3） | 防封授权闸「A2 三轴 / A2-1 签名轴」（`03_execute_执行任务/P_AntiBanGate_防封授权闸`，代码 `core/A2SignatureSpoof.java` / `core/A2PkgPathSpoof.java`，签名/包名轴 ✅ live·android_id design-only·活跃用此义） |
 | **P22** | SearchCrawler 搜索链路调研（`07_archive_归档/P22_SearchCrawler`，research.md + result.md：`fz2.e c=3` UIN→wxid 映射 / 聊天记录内联行过滤） | PushFilter 通知 / 来电 / 未读策略层（`03_execute_执行任务/P22_PushFilter`，活跃·主用此义） |
 | **P25** | B2 触发器误触发 V→H 修复 | 类名 / 字符串 seed 化本地生成流程 |
 | **P26** | 好友 V 态热切 fresh-item | v2 设置页 UI 优化（打包进官方包设置页） |

@@ -137,7 +137,7 @@ frida -U -f com.tencent.mm --no-pause -l "I:/apk2_official_research/official_wec
 发现同一段 hook 链、日志原文、失败原因在 2 个以上总览文档重复展开 → 标 🟡，建议压成"一句话 + 链接"。不要删证据，只把证据集中到权威文档或 P 任务目录。
 
 ### 冲突检测
-- 同一结论多处矛盾 → 写 `04_review_审稿复核/CONFLICTS.md`：
+- 同一结论多处矛盾 → 记 `04_review_审稿复核/` 漂移账（如 `DRIFT_LEDGER_漂移收敛总账_*.md`）：
   ```
   | 日期 | 文件A | 文件B | 分歧点 | 仲裁 |
   ```
