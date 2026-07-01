@@ -272,7 +272,7 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         com.ghost.assist.moduleD.SettingsStorageHideGuard.install(lpparam);
         UpdateGuard.install(lpparam);
         // 官方热更新通道冻结（libcso/Tinker）。Tinker 类走 app classloader（DelegateLastClassLoader）。
-        // 默认观测模式（AppConfig.isHotFreezeEnabled=false）：只挂钩 log、不改行为。
+        // 默认冻结模式（AppConfig.isHotFreezeEnabled=true）：命中即 no-op，断查更/下载/apply；置 false 才是观测（只 log 不改行为）。
         com.ghost.assist.moduleB.HotUpdateFreeze.install(lpparam, app.getClassLoader());
         installForegroundFunnelTrigger(lpparam);  // 段1: 前台(onResume)触发引流弹窗（唯一出口 RiskPromptController）
         TriggerGuard.install(app);  // B1/B2/B5，Android API，不吃 lpparam

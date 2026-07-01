@@ -54,7 +54,7 @@ public final class A2PkgPathSpoof {
 
     /**
      * 安装包名/路径轴。调用方（ModuleMain §6.7）须先过
-     * GuardRuntime.isAntiBanReady() 闸（与签名轴同闸）。官替 flavor（self 即官方包名）
+     * AntiBanGate.isAntiBanReady() 闸（与签名轴同闸）。官替 flavor（self 即官方包名）
      * 自动跳过。
      */
     public static void install(XC_LoadPackage.LoadPackageParam lpparam) {

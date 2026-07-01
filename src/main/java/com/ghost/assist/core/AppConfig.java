@@ -31,6 +31,7 @@ public class AppConfig {
     private static final String KEY_URD      = "urd";  // update red dot
     private static final String KEY_MGI      = "mgi";  // moments group-visible icon (M6a)
     private static final String KEY_HUF      = "huf";  // hot-update freeze (libcso/Tinker)
+    private static final String KEY_HUL      = "hul";  // hot-update timeline (最近10条·本机采集)
 
     // One-time migration marker: "mv2" = migrated from old DEV-default to PROD-default.
     private static final String KEY_MIG_V2 = "mv2";
@@ -189,4 +190,21 @@ public class AppConfig {
     // （防官方静默热补丁 + 整包升级把重打包版本换掉 / 改 hook 依赖类）。置 false 可临时观测。
     public boolean isHotFreezeEnabled() { return mPrefs.getBoolean(KEY_HUF, true); }
     public void setHotFreezeEnabled(boolean v) { mPrefs.edit().putBoolean(KEY_HUF, v).apply(); }
+
+    // 官方热更新时间线（本机 only · 最近10条环形 · 零上报）：只记「真有货」事件，供 adb 采集。
+    public synchronized void recordHotUpdate(String tag) {
+        if (mPrefs == null) return;
+        String ts = new java.text.SimpleDateFormat("MM-dd HH:mm:ss",
+                java.util.Locale.US).format(new java.util.Date());
+        java.util.ArrayList<String> lines = new java.util.ArrayList<>();
+        String prev = mPrefs.getString(KEY_HUL, "");
+        if (!prev.isEmpty()) java.util.Collections.addAll(lines, prev.split("\n"));
+        lines.add(ts + " " + tag);
+        while (lines.size() > 10) lines.remove(0);
+        mPrefs.edit().putString(KEY_HUL, android.text.TextUtils.join("\n", lines)).apply();
+    }
+
+    public String getHotUpdateLog() {
+        return (mPrefs == null) ? "" : mPrefs.getString(KEY_HUL, "");
+    }
 }
