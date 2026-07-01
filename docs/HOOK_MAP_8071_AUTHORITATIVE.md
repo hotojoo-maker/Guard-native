@@ -302,7 +302,7 @@
 
 ### 11. 隐藏触发机制（B 模块：摇一摇 / 切后台 / 锁屏 / 口令解锁）
 
-> 状态机自动切换触发器，主体 `moduleB/TriggerGuard.java`（B6 口令走 `SearchUnlock.java`）。B1/B2/B5 单向 → HIDDEN（PRODUCT_GATE §8.1）；B6 → VISIBLE。全部用系统 API、不依赖微信混淆类，升版稳定。
+> 状态机自动切换触发器，主体 `moduleB/TriggerGuard.java`（B6 口令走 `SearchUnlock.java`）。B1/B2/B5 单向 → HIDDEN；B6 → VISIBLE。全部用系统 API、不依赖微信混淆类，升版稳定。
 
 | 触发 | 机制 | hook/监听 | 状态 |
 |------|------|-----------|------|

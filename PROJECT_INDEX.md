@@ -104,7 +104,7 @@
 | 文件 | 作用 | 谁维护 |
 |------|------|--------|
 | [`CLAUDE.md`](./CLAUDE.md) | 主入口 / 29 条铁律 / 无分歧共识 | 所有人 |
-| [`docs/PRODUCT_GATE.md`](./docs/PRODUCT_GATE.md) | **产品总闸**：状态机 / VIP 授权 / 密码入口 | dispatch |
+| [`docs/GUARD_GATE_TRUTH.md`](./docs/GUARD_GATE_TRUTH.md) | **门控口径**：状态机 / 授权门 / 口令入口 | dispatch |
 | [`AGENTS.md`](./AGENTS.md) | Cursor / Claude Code 兼容入口 | — |
 | [`PROJECT_INDEX.md`](./PROJECT_INDEX.md) | 本文件 / 路径表 / 导航 | review |
 | [`HOOKMAP.md`](./HOOKMAP.md) | 6 模块功能总图 / 状态看板 | review |
@@ -138,7 +138,7 @@ guard_native/
 ├── 07_archive_归档/      已收口 P 任务归档（2026-06-10 首次归档 21 个，见 `07_archive_归档/INDEX.md`）
 ├── 08_release_发布/      蜜罐 seed / 签名 / APK 输出
 ├── docs/                 8071 主车道 README + GUARD_GATE_TRUTH + HOOK_MAP_8071_AUTHORITATIVE
-│   │                     + CONV_REFRESH_PROBLEM + PRODUCT_GATE + P22_PushFilter_VoIP …
+│   │                     + CONV_REFRESH_PROBLEM + P22_PushFilter_VoIP …
 │   ├── archive/          8066/历史规划（见 archive/INDEX.md，含 HOOK_MAP_V1 / HOOK_POINTS / CLASS_MAP_8066 / T05/T07）
 │   └── isolation/        竞品 Catfish 索引
 ├── native_core/          libguardcore.so 模块地图（API / ARCHITECTURE / MAP / ROADMAP / RULES）

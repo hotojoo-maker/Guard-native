@@ -111,10 +111,10 @@
 - 本页（SSOT）整页重写为 v2。
 - `docs/RELEASE_RULES.md` 签名表 + RELEASE_ID 段 + 共存身份段同步 v2。
 - `PROTECTION_MAP.md` §10.9 签名行同步 v2。
-- 3 份 `guard-release` skill 镜像（`.cursor` / `.claude` / `.agents`）同步 v2。
+- 2 份 `guard-release` skill 镜像（`.cursor` / `.claude`）同步 v2。
 - 3 份 `guard-security` skill 镜像删「共存 RELEASE_ID 未注入」旧话。
-- `04_review_审稿复核/CERT_RECON_证书对账表_20260629.md` 顶栏打过时印，指向本页。
-- `03_execute_执行任务/P_CertConverge_证书收敛/` 任务卡 + 旧 SSOT 标 DEPRECATED，指向本页。
+- `04_review_审稿复核/CERT_RECON_证书对账表_20260629.md`：过程对账档，已于 2026-07-01 删除收敛（本页为唯一真源）。
+- `03_execute_执行任务/P_CertConverge_证书收敛/`：任务卡 + 旧 SSOT（与 v2 全反）已于 2026-07-01 删除收敛（本页为唯一真源）。
 - `03_execute_执行任务/P_AntiBanGate_防封授权闸/共存差异清单.md` 缺口①标已闭合，§1 #6 改 v2。
 - `01_dispatch_总调度/CURRENT_PLAN.md` 删「共存 RELEASE_ID 未注入」「两套配方」旧话。
 - `DECISION_LOG.md` 加 D-026（cert-converge v2）、D-027（cert binding 改读宿主整包）、D-028（心跳稳定档 60min）、D-029（W_dev Batch3 门禁服务器单方判定）。

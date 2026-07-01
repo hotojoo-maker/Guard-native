@@ -1,4 +1,4 @@
-# sync_skills.ps1 - mirror .cursor/skills -> .claude/skills + .agents/skills
+# sync_skills.ps1 - mirror .cursor/skills -> .claude/skills
 #
 # Usage:
 #   powershell -File sync_skills.ps1                    # one-shot
@@ -8,7 +8,7 @@
 # Design:
 #   Primary  : .cursor/skills/  (edit here daily)
 #   Mirror 1 : .claude/skills/  (Claude Code compat)
-#   Mirror 2 : .agents/skills/  (Devin native skill dir)
+#   (.agents mirror removed 2026-07-01 — CLAUDE recognizes only .cursor + .claude)
 #   Strategy : robocopy /MIR, idempotent (handles Chinese folder names via
 #              wide-char API; do NOT use Copy-Item — it mangles CJK names)
 #   Secrets  : /XF DEV_SECRETS.md — never mirror dev secrets into .agents/.claude
@@ -25,7 +25,6 @@ $root = Split-Path -Parent $MyInvocation.MyCommand.Definition
 
 $cursorSkills = Join-Path $root '.cursor\skills'
 $claudeSkills = Join-Path $root '.claude\skills'
-$agentsSkills = Join-Path $root '.agents\skills'
 
 function Sync-Once {
     param([string]$Src, [string]$Dst)
@@ -46,7 +45,7 @@ function Sync-Once {
 
 if ($Direction -eq 'forward') {
     $src = $cursorSkills
-    $dsts = @($claudeSkills, $agentsSkills)   # cursor -> claude + agents
+    $dsts = @($claudeSkills)                  # cursor -> claude
 } else {
     $src = $claudeSkills
     $dsts = @($cursorSkills)                   # claude -> cursor only

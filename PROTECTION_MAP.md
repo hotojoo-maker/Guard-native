@@ -3,7 +3,7 @@
 > **定位**：这是**上线前的防护门控文档**。每个阶段发版前，对照 §9 的清单逐条打勾，全绿才上线。
 > **维护规矩**：防破解相关只记在这一份，别再散到别处；改相关代码前先看本文。
 > **证据基线**：2026-06-02 代码实测（只读核查，见 §附录 A），标 L2 = 静态已证实。
-> **关联**：`CLAUDE.md`（29 条铁律）· `docs/GUARD_GATE_TRUTH.md`（门控权威）· `docs/PRODUCT_GATE.md`（四层模型）· `DECISION_LOG.md` D-013（危险通告/kill switch）· `RISK_REGISTER.md` · `docs/DEBUG_CONSOLE_V2.md`（防护驾驶舱）
+> **关联**：`CLAUDE.md`（29 条铁律）· `docs/GUARD_GATE_TRUTH.md`（门控权威）· `DECISION_LOG.md` D-013（危险通告/kill switch）· `RISK_REGISTER.md` · `docs/DEBUG_CONSOLE_V2.md`（防护驾驶舱）
 > **当前进度（2026-06-02）**：**Phase 0 完成 ✅** —— 仪表盘（防护驾驶舱 + `/api/native` + `tools/guard_status`）+ ① DebugServer DEV-gate + ② proguard 收窄（release `BATCH1_VERIFY PASS` + mapping 实锤：NativeBridge 保留、过滤器混淆、诱饵留亮）+ ③ 接 `AuthManager.evaluate()`+`PiracyNotice`（装机 `evaluate=NO_LICENSE`，v1 放行不变）。**下一步 Phase 1**（真锁+心跳，接 miyou-server）。
 > **2026-06-11 更新**：Phase 1D-server（S2 服务器真锁）解冻，先建出出站/信封/心跳骨架。
 > **2026-06-12 更新**：S2/S3a/S4/S3b 已接入主流程最小闭环：冷启动应用缓存 envelope seed 并启动 `GuardHeartbeat`，激活后立即拉 signed envelope；`android_8071` 已 `prod_server_lock`，无 server seed 时 registry scatter。现状 + 下一受控步骤见 **§10.6**。

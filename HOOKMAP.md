@@ -81,13 +81,13 @@
 
 - **状态机** = 一切开关；**VIP** = 授权（≠ 隐藏态）；**密码** = 放大镜→全局搜索入口
 - 公式：`VIP && isActive() && 密友名单` → 藏一切（通知栏 v2+）
-- 详细：[`docs/PRODUCT_GATE.md`](./docs/PRODUCT_GATE.md)
+- 详细：[`docs/GUARD_GATE_TRUTH.md`](./docs/GUARD_GATE_TRUTH.md)
 
 #### A1 总开关（状态机）
 
 - 状态：🟡（StateMachine 3 态 + `isActive()` 总闸，Filter 已接；VIP 授权 v2）
 - 实现：MMKV `g_<seed>` / key 短哈希
-- 详细：`StateMachine.java` + PRODUCT_GATE §三
+- 详细：`StateMachine.java` + GUARD_GATE_TRUTH §1
 
 **状态语义（防歧义）**：
 
@@ -128,7 +128,7 @@
 - 默认密码 **`111111`**（6 个 1），精确匹配、无回车，仅 **HIDDEN** 态 → **显形** + 自动回主界面，与授权无关
 - 口径：`111111` 是入口手势 / 显形开关，**不是授权码**；只要口令正确就可显形并看到入口，禁止在 `SearchFilter` 里扩展授权或状态机写操作
 - 设置入口：仅 **VISIBLE** 态可见，**HIDDEN** 态必须消失，不暴露密友功能存在
-- 详细：PRODUCT_GATE §五 · `P20_搜索拦截/brief.md`
+- 详细：GUARD_GATE_TRUTH §3 · `P20_搜索拦截/brief.md`
 
 ---
 

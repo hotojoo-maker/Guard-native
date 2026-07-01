@@ -8,7 +8,7 @@
 > - cert / registry / 发行线口径真源 = `docs/RELEASE_LINE_SSOT_发行线统一口径.md`（v2）
 > - 加密 / 真锁规则真源 = `.cursor/skills/guard-security_网络安全官/SKILL.md`
 > - 决策履历 = `DECISION_LOG.md`
-> - 文档旧料盘点 = `04_review_审稿复核/OLDREF_AUDIT_A/B`
+> - 文档旧料盘点：原 `OLDREF_AUDIT_A/B` + `精简方案_提案` + `MN1_OLDREF清单` 已删收敛（2026-07-01），有效结论并入本页 §3
 > 维护铁律：① 改任一线 → 回填本页「状态」列（G9）；② 机器闸（§4）落地后，本页「状态」应由闸结果驱动、不再靠人工标。
 
 ---
@@ -82,7 +82,7 @@
 | P2-3 | 死文件物理仍在：`registry_cipher_coexist.inc` + `bootstrap_cipher_coexist.inc`（registry_loader 已不引用、CMake 已退役 GUARD_REGISTRY_COEXIST）| `native_core/src/*_coexist.inc`；`registry_loader.cpp:31`；`CMakeLists.txt:40-42` | 移 `native_core/src/_archived/` 或头加 DEPRECATED | 运行不引用、物理归档 | ⬜ |
 | P2-4 | 两份签名 SSOT：`P_CertConverge/SSOT_签名唯一` 已 DEPRECATED 且自述「与 v2 全反」，易让人读反 | `03_execute_执行任务/P_CertConverge_证书收敛/SSOT_签名唯一_统一真源.md:3-4` | 顶部已标 DEPRECATED（确认指针到 RELEASE_LINE_SSOT）/ 或归档 | 接手不会读到反口径 | 🟡 |
 | P2-5 | registry 字段核账：现 5 entry/34 字段；安全官 skill 旧文「37 字段 22 接线 15 挂空」与代码不符 → 以代码为准重核哪些真被消费、挂空的接上或删 | `registry_8071.json`（5 entry/34 字段）；安全官 skill §加密 hook 名粒度 | 核账后接线或删，别留半截 | 字段消费状态清晰 | ⬜ |
-| P2-6 | 文档减面：`CHATGPT_项目全景手册.md` 断链（→ `docs/HOOK_POINTS.md` 已迁）+ GBK 编码（违 G7）+ 过时（F-31 vs F-42）；同名 `FAILURE_LOG.md` 两份（refs vs 根）| `OLDREF_AUDIT_A_文档线_20260629.md §五.2/七` | 按 OLDREF_AUDIT 待裁决项归档/修链/转 UTF-8 | 断链清零、旧料归档 | ⬜ |
+| P2-6 | 文档减面：`CHATGPT_项目全景手册.md` + `refs/`（含同名 `FAILURE_LOG.md`）已删除收敛 | 2026-07-01 Glob 核实二者已不存在 | — | ✅ 2026-07-01（断链源消失；OLDREF 盘点档亦已删收敛）|
 
 ---
 

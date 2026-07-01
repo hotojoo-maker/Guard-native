@@ -232,7 +232,7 @@
   - 文档：`docs/RELEASE_LINE_SSOT_发行线统一口径.md` 整页重写为 v2；`docs/RELEASE_RULES.md` / `PROTECTION_MAP.md` / `04_review_审稿复核/CERT_RECON_证书对账表_20260629.md` / `docs/VERSION_UPGRADE_SOP.md` / `.cursor/skills/guard-release_发版/SKILL.md` / `.cursor/skills/guard-security_网络安全官/SKILL.md` 同步；`03_execute_执行任务/P_CertConverge_证书收敛/`（任务卡 + SSOT）标 DEPRECATED；`03_execute_执行任务/P_AntiBanGate_防封授权闸/共存差异清单.md` §2 缺口①标已闭合；`01_dispatch_总调度/CURRENT_PLAN.md` 同步。
   - 代码：`signing/guard-native-coexist-release.jks` 退役（jks 保留作历史，未引用于任何 buildType）；`native_core/src/registry_cipher_coexist.inc` 物理仍在但运行时不引用（待头部加 DEPRECATED 注或归档）。
   - 部署：手机上的 v1 老共存包（`8f47a47a` 签的）必须卸载 + 用 v2 新共存包（`e3e13a49` 签）重装，否则服务器派钥匙按 `e3e13a49` 算 → 老包 cert 不匹配 → recipeOk=false / TAMPER_SHADOW（散沙，预期）。
-  - 镜像：`.cursor/skills/` 改完跑 `powershell -File sync_skills.ps1` 同步到 `.claude/skills` + `.agents/skills`。
+  - 镜像：`.cursor/skills/` 改完跑 `powershell -File sync_skills.ps1` 同步到 `.claude/skills`。
 - **撤回**：取代 D-017 中"官替/共存同一固定 keystore（debug `ca421ec3`）"和 D-018 阶段衍生的"两把印章两套配方"；本条**不撤** D-017 中"按版本轴 官替 / 共存 / 管理"分线的产品轴口径、也**不撤** D-018 中"A2 改吊本地完整性 + 本地 DER"的运行时口径——这两条都仍有效，只是签名层换回"同一把 release jks"。
 
 ### D-027：cert binding 输入源 = 宿主整包 sourceDir（取代「读模块自身 APK」）（2026-06-30）
