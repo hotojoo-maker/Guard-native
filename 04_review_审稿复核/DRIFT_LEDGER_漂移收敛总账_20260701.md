@@ -215,3 +215,19 @@
 
 - **未动**（避免改历史/超范围）：`.devin/cert-sync-v1` 正文两把印章表格（仅加头部横幅）；`DECISION_LOG` 各决策叙事本体；P2-12 本地磁盘 GB 数（那是 gitignored 本地 dev 产物、非 git tracked，git tracked 工作树已 2.56MB 见 E 步）；`kdf_vectors.inc:7` 仍绑旧 cert `ca421ec3`（= §3 P0-2 代码级漂移，禁入区 `*.inc`，留 Cursor 侧接发版硬闸，本轮不碰）。
 - **镜像**：改 `.cursor/skills/guard-auth-review` 后跑 `sync_skills.ps1`（synced 16 SKILL.md，二次印证 skill 目录数=16）。
+
+### 9.5 签名铁律去重收口（Vchat N15 起草改动 → N51 提交 · 2026-07-02）
+
+> 起因：G 步 = 签名铁律块在 6 个 skill 逐字拄写（× `.claude` 镜像 = 12 份）违反 G10。N15 已把改动落到工作树（15 文件、+44 -82），但掉线未提交。N51 接手 code-true 核 diff + 用户拍「按 N15 方案提交」，本轮只做提交、不再动内容。
+
+| # | 收敛 | 落点 | 修法 |
+|---|------|------|------|
+| 1 | 新增签名铁律单一权威块 | `CLAUDE.md §十三.五` (+14 行) | D-026 版 cert/规则完整落此；skill 只留一行 cert 值 + 指针 |
+| 2 | 5 个 skill 签名铁律整块 → 单行指针 | `execute-one` · `auth-review` · `review` · `terminal` · `git 保姆` × `.cursor`/`.claude` 镜像 = **10 份** | 整块 7 行 → 2 行（`## 🔐 签名铁律` + `> release cert e3e13a49… · 完整规则见 CLAUDE §十三.五`） |
+| 3 | `dispatch` skill 签名铁律块 → 单行指针 + 保留 1 行派发提醒 | `.cursor` + `.claude` 镜像 = **2 份** | 整块 7 行 → 3 行（顶部 2 行标准 + 1 行"派发发布/共存/签名/打包任务前先让执行窗口读 RELEASE_RULES"= 调度职责，非签名值） |
+| 4 | `security` skill 真漂修正（顺手一锹） | `.cursor` + `.claude` 镜像 = 2 份 (-1+1) | "官替共存各自固定 keystore" → "共用同一把 release jks（D-026）" |
+| 5 | `dispatch` skill §外围签名一致段简化 | `dispatch` 底部 | 展开的 cert 值 → 指回 CLAUDE §十三.五 |
+
+- **净收敛**：15 文件 / +44 -82 = **净减 38 行**；cert 值从 6 skill×2镜像 = 12 份 → **收到 CLAUDE 1 处 + skill 单行**。
+- **未动**：`guard-release` / `guard-server` / `guard-security` 主体（角色专用的详细签名段、非同一块拄写模板，不撞 G10）；`guard-antiban` / `guard-execute-one` 等 skill 内部散在的签名提醒（若非 `## 🔐 签名铁律` 标题块，本轮不动）。
+- **用户拍板**：G 方案 3 选 1（A 挪禁忌表 / B 单行下多留 / C 完全删）先拍 C；发现 N15 已改到工作树后重拍「按 N15 方案（保 1 行派发提醒）提交」= 兼采 B/C，避免重改。

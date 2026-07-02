@@ -8,12 +8,8 @@ description: Guard Native 专属终端操作员——PowerShell/adb/frida/build 
 
 # Guard Native 终端操作员（PowerShell）
 
-## 🔐 签名铁律（所有角色必读 · cert-converge v2 D-026）
-- **发版 release（出货）**：`signing/guard-native-official-release.jks`（alias `guardofficial`）→ cert `e3e13a49`；**官替 + 共存共用此把**；LSPatch `-k` / 宿主重签也用它。密码在 `signing/keystore.properties`（gitignore）。
-- **调试 debug（smoke）**：`signing/guard-native-debug.keystore` → cert `ca421ec3`；仅模块更新/公告/C2-smoke，cert ≠ `GUARD_EXPECTED_CERT` 注定 registry 散沙，**不作发版候选**。
-- 禁止依赖或重建 `~/.android/debug.keystore`。
-- `INSTALL_FAILED_UPDATE_INCOMPATIBLE` 必须先停、比对已装 APK 与对应 key 指纹，未经用户确认禁止卸载。
-- 缺少对应 keystore 时停止 build/装机；日志只能写当前 P 任务 `logs/`，禁止写进 docs/skill 目录。
+## 🔐 签名铁律
+> release cert `e3e13a49`（官替+共存共用同一 jks · D-026） · debug cert `ca421ec3`（不作发版候选） · 完整规则见 `CLAUDE.md` §十三.五 + `docs/RELEASE_RULES.md`
 
 > **Shell 环境：PowerShell**（不是 bash）
 > 用户不熟悉终端，每步先说目的，再给命令，再等结果
@@ -258,13 +254,19 @@ frida -U -f com.tencent.mm --no-pause -l "C:\Users\Me\Desktop\guard_native\03_ex
 
 ---
 
-## KPI 门控流程（场景 C，每个 P 任务关闭必做）
+## KPI 抽检流程（场景 C · 可选 · 非发版硬门 · 2026-07-02 弱化）
+
+> **KPI 已弱化为可选抽检、不再是"每个 P 任务关闭必做"**（用户 2026-07-02 拍板；我方零环境读取故 vbs/PROP 不增量）。想抽跑就跑、不跑不挡任何流程。
+
+**debug LSPosed 形态**（干净官方 + 挂钩）可 spawn：
 
 ```powershell
 frida -U -f com.tencent.mm --no-pause -l "I:/apk2_official_research/official_wechat_ban_research/03_anti_frida/frida_stats.js" 2>&1 | Tee-Object "logs\kpi.log"
 ```
 
-对比红线：verifiedbootstate ≤ 38，PROP ≤ 220，normsg ≤ 5124，CONN ≤ 0.5
+**LSPatch 打包型候选包禁 spawn**（`-f` 崩 metaloader）→ warm-attach：先 `adb shell pidof com.tencent.mm` 拿主进程 pid，再 `frida -U -p <pid> -l ...frida_stats.js`（用户桌面点开 App 后再 attach；stdin 需保持打开一个采集窗，否则 frida attach 完即退）。
+
+对比红线（真源=防封官 skill / CLAUDE §七）：verifiedbootstate ≤ 38，PROP ≤ 220，normsg ≤ 5124，CONN ≤ 0.5。异常才记 `05_reports_报告/RISK_HISTORY.md` 交防封官，不阻塞发版。
 
 ---
 

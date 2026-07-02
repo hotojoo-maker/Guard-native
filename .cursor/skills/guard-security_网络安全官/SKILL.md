@@ -603,7 +603,7 @@ SO 只管“验真 + 解密 + 关键风险信号”；弹窗、影子期倒计�
 触发关键词：`发布`、`发版`、`签名`、`keystore`、`共存版`、`官替版`、`registry_cipher`、`_CERT_SHA256`、`guardWxPkg`。
 
 - 先读 `docs/RELEASE_RULES.md` 的「双版本发布手册」和「加密接手清单」。
-- 官替版与共存版是两条独立发行线：各自固定 `packageName`、keystore、`versionCode`、`release_id`；互不覆盖。
+- 官替版与共存版是两条独立发行线：各自固定 `packageName`、`versionCode`、`release_id`，**共用同一把 release jks**（D-026）；互不覆盖。
 - encrypted registry 发版必须同源更新：`registry_8071.json` → `gen_registry_cipher.py` → `registry_cipher.inc` → `PHASE1C/1D/1E_VERIFY PASS`。
 - 生成 cipher 时的签名证书 SHA-256 必须等于运行时 binding material；官替版/共存版签名不同就必须分别生成，不得混用。
 - Java 白名单、Xposed scope、C++ `GUARD_EXPECTED_PACKAGE`、服务器 `release_id` 必须来自同一包档案；不能只改 C++。

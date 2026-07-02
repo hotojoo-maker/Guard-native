@@ -99,7 +99,7 @@
    - `:push` 进程**禁止**：UI 操作 / `ActivityManager` / `getRunningAppProcesses` / WebServer / Overlay / Toast / 通知栏 / 复杂反射 dump / 全局 List hook / 网络授权请求 / 业务页面过滤
    - ❌ 永久禁止：`:sandboxed_process` `:isolated_*` `:appbrand*`
 7. **不调 ActivityManager.getRunningAppProcesses** — 沙箱进程无权限会 FATAL
-8. **verifiedbootstate 等 KPI = 出包前体检项**（非日常红线，详 §七）；守铁律5 零环境读取故不增量，硬轴 = 签名身份
+8. **verifiedbootstate 等 KPI = 可选抽检项**（非日常红线、非发版硬门，详 §七）；守铁律5 零环境读取故不增量，硬轴 = 签名身份
 
 ### 实现级（FAILURE_LOG F-01 ~ F-43 摘要）
 9. 禁止把 8.0.70 架构搬到 8.0.71（混淆名全变）
@@ -115,7 +115,7 @@
 19. **禁止 hook（钩子）异步回调里持有 `this`**（JNI 局部引用被垃圾回收后 SIGABRT 崩）
 20. 禁止全局 hook ArrayList.add（频率过高）
 21. **必须 notifyDataSetChanged 时先清后通知**（不是先通知后清）
-22. **出包前跑 frida_stats.js 体检**（KPI 不增量，详 §七）
+22. **frida_stats.js KPI = 可选抽检、非发版硬门**（我方零环境读取故 vbs/PROP 不增量；想抽跑就跑、不跑不阻塞发版，详 §七）
 23. **禁止注入微信 JNI 链**（F-23 实证：CodecLooper SIGSEGV + 微信强制下线）
     - ❌ 仍然禁止：`dlopen` 微信自身 SO / 在微信 `JNI_OnLoad` 链中注入 / 重碰 native（改返回/替换/广钩） / `System.loadLibrary` 加载不属于模块自身的 SO
     - ✅ 例外——模块自有 SO（动态库 `libguardcore.so`）：状态机 / AES-GCM（加密算法） / HMAC（消息签名算法） / 授权校验 / wxid 匹配 / 进程角色判断 / hidden 状态持久化
@@ -262,7 +262,9 @@ P2 / 暂缓 / 禁止 / 系统层破绽点 → **全部不做**
 | normsg / 100K | — | 4,000 | 5,124 | QE66 P14 |
 | CONN 密度 | — | 0.2 | 0.5 | QE66 P14 |
 
-环境类 vbs/PROP 我方零环境读取本就达标；密度类 normsg/CONN 明显异常才查（P18 零点未建 F-22，上表数字作参考）。**日常健康 = 身份(签名) + 卡顿/性能 + 零新增行为**。工具：`frida_stats.js`（→ [`TOOLS_INDEX.md`](./TOOLS_INDEX.md)）。
+环境类 vbs/PROP 我方零环境读取本就达标；密度类 normsg/CONN 明显异常才查（P18 零点未建 F-22，上表数字作参考）。**日常健康 = 身份(签名) + 卡顿/性能 + 零新增行为**。
+
+> **KPI 已弱化（2026-07-02）**：frida_stats.js 只作**可选抽检**，**不是发版硬门**。2026-07-02 对官替 LSPatch 候选包 warm-attach 实测：16 指标全 ≈0（PROP/vbs/CONN/DNS/proc 扫描/mprotect 均 0），远低红线——印证「零环境读取故不增量」。想抽跑就跑，不跑不阻塞发版。工具 `frida_stats.js`（→ [`TOOLS_INDEX.md`](./TOOLS_INDEX.md)）。
 
 ---
 
@@ -358,9 +360,23 @@ v4  2 月     底层 C++ 蜜罐 + 加盐字幕混合加密
 
 ## 十三、发布与运营
 
-发布、危险通告、商业模式、对外品牌、官替版 / 共存版、签名证书和加密发版规则统一收敛到 [`docs/RELEASE_RULES.md`](./docs/RELEASE_RULES.md)。
+发布、危险通告、官替版 / 共存版、签名证书和加密发版规则统一收敛到 [`docs/RELEASE_RULES.md`](./docs/RELEASE_RULES.md)；**商业模式 / 对外品牌**已拆到 [`docs/运营_商业与品牌.md`](./docs/运营_商业与品牌.md)。
 
 本文件只保留入口：发版、签名、共存版、`registry_cipher`、`guardWxPkg`、客户包档案相关问题，先读 `docs/RELEASE_RULES.md`，再进入对应 skill。
+
+---
+
+## 十三.五、🔐 签名铁律（单一权威 · cert-converge v2 D-026）
+
+> 所有 skill 的签名规则指回这里；skill 里只保留一行 cert 值 + 指针。深真源 → `docs/RELEASE_RULES.md` + `docs/RELEASE_LINE_SSOT_v2.md`。
+
+- **发版 release（出货）**：`signing/guard-native-official-release.jks`（alias `guardofficial`）→ cert `e3e13a49`；**官替 + 共存共用此把**（build.gradle `guardOfficialRelease`）。密码在 `signing/keystore.properties`（gitignore）。
+- **调试 debug（smoke）**：`signing/guard-native-debug.keystore` → cert `ca421ec3`；仅模块更新/公告/C2-smoke，cert ≠ `GUARD_EXPECTED_CERT` 注定 registry 散沙，**不作发版候选**。
+- 禁止依赖或重建 `~/.android/debug.keystore`。
+- `INSTALL_FAILED_UPDATE_INCOMPATIBLE` 必须先停、比对已装 APK 与对应 key 指纹，未经用户确认禁止卸载。
+- 缺少对应 keystore 时停止 build/装机；日志只能写当前 P 任务 `logs/`，禁止写进 docs/skill 目录。
+- 官替版和共存版是两条独立发行线，**共用同一把 release jks**（D-026）；各自固定 `packageName` + `versionCode`；官替只覆盖官替，共存只覆盖同包名共存。
+- 发版 / 签名 / 共存版任务先读 `docs/RELEASE_RULES.md`；禁止为旧客户旧版本线重新生成 keystore。
 
 ---
 

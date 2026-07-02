@@ -9,13 +9,9 @@ description: Guard Native 总调度——制定 P 任务计划/协调多 Vchat �
 
 # guard-dispatch — 总调度
 
-## 🔐 签名铁律（所有角色必读 · cert-converge v2 D-026）
-- **发版 release（出货）**：`signing/guard-native-official-release.jks`（alias `guardofficial`）→ cert `e3e13a49`；**官替 + 共存共用此把**（build.gradle `guardOfficialRelease`）。密码在 `signing/keystore.properties`（gitignore）。
-- **调试 debug（smoke）**：`signing/guard-native-debug.keystore` → cert `ca421ec3`；仅模块更新/公告/C2-smoke，cert ≠ `GUARD_EXPECTED_CERT` 注定 registry 散沙，**不作发版候选**。
-- 禁止依赖或重建 `~/.android/debug.keystore`。
-- `INSTALL_FAILED_UPDATE_INCOMPATIBLE` 必须先停、比对已装 APK 与对应 key 指纹，未经用户确认禁止卸载。
-- 缺少对应 keystore 时停止 build/装机；日志只能写当前 P 任务 `logs/`，禁止写进 docs/skill 目录。
-- 官替版和共存版是两条独立发行线；派发“发布/共存/签名/打包”任务前，先让执行窗口读 `docs/RELEASE_RULES.md`，不得临时猜包名或签名。
+## 🔐 签名铁律
+> release cert `e3e13a49`（官替+共存共用同一 jks · D-026） · debug cert `ca421ec3`（不作发版候选） · 完整规则见 `CLAUDE.md` §十三.五 + `docs/RELEASE_RULES.md`
+- 派发"发布/共存/签名/打包"任务前，先让执行窗口读 `docs/RELEASE_RULES.md`，不得临时猜包名或签名。
 
 ---
 
@@ -238,7 +234,7 @@ adb logcat -d 2>&1 | findstr "NCL"
 - 任何分歧 → 不自决，先问用户
 - 跨窗口共享数据 → 经过 `06_refs_参考资料/`
 - 失败教训 → 必须写进 `FAILURE_LOG.md`
-- **签名一致性（防装机翻车，cert-converge v2 D-026 更正）**：`build.gradle` 已按 flavor 配 `signingConfig`——release = `guardOfficialRelease`（官替+共存共用 `e3e13a49`）/ debug = `guard-native-debug.keystore`（`ca421ec3`，仅 smoke）。立项 / 换机 / 发版前必查对应 keystore 存在；**禁止**依赖或让 Gradle 现场重建 `~/.android/debug.keystore`（重建 = 签名变 = 旧装机包覆盖不上，详见终端 skill §铁律 6）。
+- **签名一致性（防装机翻车）**：见 `CLAUDE.md` §十三.五 签名铁律（cert-converge v2 D-026）。立项 / 换机 / 发版前必查对应 keystore 存在；**禁止**依赖或让 Gradle 现场重建 `~/.android/debug.keystore`（重建 = 签名变 = 旧装机包覆盖不上，详见终端 skill §铁律 6）。
 
 ---
 

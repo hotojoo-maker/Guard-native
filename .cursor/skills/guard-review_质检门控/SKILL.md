@@ -8,12 +8,8 @@ description: Guard Native 质检门控——P任务自审(轻档) + 发版门控
 
 # guard-review — 质检门控（三合一）
 
-## 🔐 签名铁律（所有角色必读 · cert-converge v2 D-026）
-- **发版 release（出货）**：`signing/guard-native-official-release.jks`（alias `guardofficial`）→ cert `e3e13a49`；**官替 + 共存共用此把**（build.gradle `guardOfficialRelease`）。密码在 `signing/keystore.properties`（gitignore）。
-- **调试 debug（smoke）**：`signing/guard-native-debug.keystore` → cert `ca421ec3`；仅模块更新/公告/C2-smoke，cert ≠ `GUARD_EXPECTED_CERT` 注定 registry 散沙，**不作发版候选**。
-- 禁止依赖或重建 `~/.android/debug.keystore`。
-- `INSTALL_FAILED_UPDATE_INCOMPATIBLE` 必须先停、比对已装 APK 与对应 key 指纹，未经用户确认禁止卸载。
-- 缺少对应 keystore 时停止 build/装机；日志只能写当前 P 任务 `logs/`，禁止写进 docs/skill 目录。
+## 🔐 签名铁律
+> release cert `e3e13a49`（官替+共存共用同一 jks · D-026） · debug cert `ca421ec3`（不作发版候选） · 完整规则见 `CLAUDE.md` §十三.五 + `docs/RELEASE_RULES.md`
 
 ---
 
@@ -89,24 +85,19 @@ grep 代码是否有被禁模式：
 - 同名 .md / 同功能脚本是否多份
 - 有重复 → 合并保留最新
 
-### ⑤ KPI 出包前体检（口径见防封官 skill）
+### ⑤ KPI 抽检（可选 · 非发版硬门 · 2026-07-02 弱化）
 
-**Step 1 — 跑 KPI**
+> **KPI 已弱化为可选抽检，不再是发版阻塞门**（用户 2026-07-02 拍板）。理由：我方模块**零环境读取**，vbs/PROP 本就不增量；2026-07-02 官替 LSPatch 候选包 warm-attach 实测 16 指标全 ≈0，印证这点。发版**不跳过 ①~④**（那几项仍阻塞），KPI 想抽跑就跑、不跑不挡发版。红线数值真源 = 防封官 skill / `CLAUDE.md` §七，本处不复制。
+
+想抽检时（可选）：
 
 ```
 frida -U -f com.tencent.mm --no-pause -l "I:/apk2_official_research/official_wechat_ban_research/03_anti_frida/frida_stats.js" 2>&1 | tee logs/frida_stats_release.log
 ```
 
-| 指标 | 安全上限 | 红线 |
-|------|:-------:|:----:|
-| verifiedbootstate | 20 | **38** |
-| PROP/100K | 150 | 220 |
-| normsg/100K | 4000 | 5124 |
-| CONN 密度 | 0.2 | 0.5 |
+> LSPatch 打包型候选包**禁 spawn**（`-f` 会崩 metaloader）→ 改 warm-attach（`frida -U -p <mm主进程pid>`）；warm-attach 抓不到冷启 vbs/PROP 窗（我方零环境读取故不影响判断）。
 
-环境类 vbs/PROP 零读取达标；密度类 normsg/CONN 明显异常才查（非即停）
-
-**判定**：全部 ✅ → 可发版 | 任一 🔴 → 写入 `05_reports_报告/RISK_HISTORY.md`
+**判定（非阻塞）**：明显异常 → 记 `05_reports_报告/RISK_HISTORY.md` 供防封官复核；不跑或数值正常 → **不影响发版**。
 
 ---
 
@@ -171,8 +162,8 @@ frida -U -f com.tencent.mm --no-pause -l "I:/apk2_official_research/official_wec
 ② 证据升格:  ✅ / 🔴
 ③ 二进制授权: ✅ / 🔴
 ④ 重复文件:  ✅ / 有重复
-⑤ KPI:      ✅ / 🔴 (列实测值)
-判定: 通过 / 🔴 阻塞
+⑤ KPI(可选抽检·非阻塞): 未跑 / ✅ / ⚠️异常已记 RISK_HISTORY
+判定: 通过 / 🔴 阻塞(仅①~④)
 ```
 
 ---
@@ -186,7 +177,7 @@ L1/L2/L3/L4 定义见 `CLAUDE.md` §三.五；本 skill 重点是把无 L1 的 �
 ## 铁律
 
 - 无 L1 不得写"封号" / "服务端拦截"
-- 重档任何一项阻塞 → 整体阻塞，禁止发版
+- 重档 ①~④ 任一阻塞 → 整体阻塞，禁止发版（⑤ KPI 为可选抽检、非阻塞）
 - 不删资料，只搬 `07_archive_归档/`
 - T 任务必须自洽，不依赖上下文
 
@@ -195,7 +186,6 @@ L1/L2/L3/L4 定义见 `CLAUDE.md` §三.五；本 skill 重点是把无 L1 的 �
 ## 反模式
 
 - ❌ P 任务装机前跳过轻档
-- ❌ 发版前跳过 frida_stats
 - ❌ catch Exception 没改 Throwable 就通过
 - ❌ L4 证据不标注直接当结论
 - ❌ 改 APK/DEX 没记录授权

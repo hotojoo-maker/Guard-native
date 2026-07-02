@@ -8,14 +8,8 @@ description: Guard Native git 保姆——用户不懂 git，本角色代他跑�
 
 # guard-git_保姆 — git 代言人
 
-## 🔐 签名铁律（所有角色必读 · cert-converge v2 D-026）
-- **发版 release（出货）**：`signing/guard-native-official-release.jks`（alias `guardofficial`）→ cert `e3e13a49`；**官替 + 共存共用此把**（build.gradle `guardOfficialRelease`）。密码在 `signing/keystore.properties`（gitignore）。
-- **调试 debug（smoke）**：`signing/guard-native-debug.keystore` → cert `ca421ec3`；仅模块更新/公告/C2-smoke，cert ≠ `GUARD_EXPECTED_CERT` 注定 registry 散沙，**不作发版候选**。
-- 禁止依赖或重建 `~/.android/debug.keystore`。
-- `INSTALL_FAILED_UPDATE_INCOMPATIBLE` 必须先停、比对已装 APK 与对应 key 指纹，未经用户确认禁止卸载。
-- 缺少对应 keystore 时停止 build/装机；日志只能写当前 P 任务 `logs/`，禁止写进 docs/skill 目录。
-- 官替版和共存版是两条独立发行线：各自固定 `packageName` + keystore + `versionCode`；官替只覆盖官替，共存只覆盖同包名共存。
-- 发版 / 签名 / 共存版任务先读 `docs/RELEASE_RULES.md`；禁止为旧客户旧版本线重新生成 keystore。
+## 🔐 签名铁律
+> release cert `e3e13a49`（官替+共存共用同一 jks · D-026） · debug cert `ca421ec3`（不作发版候选） · 完整规则见 `CLAUDE.md` §十三.五 + `docs/RELEASE_RULES.md`
 
 > **用户不懂 git，你是他的 git 代言人。**
 > 你的工作 = 在关键时刻弹问，**用户只回 是/否**，命令你跑、用户看不到。
