@@ -6,17 +6,16 @@
 
 ---
 
-## 默认阅读顺序（8071）
+## 8071 车道内容（接手总序以 `CLAUDE.md §一` 为准，本表只列本车道特有文件）
 
-| 顺序 | 文件 | 用途 |
-|:--:|------|------|
-| 0 | [`../_CORE_现状真源/`](../_CORE_现状真源/) | 授权/发版/防封「当前真源」浓缩页（碰对应域先读） |
-| 1 | [`GUARD_GATE_TRUTH.md`](./GUARD_GATE_TRUTH.md) | 门控 / 状态机 / 口令裁决 |
-| 2 | [`HOOK_MAP_8071_AUTHORITATIVE.md`](./HOOK_MAP_8071_AUTHORITATIVE.md) | **8071 hook 点权威事实** |
-| 3 | 根目录 [`HOOKMAP.md`](../HOOKMAP.md) + [`TASK_BOARD.md`](../TASK_BOARD.md) | 模块进度总图（注意文件头日期） |
-| 4 | `03_execute_执行任务/P*/result.md` | 单任务装机实证 |
-| 5 | [`CONV_REFRESH_PROBLEM.md`](./CONV_REFRESH_PROBLEM.md) | 会话 H↔V 热切问题单（H→V 仍 🟡） |
-| 6 | [`HONEYPOT_蜜罐设计.md`](./HONEYPOT_蜜罐设计.md) | 蜜罐诱饵 + 触发逻辑 + 域名加密引导段 C2（汇总，权威在 `../PROTECTION_MAP.md`） |
+> `_CORE_现状真源/` + `HOOKMAP` + `TASK_BOARD` + P result 已在 `CLAUDE.md §一` 接手顺序里，本表不再复列（G10 防多套序打架）。
+
+| 文件 | 用途 |
+|------|------|
+| [`GUARD_GATE_TRUTH.md`](./GUARD_GATE_TRUTH.md) | 门控 / 状态机 / 口令裁决 |
+| [`HOOK_MAP_8071_AUTHORITATIVE.md`](./HOOK_MAP_8071_AUTHORITATIVE.md) | **8071 hook 点权威事实** |
+| [`CONV_REFRESH_PROBLEM.md`](./CONV_REFRESH_PROBLEM.md) | 会话 H↔V 热切问题单（H→V 仍 🟡） |
+| [`HONEYPOT_蜜罐设计.md`](./HONEYPOT_蜜罐设计.md) | 蜜罐诱饵 + 触发逻辑 + 域名加密引导段 C2（汇总，权威在 `../PROTECTION_MAP.md`） |
 
 ---
 

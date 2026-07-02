@@ -187,3 +187,12 @@
 - **范围**：7 处 + 3 skill 镜像。**高风险**（动多文件、易撞收尾 AI）→ **单开一轮、先跟收尾 AI 分工**（主仓 SSOT 谁落档按 `.devin/CONNECT.md §4`）。
 - **验收**：同一 cert 教训只在权威处展开；别处 grep 只剩链接；无矛盾。
 - **本轮已顺带减**：a（D-030 官替 L3→已 L2 坐实）✅、b（`RELEASE_LINE_SSOT` §22 D-018 错号→并入 D-026）✅。
+
+### 9.3 07-02 live 双版实证 + 规划档减法（Vchat M88）
+
+- 设备 `609b4b18` 现装官替（pid 31345）+ 共存（pid 772）冷启 L1：`certBind=e3e13a49` / `role=1 MAIN` / `BATCH1_VERIFY PASS` / `recipeOk=true` / `risk=正常`。证据落盘 `03_execute_执行任务/P_HotUpdateFreeze_官方热更新冻结/logs/live_verify_20260702_{ncl,full}.txt`（gitignored），关键行摘入 tracked `result.md §3.1`。
+- 因此减法：`CURRENT_PLAN §P2` + `TASK_BOARD` P_NC1 行「待装机 / RiskState 真降级未做」陈状态删除 → 指向 `_CORE/发版_当前真源` + `PROTECTION_MAP §10.6` + 本账为单一真源（G10，本行不复述）。`result.md §4` 官替 L1「待补」→「✅ 07-02 现装包实证」+ 诚实边界（现装包 vs 出货候选文件级同一性未比对）。
+- 发现（补记 P2 类）：`coexist_verify_20260701.txt` 实在盘上（前轮 M83「缺失/glob 零命中」= Glob 跳 gitignored 文件的假阴性；日志一直在，是搜索方式滤掉了）。
+- **RiskState 口径 6 文件一致改**（`授权页§④` / `PROTECTION_MAP §10.6` 三处 / `PROJECT_INDEX` / `docs/RELEASE_RECIPE契约` / `guard-security` skill ×2 镜像）：flat「RiskState 真降级未做」→「杂项 5 功能 `isTamperDegraded()` 散沙**已落码**（5 caller：CallGuard/PushFilter/AntiRecall/FakeLocation/FakeBalance）；密友四链走 crypto registry 散沙不走本轴；真未做窄口径 = `EncryptedConfigLoader` 直接 risk-gating + 负向 L1」，单一真源指向 `core/RiskState.java` 类注释。安全官 + 授权检查官改前审 = PASS（纯口径精确化，不动代码/门/gate，方向是「更精确不过度宣称真锁」）。快照 `snap/riskstate-converge/20260702-1106`。
+- **接手序去重（G10 · 收 P2-8 尾）**：M45 已定 `CLAUDE §一` 为唯一接手序；本轮补收 `docs/README`（删 0-6 竞争阅读序 → 只留 8071 车道特有 4 文件 + 指 CLAUDE §一）+ `AGENTS.md`（删重抄五步 → 指 CLAUDE §一）。`PROJECT_INDEX §负一「文档权威链」`= 冲突仲裁轴（非接手序）、已标「冲突时按此顺序」，保留不动。真源：接手序单一 = `CLAUDE §一`。
+- **Catfish 竞品隔离结案（承 2026-06-29 归柜）**：`refs/` → `docs/isolation/` 迁移遗留的「待改链接清单」热路径组（`CLAUDE` / `PROJECT_INDEX`〔含目录树〕/ `TOOLS_INDEX` / `FAILURE_LOG` / `docs/HOOK_MAP_8071` / `docs/DOC_AUDIT` / `00_start/PROMPT_TEMPLATES` / `guard-execute-one skill`）已全部改向；全仓 grep 复核热路径零残留 `refs/`（仅 `07_archive_` + `docs/archive/` 冻结冷库按迁移档 §E 放行；`INDEX_COMPETITOR:29` 系改名历史注、保留）。本轮删 `PROJECT_INDEX` 目录树过期 `refs/(现有,不动)` 行 + 加迁移指针；`_MIGRATION_竞品归柜_20260629.md §②` 标结案。

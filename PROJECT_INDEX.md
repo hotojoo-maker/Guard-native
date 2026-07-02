@@ -60,7 +60,7 @@
 
 | 功能 | 编号 | 文件夹 / 说明 |
 |------|------|--------|
-| native 加密 / 授权真锁链 | P_NC1 + S3a/S4/S3b | P1A~P1E 已有 `BATCH1/PHASE1A~1E PASS`；S3a `android_8071` 已 `prod_server_lock` + server seed 解 registry；S4 Ed25519、S3b LeaseClock 已装机 PASS。仍待删 Filter fallback / V3 发行线对齐 / RiskState 真降级。详见 `03_execute_执行任务/S3a0_ServerSeed设计/result.md` 与 `PROTECTION_MAP.md` §10.6 |
+| native 加密 / 授权真锁链 | P_NC1 + S3a/S4/S3b | P1A~P1E 已有 `BATCH1/PHASE1A~1E PASS`；S3a `android_8071` 已 `prod_server_lock` + server seed 解 registry；S4 Ed25519、S3b LeaseClock 已装机 PASS。仍待删 Filter fallback / V3 发行线对齐 / RiskState 直接 risk-gating 收窄（杂项 5 功能 `isTamperDegraded` 散沙已落码，详 §10.6）。详见 `03_execute_执行任务/S3a0_ServerSeed设计/result.md` 与 `PROTECTION_MAP.md` §10.6 |
 | 普通消息通知 + 铃声完整体验 | P22 的 P_NF1/P_NF2/P_NF3 | 转 v1.1；`03_execute_执行任务/P22_PushFilter` |
 
 ### ⬜ 没做 / 计划 / 暂存
@@ -145,9 +145,10 @@ guard_native/
 │   ├── archive/          8066/历史规划（见 archive/INDEX.md，含 HOOK_MAP_V1 / HOOK_POINTS / CLASS_MAP_8066 / T05/T07）
 │   └── isolation/        竞品 Catfish 索引
 ├── native_core/          libguardcore.so 模块地图（API / ARCHITECTURE / MAP / ROADMAP / RULES）
-├── refs/                 (现有, 不动) MainEntry / UserControll / filter_moments.js
 └── src/                  代码主目录 (W1~W3 产出，com.ghost.assist.*)
 ```
+
+> 注：竞品参考 `refs/` 已于 2026-06-29 整体迁入 `docs/isolation/`（竞品柜），原 `refs/` 目录已空/移除；勿再引 `refs/` 路径。
 
 > **已删除目录（2026-05-27）**：`02_docs_文档员/` + `02_docs_资料员/` → 角色合并入 `guard-review_质检门控`。T05/T07 历史定义已存档至 `docs/archive/wechat_8066/tasks/`。
 

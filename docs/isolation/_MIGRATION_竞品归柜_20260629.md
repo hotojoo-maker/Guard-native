@@ -28,6 +28,9 @@
 
 ## ② 待改链接清单（不自改，交持有方修订）
 
+> **✅ 结案 2026-07-02（Vchat M88）**：热路径（A/B/C 组：`CLAUDE` / `PROJECT_INDEX`〔含目录树〕/ `TOOLS_INDEX` / `FAILURE_LOG` / `docs/HOOK_MAP_8071` / `docs/DOC_AUDIT` / `00_start/PROMPT_TEMPLATES` / `guard-execute-one skill`）**已全部改向 `docs/isolation/`**（全仓 grep 复核：热路径零残留 `refs/`）。
+> **仅剩 D/E 组（`07_archive_归档/` + `docs/archive/`）为冻结冷库**——按 §E「历史原样保留放行」不再churn；换版本/事故解冻时若需再修。下表保留作历史记录。
+
 > 以下 .md 仍指向旧 `refs/...` 路径；搬后均断链。统一改向：`refs/<file>` → `docs/isolation/<file>`，其中 `refs/FAILURE_LOG.md` → `docs/isolation/FAILURE_LOG_catfish.md`。
 > 相对路径写法按各文件所在层级换算（如根目录用 `docs/isolation/...`，docs/ 内用 `isolation/...`）。
 

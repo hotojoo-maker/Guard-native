@@ -2,7 +2,7 @@
 
 > **定位**：真锁（S3a 服务器短命种子折进 SO key）落地时，**客户端构建** 和 **miyou-server（另一个 AI 负责）** 必须用**同一份 per-release 配方**，否则三方 S_rel 不同步 → 所有人 registry 散沙 → 隐私 hook 全挂。本契约固定两边字段语义、机密边界、发版步骤。
 > **权威**：真锁现状 + 风险以 `../PROTECTION_MAP.md` §10.6 为准；本文只定「配方文件」这一契约。
-> **状态**：🟡 契约 + 客户端读取已就绪；`android_8071` 客户端已按 `prod_server_lock` 生成并装机验证 `recipeOk=true`（2026-06-11）。仍未宣称真锁终局：删 Filter fallback / V3 证书源与包名注入 / RiskState 真散沙降级 需另行受控推进。
+> **状态**：🟡 契约 + 客户端读取已就绪；`android_8071` 客户端已按 `prod_server_lock` 生成并装机验证 `recipeOk=true`（2026-06-11）。仍未宣称真锁终局：删 Filter fallback / V3 证书源与包名注入 / RiskState 直接 risk-gating 收窄（杂项散沙已落码，详 `PROTECTION_MAP.md §10.6`）需另行受控推进。
 
 ---
 
@@ -51,7 +51,7 @@
 ## 5. ⚠️ prod_server_lock 口径
 
 - 当前 `android_8071` 已切 `prod_server_lock`：`registry_cipher.inc` 生成时 `GUARD_REGISTRY_REQUIRES_SERVER_SEED=1`，线上 envelope unwrap 后 `recipeOk=true`；无有效 server seed 时 registry scatter。
-- **仍未切的是“真锁终局”**：删 Filter 明文 fallback、V3 官替/共存证书源与包名注入、每发行线独立回归、RiskState 真散沙降级。
+- **仍未切的是“真锁终局”**：删 Filter 明文 fallback、V3 官替/共存证书源与包名注入、每发行线独立回归、RiskState 直接 risk-gating 收窄（杂项散沙已落码，详 §10.6 / `core/RiskState.java`）。
 - 后续任何新发行线切 `prod_server_lock` 必须：① 客户端 unwrap 用真信封装机验过 ② 服务器发同一 `s_rel` 的 `k` ③ 与 V3 改包证书源/包名注入对齐（§10.6 ⚠️）④ 绑定同一套本地 AI 发版步骤。
 - 一旦 `prod_server_lock` + **删 Filter 明文 fallback** 同时成立，任何「证书/种子没同步」的包 → registry 散沙 → 隐私 hook 全挂（PROTECTION_MAP §10.6「删 fallback = 重签即死」）。
 

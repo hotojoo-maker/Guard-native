@@ -593,7 +593,7 @@ SO 只管“验真 + 解密 + 关键风险信号”；弹窗、影子期倒计�
 - 不要重写 SO、不重写 AES-GCM、不换 crypto 依赖；除非有明确编译失败、验收失败或安全缺陷证据。
 - **加密主线已推进到 P1E（Filter 读 registry，2026-06-09）**：1B 抽取 → 1C 加密 registry + search.gateway 收敛 → 1D-local 派生 key（去明文 key 常量）→ A-step2 证书绑定 → P1E 让 ContactFilter/MomentsFilter/ConvFilter 真从 registry 读类名（取件口 `GuardRuntime.getRecipe` + `nativeGetRecipe`）+ conv.list 漂移债结案；均装机 PHASE1A-1E PASS。
 - **P1F 两闸 + 风险骨架已落地（2026-06-10，装机 PASS）**：`LeaseClock` 骨架 + `RiskState`（record-only L0~L6）+ `RiskPromptController`（唯一弹窗）+ kill↔funnel 拆两闸；web 驾驶舱同步显示 风险等级/停用闸/引流。详见 `07_archive_归档/P1F_十字防护整合设计/`（DESIGN + worklog）。
-- **真锁现状（2026-06-11）**：S2/S3a/S4/S3b 已推进到授权码 → token → Ed25519 envelope → AuthGate → server seed 解 registry；`StateMachine.isVipAuthorized()` 不再是 stub。仍未收口：删 Filter fallback、V3 发行线对齐、RiskState 真降级。对外不得宣称真锁终局完成。
+- **真锁现状（2026-06-11）**：S2/S3a/S4/S3b 已推进到授权码 → token → Ed25519 envelope → AuthGate → server seed 解 registry；`StateMachine.isVipAuthorized()` 不再是 stub。仍未收口：删 Filter fallback、V3 发行线对齐、RiskState 直接 risk-gating 收窄（杂项5功能 `isTamperDegraded` 散沙已落码；真未做 = `EncryptedConfigLoader` 直接 risk-gating + 负向 L1，见 `core/RiskState.java`）。对外不得宣称真锁终局完成。
 - 不改已验证 hook 回调体；授权/状态机边界仍归授权检查官共同审查。
 - 业务本体是“密友/密群隐藏 + 通知/红点/搜索/朋友圈等过滤链”，不是通用 DRM demo；registry 抽取必须服务这些已验收链路。
 - 安全官只维护安全/加密/DRM/风控路线；授权/状态机/模块边界仍归 `guard-auth-review_授权检查官`。不要把同一策略复制到授权检查官 skill。
@@ -608,7 +608,7 @@ SO 只管“验真 + 解密 + 关键风险信号”；弹窗、影子期倒计�
 - 生成 cipher 时的签名证书 SHA-256 必须等于运行时 binding material；官替版/共存版签名不同就必须分别生成，不得混用。
 - Java 白名单、Xposed scope、C++ `GUARD_EXPECTED_PACKAGE`、服务器 `release_id` 必须来自同一包档案；不能只改 C++。
 - 业务 hook 仍生效但 `PHASE1D/1E` 失败时，可能只是 fallback 在兜底；禁止宣称加密链路通过。
-- 当前可宣称“商业授权闭环（客户端 pv v1.6）+ Ed25519 防伪造信封 + 当前发行线 server seed 解 registry 已接入”；删 fallback / V3 发行线 / RiskState 真降级完成前，禁止宣称“授权无法破解”或“服务器真锁终局完成”。
+- 当前可宣称“商业授权闭环（客户端 pv v1.6）+ Ed25519 防伪造信封 + 当前发行线 server seed 解 registry 已接入”；删 fallback / V3 发行线 / RiskState 全链路降级+正版恢复闭环完成前，禁止宣称“授权无法破解”或“服务器真锁终局完成”。
 
 ## 安全任务收尾铁律
 
@@ -628,7 +628,7 @@ SO 只管“验真 + 解密 + 关键风险信号”；弹窗、影子期倒计�
 
 3. 发布前安全摘要
    - 必须写清：当前做到哪一阶段、哪些 PASS、哪些只是占位、哪些不能对外宣称已完成。
-   - 对当前加密主线的发布口径：P1E = AES-GCM encrypted registry + Filter 真读 registry（Contact/Moments/Conv）+ 派生 key + 证书绑定；P1F/S3b = `LeaseClock` 服务器授时 + `RiskState` record-only L0~L6 + `RiskPromptController` 唯一弹窗 + kill↔funnel 拆两闸；S4 = Ed25519 信封验签；S3a = 当前 `android_8071` `prod_server_lock` 发行线 server seed 解 registry。**仍未完成**：删 Filter fallback、V3 官替/共存发行线对齐、RiskState 真散沙降级与正版恢复闭环，registry+fallback 双份明文未完全消除。
+   - 对当前加密主线的发布口径：P1E = AES-GCM encrypted registry + Filter 真读 registry（Contact/Moments/Conv）+ 派生 key + 证书绑定；P1F/S3b = `LeaseClock` 服务器授时 + `RiskState` record-only L0~L6 + `RiskPromptController` 唯一弹窗 + kill↔funnel 拆两闸；S4 = Ed25519 信封验签；S3a = 当前 `android_8071` `prod_server_lock` 发行线 server seed 解 registry。**仍未完成**：删 Filter fallback、V3 官替/共存发行线对齐、RiskState 全链路降级+正版恢复闭环（杂项 5 功能 `isTamperDegraded` 散沙已落码），registry+fallback 双份明文未完全消除。
 
 当前 P1E 收口口径（2026-06-09）：
 

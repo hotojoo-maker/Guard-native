@@ -43,9 +43,33 @@
 
 ---
 
+## 3.1 07-02 双版本冷启现场复验（live logcat 摘录 · 永久存证）
+
+> 设备小米9 `609b4b18` / 用户手动冷启（共存未用 adb 拉起）。原始日志 `logs/live_verify_20260702_ncl.txt`（NCL 过滤）+ `logs/live_verify_20260702_full.txt`（全量，均 gitignored）；关键行摘此以进 git 历史。
+
+```text
+官替 com.tencent.mm（pid 31345 · 11:03）:
+[native] certBind set sha256[0..3]=e3e13a49
+[native] role=1 (expect 1=MAIN) / BATCH1_VERIFY PASS
+[A2SIG] installed (self=com.tencent.mm, der=751B)
+[hb] registry after seed ... entries=5 [conv.list][moments.feed][contact.address][search.gateway][a2.sig] recipeOk=true
+[hb] synced tier=1 lease=1782965004 risk=正常
+[hb] health report sent=true result=OK lease=正常 risk=CLEAN registry=ready
+
+共存 com.tencent.mn（pid 772 · 11:05，跑在 cache/lspatch/origin）:
+[native] certBind set sha256[0..3]=e3e13a49
+[native] role=1 (expect 1=MAIN) / BATCH1_VERIFY PASS
+[A2SIG] installed (self=com.tencent.mn, der=751B)
+[A2PKG] installed (self=com.tencent.mn)
+[hb] registry after seed ... entries=5 [...] recipeOk=true
+[native:push] init=true role=2(expect 2=PUSH) hidden=true
+```
+
+---
+
 ## 4. 出货 APK
 
-- 官替：**正确出货包 = `build/lspatch_out_official_fix/official_e3host_8071-439-lspatched.apk`**（host=`host_official_clean` 经 official jks **重签 e3e13a49** 后 LSPatch；文件签名 + 内嵌 `assets/lspatch/origin.apk` 双 = e3e13a49 → 预判运行时 certBind=e3e13a49，2026-07-01 AK53 验）。⚠️ **不可出货旧产物**：`build/lspatch_out_rel/wx_host`（debug ca421ec3）、`02_tools_工具/lspatch_out/host_official_clean...lspatched.apk`（**origin.apk=0fe4ff85 → 同 F-43 会散沙**）。官替装机 L1（冷启 certBind/recipeOk）待用户方便时补（避免打断现跑官替；origin.apk 预判 = L2）。
+- 官替：**正确出货包 = `build/lspatch_out_official_fix/official_e3host_8071-439-lspatched.apk`**（host=`host_official_clean` 经 official jks **重签 e3e13a49** 后 LSPatch；文件签名 + 内嵌 `assets/lspatch/origin.apk` 双 = e3e13a49 → 预判运行时 certBind=e3e13a49，2026-07-01 AK53 验）。⚠️ **不可出货旧产物**：`build/lspatch_out_rel/wx_host`（debug ca421ec3）、`02_tools_工具/lspatch_out/host_official_clean...lspatched.apk`（**origin.apk=0fe4ff85 → 同 F-43 会散沙**）。官替装机 L1 ✅ **2026-07-02 现装官替包冷启实证**（设备 609b4b18 / pid 31345）：`certBind=e3e13a49` + `role=1 MAIN` + `BATCH1_VERIFY PASS` + `[A2SIG] installed(self=mm)` + `registry entries=5 recipeOk=true` + `tier=1 risk=正常`（证据 `logs/live_verify_20260702_ncl.txt`，摘录见 §3.1）。诚实边界：证的是「现装包在本机冷启正常」；现装包与出货候选 `official_e3host_8071-439` 的文件级同一性未逐字节比对。
 - 共存：`build/lspatch_out_coexist_fix/mn_e3host_8071-439-lspatched.apk`（host=克隆 com.tencent.mn 8.0.71 **经 official jks 重签为 e3e13a49** 后再 LSPatch）。2026-07-01 装机 L1 全绿（§3 / `logs/coexist_verify_20260701.txt`）。⚠️ `build/lspatch_out_coexist/coexist_host-439-lspatched.apk` 是 debug `ca421ec3` 旧产物，不可出货。
 - 出包：`assembleCoexistRelease`（模块 cert e3e13a49）+ **克隆宿主先用 official jks 重签** → `tools/lspatch_pack.ps1 -Flavor coexist -BuildType release -HostApk <重签宿主>`（release 模式 LSPatch `-k` 自动取 official jks，**不是 debug**）。
 

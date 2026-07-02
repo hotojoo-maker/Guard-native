@@ -66,7 +66,7 @@
 | A2  | 密友列表（数据层 + 导入 UI） | ✅ | 原生 `SelectContactUI` 导入；详见权威 §3。|
 | A3  | 密群（数据层 + Filter union + 导入 UI）| ✅ | 过滤链 + 原生 `GroupCardSelectUI` 导入；详见权威 §4。|
 | **P23** | **F08 防撤回（C1）** | ✅ | 2026-05-31 L1 装机；详见 P23 result / 权威 §2。|
-| P_NC1 / S3a / S4 / S3b | native 加密 + 授权真锁链 | 🟡 | `BATCH1/PHASE1A~1E PASS`、S4 Ed25519、S3b LeaseClock、当前 `android_8071` server seed 解 registry 已验；仍待删 Filter fallback / V3 发行线对齐 / RiskState 真降级。详见 `03_execute_执行任务/S3a0_ServerSeed设计/result.md` 与 `PROTECTION_MAP.md` §10.6。|
+| P_NC1 / S3a / S4 / S3b | native 加密 + 授权真锁链 | 🟡 | 本体 ✅ 装机（BATCH1/PHASE1A~1E PASS；S4 Ed25519 / S3b LeaseClock / server seed 解 registry 均验；07-02 live 双版 `certBind=e3e13a49`+`recipeOk=true` 实证）；整链尾巴以 `PROTECTION_MAP.md §10.6` + `DRIFT_LEDGER` 为单一真源，本行不复述。|
 | **P22** | **PushFilter 通知策略层** | 🟡 | 主拦截/来电/未读已收口；普通消息通知 + 铃声功能转 v1.1，详见 `docs/P22_PushFilter_VoIP.md`。|
 | **P_CV1** | **通讯录 V↔H 热切** | 🟡 | 原 logcat 缺失，仅存 L1 装机截图(2026-05-27)+L2 代码互证；证据 `07_archive_归档/P_CV1_通讯录V态热切/worklog.md`；待补 logcat 双通原文。|
 | **P_PF2** | **语音/视频来电拦截 + CallGuard** | ✅ | 2026-05-29 装机验证；详见 `docs/P22_PushFilter_VoIP.md`。|
