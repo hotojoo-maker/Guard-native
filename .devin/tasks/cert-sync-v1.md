@@ -1,5 +1,7 @@
 # 任务 cert-sync-v1 · 证书三端同步收口
 
+> ⚠️ **已被 D-026 (cert-converge-v2) 取代（2026-06-30）**：本卡按「两把印章两套配方」（官替 `e3e13a49` / 共存 `8f47a47a`）写就；现口径 = **官替 + 共存 release 共用 `e3e13a49` 一套配方**，共存 `8f47a47a` 已退役。下文表格/命令仅作历史留档，现状真源以 `docs/RELEASE_LINE_SSOT_发行线统一口径.md` v2 + `DECISION_LOG.md` D-026 为准。
+>
 > **开工前必读** `.devin/GUARD_RULES.md`，严格遵守（最小读取 / 禁止推测 / 命名规约无品牌名）。
 > **工作分支** `devin/cert-sync-v1`（已建好）。完成后 `git push origin devin/cert-sync-v1` + `gh pr create`。
 

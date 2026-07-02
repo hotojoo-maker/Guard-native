@@ -168,7 +168,7 @@ StateMachine.isActive() = isVipAuthorized()                 // 1. 授权门 — 
 | `enterHidden()` / `exitHidden()` | 切到隐藏态 / 切出隐藏态（只能 SettingsEntry 按钮 + B 模块触发器调） |
 | `beginUnlock()` | 状态机进入"解锁中"——搜索框弹出时调 |
 | `isActive()` | 四层叠加：授权 + registry 配方门 + 密友总开关 + 当前是否 HIDDEN |
-| `isVipAuthorized()` | 当前 wxid 是否已有有效服务器授权；v1.1 已接 `EnvelopeStore.isAuthorizedNow()`，不再是 stub |
+| `isVipAuthorized()` | 当前 wxid 是否已有有效服务器授权；v1.6 授权闭环已接 `EnvelopeStore.isAuthorizedNow()`，不再是 stub |
 | `isFeatureEnabled()` | 用户在设置页有没有手动关闭"密友功能"开关 f1 |
 | `AuthManager.evaluate()` | 评估当前 wxid + 设备 + license 的组合，输出 AUTH_OK / ACCOUNT_MISMATCH 等 |
 | `bindAccount()` | 通过 DebugServer `/api/bind_account` 建立首次绑定关系 |
@@ -637,7 +637,7 @@ BLOCK 原因: [如有，必填]
 | 蜜罐 | 未实现 | v2+ 引入假入口 |
 | Ed25519 验签 | ✅ 已落地 S4（2026-06-11 装机 PASS；详见 `PROTECTION_MAP §10.6`） | — |
 
-> ⚠️ 本表部分行已被 v1.1 推进超越（isVipAuthorized 已接信封授权、Ed25519 已落地、LeaseClock 已接服务器授时 + 设置页 72h 离线强验）。**授权/真锁的唯一权威现状以 `PROTECTION_MAP.md §10.6` 为准**；其余仍是 stub 的（killSwitch / 蜜罐 / MISMATCH 拦截）不得在 v1 期间自行"修复"。
+> ⚠️ 本表部分行已被 v1.6 推进超越（isVipAuthorized 已接信封授权、Ed25519 已落地、LeaseClock 已接服务器授时 + 设置页 72h 离线强验）。**授权/真锁的唯一权威现状以 `PROTECTION_MAP.md §10.6` 为准**；其余仍是 stub 的（killSwitch / 蜜罐 / MISMATCH 拦截）不得在 v1 期间自行"修复"。
 
 ---
 

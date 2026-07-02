@@ -38,7 +38,7 @@
 
 ### P0 — 证书收敛（无客户窗口 · 宜先做）
 
-- **P_CertConverge**（✅ 已被 v2 覆盖 · 2026-06-30）：用户拍板回合为「**一套配方**」（官替 / 共存 release 共用 official jks → `e3e13a49`）；服务器 / 客户端 / 文档三摊全部同步。新真源 = `docs/RELEASE_LINE_SSOT_发行线统一口径.md` v2 + `DECISION_LOG.md` D-019。原任务卡 `03_execute_执行任务/P_CertConverge_证书收敛/任务卡.md` 已 SUPERSEDED。
+- **P_CertConverge**（✅ 已被 v2 覆盖 · 2026-06-30）：用户拍板回合为「**一套配方**」（官替 / 共存 release 共用 official jks → `e3e13a49`）；服务器 / 客户端 / 文档三摊全部同步。新真源 = `docs/RELEASE_LINE_SSOT_发行线统一口径.md` v2 + `DECISION_LOG.md` D-026。原任务卡 `03_execute_执行任务/P_CertConverge_证书收敛/任务卡.md` 已 SUPERSEDED。
 
 ### P1 — 当前 v1 收口（文档 / 证据 / 快照）
 - P21 主线已收尾，等待其他窗口最终证据归档后统一提交。

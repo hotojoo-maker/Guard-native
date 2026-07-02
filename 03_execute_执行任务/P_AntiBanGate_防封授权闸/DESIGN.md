@@ -341,7 +341,7 @@ C36（06-22）减法 + 黑盒化 + 三触发汇一出口；C36 续 三抽屉 + �
 
 1. **`_SEG_A/B/C`（key 段）+ `_CERT_SHA256`**：被 `gen_registry_cipher.py` / `gen_bootstrap_cipher.py` / `config_crypto.cpp` 三处共享。归一只改 json 内容 + 接线，**绝不动 key 派生 / 段常量 / cert**，否则 registry 和 bootstrap 一起解不开。
 2. **`CompatProbe.BASELINE` / `PromoConfig` 任一字面量**：**不碰 PromoConfig**（它是诱饵、不是死配置，别顺手删）；BASELINE 现【构建期自动从 PromoConfig 算】（`build.gradle computeCanaryBaseline` → `BuildConfig.CANARY_BASELINE`），改诱饵重编自动跟随。
-3. **`CompatProbe.EXPECTED_CERT` = registry `_CERT_SHA256`**（官替 `e3e13a49` / 共存 `8f47a47a`，debug `ca421ec3` 退役中）：换证书时三处 + 运行时 `setBindingMaterial` 必须一起改。
+3. **`CompatProbe.EXPECTED_CERT` = registry `_CERT_SHA256`**（官替 + 共存 release 共用 `e3e13a49`，D-026 一套配方；debug smoke `ca421ec3`，旧共存 `8f47a47a` 已退役）：换证书时三处 + 运行时 `setBindingMaterial` 必须一起改。
 4. **`NativeBridge.getEndpoint`（引流 URL 出口）**：归一只动 `getRecipe`，绝不混进 `getEndpoint`（引流 URL 走 bootstrap/`getEndpoint`，hook 配方走 registry/`getRecipe`，两条出口分开）。
 
 ---

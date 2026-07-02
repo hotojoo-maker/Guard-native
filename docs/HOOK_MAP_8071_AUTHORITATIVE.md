@@ -438,6 +438,6 @@
 | `docs/archive/wechat_8066/HOOK_POINTS.md` | 8066 历史伪代码（仅 diff） |
 | `docs/archive/wechat_8066/HOOK_MAP_V1.md` | v1 规划 DEPRECATED |
 | `docs/isolation/FEATURE_MATRIX.md` | 功能 × 状态 × 失败档案矩阵 |
-| `FAILURE_LOG.md` | F-01 ~ F-42 禁止方案铁律索引（详细正文 → `07_archive_归档/FAILURE_LOG_full_20260629.md`；F-40 重装顶爆假种子 recipeOk=false、F-41 后台标记正常不重置 tier/risk、F-42 LSPatch 439×A15 干净装闪退） |
+| `FAILURE_LOG.md` | F-01 ~ F-43 禁止方案铁律索引（详细正文 → `07_archive_归档/FAILURE_LOG_full_20260629.md`；F-40 重装顶爆假种子 recipeOk=false、F-41 后台标记正常不重置 tier/risk、F-42 LSPatch 439×A15 干净装闪退、F-43 克隆宿主签名 bleed-through→cert mismatch） |
 | `07_archive_归档/tools/dynamic_crawler_动态爬虫/README.md` | 动态探针工具集（已归档）|
 | `03_execute_执行任务/P*/result.md` | 14 份 P 任务装机实证 |

@@ -26,7 +26,7 @@
 | 域 | 漂移风险 | 现状 | 主要缺口（详见 §3） |
 |---|:--:|---|---|
 | **加密** | 🔴 高 | json→gen→SO/fallback 管道通、fail-closed 已落、KDF 三端机制已建 | 护栏自己漂（`kdf_vectors.inc` 绑旧 cert）+ 三端对账无发版硬闸 + ConvFilter/SearchFilter 回调内联 + PushFilter 零接入 |
-| **文档** | 🟠 中高 | 7 层权威链 + SSOT + 对账文化齐全 | 258 个 md、权威面太多、~43% 旧料、真源交叉引用错号、断链/GBK |
+| **文档** | 🟠 中高 | 7 层权威链 + SSOT + 对账文化齐全 | 227 个 md、权威面太多、旧料偏多、真源交叉引用错号、断链/GBK |
 | **共存** | 🟡 中 | v2 已收成「一套配方」（cert/S_rel 共用官替） | cert 轴 2 周 3 变已拍死、剩 cleanup（死 inc / 过期注释 / 1 台残留真机） |
 | **官替** | 🟡 中 | 锚定线、相对稳 | 与共存共担全部「多端逐字节一致」要求 |
 
@@ -92,14 +92,14 @@
 
 | # | 项 | 证据（code-true） | 性质 | 状态 |
 |---|------|------|------|:--:|
-| P2-7 | 技能数矛盾：CLAUDE「10」漏防封官 / PROJECT_INDEX「8」/ 实际 11 项目 skill | `.cursor/skills` 17 目录（11 项目 + 6 通用）；`CLAUDE.md` §十 / `PROJECT_INDEX.md:130` | 文档对齐 | ✅ 2026-07-02（复核纠偏：功能 skill=10 guard + 6 通用，CLAUDE §零/§十=10、PROJECT_INDEX:132=10、实测=10 三处一致；「8/11/漏防封官」系删 auth-gate 前旧态。空目录 `auth-gate_授权门控` 本轮已删；其 SKILL.md 删除仍待 git 提交）|
+| P2-7 | 技能数矛盾（旧态：CLAUDE「10」漏防封官 / PROJECT_INDEX「8」/ 误记 11 项目 skill）| `.cursor/skills` 实测 16 目录（10 guard + 6 通用）；`CLAUDE.md` §十 / `PROJECT_INDEX.md:132` | 文档对齐 | ✅ 2026-07-02（复核纠偏：功能 skill=10 guard + 6 通用，CLAUDE §零/§十=10、PROJECT_INDEX:132=10、实测=10 三处一致；「8/11/漏防封官」系删 auth-gate 前旧态。空目录 `auth-gate_授权门控` 已删）|
 | P2-8 | `_CORE_现状真源/`（发版/授权/防封 3 页最新真源）没进 PROJECT_INDEX 权威链 / CLAUDE 入口 | grep `_CORE` 全仓仅自引；PROJECT_INDEX §负一 + CLAUDE 接手四步均无 | 权威链层0（已拍：_CORE=先读现状层）| ✅ 2026-07-02（CLAUDE §一「接手顺序」+ PROJECT_INDEX 权威链层0 + 核心文档表 + AGENTS / docs README / dispatch skill 五处已接 _CORE；.claude 镜像已同步）|
 | P2-9 | `build.gradle:90` 过时注释「共存 8f47a47a」≠ `:150` 实际 `e3e13a49`（`:116/:147` 已注退役）| build.gradle:90/116/147/150 | 【改代码·注释】 | ✅ 2026-07-02（L90 注释改 v2：两线共用 e3e13a49、8f47a47a 已退役）|
 | P2-10 | `nativeReloadState()` 文档有代码无（幽灵 API）| grep 仅 `.md`（CLAUDE + native_core/*.md），无 `.java/.cpp` | 【改代码 或 文档下线该 API】 | ✅ 2026-07-02（下线 4 处假调用：CLAUDE 铁律27 / RULES ×2 / ARCHITECTURE；ROADMAP TODO 保留；code grep 0 命中已复核）|
 | P2-11 | 冷启动写死测试 wxid `wxid_lzd2va16jd1622` | `ModuleMain.java:429` + `native_core/src/wxid_matcher.cpp:28` | 【改代码·关 debug 档】 | ⬜ |
 | P2-12 | 体量：5 god file（`SettingsEntry` 3050…）+ 强制前置阅读链 ~80KB + 根目录 ~1.5GB / 全树 ~5GB dev 产物（APK/日志，gitignored 不入库、碍导航）| 新 AI 盘点（数字已复算）| 【拆分/清理·另立任务】 | ⬜ |
 
-> **镜像口径更正**（DOC_DEBT + 首个调查 AI 均认错对象）：非「`.claude` 缺 guard-server」（两镜像 17=17 均含 guard-server）；真实差异 = `.cursor` 多一个 `guard-git_保姆/DEV_SECRETS.md`（已 gitignore + `sync_skills.ps1 /XF` 故意排除，**无泄漏**，非漂移）。
+> **镜像口径更正**（DOC_DEBT + 首个调查 AI 均认错对象）：非「`.claude` 缺 guard-server」（两镜像 16=16 SKILL.md 目录均含 guard-server）；真实差异 = `.cursor` 多一个 `guard-git_保姆/DEV_SECRETS.md`（已 gitignore + `sync_skills.ps1 /XF` 故意排除，**无泄漏**，非漂移）。
 
 ---
 
@@ -197,3 +197,21 @@
 - **接手序去重（G10 · 收 P2-8 尾）**：M45 已定 `CLAUDE §一` 为唯一接手序；本轮补收 `docs/README`（删 0-6 竞争阅读序 → 只留 8071 车道特有 4 文件 + 指 CLAUDE §一）+ `AGENTS.md`（删重抄五步 → 指 CLAUDE §一）。`PROJECT_INDEX §负一「文档权威链」`= 冲突仲裁轴（非接手序）、已标「冲突时按此顺序」，保留不动。真源：接手序单一 = `CLAUDE §一`。
 - **Catfish 竞品隔离结案（承 2026-06-29 归柜）**：`refs/` → `docs/isolation/` 迁移遗留的「待改链接清单」热路径组（`CLAUDE` / `PROJECT_INDEX`〔含目录树〕/ `TOOLS_INDEX` / `FAILURE_LOG` / `docs/HOOK_MAP_8071` / `docs/DOC_AUDIT` / `00_start/PROMPT_TEMPLATES` / `guard-execute-one skill`）已全部改向；全仓 grep 复核热路径零残留 `refs/`（仅 `07_archive_` + `docs/archive/` 冻结冷库按迁移档 §E 放行；`INDEX_COMPETITOR:29` 系改名历史注、保留）。本轮删 `PROJECT_INDEX` 目录树过期 `refs/(现有,不动)` 行 + 加迁移指针；`_MIGRATION_竞品归柜_20260629.md §②` 标结案。
 - **看板 A 步（`TASK_BOARD §五` 折叠）**：§五「P 任务历史」19 项 ✅ + 未完项明细全部收进 `<details>`（审计轨迹不删——日期/证据路径/commit hash 全留、只折叠），顶部留一行 🟡/⬜ 未完项摘要 + 指 `PROJECT_INDEX §零`。**采「折叠」非「删行→指针」**：§零 是功能清单、不含 P15/cert-sync/arch-audit/debug-gate 等 infra 项，删行会丢这些 → 折叠保全（比两 AI 建议的「压成一行」更稳，不丢 infra 审计）。看板热路径变短、明细可展开。
+
+### 9.4 残留漂移一批修（Vchat N15 · 2026-07-02）
+
+> 起因：用户问「文档是否还漂移」。子代理全仓扫 + 我 code-true 眼核。核心热路径事实（F-43 / 两线共用 `e3e13a49` / pv v1.6 / CLAUDE·PROJECT_INDEX 10+6 skill）已齐；剩小漂（陈旧存货 / 误号 / 断链），本轮一次性修（纯文本、零代码、零逻辑）。改前用户拍「全修」。
+
+| # | 漂移 | 落点 | 修法 |
+|---|------|------|------|
+| 1 | 活机制文档仍写共存 cert `8f47a47a` | `P_AntiBanGate/DESIGN.md:344` | → 官替+共存共用 `e3e13a49`（D-026），旧 `8f47a47a` 标退役 |
+| 2 | FAILURE_LOG 天花板停在 F-42 | `docs/HOOK_MAP_8071_AUTHORITATIVE.md:441` | `F-01~F-42` → `F-01~F-43`（补 F-43 行） |
+| 3 | cert-converge 误引 D-019（实 D-026） | `TASK_BOARD.md:88` · `CURRENT_PLAN.md:41` | D-019 → D-026 |
+| 4 | 本账自漂：`258 个 md`、`17 目录/11 项目 skill/17=17` | 本账 §1 / §3 P2-7 / P2-7 镜像注 | 258→227；17/11→实测 16 目录（10 guard+6 通用）/16=16 |
+| 5 | 死引用（幽灵路径/角色） | `PROJECT_INDEX:138` CONFLICTS · `08_release/README:24,27` + `RISK_REGISTER:3` + `DECISION_LOG:89` guard-risk-check · `DECISION_LOG:245` auth-gate skill | CONFLICTS→漂移账(DRIFT_LEDGER)；guard-risk-check→guard-review质检门控（SO入库那处→guard-security）；auth-gate→guard-auth-review（已并入） |
+| 6 | 同文件版本自相矛盾 v1.1 vs v1.6 | `guard-auth-review` skill :171/:640（+ `.claude` 镜像 sync） | v1.1 → v1.6（对齐同文件 :488） |
+| 7 | 交接卡陈旧数 | `01_dispatch/架构师交接卡.md:32/:38` | 169 md→227；至 F-41→F-43 |
+| 8 | 已被 D-026 取代的任务卡无提示 | `.devin/tasks/cert-sync-v1.md` 头部 | 加 SUPERSEDED 横幅指 D-026 / RELEASE_LINE_SSOT v2（历史表格留档不改） |
+
+- **未动**（避免改历史/超范围）：`.devin/cert-sync-v1` 正文两把印章表格（仅加头部横幅）；`DECISION_LOG` 各决策叙事本体；P2-12 本地磁盘 GB 数（那是 gitignored 本地 dev 产物、非 git tracked，git tracked 工作树已 2.56MB 见 E 步）；`kdf_vectors.inc:7` 仍绑旧 cert `ca421ec3`（= §3 P0-2 代码级漂移，禁入区 `*.inc`，留 Cursor 侧接发版硬闸，本轮不碰）。
+- **镜像**：改 `.cursor/skills/guard-auth-review` 后跑 `sync_skills.ps1`（synced 16 SKILL.md，二次印证 skill 目录数=16）。

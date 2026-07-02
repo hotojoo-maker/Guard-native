@@ -86,7 +86,7 @@
 ### D-012：native 二阶段使用约束
 - **决策**：v1 完全无 native；v2+ 如引 native 仅限"性能瓶颈点"（朋友圈 parseFrom 单点）和"授权/校验/蜜罐"，**禁抄 Catfish Pine/bypassmm/shadowhook 三件套**，候选库 LSPlant / bytehook / Dobby
 - **依据**：D 线网络对比研究 + FAILURE_LOG F-21
-- **影响**：任何 SO 文件进入仓库前必须经风险复核（guard-risk-check_风险复核）
+- **影响**：任何 SO 文件进入仓库前必须经安全复核（guard-security_网络安全官）
 
 ### D-015：交付形态锁定 + 5 阶段开发顺序（2026-05-21）
 
@@ -242,7 +242,7 @@
 - **影响**：
   - 装机：release flavor 装机后 cert binding 拿到宿主 e3e13a49 → registry 解开 → recipeOk=true（待 V3 / 下次官替 release 装机闭环验证）。
   - 现存机：同机老 LSPatch debug 包（cert=`ca421ec3` + 旧 registry 按 `ca421ec3` 派生）行为不受影响（它的宿主整包本就是 `ca421ec3`，仍同源）。
-  - 文档：`FAILURE_LOG.md` F-43 新增；`docs/RELEASE_RULES.md` / `PROTECTION_MAP.md` §10.x / `docs/GUARD_GATE_TRUTH.md` / `.cursor/skills/guard-security_网络安全官/SKILL.md` 同步 cert binding 输入源真相；`.cursor/skills/auth-gate_授权门控/SKILL.md` 同步 A2 闸 cert 输入源。
+  - 文档：`FAILURE_LOG.md` F-43 新增；`docs/RELEASE_RULES.md` / `PROTECTION_MAP.md` §10.x / `docs/GUARD_GATE_TRUTH.md` / `.cursor/skills/guard-security_网络安全官/SKILL.md` 同步 cert binding 输入源真相；`.cursor/skills/guard-auth-review_授权检查官/SKILL.md`（auth-gate 已并入此角色）同步 A2 闸 cert 输入源。
 - **撤回**：撤回意味着回到 `sModulePath` 读模块自身、release 形态再次散沙。除非 LSPatch 提供 `--keep-module-cert` 类选项或换非 LSPatch 注入工具，否则不撤。
 
 ### D-028:心跳稳定档 = 固定 60min(取代 1~2h 随机)(2026-06-30)

@@ -135,7 +135,7 @@ guard_native/
 ├── 01_dispatch_总调度/   CURRENT_PLAN
 ├── 02_tools_工具/        dynamic_crawler 等
 ├── 03_execute_执行任务/  P15 / P16 / P17 / P18 等
-├── 04_review_审稿复核/   每个 P 任务的审稿报告 + T_TASKS 调研池 + CONFLICTS
+├── 04_review_审稿复核/   每个 P 任务的审稿报告 + T_TASKS 调研池 + 漂移账（DRIFT_LEDGER）
 ├── 05_reports_报告/      阶段报告 / TECH_SYNC_SUMMARY
 ├── 06_refs_参考资料/     wechat / catfish / frida / 离线采集快照
 ├── 07_archive_归档/      已收口 P 任务归档（2026-06-10 首次归档 21 个，见 `07_archive_归档/INDEX.md`）
