@@ -54,6 +54,11 @@
 
 ## 五、P 任务历史
 
+> **🟡 进行中**：P20 搜索 · P_NC1 真锁链 · P22 通知 · P_CV1 通讯录热切 · P_NF1/P_NF3 通知震动 · P_RegistryUnify · P_AntiBanGate（+Extract）· P_Fc5gMerge；**⬜ 未做**：P18 KPI · P_CF2 越界崩溃 · P_NF2 铃声。完整「功能↔编号↔文件夹」见 [`PROJECT_INDEX.md`](./PROJECT_INDEX.md) §零。
+
+<details>
+<summary>📂 P 任务完整历史（19 项 ✅ + 未完成明细 · 含日期/证据路径 · 审计轨迹不删，点开查）</summary>
+
 | P 号 | 任务 | 状态 | 完成日 |
 |:--:|------|:--:|------|
 | P15 | 脚手架 | ✅ | 2026-05-19 门控通过；详见 P15 result。|
@@ -92,6 +97,8 @@
 > 编号从 P15 起，是接续 apk2 项目 QE66 的 P14（保持跨项目可追溯）。`P_CV*` 系列与 `P_NC*` 同属语义号，不占 v2 路线图 P26–P30 / v3 P31–P33 编号位。
 >
 > **账实说明（2026-06-10 对齐）**：本表部分编号**无独立任务目录**，实体在别处——`P_NC1`→`07_archive_归档/P1A…P1F`；`P_NF1~4`/`P_PF2`→`03_execute_执行任务/P22_PushFilter`；`A2/A3`→`P_IMPORT` + 权威 §3/§4；`P24`→`docs/classmap/`。完整「编号↔文件夹」对照见 [`PROJECT_INDEX.md`](./PROJECT_INDEX.md) §零。
+
+</details>
 
 ---
 
