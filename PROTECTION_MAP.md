@@ -499,7 +499,7 @@ StateMachine.isActive()                // 取中央总闸
 > A2 防封 / 授权 / 防破解的**唯一可读真源** = `03_execute_执行任务/P_AntiBanGate_防封授权闸/SSOT_A2授权防破解_统一真源.md`（D-020 · code-true）。本节只留防破解总账侧指针，不复述结论（G10）。
 
 - **A2 闸**：吊本地 cert 完整性 **+ 时间闸**（首装 72h / 曾授权失效 7 天），fail-open；**未授权超窗撤 A2**（D-020 取代 D-018「未授权永不撤」）。代码锚点见 SSOT §8。
-- **封停 / 删卡撤销**：代码 `isCardRevoked` / `markCardRevoked`（语义 = 后台**封停 / 删卡**，**项目无「退款」概念**；`rf` 仅保留作 wire/存储键的历史缩写）；`EnvelopeStore.isAuthorizedNow()` 首判 `isCardRevoked()` → 撤隐私、A2 侧 `isAntiBanReady()=false`；不自愈、不清数据（红线#5）。服务器侧封停/删卡能力主节点 live（`/admin/api/cards/refund` 为历史接口名，归 miyou-server 仓库）；e2e 真机 L1 + 备节点待补。详见 SSOT §3 / §8。
+- **封停 / 删卡撤销**：代码 `isCardRevoked` / `markCardRevoked`（语义 = 后台**封停 / 删卡**，**项目无「退款」概念**；`rf` 仅保留作 wire/存储键的历史缩写）；`EnvelopeStore.isAuthorizedNow()` 首判 `isCardRevoked()` → 撤隐私、A2 侧 `isAntiBanReady()=false`；不自愈、不清数据（红线#5）。服务器侧封停/删卡能力主节点 live（`/admin/api/cards/refund` 为历史接口名，归 miyou-server 仓库）；**device-ban（`DEVICE_BANNED` 硬错误码→清 token）撤隐私 + 重激活恢复 e2e 真机 L1 已证（2026-07-03，详授权真源 §⑥）**；`rf=1` / `isCardRevoked` 连坐 A2 路径（72h grace + 有效信封自愈）+ 备节点 仍待 e2e 验。详见 SSOT §3 / §8。
 - 蜜罐 canary **不进** A2 门（仍走 `check()→markTampered→影子期引流`，§10.9 不变）。
 
 ---
