@@ -53,10 +53,11 @@
 ## 一、接手顺序
 
 1. 读完本文 CLAUDE.md（10 分钟）
-2. 碰 授权 / 发版 / 防封 → 先读 [`_CORE_现状真源/`](./_CORE_现状真源/) 对应页（现状浓缩 + 深链）
+2. 碰 授权 / 发版 / 防封 / 加密 → 先读 [`_CORE_现状真源/`](./_CORE_现状真源/) 对应页（现状浓缩 + 深链）
    - 授权 → [`_CORE_现状真源/授权_当前真源.md`](./_CORE_现状真源/授权_当前真源.md)
    - 发版 → [`_CORE_现状真源/发版_当前真源.md`](./_CORE_现状真源/发版_当前真源.md)
    - 防封 → [`_CORE_现状真源/防封_当前真源.md`](./_CORE_现状真源/防封_当前真源.md)
+   - 加密 → [`_CORE_现状真源/加密_当前真源.md`](./_CORE_现状真源/加密_当前真源.md)
 3. 读 [`docs/README.md`](./docs/README.md)（8071 文档车道）
 4. 读 [`HOOKMAP.md`](./HOOKMAP.md) + [`TASK_BOARD.md`](./TASK_BOARD.md)
 5. 查路径 / 导航 → [`PROJECT_INDEX.md`](./PROJECT_INDEX.md)

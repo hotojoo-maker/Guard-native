@@ -150,7 +150,7 @@
 - **取舍（已认）**：防封对「完整但未付费」者免费——丢「白嫖→撤防封→封」这根棍；但防封单独低价值（隐私仍授权锁），防重打包/换壳靠 cert（重签→散沙），减法划算。
 - **实现**：B（本地常量 + 完整查，减法版，先上）/ A（cert 钥匙锁，更牢，后续配 SO 下沉）。
 - **落地细化（2026-06-26 E87）**：A2 安装门**只认 cert**（`CompatProbe.isIntegrityIntact`：读到证书且确证 ≠ `EXPECTED_CERT` 才散沙；读不到 / 相符 / 异常 = 装，逆序线 fail-open）。**canary 不进 A2 门**（吊编译期 `BASELINE`、漏重算会整片误封），canary 仍走 `CompatProbe.check`→`markTampered`→影子期引流（不变）。改包必重签 → cert 已覆盖重打包场景。官方 DER = `A2SignatureSpoof.OFFICIAL_DER_HEX` 本地常量。
-- **状态**：🟢 码已落 + **装机 L1 PASS（E99 2026-06-26）**：Test1 首装未授权 ready=true/der=751B/level=正常、Test2 隐藏不连坐(removed wxid)/0 崩溃；Test3 重签散沙收《红队压测验证任务书_20260626》。lint 净·DER 校验过(751B/md5 `18c867f0`)·改前审查 PASS〔Vchat E87 · 安全官+授权检查官 WARN〕·S0 快照 `snap/A2-routeB-S0/20260626-1900`（在 `snap/A2gate/20260626-1848` 之上）·本轮 commit（A2 范围）。机制真源 = `DESIGN.md §5.1/§6`（DESIGN/skill 文档同步归主控）；规则 = 安全官 skill §防封反白嫖（旧 lock#1/#2 被本条取代）。状态页 = `STATUS_防封加密线.md`；落码细节 = `P_AntiBanGate/worklog.md` 2026-06-26c+d。
+- **状态**：🟢 码已落 + **装机 L1 PASS（E99 2026-06-26）**：Test1 首装未授权 ready=true/der=751B/level=正常、Test2 隐藏不连坐(removed wxid)/0 崩溃；Test3 重签散沙收《红队压测验证任务书_20260626》。lint 净·DER 校验过(751B/md5 `18c867f0`)·改前审查 PASS〔Vchat E87 · 安全官+授权检查官 WARN〕·S0 快照 `snap/A2-routeB-S0/20260626-1900`（在 `snap/A2gate/20260626-1848` 之上）·本轮 commit（A2 范围）。机制真源 = `DESIGN.md §5.1/§6`（DESIGN/skill 文档同步归主控）；规则 = 安全官 skill §防封反白嫖（旧 lock#1/#2 被本条取代）。状态页 = `_CORE_现状真源/防封_当前真源.md`；落码细节 = `P_AntiBanGate/worklog.md` 2026-06-26c+d。
 - **上线前门控**：红蓝对抗（重签包→散沙 / 首装未授权→防住 / 抽本地 DER 或掐完整查→拿不到隐私 / 正版不误伤）。
 - **撤回**：不撤 D-017 全条（版本轴 / 同 keystore / 后台统计仍有效）；仅取代其中「A2 料只进 server-seed registry + `isAntiBanReady` 吊授权」的门控口径。
 
@@ -279,6 +279,52 @@
   - 出货：未来"克隆宿主"流派（共存版、自改包名包）一律走此流程；"官方原版直接 LSPatch"流派（官替版用 `host_official_clean_8.0.71.apk`）**同样需要重签**（宿主原始 `0fe4ff85` ≠ `e3e13a49` → 同样 cert mismatch；老 AI 已 L2 坐实：官替候选 `02_tools_工具/lspatch_out/host_official_clean...lspatched.apk` 内嵌 `origin.apk`=`0fe4ff85` 真坏，已修为 `build/lspatch_out_official_fix/official_e3host_8071-439-lspatched.apk`，文件+origin 双 e3e13a49）。
   - 硬闸：建议起 P0 `verify_cert_chain` 四端硬闸（apksigner 文件级 + logcat 运行时 + registry_cipher 派生 + 服务器 release_lines.cert_prefix），装前不齐就 BLOCK（老 AI 推荐入 drift ledger P0）。
 - **撤回**：除非 LSPatch 出新版本能让 `-k` 同时改写运行时 sigbypass 返回的签名（目前 v0.6.x 不能），否则不撤。
+
+### D-031：加密 hook 名粒度保持粗 + 单一真源归一（2026-06-21 · 2026-07-03 P91 从安全官 skill 迁入）
+
+> 触发：用户问「当前加密的类名不需要那么细碎，再补一些是否更好维护？」本节给死结论。配套机制设计 `03_execute_执行任务/P_AntiBanGate_防封授权闸/DESIGN.md` §3（原 PLAN §二已并入；PLAN 2026-06-30 减法删除）。
+
+#### 一句话结论
+
+**维护难易 ≠ 加密了几个类名；维护难易 = 是不是单一真源。** 1 个源 = 好维护；同一个名字存 N 份 = 难维护，与数量无关。
+
+#### 当前真实痛点不是「加密太少」，是「三处重复」
+
+同一个混淆名（如 `kc5.y`）现同时存在：
+
+1. `native_core/registry_8071.json`（加密源）
+2. Filter 里 `BuildConfig.DEBUG ? "kc5.y" : ""`（debug 兜底）
+3. Filter 里内联硬编码 `"kc5.y"`
+
+→ 既扩大明文暴露面，又使「下版本改名」要改 3 处、改漏即出 bug。现状量化：registry 字段数 / 接线状态**以 `registry_8071.json` + `getRecipe*` 为准**（别抄死数；曾误记 37/22/15）；registry 外还散着一批硬编码混淆名（SearchFilter / PushFilter 是重灾区，PushFilter 完全没接 registry）。
+
+#### 「再补一些」会更好还是更难维护？（分三种，别混）
+
+| 怎么补 | 维护性 | 说明 |
+|---|---|---|
+| 把散在 Java 的硬编码名**搬进 registry 当唯一源 + 同时删 Java 重复** | ✅ 更好 | 这是「归一」，下版本只改一个 json |
+| 往 registry 加更多项，但 Java 仍留旧字面量 | ❌ 更难 | 份数从 3 变更多，漂移更狠 |
+| 把加密拆更细（每个小功能一条配方） | ❌ 更难 | 每版本要更新的字段更多，且违背「拆大动脉不碎拆」（见 §配方收敛原则 / `PROTECTION_MAP.md` §10.1）|
+
+#### 建议（决策）
+
+1. **粒度保持粗**：加密类名**不需要更细碎**。维持「4 大动脉 + 4 pack」粗粒度，不为「全加密」而拆碎、到处补。
+2. **要做的是归一，不是增量**：
+   - `registry_*.json` 设为混淆名**唯一源**；
+   - DEBUG fallback 由 build 时**从 json 生成**，不再手写；
+   - Filter 内联字面量全部改走 `getRecipe()`；
+   - 把 SearchFilter / PushFilter 的硬编码锚点也收进 registry（它俩是最大洼地）；
+   - 挂空 registry 字段接上或删掉，别留半截（数量**以 `getRecipe*` 为准**，别抄死数）。
+3. **registry 版本化**：按宿主 versionCode 分块，运行时按检测版本派发 → 一个 SO 支持多版本，下版本 = 加一块、不动旧块。
+4. **安全靠服务器 + 删 release 明文 fallback，不靠把名字拆更碎**：真锁是「服务器种子解 registry」+「release fail-closed 无明文」；名字拆细只增维护、不增安全。
+5. **删 fallback 是最后一步**：归一（1~3）做完、且与 V3「每发行证书重生成 cipher」绑定后再删（`PROTECTION_MAP.md` §10.8），否则重签即裸奔。
+
+#### 准绳（写死）
+
+```text
+配方要粗（4 大动脉），来源要唯一（registry 一处），暴露要少（release 无明文）。
+拆更碎 = 更难维护 + 不增安全；归一 = 更好维护 + 配合删明文才增安全。
+```
 
 ---
 

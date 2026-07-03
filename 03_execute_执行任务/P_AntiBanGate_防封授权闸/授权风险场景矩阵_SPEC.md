@@ -4,7 +4,7 @@
 > 任何 AI 接手先读本页 → 照此实现 → **禁止自行改写场景行为、禁止与本表矛盾**（违反即停，问用户；防"自己动自己、自相矛盾"）。
 > 建立：2026-06-26 · Vchat `guard_native-E99`（用户拍板，场景导向重写）
 > 维护铁律：G8 代码即真相 ｜ G9 改完必更 ｜ G10 一结论一处（**场景行为只此一处**，别处只指向本页）
-> 关联真源：决策 `DECISION_LOG.md` D-020（取代 D-018）｜ 状态 `STATUS_防封加密线.md` ｜ 机制 `DESIGN.md` ｜ 代码 `RiskState` / `CompatProbe` / `GuardRuntime` / `StateMachine` / `EnvelopeStore`
+> 关联真源：决策 `DECISION_LOG.md` D-020（取代 D-018）｜ 状态 `_CORE_现状真源/防封_当前真源.md` + `加密_当前真源.md` ｜ 机制 `DESIGN.md` ｜ 代码 `RiskState` / `CompatProbe` / `GuardRuntime` / `StateMachine` / `EnvelopeStore`
 
 ---
 
@@ -105,7 +105,7 @@
 | 封停/删卡后重购换绑/查史 | 客户端拒绝叠加(✅已定)；服务器后台 4 能力见 §7 | 块 A + 客户端显设备短码 |
 
 > **§3/§6 一致性(E99 修)**：§3 #1 未授权 = 只软引流(不撤 A2);故 §6 删了「渐进砸门」当缺口的旧写法 —— T_login 砸门 = v2,不在 v1 缺口内。两节不再矛盾。
-> 本表每条 = 一个可恢复任务单元，配 5 件套(P文件夹/worklog时间戳/DoD/改前 snap/STATUS 指一行)。详见 `STATUS_防封加密线.md` 大计划块。
+> 本表每条 = 一个可恢复任务单元，配 5 件套(P文件夹/worklog时间戳/DoD/改前 snap/STATUS 指一行)。详见 `TASK_BOARD.md`（大计划块 E99 已并入上线维护期计划）。
 
 ---
 
