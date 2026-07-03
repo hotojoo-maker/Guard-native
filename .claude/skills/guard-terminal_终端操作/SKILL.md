@@ -105,6 +105,7 @@ description: Guard Native 专属终端操作员——PowerShell/adb/frida/build 
 | `WXID-MISMATCH` | 群聊 wxid 抽取与 hidden id 不一致 | 配合 `using id as key` = 已修复 |
 | `AUTH_OK` / `AUTH_NO_LICENSE` / `AUTH_TAMPERED` | AuthGate 评估结果 | `isVipAuthorized` = `EnvelopeStore.isAuthorizedNow()`（token+Ed25519 信封+license 未过期）= 真授权门，非 stub |
 | `RiskGate` 高危 / `SAFE_MODE` | 风险门触发 / SO 散沙全链路静默 | 正版调试时永远不该出现（旧 `killSwitch` stub 已删、不再打印） |
+| `ClassNotFound` UI 类（`e2` 朋友圈适配器 / `MvvmContactListUI` 通讯录页 等）| 该 UI 类尚未加载 | **常见于微信未登录 / 未进对应页**——登录 + 打开该页后即 hook 上、警告消失，非 bug；先确认登录态（前台 activity 若为 `LoginPasswordUI` = 没登录）再判缺陷 |
 
 **关键提醒**：日志里 `state=V` ≠ 授权通过。**别在汇报里把"输了 111111 进 V 态"等同于"已激活授权"**——它们是两条不相干的链路。
 
@@ -181,92 +182,14 @@ Start-Sleep 2
 adb logcat -v time | Tee-Object "c:\Users\Me\Desktop\guard_native\03_execute_执行任务\<当前P任务>\logs\logcat.txt"
 ```
 
-### frida warm-attach（微信已在跑）
+## 找 hook / 版本适配探针（上线维护期不读，只在版本适配/调试时按需 Read）
 
-```powershell
-# 1. 先拿 PID（找主进程，不要 :push :tools 后缀的）
-adb shell "ps -A | grep tencent"
+> v1 探索期 / 换版本找 hook 的活儿，维护期出货装机用不到，已挪出主文件（只有 SKILL.md 自动加载，子文档不自动读）。
+> - **找 hook 探针命令 + debug LSPosed 装机 + frida spawn/warm-attach** → 本文件夹 `PROBING_找hook探针.md`（手动 Read）
+> - **换微信版本整套流程**（jadx → check_classmap → 更新字典 → regen registry → 重打包）→ 先读 `docs/VERSION_UPGRADE_SOP.md`
+> - 日常出货装机命令 → `docs/RELEASE_RULES.md`「双版本发布手册」
 
-# 2. attach
-frida -U -p <PID> -l "<脚本完整路径.js>"
-```
-
-### frida spawn 模式（冷启动 / KPI 采集）
-
-```powershell
-frida -U -f com.tencent.mm --no-pause -l "<脚本完整路径.js>" 2>&1 | Tee-Object "<日志路径.log>"
-```
-
-### 确认 frida-server 在跑
-
-```powershell
-adb shell "ps -A | grep frida"
-# 没跑就启动：
-adb shell "/data/local/tmp/frida-server &"
-```
-
----
-
-## 标准装机验证流程（场景 A · debug LSPosed 模块形态；release LSPatch 出货走 RELEASE_RULES）
-
-```
-步骤 1  编译调试包
-步骤 2  adb install Guard 模块
-步骤 3  adb force-stop 微信
-步骤 4  清空 logcat
-步骤 5  告诉用户：打开微信，执行目标操作
-步骤 6  用户回来 → 拉日志
-步骤 7  判定结果
-```
-
-**步骤 6 日志检查（关键）**
-
-```powershell
-# 先确认新代码已加载
-adb logcat -d 2>&1 | Select-String "NCL.*init|NCL.*hook|NCL.*ready"
-
-# 再看拦截命中
-adb logcat -d 2>&1 | Select-String "NCL|GRD|MomentsFilter" | Select-Object -Last 50
-```
-
-- 看到 `NCL.*ready` → 新代码已加载 ✅
-- 没有 → 旧代码仍在，执行 `adb shell am force-stop com.tencent.mm` 重开
-
----
-
-## 8.0.71 类名探针流程（场景 B）
-
-用于找未知混淆类名或字段。必须先明确当前 P 任务和探针脚本路径，不从历史 P 任务默认套用。
-
-```powershell
-# 1. 确认 8.0.71 已装
-adb shell "dumpsys package com.tencent.mm | grep versionName"
-
-# 2. 确认 frida-server 在跑
-adb shell "ps -A | grep frida"
-
-# 3. spawn 跑探针（替换为当前 P 任务脚本和日志路径）
-frida -U -f com.tencent.mm --no-pause -l "C:\Users\Me\Desktop\guard_native\03_execute_执行任务\<当前P任务>\scripts\<探针脚本>.js" 2>&1 | Tee-Object "C:\Users\Me\Desktop\guard_native\03_execute_执行任务\<当前P任务>\logs\<日志名>.log"
-
-# 4. 等 [FIND] Hook 就绪 出现 → 告诉用户进朋友圈下滑
-# 5. 看到 [ITEM] ★ 或 [ADAPTER] ★ → 复制给用户
-```
-
----
-
-## KPI 抽检流程（场景 C · 可选 · 非发版硬门 · 2026-07-02 弱化）
-
-> **KPI 已弱化为可选抽检、不再是"每个 P 任务关闭必做"**（用户 2026-07-02 拍板；我方零环境读取故 vbs/PROP 不增量）。想抽跑就跑、不跑不挡任何流程。
-
-**debug LSPosed 形态**（干净官方 + 挂钩）可 spawn：
-
-```powershell
-frida -U -f com.tencent.mm --no-pause -l "I:/apk2_official_research/official_wechat_ban_research/03_anti_frida/frida_stats.js" 2>&1 | Tee-Object "logs\kpi.log"
-```
-
-**LSPatch 打包型候选包禁 spawn**（`-f` 崩 metaloader）→ warm-attach：先 `adb shell pidof com.tencent.mm` 拿主进程 pid，再 `frida -U -p <pid> -l ...frida_stats.js`（用户桌面点开 App 后再 attach；stdin 需保持打开一个采集窗，否则 frida attach 完即退）。
-
-对比红线（真源=防封官 skill / CLAUDE §七）：verifiedbootstate ≤ 38，PROP ≤ 220，normsg ≤ 5124，CONN ≤ 0.5。异常才记 `05_reports_报告/RISK_HISTORY.md` 交防封官，不阻塞发版。
+> **KPI / 防封出包体检 ≠ "找 hook"、仍在用**：`frida_stats.js` 出包前抽检 → `guard-review` skill §⑤（执行）+ `guard-antiban` skill（红线真源）。2026-07-02 弱化为可选、非硬门，但**属上线维护期活动，不埋 PROBING**。
 
 ---
 

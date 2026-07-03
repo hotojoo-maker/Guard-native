@@ -64,7 +64,7 @@ description: Guard Native 发版官（发布 / 出包 / 官替版 / 共存版 / 
 - **B 出包**（**发版候选用 Release 变体**，cert-converge v2 D-026 起强制）：`./gradlew :assembleOfficialRelease`（`com.tencent.mm`）或 `:assembleCoexistRelease`（`com.tencent.mn`）。自动跑 `checkStringLeak{Official,Coexist}Release` 硬闸（dex+SO 扫泄漏）。Debug 变体只作模块更新 / 公告 / C2-smoke、cert mismatch 注定 scatter、**不作发版候选**。
 - **C LSPatch 重新打包**（**`-k` 必须用 official release keystore**，cert binding 改读宿主 sourceDir = `-k` 那把 = `e3e13a49`）：`java -jar 02_tools_工具/lspatch.jar <宿主APK> -m <对应flavor模块APK> -l 2 -k signing/guard-native-official-release.jks <storePass> guardofficial <keyPass> -o 02_tools_工具/lspatch_out -f`。密码从 `signing/keystore.properties` 读。校验日志 `Embedding modules - com.ghost.assist`，可拆包比对内嵌 `libguardcore.so` 哈希。**一键替代**：`.\tools\lspatch_pack.ps1 -Flavor <official|coexist> -BuildType release -Clean -Build`（commit `2cd643c`）。
 - **D 服务器同步**（交 guard-server_服务器运维）：`config.py` 的 `GUARD_REL_KEYS[<id>].srel` 换同一新 s_rel + `release_lines` 登记（package_line/product_version）+ 部署主节点（备节点未购，`--all` 才带；详坑 3 / 服务器 skill L101）。
-- **E 装机 L1 验证**：冷启动看 `available=true`、`role=1 MAIN`、`BATCH1_VERIFY PASS`；心跳后 `recipeOk=true`。日志落盘才算发布候选。
+- **E 装机 L1 验证**：冷启动看 `available=true`、`role=1 MAIN`、`BATCH1_VERIFY PASS`；心跳后 `recipeOk=true`。日志落盘才算发布候选。**注**：装机时 logcat 若见 UI 类 `ClassNotFound`（朋友圈 `e2` / 通讯录 `MvvmContactListUI` 等），多半是**微信还没登录 / 没进对应页**（前台 activity = `LoginPasswordUI` 即未登录）—— 登录 + 打开该页即 hook 上、非缺陷；内核是否健康只看 `certBind=e3e13a49` / `role` / `recipeOk`。
 
 ## 七条坑（已实证，违反即翻车）
 
