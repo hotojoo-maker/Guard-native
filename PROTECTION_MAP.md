@@ -275,7 +275,7 @@ StateMachine.isActive()                // 取中央总闸
 - 验收必须分两条：正常授权卡密收到 `pv/up` 并显示运营提示；封停/风险设备进入 funnel 时才弹引流。
 
 ### 仍未做（真锁的「牙」，与诚实口径一致）
-1. 当前 `android_8071` 已切 `prod_server_lock`：`registry_cipher.inc` 为 `GUARD_REGISTRY_REQUIRES_SERVER_SEED=1`，真实 `S_rel` 与服务器 envelope `k/n` 同源，线上 unwrap 后 `recipeOk=true`。**仍不能宣称服务器真锁终局完成**：删 Filter 明文 fallback、V3 官替/共存证书源与包名注入、每发行线独立回归、RiskState 直接 risk-gating 仍未收窄（杂项5功能 `isTamperDegraded` 散沙已落码 5 caller；真未做 = `EncryptedConfigLoader` 直接接 RiskState/LeaseClock §10.5 step2 + 负向 L1；口径以 `core/RiskState.java` 为准）。
+1. 当前 `android_8071` 已切 `prod_server_lock`：`registry_cipher.inc` 为 `GUARD_REGISTRY_REQUIRES_SERVER_SEED=1`，真实 `S_rel` 与服务器 envelope `k/n` 同源，线上 unwrap 后 `recipeOk=true`。**仍不能宣称服务器真锁终局完成**：删 Filter 明文 fallback、V3 官替/共存证书源与包名注入、每发行线独立回归、RiskState 直接 risk-gating 仍未收窄（杂项功能 `isTamperDegraded` 散沙已落码，数以调用点为准；真未做 = `EncryptedConfigLoader` 直接接 RiskState/LeaseClock §10.5 step2 + 负向 L1；口径以 `core/RiskState.java` 为准）。
 2. ~~无 Ed25519 验签~~ → **S4 已落地（2026-06-11 装机 PASS）**：服务器 Ed25519 私钥签信封，客户端只放公钥验签，HS256 仅留 legacy `/api/v1/config` 公告路径。⚠️ 注意：Ed25519 防的是「伪造/篡改信封」，**不等于真锁**——真锁的「牙」仍是下面第 1 条 S3a 服务器短命 key 折进 SO。
 3. `LeaseClock` 已接信封授时（S3b-A，2026-06-11 装机 PASS）：`GuardHeartbeat.syncOnce` 验签后喂 `onServerHeartbeat(sn×1000, exp×1000)` + `RiskState.evaluate()` record-only 重算记日志。**S3b-B 也已落地（2026-06-11 装机 PASS）**：① `EnvelopeStore.isLicenseExpired` 改用 `LeaseClock.trustedNow()`（服务器授时，防回拨/前跳，不信手机墙钟）；② 设置页 `showGuardOverlay` 加"算账检查点"——断网 >72h 进设置页 → `GuardHeartbeat.reverifyIfStale` 强制重验，失败 → `revokeKeepToken`（撤销但留 token 自愈）+ 样式化弹窗"当前时间错误，授权验证失败，请检查时间"。⚠️ 边界：**正常使用（非设置页）断网不掉授权、密友照常隐藏（不误伤/不暴露）**；重连自愈实测通过。72h 阈值当前客户端写死，未走服务器下发。
 4. 备节点 HTTPS (`miyou.lol`) 反代未完成；Android 当前只启用主节点。
@@ -423,7 +423,7 @@ StateMachine.isActive()                // 取中央总闸
 - [ ] `ModuleMain` 是否仅在本地已有 token 时启动冷启动 heartbeat？
 - [ ] `EncryptedConfigLoader` 仍只读本地 SO registry（无服务器 lease）？
 - [ ] `registry_cipher.inc` 是否仍为 `GUARD_REGISTRY_REQUIRES_SERVER_SEED=1`，且 `GuardHeartbeat` 成功 unwrap envelope `k/n` 后 `recipeOk=true`？
-- [ ] `RiskState` 主链 record-only；杂项5功能已接 `isTamperDegraded` 散沙（若回退须更新）；`EncryptedConfigLoader` 直接 risk-gating 仍未接？（S3b-A+B 已做：`LeaseClock` 已被 `GuardHeartbeat` 喂服务器授时；`EnvelopeStore.isLicenseExpired` 已换 `trustedNow`；设置页有 72h 离线强验→撤销。若这些被回退/再推进，必须回来更新本节）
+- [ ] `RiskState` 主链 record-only；杂项功能已接 `isTamperDegraded` 散沙（数以调用点为准，若回退须更新）；`EncryptedConfigLoader` 直接 risk-gating 仍未接？（S3b-A+B 已做：`LeaseClock` 已被 `GuardHeartbeat` 喂服务器授时；`EnvelopeStore.isLicenseExpired` 已换 `trustedNow`；设置页有 72h 离线强验→撤销。若这些被回退/再推进，必须回来更新本节）
 - [ ] `AuthEnvelopeVerifier` 是否仍只接受 `alg==Ed25519`（S4 已做）、客户端只内置公钥？
 
 ### ⚠️ 与 V3 改包路线（D-016 主攻方向）的冲突 —— 真锁落地前必须先对齐（2026-06-11）

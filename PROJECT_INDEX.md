@@ -60,7 +60,7 @@
 
 | 功能 | 编号 | 文件夹 / 说明 |
 |------|------|--------|
-| native 加密 / 授权真锁链 | P_NC1 + S3a/S4/S3b | P1A~P1E 已有 `BATCH1/PHASE1A~1E PASS`；S3a `android_8071` 已 `prod_server_lock` + server seed 解 registry；S4 Ed25519、S3b LeaseClock 已装机 PASS。仍待删 Filter fallback / V3 发行线对齐 / RiskState 直接 risk-gating 收窄（杂项 5 功能 `isTamperDegraded` 散沙已落码，详 §10.6）。详见 `03_execute_执行任务/S3a0_ServerSeed设计/result.md` 与 `PROTECTION_MAP.md` §10.6 |
+| native 加密 / 授权真锁链 | P_NC1 + S3a/S4/S3b | P1A~P1E 已有 `BATCH1/PHASE1A~1E PASS`；S3a `android_8071` 已 `prod_server_lock` + server seed 解 registry；S4 Ed25519、S3b LeaseClock 已装机 PASS。仍待删 Filter fallback / V3 发行线对齐 / RiskState 直接 risk-gating 收窄（杂项功能 `isTamperDegraded` 散沙已落码，数以调用点为准，详 §10.6）。详见 `03_execute_执行任务/S3a0_ServerSeed设计/result.md` 与 `PROTECTION_MAP.md` §10.6 |
 | 普通消息通知 + 铃声完整体验 | P22 的 P_NF1/P_NF2/P_NF3 | 转 v1.1；`03_execute_执行任务/P22_PushFilter` |
 
 ### ⬜ 没做 / 计划 / 暂存

@@ -348,7 +348,7 @@ SO 只管“验真 + 解密 + 关键风险信号”；弹窗、影子期倒计�
 
 3. 发布前安全摘要
    - 必须写清：当前做到哪一阶段、哪些 PASS、哪些只是占位、哪些不能对外宣称已完成。
-   - 对当前加密主线的发布口径：P1E = AES-GCM encrypted registry + Filter 真读 registry（Contact/Moments/Conv）+ 派生 key + 证书绑定；P1F/S3b = `LeaseClock` 服务器授时 + `RiskState` record-only L0~L6 + `RiskPromptController` 唯一弹窗 + kill↔funnel 拆两闸；S4 = Ed25519 信封验签；S3a = 当前 `android_8071` `prod_server_lock` 发行线 server seed 解 registry。**仍未完成**：删 Filter fallback、V3 官替/共存发行线对齐、RiskState 全链路降级+正版恢复闭环（杂项 5 功能 `isTamperDegraded` 散沙已落码），registry+fallback 双份明文未完全消除。
+   - 对当前加密主线的发布口径：P1E = AES-GCM encrypted registry + Filter 真读 registry（Contact/Moments/Conv）+ 派生 key + 证书绑定；P1F/S3b = `LeaseClock` 服务器授时 + `RiskState` record-only L0~L6 + `RiskPromptController` 唯一弹窗 + kill↔funnel 拆两闸；S4 = Ed25519 信封验签；S3a = 当前 `android_8071` `prod_server_lock` 发行线 server seed 解 registry。**仍未完成**：删 Filter fallback、V3 官替/共存发行线对齐、RiskState 全链路降级+正版恢复闭环（杂项功能 `isTamperDegraded` 散沙已落码，数以调用点为准 · 真源 `core/RiskState.java`），registry+fallback 双份明文未完全消除。
 
 当前 P1E 收口口径 / 发布前 PASS 清单（做到哪、要看哪些 PASS）= 现状 → `_CORE_现状真源/加密_当前真源.md` §②（2026-07-03 P91 拆分）。
 

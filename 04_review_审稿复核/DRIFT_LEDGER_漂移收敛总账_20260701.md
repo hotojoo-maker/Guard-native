@@ -60,7 +60,7 @@
 | # | 问题 | 证据（code-true） | 落点 | 验收 | 状态 |
 |---|------|------|------|------|:--:|
 | P0-1 | `kdf_self_test()` 仅 `#ifdef GUARD_DEV_SELFTEST`（release no-op），`run_native_tests.ps1` 是独立脚本、没东西强制发版前跑 → 改 SO 一个 seg 字节、忘跑，release 照样出包、上机才散沙 | `config_crypto.cpp:615-687`、`CMakeLists.txt:48-50`、`run_native_tests.ps1`（未被 gradle 调用）| `build.gradle` preBuild 依赖 或 CI + 发版 skill 收尾 BLOCK 项 | 故意改 1 个 seg 字节 → 出包被 BLOCK | ⬜ |
-| P0-2 | **护栏自己漂**：`kdf_vectors.inc:7` `kKdfTestBinding=ca421ec3`（旧 debug 证书），但 `gen_kdf_vectors.py:30` `TEST_BINDING=kc.CERT_SHA256=e3e13a49` → 向量在证书切换后没重生成；仍能过自测（旧 gen 内部自洽）= **假绿**，没覆盖现网证书 | `kdf_vectors.inc:7`、`gen_kdf_vectors.py:26-30`、`kdf_common.py:68-73` | 重跑 `python tools/gen_kdf_vectors.py`；并把 P0-1 硬闸做成「**从源重生成 + git diff 非空即 BLOCK**」（不能只跑已提交向量）| 重生成后 `kdf_vectors.inc` binding=e3e13a49；CI diff 干净 | ⬜ |
+| P0-2 | **护栏自己漂**：`kdf_vectors.inc:7` `kKdfTestBinding=ca421ec3`（旧 debug 证书），但 `gen_kdf_vectors.py:30` `TEST_BINDING=kc.CERT_SHA256=e3e13a49` → 向量在证书切换后没重生成；仍能过自测（旧 gen 内部自洽）= **假绿**，没覆盖现网证书 | `kdf_vectors.inc:7`、`gen_kdf_vectors.py:26-30`、`kdf_common.py:68-73` | 重跑 `python tools/gen_kdf_vectors.py`；并把 P0-1 硬闸做成「**从源重生成 + git diff 非空即 BLOCK**」（不能只跑已提交向量）| 重生成后 `kdf_vectors.inc` binding=e3e13a49；CI diff 干净 | 🟡 2026-07-03（P85：已重跑 gen→binding=e3e13a49 + `run_native_tests.ps1` ALL=PASS〔kdf_self_test=PASS〕；**发版硬闸 P0-1/§4B 仍 ⬜**、改动未提交，见 §9.6）|
 
 > 呼应安全官 skill「三端钥匙派生镜像对账」铁律落地要求②（KDF 测试向量自动对账）。P0-2 是「连防漂工具都漂了」的现场实证，最该顺手先修。
 
@@ -80,8 +80,8 @@
 | P2-1 | `RELEASE_LINE_SSOT` 头部 + §0.5 把 cert 决策标 `D-018/D-019`，实际 `DECISION_LOG` 里 D-018=A2、D-019=RiskState，真正 cert-converge=**D-026** → 真源交叉引用错号 | `docs/RELEASE_LINE_SSOT_发行线统一口径.md:6,21-23`；`DECISION_LOG.md` D-018/D-019/D-026 | 改引用为 D-026 | SSOT 决策号指向 D-026 | ✅ 2026-07-01（头部/§0.5/§4.3 D-019→D-026 已改；残留 §22 cert-sync-v1 仍标 D-018 = 小残留待理） |
 | P2-2 | `kdf_common.py:64-67` 注释仍写「coexist 用独立 keystore cert=8f47a47a…per-flavor registry」（v1 口径），v2（D-026）已合一套配方、coexist 共用 e3e13a49 | `kdf_common.py:64-67` | 注释改 v2 口径 | 注释不再提 coexist 单生 | ✅ 2026-07-01（已改 v2 口径） |
 | P2-3 | 死文件物理仍在：`registry_cipher_coexist.inc` + `bootstrap_cipher_coexist.inc`（registry_loader 已不引用、CMake 已退役 GUARD_REGISTRY_COEXIST）| `native_core/src/*_coexist.inc`；`registry_loader.cpp:31`；`CMakeLists.txt:40-42` | 移 `native_core/src/_archived/` 或头加 DEPRECATED | 运行不引用、物理归档 | ⬜ |
-| P2-4 | 两份签名 SSOT：`P_CertConverge/SSOT_签名唯一` 已 DEPRECATED 且自述「与 v2 全反」，易让人读反 | `03_execute_执行任务/P_CertConverge_证书收敛/SSOT_签名唯一_统一真源.md:3-4` | 顶部已标 DEPRECATED（确认指针到 RELEASE_LINE_SSOT）/ 或归档 | 接手不会读到反口径 | 🟡 |
-| P2-5 | registry 字段核账：现 5 entry/34 字段；安全官 skill 旧文「37 字段 22 接线 15 挂空」与代码不符 → 以代码为准重核哪些真被消费、挂空的接上或删 | `registry_8071.json`（5 entry/34 字段）；安全官 skill §加密 hook 名粒度 | 核账后接线或删，别留半截 | 字段消费状态清晰 | ⬜ |
+| P2-4 | 两份签名 SSOT：`P_CertConverge/SSOT_签名唯一` 曾 DEPRECATED 且自述「与 v2 全反」，易让人读反 | 原文件 `03_execute_执行任务/P_CertConverge_证书收敛/SSOT_签名唯一_统一真源.md` **现已不存在**（Glob + 磁盘核实 2026-07-02 · 整个 `P_CertConverge_证书收敛/` 目录已删除收敛）| 目标文件随目录删除 → 无反口径可读；活指针 `RELEASE_LINE_SSOT:117` / `TASK_BOARD:88` / `CURRENT_PLAN:41` 均已正确写「已删除/SUPERSEDED」，`DECISION_LOG:232` 为历史叙事保留 | 接手不会读到反口径 | ✅ 2026-07-02（本项原为指向已删文件的幽灵 TODO，核实后标闭合 · Vchat FFN98）|
+| P2-5 | registry 字段核账：现 5 entry/34 字段；安全官 skill 旧文「37 字段 22 接线 15 挂空」与代码不符 → 以代码为准重核哪些真被消费、挂空的接上或删 | `registry_8071.json`（5 entry/34 字段）；安全官 skill §加密 hook 名粒度 | 核账后接线或删，别留半截 | 字段消费状态清晰 | 🟡 2026-07-03（P85：skill 字段数 37→34/5entry 双镜像已改，见 §9.6；接线/挂空 recount + 挂空接/删仍 ⬜）|
 | P2-6 | 文档减面：`CHATGPT_项目全景手册.md` + `refs/`（含同名 `FAILURE_LOG.md`）已删除收敛 | 2026-07-01 Glob 核实二者已不存在 | — | ✅ 2026-07-01（断链源消失；OLDREF 盘点档亦已删收敛）|
 
 ---
@@ -193,7 +193,7 @@
 - 设备 `609b4b18` 现装官替（pid 31345）+ 共存（pid 772）冷启 L1：`certBind=e3e13a49` / `role=1 MAIN` / `BATCH1_VERIFY PASS` / `recipeOk=true` / `risk=正常`。证据落盘 `03_execute_执行任务/P_HotUpdateFreeze_官方热更新冻结/logs/live_verify_20260702_{ncl,full}.txt`（gitignored），关键行摘入 tracked `result.md §3.1`。
 - 因此减法：`CURRENT_PLAN §P2` + `TASK_BOARD` P_NC1 行「待装机 / RiskState 真降级未做」陈状态删除 → 指向 `_CORE/发版_当前真源` + `PROTECTION_MAP §10.6` + 本账为单一真源（G10，本行不复述）。`result.md §4` 官替 L1「待补」→「✅ 07-02 现装包实证」+ 诚实边界（现装包 vs 出货候选文件级同一性未比对）。
 - 发现（补记 P2 类）：`coexist_verify_20260701.txt` 实在盘上（前轮 M83「缺失/glob 零命中」= Glob 跳 gitignored 文件的假阴性；日志一直在，是搜索方式滤掉了）。
-- **RiskState 口径 6 文件一致改**（`授权页§④` / `PROTECTION_MAP §10.6` 三处 / `PROJECT_INDEX` / `docs/RELEASE_RECIPE契约` / `guard-security` skill ×2 镜像）：flat「RiskState 真降级未做」→「杂项 5 功能 `isTamperDegraded()` 散沙**已落码**（5 caller：CallGuard/PushFilter/AntiRecall/FakeLocation/FakeBalance）；密友四链走 crypto registry 散沙不走本轴；真未做窄口径 = `EncryptedConfigLoader` 直接 risk-gating + 负向 L1」，单一真源指向 `core/RiskState.java` 类注释。安全官 + 授权检查官改前审 = PASS（纯口径精确化，不动代码/门/gate，方向是「更精确不过度宣称真锁」）。快照 `snap/riskstate-converge/20260702-1106`。
+- **RiskState 口径 6 文件一致改**（`授权页§④` / `PROTECTION_MAP §10.6` 三处 / `PROJECT_INDEX` / `docs/RELEASE_RECIPE契约` / `guard-security` skill ×2 镜像）：flat「RiskState 真降级未做」→「杂项 5 功能 `isTamperDegraded()` 散沙**已落码**（5 caller：CallGuard/PushFilter/AntiRecall/FakeLocation/FakeBalance）；密友四链走 crypto registry 散沙不走本轴；真未做窄口径 = `EncryptedConfigLoader` 直接 risk-gating + 负向 L1」，单一真源指向 `core/RiskState.java` 类注释。安全官 + 授权检查官改前审 = PASS（纯口径精确化，不动代码/门/gate，方向是「更精确不过度宣称真锁」）。快照 `snap/riskstate-converge/20260702-1106`。**（2026-07-03 P91 后续再收敛：forward 文档去裸数字「5」→「数以 `isTamperDegraded()` 调用点为准」；当时 5 caller = CallGuard/PushFilter/AntiRecall/FakeLocation/FakeBalance 留作历史证据，真源仍 `core/RiskState.java`。）**
 - **接手序去重（G10 · 收 P2-8 尾）**：M45 已定 `CLAUDE §一` 为唯一接手序；本轮补收 `docs/README`（删 0-6 竞争阅读序 → 只留 8071 车道特有 4 文件 + 指 CLAUDE §一）+ `AGENTS.md`（删重抄五步 → 指 CLAUDE §一）。`PROJECT_INDEX §负一「文档权威链」`= 冲突仲裁轴（非接手序）、已标「冲突时按此顺序」，保留不动。真源：接手序单一 = `CLAUDE §一`。
 - **Catfish 竞品隔离结案（承 2026-06-29 归柜）**：`refs/` → `docs/isolation/` 迁移遗留的「待改链接清单」热路径组（`CLAUDE` / `PROJECT_INDEX`〔含目录树〕/ `TOOLS_INDEX` / `FAILURE_LOG` / `docs/HOOK_MAP_8071` / `docs/DOC_AUDIT` / `00_start/PROMPT_TEMPLATES` / `guard-execute-one skill`）已全部改向；全仓 grep 复核热路径零残留 `refs/`（仅 `07_archive_` + `docs/archive/` 冻结冷库按迁移档 §E 放行；`INDEX_COMPETITOR:29` 系改名历史注、保留）。本轮删 `PROJECT_INDEX` 目录树过期 `refs/(现有,不动)` 行 + 加迁移指针；`_MIGRATION_竞品归柜_20260629.md §②` 标结案。
 - **看板 A 步（`TASK_BOARD §五` 折叠）**：§五「P 任务历史」19 项 ✅ + 未完项明细全部收进 `<details>`（审计轨迹不删——日期/证据路径/commit hash 全留、只折叠），顶部留一行 🟡/⬜ 未完项摘要 + 指 `PROJECT_INDEX §零`。**采「折叠」非「删行→指针」**：§零 是功能清单、不含 P15/cert-sync/arch-audit/debug-gate 等 infra 项，删行会丢这些 → 折叠保全（比两 AI 建议的「压成一行」更稳，不丢 infra 审计）。看板热路径变短、明细可展开。
@@ -231,3 +231,16 @@
 - **净收敛**：15 文件 / +44 -82 = **净减 38 行**；cert 值从 6 skill×2镜像 = 12 份 → **收到 CLAUDE 1 处 + skill 单行**。
 - **未动**：`guard-release` / `guard-server` / `guard-security` 主体（角色专用的详细签名段、非同一块拄写模板，不撞 G10）；`guard-antiban` / `guard-execute-one` 等 skill 内部散在的签名提醒（若非 `## 🔐 签名铁律` 标题块，本轮不动）。
 - **用户拍板**：G 方案 3 选 1（A 挪禁忌表 / B 单行下多留 / C 完全删）先拍 C；发现 N15 已改到工作树后重拍「按 N15 方案（保 1 行派发提醒）提交」= 兼采 B/C，避免重改。
+
+### 9.6 P0-2 修复 + P2-5 字段数 / F-42 / build.gradle:90 陈述漂修（2026-07-03 · P85）
+
+> 起因：新会话按聊天记录续「验上机 registry + 修漂移」。上机 registry 已 live 复证（`certBind=e3e13a49` / `recipeOk=true`，设备 609b4b18 冷启 07-03 15:55）。顺着修 P0-2 + 三处文档漂，用户拍「C 全改」。
+
+- **P0-2（文件级闭合，系统闸仍开）**：`python tools/gen_kdf_vectors.py` 重生成 `kdf_vectors.inc`，binding `ca421ec3`→`e3e13a49`（4 行变：binding + 3 个 cert 派生向量；`kKdfVecWrap` 不变=范围正确）。`run_native_tests.ps1`（无 PC 编译器→NDK Mode2，临时 elf 推 `/data/local/tmp` 跑完自删、非 app 装机）ALL=PASS：`kdf_self_test=PASS`（C++↔Python 新证书对上）、`decrypt/envelope=PASS`、`registry_self_test=SKIP`（server-lock 无种子=预期 fail-closed）。**仍 ⬜**：发版硬闸（P0-1/§4B「从源重生成+diff 非空即 BLOCK」）未接；本改动未提交。
+- **严重度纠偏（承前轮口径）**：P0-2 = Debug-only 自测（`#ifdef GUARD_DEV_SELFTEST`、不进 release SO、不上机）→ **非运行时漏洞、非「现网散沙」**；是「生成物没跟源头重跑」的陈旧 + 信号。前述「假绿」措辞偏重，以本条为准。
+- **P2-5 → 收指针（减法）**：`registry_8071.json` code-true = 5 entry / 34 字段（conv7+moments13+contact8+search5+a2.sig1）。安全官 skill `.cursor`+`.claude` 双镜像（213/231 行）「37/22/15 死数」→ **收成「字段/接线以 `registry_8071.json` + `getRecipe*` 为准」（不写死数，永不再漂）**；双镜像 SHA256 一致。历史 recon 档（`P_LeanCloseout`）留档不动。
+- **RiskState 消费者数 → 收指针（减法·已咬人的矛盾）**：`isTamperDegraded()` code-true = 5 调用点（AntiRecall/PushFilter/FakeLocation/CallGuard/**FakeBalance**）。防封§⑤「消费者 4」(漏 FakeBalance) vs 授权§④「5 caller」= 两现状页打架 → 两页 + `core/RiskState.java:20` 注释（也漏 FakeBalance）全收成「消费者以 `isTamperDegraded()` 调用点为准（grep 即得）」，删死数。
+- **#2 死行号 / #3「别再信」段 → dead-check 后不动**：行号多与符号成对 + `PROTECTION_MAP §1` 本标「历史快照」（群删丢导航=净负）；⑧ 段目标已 caveat / D-020 取代 / 前瞻有效（硬删丢有用警告）。高价值减法（静默打架死数）已在 P2-5 + RiskState 收完。
+- **小2**：`docs/isolation/INDEX_COMPETITOR.md:29` Guard「F-01~F-42」→「F-01~F-43」。
+- **可选3**：`_CORE/发版_当前真源.md:79`「build.gradle:90 注释过时」提醒本身已过时（:90 早修为 v2 口径）→ 改述「共存独立 8f47a47a = 旧说法作废，code-true build.gradle:148/150 = e3e13a49」。
+- **未提交**：本会话改动（`kdf_vectors.inc` + 安全官 skill ×2 镜像 + `_CORE` 授权/发版/防封 3 页 + `INDEX_COMPETITOR` + 本 ledger + `core/RiskState.java` 注释）全在工作区，未 git commit（等用户发话）；P0-2 native 重编出货 SO 未做。
