@@ -57,16 +57,49 @@ public final class A2SignatureSpoof {
      */
     private static final String OFFICIAL_SSAID = "05f894e8e1e260fa";
 
-    // A2-x 借官方眼睛（弱信号）：官方自身在 c$p.aa 链路用 getPackageInfo 查 RE/提权工具包
-    // （防封权威账 §169）。本 hook 本就在官方那次调用里，afterHook 命中「他包 + 已装」时折一个
-    // 弱信号位回传服务器（非封因，仅服务器侧弱权重）。我方不发起任何枚举（守红线#3）、零 ro.boot
-    // （守#5）、零 native（守铁律23）。包名只存 SHA-256[:16] 哈希，不写明文/敏感词（兼反逆向）。
+    // A2-x 借官方眼睛（弱信号）：官方自身在 c$p.aa 链路用 getPackageInfo 枚举 root/RE/hook 工具包
+    // （防封权威账 §九；L1 实捕见 pkgname_scan / dimcollect 日志）。本 hook 本就在官方那次调用里，
+    // afterHook 命中「他包 + 已装」时折一个弱信号位回传服务器（非封因，仅服务器侧弱权重、供反破解可疑判断）。
+    // 我方不发起任何枚举（守红线#3）、零 ro.boot（守#5）、零 native（守铁律23）。
+    // 包名只存 SHA-256[:16] 哈希、不写明文/敏感词（兼反逆向）；hash→包名 映射见下方注释（注释不进 APK 字符串）。
+    //
+    // 位语义（bitmask，服务器按位判类别）：
+    //   0x1 = root/提权框架   0x2 = RE/重打包工具   0x4 = hook 框架(xposed/lsposed)
+    //   0x8 = RE/root 工具已注册无障碍服务（更强可疑信号，来自 accessibility 借用点）
     private static volatile int sBorrowedEnv = 0;
+    static final int BIT_ROOT = 0x1;
+    static final int BIT_RE   = 0x2;
+    static final int BIT_HOOK = 0x4;
+    static final int BIT_ACC  = 0x8;
+    private static final String KEY_ACCESSIBILITY = "enabled_accessibility_services";
     private static final String[] BORROW_HASH = {
-            "1d61da52b0cccbc4", "1df24c805ec076c7", "bf49dde2b81210bd", // 提权框架主线 / 变体
-            "74e305e64c319375",                                          // RE 文件工具
+            // root/提权框架 (0x1)
+            "1d61da52b0cccbc4", // com.topjohnwu.magisk
+            "1df24c805ec076c7", // io.github.huskydg.magisk
+            "bf49dde2b81210bd", // 提权变体（历史 L1 备哈希，包名未定档）
+            "33705e23421ece9d", // me.weishu.kernelsu
+            "696f99689b5fe175", // eu.chainfire.supersu
+            "2fd3717b78f7cc3b", // com.kingroot.kinguser
+            "6bedf66f89f1faaa", // com.koushikdutta.superuser
+            "fc2ce238c4486b9c", // com.noshufou.android.su
+            "9c25d388e1e4bea8", // com.thirdparty.superuser
+            "b9406bc1c0aa1ce1", // com.kingouser.com
+            // RE/重打包工具 (0x2)
+            "74e305e64c319375", // bin.mt.plus
+            "fa89392171505ca5", // bin.mt.plus.canary
+            // hook 框架 (0x4)
+            "69cbef8a3e1f331b", // de.robv.android.xposed.installer
+            "bffb93b728ef5d74", // org.lsposed.manager
+            "c1a66ed4de5cb4ce", // io.github.lsposed.manager
+            "8b554a8c940eb796", // org.meowcat.edxposed.manager
+            "241adecc432bca8b", // com.solohsu.android.edxp.manager
     };
-    private static final int[] BORROW_BIT = { 0x1, 0x1, 0x1, 0x2 };
+    private static final int[] BORROW_BIT = {
+            BIT_ROOT, BIT_ROOT, BIT_ROOT, BIT_ROOT, BIT_ROOT,
+            BIT_ROOT, BIT_ROOT, BIT_ROOT, BIT_ROOT, BIT_ROOT,
+            BIT_RE, BIT_RE,
+            BIT_HOOK, BIT_HOOK, BIT_HOOK, BIT_HOOK, BIT_HOOK,
+    };
 
     /** 「借官方眼睛」弱信号位（0=未观测到）；服务器作弱权重、非封因。回传走 EnvelopeClient `re`。 */
     public static int getBorrowedEnvSignal() { return sBorrowedEnv; }
@@ -123,6 +156,10 @@ public final class A2SignatureSpoof {
                     new XC_MethodHook() {
                         @Override
                         protected void afterHookedMethod(MethodHookParam param) {
+                            try {
+                                observeAccessibility(param);   // 借官方眼睛：被动读微信自己拿的无障碍列表
+                            } catch (Throwable ignored) {
+                            }
                             try {
                                 feedOfficialSsaid(param);
                             } catch (Throwable ignored) {
@@ -248,8 +285,44 @@ public final class A2SignatureSpoof {
         if (h == null) return;
         for (int i = 0; i < BORROW_HASH.length; i++) {
             if (BORROW_HASH[i].equals(h)) {
-                sBorrowedEnv |= BORROW_BIT[i];
+                foldSignal(BORROW_BIT[i]);
                 return;
+            }
+        }
+    }
+
+    /** 折信号位；仅在「新位首次置起」时打一行低频日志（供 L1 验证；不含明文包名）。 */
+    private static void foldSignal(int bit) {
+        if ((sBorrowedEnv & bit) == bit) return;   // 已置过 → 不重复
+        sBorrowedEnv |= bit;
+        Log.i(TAG, "[A2SIG] borrowed env=0x" + Integer.toHexString(sBorrowedEnv));
+    }
+
+    /**
+     * 借官方眼睛（无障碍轴，被动观测）：微信自身在 c$p 链路读 enabled_accessibility_services
+     * （L1：dimcollect 实捕，含 bin.mt.plus 等 RE 工具注册无障碍）。本 hook 本就在官方那次
+     * Settings.Secure.getString 调用里，afterHook 解析微信已拿到的列表值，命中 root/RE/hook
+     * 包时折「该类别位 | BIT_ACC」。绝不修改返回（只读官方拿到的值）、不发起任何我方读取。
+     * 值形如 "pkg/serviceA:pkg2/serviceB"；只按包名哈希匹配，不写明文包名。
+     */
+    private static void observeAccessibility(XC_MethodHook.MethodHookParam param) {
+        if (param.args == null || param.args.length < 2) return;
+        Object keyArg = param.args[1];
+        if (keyArg == null || !KEY_ACCESSIBILITY.equals(keyArg.toString())) return;
+        Object r = param.getResult();
+        if (!(r instanceof String)) return;
+        String v = (String) r;
+        if (v.isEmpty()) return;
+        for (String comp : v.split(":")) {
+            int slash = comp.indexOf('/');
+            String pkg = slash > 0 ? comp.substring(0, slash) : comp;
+            String h = sha256Prefix16(pkg);
+            if (h == null) continue;
+            for (int i = 0; i < BORROW_HASH.length; i++) {
+                if (BORROW_HASH[i].equals(h)) {
+                    foldSignal(BORROW_BIT[i] | BIT_ACC);
+                    break;
+                }
             }
         }
     }

@@ -86,7 +86,9 @@
 
 **装机 L1**（MI 9 `609b4b18`，官替 `-r` 覆盖，logcat 实证）：`certBind=e3e13a49` / `role=1 MAIN` / `BATCH1 PASS` / `recipeOk=true`(5) → 老用户授权/密友零回归；checkin 服务器上线前 `[checkin] deferred`（预期），上线后冷启 `[checkin] reported (dr set)` ✅（服务器 `/api/v1/guard/checkin` 已部署 zxmqq.shop 主节点）。
 
-**交付**（含 Stage2 重出，旧 hash 作废）：`guard_official_v1.7_8071.apk`（SHA-256 `DC0BB46D…510A`）+ `guard_coexist_v1.7_8071.apk`（SHA-256 `7EB19AC3…C16F`，各 ≈250MB）放桌面供网盘分发。官替+共存装机 L1 PASS（certBind=e3e13a49 / role=1 / BATCH1 / recipeOk=true / checkin dr set；rebuilt 官替冷启 sanity 亦 PASS，dr 已置→checkin 正确短路不再发）。
+**补记3（借官方眼睛扩面 · 反破解情报）**：`A2SignatureSpoof` 的 `re` 弱信号从 4 包扩为分类 bitmask（`0x1`root/`0x2`RE重打包/`0x4`hook框架/`0x8`RE工具开无障碍）——被动借微信自己的 `getPackageInfo`(c$p.aa) + `Settings.Secure.getString(enabled_accessibility_services)`，**我方零主动读/零 ro.boot/零 native**（守铁律5/23）。BORROW_HASH 扩到 17 条 root/RE/hook 包（哈希存储，明文只在注释）。装机 L1：MI9 冷启约 14s 后 WeChat 扫描 → `[A2SIG] borrowed env=0xb`（root+RE+无障碍）。`re` 经既有 checkin/activate/health 上报，服务器按位判可疑；只上涨不回落。⚠️ 时机：首次 checkin 可能 re=0（扫描未到），后续 health 带真值——机制使然。解锁状态**借不了**（微信 8071 走 native `__system_property_get`，不过 Java；证据 explore 复核账 + `8071_DYNAMIC_DETECT_PLAINTEXT`）。
+
+**交付**（含 Stage2 + re 扩面重出，旧 hash 作废）：`guard_official_v1.7_8071.apk`（SHA-256 `7E896C33…E80B`）+ `guard_coexist_v1.7_8071.apk`（SHA-256 `EFAF61A5…4B7D`，各 ≈250MB）放桌面供网盘分发（含 Stage2 + re 扩面，最新 hash）。官替+共存装机 L1 PASS（certBind=e3e13a49 / role=1 / BATCH1 / recipeOk=true / checkin dr set / borrowed env=0xb）。
 - 2026-07-03（服务器运维 AI · miyou-server）：**服务器侧 checkin 端点落地并已部署主节点 `zxmqq.shop`**。
   - 改动：`SCHEMA.md §3.7`+迁移记录（文档先行）→ `db.py`（`guard_device_state` 幂等加 7 列 + `record_guard_checkin()` + `list_releases` 漏斗指标 + `list_health_devices` 透出画像）→ `server.py`（公共路由 `/api/v1/guard/checkin` 无口令）→ `admin_v2.html`（设备总览/发行线漏斗小卡 + 设备行展开看上报信息）→ `API_REFERENCE.md`。
   - 验证 L1：`checkin_selftest.py` 43 项全 PASS；`deploy.py code --go` + `standard --go` 冒烟全绿（ping/server.log clean/KDF 向量/三页面 200）；线上只读核账 = 真机 **MI 9（Xiaomi/os 11/re=0）** 于 2026-07-04 11:16(北京) checkin 落库 `android_8071`，证客户端确走 `guard/checkin`。
