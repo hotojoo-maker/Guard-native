@@ -92,6 +92,6 @@ description: Guard Native 发版官（发布 / 出包 / 官替版 / 共存版 / 
 
 1. 必须装机 L1（`role=1 MAIN` + `BATCH1 PASS` + `recipeOk=true`，终端直采日志落盘）才算发布候选；用户口述只记待补。
 2. 只更新当前发版 `worklog` + `docs/RELEASE_RULES.md`，不把同一结论复制到多处。
-3. 对外口径：可说"v1.6 授权闭环 + Ed25519 防伪造信封 + 当前发行线 server seed 解 registry"；**禁说**"服务器真锁终局完成 / 授权无法破解"。
+3. 对外口径：可说"v1.6 起授权闭环 + Ed25519 防伪造信封 + 当前发行线 server seed 解 registry"（当前出货 v1.7，版本真源见 `_CORE_现状真源/发版_当前真源.md §③`）；**禁说**"服务器真锁终局完成 / 授权无法破解"。
 4. keystore 密码 / 私钥 / `s_rel` / `wrap_key` 原文禁进 git / 聊天 / 文档；只记 `sha256[:8]` 指纹。
 5. 1.0 正式发布后：`packageName` / keystore / `customerSeed` / `release_id` 永久不可变，只递增 `versionCode`（见 RELEASE_RULES「1.0 后签名证书不可变」）。
