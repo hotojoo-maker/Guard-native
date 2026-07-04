@@ -257,7 +257,7 @@ StateMachine.isActive()                // 取中央总闸
 
 ## 10.6 Phase 1D-server（S2 服务器真锁）解冻 + 现状盘点（2026-06-11，用户拍板②）
 
-> §10.3 的「Phase 1D-server 冻结」已在 2026-06-11 由用户解除。当前已从 dormant 骨架推进到 **商业授权最小闭环（2026-06-11 装机 PASS）+ S4 Ed25519 验签 + S3b-A/B LeaseClock 授时/设置页 72h 离线强验**：授权码 → token → envelope → 客户端 AuthGate；**客户端产品版本 pv 现 `v1.6`**（`build.gradle` `GUARD_PRODUCT_VERSION`，L2 2026-06-29 升版 v1.6，有意跳过 1.4/1.5）。但仍不是服务器真锁全部完成。本节为 S2/S3a/S3b/S4 的**唯一权威现状**。
+> §10.3 的「Phase 1D-server 冻结」已在 2026-06-11 由用户解除。当前已从 dormant 骨架推进到 **商业授权最小闭环（2026-06-11 装机 PASS）+ S4 Ed25519 验签 + S3b-A/B LeaseClock 授时/设置页 72h 离线强验**：授权码 → token → envelope → 客户端 AuthGate；**客户端产品版本 pv 见 `_CORE_现状真源/发版_当前真源.md §③`**（`build.gradle` `GUARD_PRODUCT_VERSION` = 单一真源；2026-06-29 起升版有意跳过 1.4/1.5）。但仍不是服务器真锁全部完成。本节为 S2/S3a/S3b/S4 的**唯一权威现状**。
 
 ### 已建（`net/` 包，L2 代码核查）
 - `net/EnvelopeClient`：HTTPS 出站。`activate(卡密)→token`、`fetchEnvelope(token)→签名信封`；按 `AppConfig.guardServerList()` 主备 fallback；强制 https、连不上 / 证书错 = fail-closed。
@@ -265,7 +265,7 @@ StateMachine.isActive()                // 取中央总闸
 - `net/EnvelopeStore`：token / 信封 / license 到期 / 产品版本 `pv` / 更新通知 `up` 本地缓存；不存用户密友数据。
 - `net/GuardHeartbeat`：低频心跳 + 冷启动有 token 时启动；遇硬错 7 码 `CARD_BANNED / CARD_DISABLED / CARD_EXPIRED / DEVICE_BANNED / TOKEN_INVALID / RELEASE_KILLED / VERSION_KILLED` 清 token/envelope（下次心跳/冷启动即撤授权），网络失败不清，避免断网误杀。
 - `net/GuardActivation`：设置页授权码激活入口；token 后必须立刻拉 envelope 成功才算激活成功。
-- `core/AppConfig`：`GUARD_SERVER_PRIMARY=https://zxmqq.shop`、`GUARD_SERVER_BACKUP=""`（备机槽留 `miyou.lol`）、`GUARD_PRODUCT_ID=quantum_wechat`、`GUARD_PRODUCT_VERSION=v1.6`（`BuildConfig.GUARD_PRODUCT_VERSION`，`build.gradle`）、`GUARD_RELEASE_ID` 按 flavor 注入（官替 `android_8071` / 共存 `android_8071_coexist`，`build.gradle:138/156`）。
+- `core/AppConfig`：`GUARD_SERVER_PRIMARY=https://zxmqq.shop`、`GUARD_SERVER_BACKUP=""`（备机槽留 `miyou.lol`）、`GUARD_PRODUCT_ID=quantum_wechat`、`GUARD_PRODUCT_VERSION`=`BuildConfig.GUARD_PRODUCT_VERSION`（值见发版真源 §③）、`GUARD_RELEASE_ID` 按 flavor 注入（官替 `android_8071` / 共存 `android_8071_coexist`，`build.gradle:138/156`）。
 - `StateMachine.isVipAuthorized()`：已从 v1 stub 改为 `EnvelopeStore.isAuthorizedNow()`（token + verified envelope + license 未过期）。Filter 仍只读 `StateMachine.isActive()`，未直接接触服务器/风控。
 - `I:\miyou-server`：主节点 `zxmqq.shop` 已部署 `/api/v1/activate`、`/api/v1/guard/envelope`、后台卡密/设备封停、渠道/release 定向更新通知下发；备节点 8080 已部署，`miyou.lol` HTTPS 反代仍待办。
 
@@ -282,7 +282,7 @@ StateMachine.isActive()                // 取中央总闸
 5. 更新通知 `up` 已下发并被客户端消费，但属于运营提示，不是强制升级/真锁。
 
 ### 口径
-当前 = 「**商业授权最小闭环（客户端 pv **v1.6**）+ 当前 `android_8071` 发行线 prod_server_lock（server seed 解 registry）+ S4 Ed25519 信封验签 + S3b-A/B LeaseClock 授时与设置页 72h 离线强验（均 2026-06-11 装机 PASS）**」。可对内称“授权码→token→envelope→客户端 AuthGate 已通；信封已 Ed25519 防伪造/防篡改；当前发行线无有效 server seed 时 registry scatter；到期判定不信手机时间（trustedNow）；断网>72h 进设置页强制重验、失败撤销且可自愈”；**不得**对外或在文档里宣称「服务器真锁终局完成」（删 Filter fallback / V3 发行线发版流程 / RiskState 直接 risk-gating 未收窄——杂项散沙已落码，见「仍未做」#1 + `core/RiskState.java`）。⚠️ 服务器 envelope 全局 `pv` 常量是否已跟注册表对齐 = **L4 待验**（接点①，见 LeanCloseout 任务卡 §8）。
+当前 = 「**商业授权最小闭环（客户端 pv 见发版真源 §③）+ 当前 `android_8071` 发行线 prod_server_lock（server seed 解 registry）+ S4 Ed25519 信封验签 + S3b-A/B LeaseClock 授时与设置页 72h 离线强验（均 2026-06-11 装机 PASS）**」。可对内称“授权码→token→envelope→客户端 AuthGate 已通；信封已 Ed25519 防伪造/防篡改；当前发行线无有效 server seed 时 registry scatter；到期判定不信手机时间（trustedNow）；断网>72h 进设置页强制重验、失败撤销且可自愈”；**不得**对外或在文档里宣称「服务器真锁终局完成」（删 Filter fallback / V3 发行线发版流程 / RiskState 直接 risk-gating 未收窄——杂项散沙已落码，见「仍未做」#1 + `core/RiskState.java`）。⚠️ 服务器 envelope 全局 `pv` 常量是否已跟注册表对齐 = **L4 待验**（接点①，见 LeanCloseout 任务卡 §8）。
 
 ### 发包分发边界（避免误读）
 - **服务器真锁 ≠ 服务器打包 / 服务器分发 APK**。

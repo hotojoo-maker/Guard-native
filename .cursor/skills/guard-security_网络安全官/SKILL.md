@@ -328,7 +328,7 @@ SO 只管“验真 + 解密 + 关键风险信号”；弹窗、影子期倒计�
 - 生成 cipher 时的签名证书 SHA-256 必须等于运行时 binding material；官替版/共存版签名不同就必须分别生成，不得混用。
 - Java 白名单、Xposed scope、C++ `GUARD_EXPECTED_PACKAGE`、服务器 `release_id` 必须来自同一包档案；不能只改 C++。
 - 业务 hook 仍生效但 `PHASE1D/1E` 失败时，可能只是 fallback 在兜底；禁止宣称加密链路通过。
-- 当前可宣称“商业授权闭环（客户端 pv v1.6）+ Ed25519 防伪造信封 + 当前发行线 server seed 解 registry 已接入”；删 fallback / V3 发行线 / RiskState 全链路降级+正版恢复闭环完成前，禁止宣称“授权无法破解”或“服务器真锁终局完成”。
+- 当前可宣称“商业授权闭环（客户端 pv 见发版真源 §③）+ Ed25519 防伪造信封 + 当前发行线 server seed 解 registry 已接入”；删 fallback / V3 发行线 / RiskState 全链路降级+正版恢复闭环完成前，禁止宣称“授权无法破解”或“服务器真锁终局完成”。
 
 ## 安全任务收尾铁律
 
