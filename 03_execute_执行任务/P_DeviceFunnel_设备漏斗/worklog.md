@@ -93,4 +93,4 @@
   - 改动：`SCHEMA.md §3.7`+迁移记录（文档先行）→ `db.py`（`guard_device_state` 幂等加 7 列 + `record_guard_checkin()` + `list_releases` 漏斗指标 + `list_health_devices` 透出画像）→ `server.py`（公共路由 `/api/v1/guard/checkin` 无口令）→ `admin_v2.html`（设备总览/发行线漏斗小卡 + 设备行展开看上报信息）→ `API_REFERENCE.md`。
   - 验证 L1：`checkin_selftest.py` 43 项全 PASS；`deploy.py code --go` + `standard --go` 冒烟全绿（ping/server.log clean/KDF 向量/三页面 200）；线上只读核账 = 真机 **MI 9（Xiaomi/os 11/re=0）** 于 2026-07-04 11:16(北京) checkin 落库 `android_8071`，证客户端确走 `guard/checkin`。
   - 备份：`I:\miyou-server\backups\*_pre_checkin_*`；远端回滚点 `/root/deploy_primary_20260703_202111.tgz`（+auth.db.bak）。
-  - ⚠️ 客户端 worklog §3.1 写的 `/api/v1/checkin` = 草稿；实装 = `/api/v1/guard/checkin`（已改 §五）。Stage2 activate 补画像服务器端**未接**（等客户端确认字段名）。
+  - ⚠️ 客户端 worklog §3.1 写的 `/api/v1/checkin` = 草稿；实装 = `/api/v1/guard/checkin`（已改 §五）。~~Stage2 activate 补画像服务器端未接~~ → **已接**（2026-07-04 MMQ68，见 §五第 49 行 + §九补记；服务器 `_store_device_profile()` 回填已部署）。
