@@ -45,6 +45,7 @@ public final class EnvelopeStore {
     private static final String K_UP_U    = "uu";    // 更新链接
     private static final String K_RN_DAY  = "rd";    // #3 续费预警上次弹出日（可信 epoch day，按天去重）
     private static final String K_CARD_REVOKED = "rf";   // #6 封停/删卡撤销：首见封停/删卡的可信时间戳(ms)，0=未撤（SPEC §4 / SSOT §3）。值 "rf" = 历史缩写的不透明键，保留作 wire/存储兼容，语义=封停/删卡撤销（非退款）
+    private static final String K_DEVICE_REPORTED = "dr";  // B 装后预注册：设备画像已成功 checkin 上报一次（至少一次·最终一致的焊死标志，非授权键，不影响 isAuthorizedNow/isCardRevoked）
 
     // 牙④ a案 重放/过期绑定: crypto 种子硬过期宽限 = 配方卡 SPEC A.付费断网宽限 = 7 天(秒)。
     // 硬过期点 = leaseExpire + 本宽限。与隐私 72h 离线宽限(独立闸)不是一回事，别混。
@@ -296,6 +297,22 @@ public final class EnvelopeStore {
     public static String getProductVersion(String fallback) {
         String v = sPrefs == null ? "" : sPrefs.getString(K_PVER, "");
         return v == null || v.isEmpty() ? fallback : v;
+    }
+
+    // ── B 装后预注册：设备画像 checkin「只发一次」标志（遥测，非授权）──
+    //
+    // 冷启动 best-effort 上报设备画像（brand/model/os/device_id），成功即置本标志、以后永不再发。
+    // 未 init / 未置 → false = 未上报过 → 下次冷启再试（至少一次·最终一致；重试时钟 = 每次微信冷启）。
+    // 清数据 / 重装 → 标志没了 → 重发一次（服务器按 device_id 幂等 upsert，无害）。
+
+    /** 设备画像是否已成功上报过（B checkin 焊死位）。 */
+    public static boolean isDeviceReported() {
+        return sPrefs != null && sPrefs.getBoolean(K_DEVICE_REPORTED, false);
+    }
+
+    /** 标记设备画像已成功上报（checkin 成功后调；此后冷启不再发）。 */
+    public static void markDeviceReported() {
+        if (sPrefs != null) sPrefs.edit().putBoolean(K_DEVICE_REPORTED, true).apply();
     }
 
     public static int getUpdateMode() { return sPrefs == null ? -1 : sPrefs.getInt(K_UP_M, -1); }

@@ -62,10 +62,10 @@ android {
         applicationId "com.ghost.assist"
         minSdk 27           // Android 8.1 — Xiaomi 9 (MI 9) minimum
         targetSdk 34
-        versionCode 14
-        versionName "1.6"
+        versionCode 15
+        versionName "1.7"
 
-        buildConfigField "String", "GUARD_PRODUCT_VERSION", "\"v1.6\""
+        buildConfigField "String", "GUARD_PRODUCT_VERSION", "\"v1.7\""
 
         // Canary 基线：构建期从 PromoConfig 单一真源自动算（见文件顶部 computeCanaryBaseline）。
         // CompatProbe 运行时读 BuildConfig.CANARY_BASELINE，改诱饵重编自动跟随，杜绝忘重算误伤。

@@ -233,6 +233,84 @@ public final class EnvelopeClient {
         }
     }
 
+    /**
+     * B 装后预注册（checkin）：best-effort 上报「设备画像」，让后台看到「装了但还没激活」的漏斗。
+     *
+     * 与 activate 的区别：activate 要 card_key、只在用户激活时发；checkin 免授权、微信首次冷启即发。
+     * 时机/焊死由 ModuleMain 冷启触发 + EnvelopeStore.dr 标志控制（至少一次·最终一致，见该处注释）。
+     *
+     * 安全约束：
+     *   • 仅 MAIN 进程调（ModuleMain onApplicationCreated 已天然隔离 :push，铁律 6）。
+     *   • 后台线程调（runAsync），走强制 HTTPS post()，逐台 fallback。
+     *   • 只带静态设备画像 + 借官方眼睛弱信号 re；不碰授权态、不碰微信流量、不进微信 normsg 链。
+     *   • 载荷不含短命 key 材料，但仍走 https（post() 强制），与全局一致。
+     *
+     * @return true=某台服务器返回 status=ok（可焊死 dr）；false=全不可达/被拒（下次冷启再试）。
+     */
+    public static boolean checkin(String deviceId) {
+        JSONObject body = new JSONObject();
+        try {
+            body.put("product_id", AppConfig.GUARD_PRODUCT_ID);
+            body.put("release_id", AppConfig.GUARD_RELEASE_ID);
+            body.put("device_id", deviceId == null ? "" : deviceId);
+            body.put("dm", deviceMaterialHex());
+            body.put("app_version", AppConfig.GUARD_PRODUCT_VERSION);
+            JSONObject client = new JSONObject();
+            JSONObject dp = deviceProfile();
+            client.put("brand", dp.optString("brand", ""));
+            client.put("model", dp.optString("model", ""));
+            client.put("os", dp.optString("os", ""));
+            client.put("install_id", deviceId == null ? "" : deviceId);
+            client.put("re", A2SignatureSpoof.getBorrowedEnvSignal());  // 借官方眼睛弱信号（非封因，服务器弱权重）
+            body.put("client", client);
+        } catch (Throwable t) {
+            return false;
+        }
+        String prevError = sLastErrorCode;
+        String prevMsg = sLastErrorMessage;
+        String prevDev = sLastDeviceShort;
+        try {
+            for (String base : AppConfig.guardServerList()) {
+                String resp = post(base + "/api/v1/guard/checkin", body.toString());
+                if (resp == null) continue;
+                try {
+                    JSONObject j = new JSONObject(resp);
+                    if ("ok".equals(j.optString("status"))) return true;
+                } catch (Throwable ignore) {
+                    // malformed body -> try next server
+                }
+            }
+            return false;
+        } finally {
+            // checkin 是遥测：不得污染激活/取信封的错误码回显（与 reportHealth 同款保护）。
+            sLastErrorCode = prevError;
+            sLastErrorMessage = prevMsg;
+            sLastDeviceShort = prevDev;
+        }
+    }
+
+    private static volatile JSONObject sDeviceProfile;
+
+    /**
+     * 静态设备画像（memoize，读一次）。全是 android.os.Build 公开静态字段——
+     * 非 ro.boot.* 系统属性读取（守铁律 5），每机唯一稳定、零登录依赖。
+     */
+    private static JSONObject deviceProfile() {
+        JSONObject v = sDeviceProfile;
+        if (v != null) return v;
+        v = new JSONObject();
+        try {
+            v.put("brand", android.os.Build.BRAND == null ? "" : android.os.Build.BRAND);
+            v.put("model", android.os.Build.MODEL == null ? "" : android.os.Build.MODEL);
+            String rel = android.os.Build.VERSION.RELEASE;
+            v.put("os", rel == null ? "" : rel);
+        } catch (Throwable ignore) {
+            // 任一字段取不到 → 该字段留空，不阻塞上报
+        }
+        sDeviceProfile = v;
+        return v;
+    }
+
     /** 当前登录账号显示标识：微信号(alias)优先，空则原始 wxid；取不到返回 ""。后台用于换号识别 + 画像。 */
     private static String currentAcct() {
         try {

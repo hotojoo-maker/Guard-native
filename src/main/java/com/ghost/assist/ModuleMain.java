@@ -300,6 +300,10 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         //     getCurrentActivity() to finish() the search page after unlock.
         UiContextTracker.install(lpparam);
 
+        // 8b2. B 装后预注册：设备画像 best-effort 上报一次（免授权，看「装了没激活」漏斗）。
+        //      仅 MAIN 进程（本方法天然隔离 :push）；后台线程；dr 标志焊死（至少一次·最终一致）。
+        reportDeviceCheckinIfNeeded(app);
+
         // 8c. UI debug tools (overlay + notification) only in DEV/HONEY.
         if (AppConfig.isDiagnostics()) {
             StatusNotification.show(app);
@@ -308,6 +312,40 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         }
 
         Log.i(TAG, "[init] ready — state=" + StateMachine.getInstance().getStateName());
+    }
+
+    /**
+     * B 装后预注册：设备画像 checkin「只发一次」。
+     *
+     * 逻辑（对齐用户拍板「首次冷启发、传成焊死、没传成下次冷启再试」）：
+     *   • 已成功上报过（EnvelopeStore.dr）→ 直接跳过。
+     *   • 否则后台线程 best-effort checkin；成功 → markDeviceReported()（此后永不再发）；
+     *     失败（没网 / 发一半被杀 / 服务器未接口）→ dr 仍空 → 下次微信冷启重试。
+     * 采集不依赖登录（Build.* + android_id 派生），故「打开没登录被杀」也能在下次冷启补上。
+     * catch(Throwable) 全兜，绝不崩宿主（铁律 19/25）。
+     */
+    private void reportDeviceCheckinIfNeeded(Application app) {
+        try {
+            if (EnvelopeStore.isDeviceReported()) return;
+            final String deviceId = AuthManager.computeDeviceHash(app);
+            com.ghost.assist.net.EnvelopeClient.runAsync(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        if (com.ghost.assist.net.EnvelopeClient.checkin(deviceId)) {
+                            EnvelopeStore.markDeviceReported();
+                            Log.i(TAG, "[checkin] device profile reported (dr set)");
+                        } else {
+                            Log.i(TAG, "[checkin] device report deferred (retry next cold-start)");
+                        }
+                    } catch (Throwable t) {
+                        Log.w(TAG, "[checkin] report crash: " + t.getClass().getSimpleName());
+                    }
+                }
+            });
+        } catch (Throwable t) {
+            Log.w(TAG, "[checkin] arm skip: " + t.getClass().getSimpleName());
+        }
     }
 
     private void startAuthHeartbeatIfNeeded(Application app) {
