@@ -17,7 +17,7 @@ import android.util.Log;
  *     GUARD_GATE_TRUTH §4 防误伤正版）。
  *   • ⚠️ 例外（2026-06-12 起，2026-06-26 块B 扩面已落地）：`isTamperDegraded()` 已是真闸——
  *     确认篡改过影子期（TAMPER_FUNNEL/PERSISTENT）后，杂项功能 `active()=isActive()&&!isTamperDegraded()`
- *     单点散沙。当前消费者：CallGuard / PushFilter / AntiRecall / FakeLocation（杂项=来电/通知未读/防撤回/定位）。
+ *     单点散沙。当前消费者以 `isTamperDegraded()` 调用点为准（grep 即得，勿手抄死列表）；均为杂项功能（来电/通知未读/防撤回/定位/改余额…），非密友四链。
  *     故「不关闭任何功能」已不再成立。**密友隐藏四链(Conv/Moments/Contact/Search)不走本轴**——
  *     走 isActive(=授权+crypto config-ready)，重签即 crypto registry 散沙，与 RiskLevel 独立、不连坐（#4 canonical）。
  *   • 全项目只准本类写风险等级；业务层只读 currentLevel()。

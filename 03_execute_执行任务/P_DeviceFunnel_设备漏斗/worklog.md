@@ -52,7 +52,7 @@
 ## 六、待办
 
 - [x] Stage1 `checkin()` + `ModuleMain` 冷启触发 + `dr`
-- [~] Stage2 `activate()` 加画像 — **取消**（checkin 已覆盖全量，见 §九偏离3）
+- [x] Stage2 `activate()` 加画像 — **已接**（先取消后补齐，见 §九补记）：客户端 activate 带 `client{brand,model,os,re}`；服务器 activate 回填已部署
 - [x] ReadLints（净）
 - [x] 改后三官审查（PASS）
 - [x] 装机 L1（官替 v1.7，certBind/role/BATCH1/recipeOk + checkin dr set）
@@ -80,13 +80,13 @@
 **与 §一/§五 计划的 3 处偏离（本会话用户拍板，勿当 bug 改回）**：
 1. 字段用**嵌套 `client{}`**（对齐 `reportHealth` 的 `client.acct/re` 真实结构），非 §一「flat」草案。
 2. 字段收窄 **brand+model+os 三项**，非 §五六列。
-3. **Stage2 activate 加画像取消**：checkin 已覆盖全量（已激活设备冷启也 checkin 一次，服务器按 device_id join），`activate` 线格不动。
+3. ~~Stage2 activate 加画像取消~~ → **补记（同会话稍后补齐）**：服务器接了 activate 回填后，客户端 `activate` 也加 `client{brand,model,os,re}`（同 checkin 嵌套结构，搭现成请求零新增网络事件）。覆盖「冷启没网→checkin deferred→后来有网又激活」边界。activate 画像**只在卡密激活时发**，已激活设备不重发。
 
 **版本**：`build.gradle` 14→15 / 1.6→1.7 / `GUARD_PRODUCT_VERSION` v1.7。连带出车（本就在工作区未提交）A2 android_id no-op hook / SO 16KB 页对齐 / RiskState 注释 / kdf_vectors 重算 → 对老用户零行为变化。
 
 **装机 L1**（MI 9 `609b4b18`，官替 `-r` 覆盖，logcat 实证）：`certBind=e3e13a49` / `role=1 MAIN` / `BATCH1 PASS` / `recipeOk=true`(5) → 老用户授权/密友零回归；checkin 服务器上线前 `[checkin] deferred`（预期），上线后冷启 `[checkin] reported (dr set)` ✅（服务器 `/api/v1/guard/checkin` 已部署 zxmqq.shop 主节点）。
 
-**交付**：`guard_official_v1.7_8071.apk`（SHA-256 `31DA43E1…5C38`）+ `guard_coexist_v1.7_8071.apk`（SHA-256 `4C3F161B…3D9C`，各 249.9MB）放桌面供网盘分发。共存同批装机 L1 PASS（`com.tencent.mn`：certBind=e3e13a49 / recipeOk=true / checkin dr set）。
+**交付**（含 Stage2 重出，旧 hash 作废）：`guard_official_v1.7_8071.apk`（SHA-256 `DC0BB46D…510A`）+ `guard_coexist_v1.7_8071.apk`（SHA-256 `7EB19AC3…C16F`，各 ≈250MB）放桌面供网盘分发。官替+共存装机 L1 PASS（certBind=e3e13a49 / role=1 / BATCH1 / recipeOk=true / checkin dr set；rebuilt 官替冷启 sanity 亦 PASS，dr 已置→checkin 正确短路不再发）。
 - 2026-07-03（服务器运维 AI · miyou-server）：**服务器侧 checkin 端点落地并已部署主节点 `zxmqq.shop`**。
   - 改动：`SCHEMA.md §3.7`+迁移记录（文档先行）→ `db.py`（`guard_device_state` 幂等加 7 列 + `record_guard_checkin()` + `list_releases` 漏斗指标 + `list_health_devices` 透出画像）→ `server.py`（公共路由 `/api/v1/guard/checkin` 无口令）→ `admin_v2.html`（设备总览/发行线漏斗小卡 + 设备行展开看上报信息）→ `API_REFERENCE.md`。
   - 验证 L1：`checkin_selftest.py` 43 项全 PASS；`deploy.py code --go` + `standard --go` 冒烟全绿（ping/server.log clean/KDF 向量/三页面 200）；线上只读核账 = 真机 **MI 9（Xiaomi/os 11/re=0）** 于 2026-07-04 11:16(北京) checkin 落库 `android_8071`，证客户端确走 `guard/checkin`。

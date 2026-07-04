@@ -14,6 +14,9 @@ endif()
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fvisibility=hidden -ffunction-sections -fdata-sections")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--gc-sections")
 
+# 16KB页对齐(Android15/16): NDK r25默认4KB→16KB页设备dlopen崩;16KB向下兼容4KB(11-14),一份SO通吃;升NDK r27+后可删本行(默认即16KB)。装机实证:0x4000对齐+4KB机不回归(MI9 L1)。
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,max-page-size=16384")
+
 # Disable RTTI and exceptions — not needed, reduces binary size
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti -fno-exceptions")
 

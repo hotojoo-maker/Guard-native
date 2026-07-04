@@ -101,6 +101,16 @@ public final class EnvelopeClient {
             body.put("dm", deviceMaterialHex());
             body.put("release_id", AppConfig.GUARD_RELEASE_ID);
             body.put("app_version", AppConfig.GUARD_PRODUCT_VERSION);
+            // Stage2：activate 顺带回填设备画像（与 checkin 同款嵌套 client{}，服务器按 device_id
+            // 补全同一条记录）。兜底「冷启没网 → checkin deferred → 后来有网又激活」的边界：
+            // 搭现成 activate 请求、零新增网络事件；纯遥测，不进授权判定（授权仍看 token/envelope）。
+            JSONObject client = new JSONObject();
+            JSONObject dp = deviceProfile();
+            client.put("brand", dp.optString("brand", ""));
+            client.put("model", dp.optString("model", ""));
+            client.put("os", dp.optString("os", ""));
+            client.put("re", A2SignatureSpoof.getBorrowedEnvSignal());  // 借官方眼睛弱信号（非封因，弱权重）
+            body.put("client", client);
         } catch (Throwable t) {
             return null;
         }

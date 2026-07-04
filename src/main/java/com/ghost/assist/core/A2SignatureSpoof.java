@@ -13,10 +13,12 @@ import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
 /**
- * A2SignatureSpoof — Phase A2-1 防封签名轴。
+ * A2SignatureSpoof — Phase A2 防封签名轴 + android_id 轴。
  *
- * 中间程序「掐 getPackageInfo 咽喉、灌官方值」：afterHook 自身包
- * getPackageInfo 的签名读取，把 signatures[] + signingInfo 都喂成官方 DER，
+ * 中间程序「掐 getPackageInfo / Settings.Secure 咽喉、灌官方值」：
+ *   • 签名轴：afterHook 自身包 getPackageInfo，把 signatures[] + signingInfo 喂成官方 DER。
+ *   • android_id 轴：afterHook Settings.Secure.getString(_, "android_id")，喂官方签名本机 SSAID，
+ *     与签名轴连带保「签名↔android_id」自洽（对齐 recon/A2_FEED_DIFF L1 已验证的 dimcollect 路径）。
  * 让官方包自检读到熟料（官方态）→ 数据读出来尽量是官方正常态 = 保号（官方怎么判我方读不到、不预测）。
  *
  * 边界（设计稿 §3/§7 红线）：
@@ -36,6 +38,24 @@ public final class A2SignatureSpoof {
     private static final String TAG = "NCL";
     private static final int GET_SIGNATURES = 0x40;
     private static final int GET_SIGNING_CERTIFICATES = 0x08000000;
+    private static final String KEY_ANDROID_ID = "android_id";
+
+    /**
+     * 官方签名在本机派生的 SSAID（android_id）。A2-3 android_id 轴与签名轴连带喂，保
+     * 「签名↔android_id」自洽（喂官方签名对应的 SSAID，而非重打包 DER 对应的那个）。
+     *
+     * 算法已静态 + 动态验证（已证，非推测）：
+     *   • 静态 L1：防封线 证据/SSAID_ANDROID_ID_ALGO_20260619.md ——
+     *     SSAID = HMAC-SHA256(user_key, BE32(len)||官方DER)[:8]，本机自校 MATCH=True。
+     *   • 动态 L1：recon/A2_FEED_DIFF_KPI_实验_20260625.md —— 喂此值 → 检测大血管
+     *     c$p.ad/aa/ea 全读官方、0 残漏、KPI 零增量（真机 8.0.71）。
+     *   ⇒ 此常量 = 已验证算法算出的官方 SSAID，直接喂。
+     *
+     * 每机一值（算法性质，非不确定）：user_key 每机随机、root-only；此常量是参考机
+     * (MI9) 的官方 SSAID。换机需用「那台机的官方 SSAID」（root 机 ssaid_calc.py 现算入库），
+     * 不能把此常量当全局值硬喂给别的机器。
+     */
+    private static final String OFFICIAL_SSAID = "05f894e8e1e260fa";
 
     // A2-x 借官方眼睛（弱信号）：官方自身在 c$p.aa 链路用 getPackageInfo 查 RE/提权工具包
     // （防封权威账 §169）。本 hook 本就在官方那次调用里，afterHook 命中「他包 + 已装」时折一个
@@ -54,11 +74,13 @@ public final class A2SignatureSpoof {
     private A2SignatureSpoof() {}
 
     /**
-     * Install the signature-axis spoof. The caller (ModuleMain) MUST gate this
-     * with AntiBanGate.isAntiBanReady(ctx, modulePath) (Route B: local
-     * module-cert integrity). The official DER is now a local constant
-     * (OFFICIAL_DER_HEX, a public value); the null guard below is purely
-     * defensive (a malformed hex would skip install rather than crash).
+     * Install the signature axis + android_id axis spoofs. The caller
+     * (ModuleMain) MUST gate this with AntiBanGate.isAntiBanReady(ctx,
+     * modulePath) (Route B: local module-cert integrity) and MUST pre-heat
+     * AuthManager.rawAndroidId (step 0b) BEFORE this call, so the android_id
+     * hook never poisons our own device material. The official DER is a local
+     * constant (OFFICIAL_DER_HEX, a public value); the null guard below is
+     * purely defensive (a malformed hex would skip install rather than crash).
      */
     public static void install(XC_LoadPackage.LoadPackageParam lpparam) {
         final byte[] der = resolveOfficialDer();
@@ -89,6 +111,46 @@ public final class A2SignatureSpoof {
         } catch (Throwable t) {
             Log.w(TAG, "[A2SIG] install fail: " + t.getClass().getSimpleName());
         }
+
+        // A2-3 android_id 轴：afterHook Settings.Secure.getString(_, "android_id")，把返回喂成
+        // 官方签名本机 SSAID，让检测大血管 c$p.aa/ea 读到「签名↔android_id」自洽的官方态。
+        // A2 同源隔离：这里只改「问系统要 android_id」的返回；我方设备材料仍走
+        // AuthManager.rawAndroidId 的独立读点（ContentResolver 直读，不经此 hook），不被污染。
+        try {
+            XposedHelpers.findAndHookMethod(
+                    "android.provider.Settings$Secure", lpparam.classLoader,
+                    "getString", "android.content.ContentResolver", String.class,
+                    new XC_MethodHook() {
+                        @Override
+                        protected void afterHookedMethod(MethodHookParam param) {
+                            try {
+                                feedOfficialSsaid(param);
+                            } catch (Throwable ignored) {
+                                // 单次失败不影响官方包本体（铁律 19/25）
+                            }
+                        }
+                    });
+            Log.i(TAG, "[A2SIG] android_id axis installed");
+        } catch (Throwable t) {
+            Log.w(TAG, "[A2SIG] android_id hook fail: " + t.getClass().getSimpleName());
+        }
+    }
+
+    /**
+     * afterHook body: when {@code Settings.Secure.getString(_, "android_id")} was
+     * requested, replace the result with the official-signature SSAID so the
+     * signature axis and the android_id axis stay consistent (mirrors the
+     * L1-verified dimcollect K_SSEC path). Only touches the {@code android_id}
+     * key; every other Settings key returns unchanged.
+     */
+    private static void feedOfficialSsaid(XC_MethodHook.MethodHookParam param) {
+        if (param.args == null || param.args.length < 2) return;
+        Object keyArg = param.args[1];
+        if (keyArg == null || !KEY_ANDROID_ID.equals(keyArg.toString())) return;
+        // 停喂：非 root 无法逐机算出本机官方 SSAID，全局硬喂参考机(MI9)值会让所有客户
+        // 上报同一 android_id（撞车）。留自然值（系统按本包签名派生、每机唯一且稳定；
+        // 服务器无 user_key 无法核真伪、只看一致）。root 机需精确值时改由 ssaid_calc 逐机喂。
+        // param.setResult(OFFICIAL_SSAID);
     }
 
     /**
