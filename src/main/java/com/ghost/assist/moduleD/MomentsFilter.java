@@ -2,6 +2,7 @@ package com.ghost.assist.moduleD;
 
 import android.util.Log;
 
+import com.ghost.assist.BuildConfig;
 import com.ghost.assist.core.AppConfig;
 import com.ghost.assist.core.Bridge;
 import com.ghost.assist.core.GuardRuntime;

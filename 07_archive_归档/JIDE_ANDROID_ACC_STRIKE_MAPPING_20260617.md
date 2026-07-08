@@ -1457,7 +1457,7 @@ oy5.d.<init> -> com.tencent.mm.modelbase.l3.<init>
 
 该链中本轮见到 `HookBridge` / `LSPHooker_` 栈痕迹，说明 LSPosed artifact 是独立暴露面，需后续单独评估；不能仅因出现栈名就直接写成封因。
 
-结论（L1）：8.0.71 官方微信会读取自身签名，且签名进入 normsg / protobuf / network 链。官替版即使隐藏包名轴，签名仍属于可区分非官方身份的报送数据。服务器是否据签名判断 / 处罚未证，不写推测。
+结论（L1）：8.0.71 官方包会读取自身签名，且签名进入 normsg / protobuf / network 链。官替版即使隐藏包名轴，签名仍属于可区分非官方身份的报送数据。服务器是否据签名判断 / 处罚未证，不写推测。
 
 ## H.3 启动期 native 环境检测面复验（L1）
 
@@ -1513,7 +1513,7 @@ ro.boot.vbmeta.device_state
 su / magisk / frida / xposed / riru / zygisk
 ```
 
-结论（L1）：8.0.71 官方微信启动期环境检测主面是系统属性、boot/verity 状态、framework 扫描、fd 枚举。`ro.boot.verifiedbootstate` 已确认在 normsg 启动期读取面里；是否构成 KPI 风险要看读取次数增量，不是只看是否读取。
+结论（L1）：8.0.71 官方包启动期环境检测主面是系统属性、boot/verity 状态、framework 扫描、fd 枚举。`ro.boot.verifiedbootstate` 已确认在 normsg 启动期读取面里；是否构成 KPI 风险要看读取次数增量，不是只看是否读取。
 
 ## H.4 B56 当前收口
 

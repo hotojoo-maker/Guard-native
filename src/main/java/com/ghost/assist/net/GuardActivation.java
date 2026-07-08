@@ -47,7 +47,7 @@ public final class GuardActivation {
         String deviceId = AuthManager.computeDeviceHash(ctx);
         String token = EnvelopeClient.activate(cardKey.trim(), deviceId);
         if (token == null || token.isEmpty()) {
-            String msg = EnvelopeClient.authErrorText(EnvelopeClient.getLastErrorCode());
+            String msg = resolveAuthErrorText();
             EnvelopeStore.saveAuthError(msg);
             Log.w(TAG, "[act] activate rejected (bad card / network)");
             return new Result(false, msg);
@@ -61,11 +61,26 @@ public final class GuardActivation {
         int tier = GuardHeartbeat.syncOnce(deviceId, certHex, appVersion);
         if (tier < 0) {
             EnvelopeStore.clear();
-            EnvelopeStore.saveAuthError("授权异常，请联系客服");
+            EnvelopeStore.saveAuthError(resolveAuthErrorText());
             Log.w(TAG, "[act] envelope sync failed after token");
             return new Result(false, "envelope failed");
         }
         GuardHeartbeat.start(deviceId, certHex, appVersion);
         return new Result(true, "activated");
+    }
+
+    /**
+     * 优先用服务器下发的 message + device_short（db.py 所有 error 响应都带 message，
+     * DEVICE_LIMIT/DEVICE_ALREADY_BOUND 还带 device_short）；服务器拿不到时回退本地
+     * authErrorText(code) 兜底（网络全断、响应 parse 失败、http 0 时 code 为空仍可走兜底）。
+     * 这是「服务器是文案真源」的客户端落点：以后加新错误码/改文案只动服务器，老客户端自动生效。
+     */
+    private static String resolveAuthErrorText() {
+        String serverMsg = EnvelopeClient.getLastErrorMessage();
+        String base = (serverMsg == null || serverMsg.isEmpty())
+                ? EnvelopeClient.authErrorText(EnvelopeClient.getLastErrorCode())
+                : serverMsg;
+        String dev = EnvelopeClient.getLastDeviceShort();
+        return (dev == null || dev.isEmpty()) ? base : base + "【设备 " + dev + "】";
     }
 }

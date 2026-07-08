@@ -36,7 +36,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
  *
  * :push 进程子集：L1 + NM（来电的 SF/VW 由 CallGuard.installForPush 安装）。
  *
- * 关键铁律：F-23（不碰微信 SO）；铁律 30（:push 只读 NativeBridge）；
+ * 关键铁律：F-23（不重碰微信 SO）；铁律 30（:push 只读 NativeBridge）；
  * 权威文档 docs/P22_PushFilter_VoIP.md。
  */
 public class PushFilter {

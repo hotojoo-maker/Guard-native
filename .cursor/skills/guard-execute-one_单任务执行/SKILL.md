@@ -1,17 +1,15 @@
 ---
+icon: 🔧
+cn: 单任务执行
 name: guard-execute-one_单任务执行
 description: Guard Native 执行——写代码/跑脚本/设备调试/单个 P 任务。从 TASK_BOARD 领到 P 任务后立即用这个 skill。调试时必须与用户交互，禁止盲猜。
 ---
-
 > ⚠️ 输出前自查：禁止错别字、黑话、客户看不懂的话。
 
 # guard-execute — 执行
 
-## 🔐 固定签名铁律（所有角色必读）
-- 项目唯一固定签名文件：`signing/guard-native-debug.keystore`。
-- `build.gradle` 的 debug/release 必须都指向该文件；禁止依赖或重建 `~/.android/debug.keystore`。
-- `INSTALL_FAILED_UPDATE_INCOMPATIBLE` 必须先停、比对已装 APK 与固定 key 指纹，未经用户确认禁止卸载。
-- 缺少固定 key 时停止 build/装机；日志只能写当前 P 任务 `logs/`，禁止写进 docs/skill 目录。
+## 🔐 签名铁律
+> release cert `e3e13a49`（官替+共存共用同一 jks · D-026） · debug cert `ca421ec3`（不作发版候选） · 完整规则见 `CLAUDE.md` §十三.五 + `docs/RELEASE_RULES.md`
 
 ---
 
@@ -72,7 +70,7 @@ description: Guard Native 执行——写代码/跑脚本/设备调试/单个 P 
 
 | # | 铁律 | 出处 |
 |---|------|------|
-| F-23 | 禁止 JniHook/JNI_OnLoad | 微信强制下线实证 |
+| F-23 | 禁重碰 native（JNI_OnLoad 注入） | 微信强制下线实证 |
 | F-24 | 禁止 extends Service | Service not found 实证 |
 | F-25 | XposedHelpers 调用必须 `catch (Throwable)` | init 静默中断实证 |
 | F-26 | hook protobuf 方法用 `getMethods()` + `XposedBridge.hookMethod` | NoSuchMethodError |
@@ -86,7 +84,7 @@ description: Guard Native 执行——写代码/跑脚本/设备调试/单个 P 
 - 代码路径：`src/main/java/com/ghost/assist/<模块>/`
 - 禁止敏感词：`vip` `hide` `pirate` `wechat` `catfish` `myauth` `wmiyou`
 - 类名/方法名/MMKV key 全部 seed 化短哈希
-- 参考 `./refs/MainEntry.java` `./refs/UserControll.java`，类名必须重写
+- 参考 `docs/isolation/MainEntry.java` `docs/isolation/UserControll.java`，类名必须重写
 
 ---
 

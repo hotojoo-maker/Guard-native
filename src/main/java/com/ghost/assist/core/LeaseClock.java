@@ -13,12 +13,8 @@ import android.util.Log;
  * 不能用它判死刑。可信时间 = 上次服务器时间 + 单调时钟流逝量：
  *   trusted_now = last_server_now + (elapsedRealtime_now - last_elapsedRealtime)
  *
- * v1 现状（诚实口径）：
- *   • 服务器心跳端点 = Phase 1D-server，**未接**。本类先用「本地缓存的
- *     last_server_now」+ 单调时钟跑骨架；从未成功心跳过 → 默认 CLEAN，
- *     不凭空降级（不误伤）。
- *   • 时间可获取官方服务器（用户已确认方向）：接口就绪后调 onServerHeartbeat()
- *     写入 last_server_now，本类逻辑不变。
+ * 约束：
+ *   • 无服务器基准时回退历史水位/墙钟，默认 CLEAN，不凭空降级（不误伤）。
  *   • 只输出 RiskState.Level 的「离线/时间」分支，绝不自己弹窗、不关功能。
  *
  * 边界：本类只读/写自己的时间水位，不碰 StateMachine / AuthGate / Filter。
@@ -157,16 +153,16 @@ public final class LeaseClock {
     /** 租约是否已过期（带租约且 trustedNow 超过 expire_at）。 */
     public static synchronized boolean isLeaseExpired() {
         long expire = Bridge.getInstance().getLong(KEY_EXPIRE_AT, 0L);
-        if (expire <= 0L) return false; // 无租约（v1 未接服务器）→ 不判过期
+        if (expire <= 0L) return false; // 无租约 → 不判过期
         return trustedNow() > expire;
     }
 
     /**
      * 输出时间/断网维度的风险等级（供 RiskState 取并集）。
      *
-     * v1（未接服务器）：lastHeartbeat==0 → 没有任何服务器基准 → CLEAN，
+     * 无服务器基准（lastHeartbeat==0）→ CLEAN，
      *   绝不凭空降级（这是「不因单纯断网误杀」红线）。
-     * 接服务器后：
+     * 有服务器基准后：
      *   - 租约过期 → DEGRADED
      *   - 断网 >72h → DEGRADED
      *   - 断网 >24h 且时钟异常 → TIME_SUSPICIOUS

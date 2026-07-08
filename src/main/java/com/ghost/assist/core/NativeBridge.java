@@ -10,10 +10,6 @@ package com.ghost.assist.core;
  *     in case the SO failed to load (e.g. first install, ABI mismatch).
  *   • This class owns nothing except the bridge; business logic stays
  *     in each hook module (ConvFilter, MomentsFilter, etc.).
- *
- * Phase 1: all native methods are stubs returning safe defaults.
- * Phase 3: call init() from ModuleMain.handleLoadPackage() before
- *           registering any hook.
  */
 public final class NativeBridge {
 

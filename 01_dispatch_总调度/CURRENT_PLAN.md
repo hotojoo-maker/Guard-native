@@ -1,24 +1,27 @@
 # CURRENT_PLAN — 当前阶段计划
 
 > 维护人：guard-dispatch_总调度
-> 更新：2026-06-11（支付口径修正：改包重签后微信内支付可用，仅「第三方支付跳转」不可用且不可解决）｜2026-06-09（v1 收口口径：P21 主线收尾；P18 基线本轮跳过；P22 普通消息通知/铃声转 v1.1）
+> 更新：2026-06-29（相位收口：v1 功能开发探索期 → 上线维护期）
 
 ---
 
-## 当前阶段：v1 阶段 ① 功能开发（D-015 锁定）
+## 当前阶段：上线维护期（2026-06-29 相位切换，建议登 DECISION_LOG）
 
-### 当前一句话状态（2026-06-09 17:20）
+> v1 功能开发探索期已收口归档：D1/D2/D3、会话、通讯录、A2/A3、搜索、防撤回(C1)、未读(UNREADFIX)、伪装订位(E2)、朋友圈小红点 hook 点均装机已验。项目已加密接主流程上线。
 
-> **P21 朋友圈小红点主线已收尾；P18/KPI 基线本轮跳过；P22 普通消息通知 + 铃声功能转 v1.1，不再阻塞当前 v1。当前先做文档/证据收敛与发版前快照，新增功能项（§6a/C5/E3）另行排队。**
+### 当前一句话状态（2026-06-29）
 
-### 四窗口现状（对齐 TASK_BOARD §一）
+> **hook 点基本完成。防破解 / A2 / 共存 / 官替 / 蜜罐 / 绊线 框架已建（cert-sync 已装机验；A2 闸等部分 🟡 空转/待装机，详 TASK_BOARD §五）。开发探索期的找 hook 工具与试错已归档（07_archive / docs/isolation），平时冻结、换微信版本才解冻。**
+
+### 三条主线（取代旧 v1 四窗口框架）
 
 ```
-W1  B 模块触发 + 搜索 (P20/P20B)  ✅ P20 搜索 / 🟡 P20B（B4 不阻塞；KPI 本轮不作为 v1 阻塞）
-W2  朋友圈小红点  (P21)            ✅ 主线收尾（Layer0b + P21B WithAll/bm；rm 同路径覆盖，后续有场景再复验）
-W3  会话 LSPosed  (P17)            ✅ 已收口（05-20）
-W4  离线资料库采集 (P18)           本轮跳过（不阻塞当前 v1）
+① 上线维护   防破解 / miyou-server 授权 / 发版(官替+共存) / 绊线监控 / KPI 体检
+② 按需加功能 改余额(E3) / 语音转发(C5) / §6a 仅可见分组 / 朋友圈选人列表隐私缺口 等（一功能一卡，见「未做功能索引」）
+③ 版本适配   换微信版本 → jadx + check_classmap 半自动追变动混淆名 → 更新权威 hook 表 → regen registry → 重打包（见 docs/VERSION_UPGRADE_SOP.md）
 ```
+
+> 旧 4 窗口（W1 P20/P20B · W2 P21 · W3 P17 · W4 P18）均已收口/归档，详见下方历史归档与 TASK_BOARD §五。
 
 ### 临时插入 / 已收口
 
@@ -33,14 +36,18 @@ W4  离线资料库采集 (P18)           本轮跳过（不阻塞当前 v1）
 
 ## 主线缺口（按优先级）
 
+### P0 — 证书收敛（无客户窗口 · 宜先做）
+
+- **P_CertConverge**（✅ 已被 v2 覆盖 · 2026-06-30）：用户拍板回合为「**一套配方**」（官替 / 共存 release 共用 official jks → `e3e13a49`）；服务器 / 客户端 / 文档三摊全部同步。新真源 = `docs/RELEASE_LINE_SSOT_发行线统一口径.md` v2 + `DECISION_LOG.md` D-026。原任务卡 `03_execute_执行任务/P_CertConverge_证书收敛/任务卡.md` 已 SUPERSEDED。
+
 ### P1 — 当前 v1 收口（文档 / 证据 / 快照）
 - P21 主线已收尾，等待其他窗口最终证据归档后统一提交。
 - P18/KPI 基线本轮跳过，不作为当前 v1 阻塞项。
 - P22 普通消息通知链路 + SOUND/铃声功能转 **v1.1**。
 - 发版前优先做 git 快照/提交与文档口径收敛。
 
-### P2 — native_core Batch 1 装机
-- **P_NC1** 🟡 编译/接入完成，**待 `[native] BATCH1_VERIFY PASS` 装机日志**
+### P2 — native_core Batch 1 装机 ✅
+- **P_NC1** ✅ 装机验证完成（BATCH1_VERIFY PASS，07-02 live 双版实证）；现状/尾巴以 `_CORE_现状真源/发版_当前真源.md` 为准，本页不复述。
 
 ### P3 — ~~v1 收尾新增~~ → **移出 v1，下一版再排**（2026-06-10 用户拍板）
 > 原 2026-06-08 拉入 v1；**2026-06-10 用户决定：§6a / C5 / E3 三项全部推迟到下一版（v1.1/v2）再排，v1 收口不含这三项。** 下方保留资料备查。
@@ -70,7 +77,7 @@ W4  离线资料库采集 (P18)           本轮跳过（不阻塞当前 v1）
 - **P_CF2** ⬜ 会话列表越界崩溃（与 P_PF2 来电拦截重构相关，详见 `docs/P22_PushFilter_VoIP.md`）
 
 ### P5 — UI 优化（不阻塞 v1）
-- **P26C** 搜索高亮（归 UI 优化）
+- **搜索高亮**（归 UI 优化；旧称 P26C，但 P26C 号已归「隐藏指定通讯录标签」，勿再用号——见 `PROJECT_INDEX.md` §零）
 
 ### P6 — KPI 基线（本轮跳过）
 - P18 空白 LSPosed KPI 基线本轮跳过，不阻塞当前 v1 收口。
@@ -87,7 +94,7 @@ W4  离线资料库采集 (P18)           本轮跳过（不阻塞当前 v1）
 ### 阶段 ②.5 + ③ + ④（v2）
 - P26–P30：UI 优化 / LicenseGate / ClassMap 加密 / miyou-server / 通知伪装 C2
 
-> **防护 / 服务器真锁（S2/S3a/S4/S3b = Phase 1D-server）现状**：2026-06-12 已接入主流程最小闭环。冷启动会应用缓存 envelope seed 并启动 `GuardHeartbeat`；激活后会立即 `syncOnce()` 拉 signed envelope；release 严格模式下 `StateMachine.isActive()` 已依赖 `GuardRuntime.isSensitiveConfigReady()`。当前仍未完成：共存版 `GUARD_RELEASE_ID` flavor 注入、删剩余 Filter 明文字面量、RiskState 全链路散沙降级与正版恢复闭环。权威现状见 [`../PROTECTION_MAP.md`](../PROTECTION_MAP.md) §10.6 与 `03_execute_执行任务/S3a0_ServerSeed设计/result.md`。
+> **防护 / 服务器真锁（S2/S3a/S4/S3b = Phase 1D-server）现状**：2026-06-12 已接入主流程最小闭环。冷启动会应用缓存 envelope seed 并启动 `GuardHeartbeat`；激活后会立即 `syncOnce()` 拉 signed envelope；release 严格模式下 `StateMachine.isActive()` 已依赖 `GuardRuntime.isSensitiveConfigReady()`。当前仍未完成：删剩余 Filter 明文字面量、RiskState 全链路散沙降级与正版恢复闭环、`GuardHeartbeat.java:90` install_id per-install UUID（服务器重装锁闸前置）。`GUARD_RELEASE_ID` flavor 注入 = ✅ 已完成。权威现状见 [`../PROTECTION_MAP.md`](../PROTECTION_MAP.md) §10.6 与 `03_execute_执行任务/S3a0_ServerSeed设计/result.md`。
 
 ### 阶段 ⑤ 打包形态（v3）— **已提为主攻方向（D-016, 2026-06-08）**
 - P31–P33：LSPatch 双模式 / 签名校验绕过 / 反盗版引流壳
@@ -100,6 +107,8 @@ W4  离线资料库采集 (P18)           本轮跳过（不阻塞当前 v1）
 ## V3 免 root 改包路线（D-016 提优先级，调研先行）
 
 > 铁律：V3 技术难点（微信自带签名校验 + Tinker 热补丁 + np.protect 加固）没查清**禁止报工期**。先调研，产出可行性报告再排 P31–P33。
+
+> 📌 打包/装机流程（gradlew flavor + LSPatch 重新打包 + 干净装机）以 `docs/RELEASE_RULES.md`「双版本发布手册」为准；下方 V3-T1 的 `lspatch` 命令仅为当时可行性 recon 记录（带 `-v`），非发版口径。
 
 ### 调研任务（必须先做，G1–G4：无证据不报方案）
 - **V3-T1 LSPatch 劫持 8.0.71 可行性** 🟡 用户装机口述实证（2026-06-08，待补 logcat/截图）
@@ -127,7 +136,7 @@ W4  离线资料库采集 (P18)           本轮跳过（不阻塞当前 v1）
 - **支付**：改包名/重签后**第三方支付跳转依旧不可用**（不可解决的固有限制；微信内支付可用）；共存版定位 = 官方管第三方支付跳转 + 我们包管隐私（正好互补）。
 
 ### V3-T5 共存版迁移聊天记录调研（用户 2026-06-08 拉入）🟡 静态已出报告，待动态验
-- **需求**：改包名共存版要能从官方微信迁移历史聊天记录（手机自带分身能迁，改包名版默认迁不了）。
+- **需求**：改包名共存版要能从官方包迁移历史聊天记录（手机自带分身能迁，改包名版默认迁不了）。
 - **已知（L2 静态，子代理 jadx 实证）**：迁移接收端 Java 层**不查包名、不查签名**（getPackageInfo/GET_SIGNATURES 全量扫描零命中）。真正校验 = 微信账号 sha256(wxid) + 服务器 CGI `migratemsggetbindinfo` + 局域网握手（deviceId + hello/ok + authKey + 同 WiFi 同网段）。
 - **裁决（L3）**：迁移认「微信账号」不认「APK 身份」→ 改包共存版**有条件可直接当接收端**；「迁移模式 hook 身份 API 伪装官方」走错方向（Java 层不读这些）。
 - **待动态验（L4，装机跑 Frida）**：① 改包版能否登录 + 服务器 `migratemsggetbindinfo` 是否按设备指纹/UA 拒；② native SO `iam_feat_roam` 握手是否有 jadx 不可见的完整性校验；③ 经典栈端口 + 同网段要求。

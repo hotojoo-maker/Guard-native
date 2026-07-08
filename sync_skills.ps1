@@ -1,4 +1,4 @@
-# sync_skills.ps1 - mirror .cursor/skills -> .claude/skills + .agents/skills
+# sync_skills.ps1 - mirror .cursor/skills -> .claude/skills
 #
 # Usage:
 #   powershell -File sync_skills.ps1                    # one-shot
@@ -8,9 +8,11 @@
 # Design:
 #   Primary  : .cursor/skills/  (edit here daily)
 #   Mirror 1 : .claude/skills/  (Claude Code compat)
-#   Mirror 2 : .agents/skills/  (Devin native skill dir)
+#   (.agents mirror removed 2026-07-01 — CLAUDE recognizes only .cursor + .claude)
 #   Strategy : robocopy /MIR, idempotent (handles Chinese folder names via
 #              wide-char API; do NOT use Copy-Item — it mangles CJK names)
+#   Secrets  : /XF DEV_SECRETS.md — never mirror dev secrets into .agents/.claude
+#              (.agents is git-tracked); the GitHub token stays one copy under .cursor
 
 param(
     [switch]$Watch,
@@ -23,7 +25,6 @@ $root = Split-Path -Parent $MyInvocation.MyCommand.Definition
 
 $cursorSkills = Join-Path $root '.cursor\skills'
 $claudeSkills = Join-Path $root '.claude\skills'
-$agentsSkills = Join-Path $root '.agents\skills'
 
 function Sync-Once {
     param([string]$Src, [string]$Dst)
@@ -36,7 +37,7 @@ function Sync-Once {
     New-Item -ItemType Directory -Force -Path $Dst | Out-Null
     Write-Host ("[{0}] {1} -> {2}" -f (Get-Date -Format HH:mm:ss), $Src, $Dst) -ForegroundColor Cyan
 
-    robocopy $Src $Dst /MIR /NP /NS /NJH /NJS /NC /NDL | Out-Null
+    robocopy $Src $Dst /MIR /XF DEV_SECRETS.md /NP /NS /NJH /NJS /NC /NDL | Out-Null
 
     $count = (Get-ChildItem -Path $Dst -Recurse -Filter 'SKILL.md').Count
     Write-Host ("  -> synced {0} SKILL.md" -f $count) -ForegroundColor Green
@@ -44,7 +45,7 @@ function Sync-Once {
 
 if ($Direction -eq 'forward') {
     $src = $cursorSkills
-    $dsts = @($claudeSkills, $agentsSkills)   # cursor -> claude + agents
+    $dsts = @($claudeSkills)                  # cursor -> claude
 } else {
     $src = $claudeSkills
     $dsts = @($cursorSkills)                   # claude -> cursor only

@@ -1,4 +1,4 @@
-# TASK_BOARD — 任务看板（4 窗口 + P 任务进度）
+# TASK_BOARD — 任务看板（P 任务进度）
 
 > ⛔ **AI 读此文件的绝对铁律 / AI HARD RULES**
 > - ✅ = 有装机日志原文的才算完成，无日志不得推进"下一步"
@@ -8,7 +8,7 @@
 > 接手前看：[`docs/README.md`](./docs/README.md) + [`CLAUDE.md`](./CLAUDE.md) + [`HOOKMAP.md`](./HOOKMAP.md)
 > 防破解/防盗版总账（含上线前门控）：[`PROTECTION_MAP.md`](./PROTECTION_MAP.md)
 > **账实唯一权威（编号↔任务↔状态↔文件夹）：[`PROJECT_INDEX.md`](./PROJECT_INDEX.md) §零 功能总清单**。本看板若与之冲突，以 §零 为准。重复编号 **P25 / P26 / P26C**（同号两义）已在 §零 摊开，下方相应处已标注。
-> 更新时间：2026-06-29（相位收口：v1 探索期→上线维护期；旧 4 窗口已归档）
+> 更新时间：2026-07-01（相位收口：v1 探索期→上线维护期；旧 4 窗口已归档，§二/§三/§四 已减法收口）
 > **当前底座：微信 8.0.71**（D-014）
 > 维护人：guard-dispatch_总调度
 
@@ -21,70 +21,22 @@
 | 主线 | 范围 | 状态 |
 |:--:|------|:--:|
 | ① 上线维护 | 防破解 / miyou-server / 发版(官替+共存) / 绊线 / KPI | 🟡 进行中（cert-sync ✅，A2 闸等 🟡，详 §五） |
-| ② 按需加功能 | E3 改余额 / C5 语音转发 / §6a / 选人列表隐私缺口 等 | ⬜ 一功能一卡（见「未做功能索引」） |
+| ② 按需加功能 | C5 语音转发 / §6a / 选人列表隐私缺口 等（E3 改余额 ✅ 已装机 06-30，见 HOOKMAP §E）| ⬜ 一功能一卡（见「未做功能索引」） |
 | ③ 版本适配 | 换微信版本的 hook diff 流程 | 📘 见 `docs/VERSION_UPGRADE_SOP.md` |
 
 > 旧 4 窗口去向：W1 P20/P20B、W2 P21、W3 P17 → `07_archive_归档/`；W4 P18 本轮跳过。历史明细见 §五。
 
 ---
 
-## 二、4 窗口任务详细（每个窗口的目标 + 必读 + 产出）
+## 二、P 任务现状（旧「4 窗口任务详细」已废弃）
+
+> 旧 W1-W4 任务详细已随相位收口废弃（去向见 §一）。**P 任务现状** → 本文件 §五 + [`PROJECT_INDEX.md`](./PROJECT_INDEX.md) §零。
 
 ---
 
-### 🟦 W1 B 模块触发器 + 搜索（P20B/P20）
+## 三、依赖 / 启动顺序（旧 W1-W4 依赖图已废弃）
 
-**状态**：P20 搜索 🟡（联系人 L1 已证，全场景待补）；P20B 触发器 🟡（B2/B5/B6 ✅；B1 🟡 logcat 待补；B4 因用户设备无返回键，按确认不阻塞；KPI 轻采样已记录，发版前重测）。
-
-**下一步**：
-1. P22 普通消息通知 + 铃声功能转 v1.1，不阻塞当前 v1。
-2. 搜索高亮归 UI 优化（旧称 P26C；号已归「隐藏指定通讯录标签」，见 §零），不阻塞 P20。
-
-**详情**：`07_archive_归档/P20_搜索拦截/result.md`、`07_archive_归档/P20B_BTriggers_SearchUnlock/worklog.md`、`docs/HOOK_MAP_8071_AUTHORITATIVE.md` §8b。
-
----
-
-### ✅ W2 朋友圈小红点 P21
-
-**状态**：✅ 主线收尾。Layer0b 已装机实证；P21B WithAll/bm live Cursor 过滤已装机；rm 代码同路径覆盖，后续有“与我的互动”入口时可补 L1，但不阻塞当前 v1。
-
-**下一步**：仅做证据归档/备用复验；不改 D1/D2/D3 已验 hook。
-
-**详情**：`07_archive_归档/P21_MomentsRedDot/worklog.md`、`HOOKMAP.md` §二。
-
----
-
-### ✅ W3 会话过滤（P17）
-
-**状态**：✅ 2026-05-20 装机验收通过，不动已验 hook。
-
-**详情**：`07_archive_归档/P17_会话LSPosed/result.md`、`docs/HOOK_MAP_8071_AUTHORITATIVE.md` §8a。
-
----
-
-### 🟧 W4 离线资料库采集（P18）
-
-**状态**：⬜ 本轮跳过。空白 LSPosed KPI 基线不作为当前 v1 阻塞项。
-
-**下一步**：后续进入正式发布门控或质检重档时再补跑 `frida_stats.js`；业务 Proto/网络采集按 P18 brief 另开。
-
-**详情**：`03_execute_执行任务/P18_离线采集/`、`TOOLS_INDEX.md`。
-
----
-
-## 三、依赖关系
-
-```
-W1 B触发+搜索 ─→ P22 普通消息通知/铃声转 v1.1；搜索高亮归 UI 优化（旧 P26C 号已归隐藏标签）
-W2 P21        ─→ P21 主线收尾；rm L1 / Layer2 / v18 tab badge 仅作备用复验
-W3 P17        ─→ 会话过滤已验收，不作为新任务入口
-W4 P18        ─→ 本轮跳过；正式发布门控再补 KPI
-```
-
-**当前启动顺序**：
-1. 先做文档/证据收敛与 git 快照，避免当前脏工作区继续漂。
-2. P22 普通消息通知 + 铃声功能转 v1.1。
-3. P18/KPI 基线本轮跳过；正式发布门控再补。
+> **当前主线 / 启动顺序** → §一 + [`01_dispatch_总调度/CURRENT_PLAN.md`](./01_dispatch_总调度/CURRENT_PLAN.md)。
 
 ---
 
@@ -92,16 +44,20 @@ W4 P18        ─→ 本轮跳过；正式发布门控再补 KPI
 
 | # | 规则 |
 |---|------|
-| 1 | 每窗口开工先改 §一 表"占用至"列 |
-| 2 | 只动自己 P 任务目录（`03_execute_执行任务/<你的P任务>/` 等；已归档任务见 `07_archive_归档/`）|
-| 3 | 改根目录看板（HOOKMAP / TASK_BOARD / FAILURE_LOG）前先 git pull |
-| 4 | 关任务前必跑 `frida_stats.js` 对比基线 |
-| 5 | 关任务前更新 [`HOOKMAP.md`](./HOOKMAP.md) 对应行 ⬜→🟡 或 🟡→✅ |
-| 6 | 每个窗口完成后写 5-10 行交接快照到 `04_review_审稿复核/W<N>_<日期>.md` |
+| 1 | 只动自己 P 任务目录（`03_execute_执行任务/<你的P任务>/` 等；已归档任务见 `07_archive_归档/`）|
+| 2 | 改根目录看板（HOOKMAP / TASK_BOARD / FAILURE_LOG）前先 git pull |
+| 3 | 关任务前必跑 `frida_stats.js` 对比基线 |
+| 4 | 关任务前更新 [`HOOKMAP.md`](./HOOKMAP.md) 对应行 ⬜→🟡 或 🟡→✅ |
+| 5 | 完成后写 5-10 行交接快照到 `04_review_审稿复核/`（窗口领取/命名走 dispatch skill「多 Vchat 窗口」）|
 
 ---
 
 ## 五、P 任务历史
+
+> **🟡 进行中**：P20 搜索 · P_NC1 真锁链 · P22 通知 · P_CV1 通讯录热切 · P_NF1/P_NF3 通知震动 · P_RegistryUnify · P_AntiBanGate（+Extract）· P_Fc5gMerge；**⬜ 未做**：P18 KPI · P_CF2 越界崩溃 · P_NF2 铃声。完整「功能↔编号↔文件夹」见 [`PROJECT_INDEX.md`](./PROJECT_INDEX.md) §零。
+
+<details>
+<summary>📂 P 任务完整历史（19 项 ✅ + 未完成明细 · 含日期/证据路径 · 审计轨迹不删，点开查）</summary>
 
 | P 号 | 任务 | 状态 | 完成日 |
 |:--:|------|:--:|------|
@@ -115,7 +71,7 @@ W4 P18        ─→ 本轮跳过；正式发布门控再补 KPI
 | A2  | 密友列表（数据层 + 导入 UI） | ✅ | 原生 `SelectContactUI` 导入；详见权威 §3。|
 | A3  | 密群（数据层 + Filter union + 导入 UI）| ✅ | 过滤链 + 原生 `GroupCardSelectUI` 导入；详见权威 §4。|
 | **P23** | **F08 防撤回（C1）** | ✅ | 2026-05-31 L1 装机；详见 P23 result / 权威 §2。|
-| P_NC1 / S3a / S4 / S3b | native 加密 + 授权真锁链 | 🟡 | `BATCH1/PHASE1A~1E PASS`、S4 Ed25519、S3b LeaseClock、当前 `android_8071` server seed 解 registry 已验；仍待删 Filter fallback / V3 发行线对齐 / RiskState 真降级。详见 `03_execute_执行任务/S3a0_ServerSeed设计/result.md` 与 `PROTECTION_MAP.md` §10.6。|
+| P_NC1 / S3a / S4 / S3b | native 加密 + 授权真锁链 | 🟡 | 本体 ✅ 装机（BATCH1/PHASE1A~1E PASS；S4 Ed25519 / S3b LeaseClock / server seed 解 registry 均验；07-02 live 双版 `certBind=e3e13a49`+`recipeOk=true` 实证）；整链尾巴以 `PROTECTION_MAP.md §10.6` + `DRIFT_LEDGER` 为单一真源，本行不复述。|
 | **P22** | **PushFilter 通知策略层** | 🟡 | 主拦截/来电/未读已收口；普通消息通知 + 铃声功能转 v1.1，详见 `docs/P22_PushFilter_VoIP.md`。|
 | **P_CV1** | **通讯录 V↔H 热切** | 🟡 | 原 logcat 缺失，仅存 L1 装机截图(2026-05-27)+L2 代码互证；证据 `07_archive_归档/P_CV1_通讯录V态热切/worklog.md`；待补 logcat 双通原文。|
 | **P_PF2** | **语音/视频来电拦截 + CallGuard** | ✅ | 2026-05-29 装机验证；详见 `docs/P22_PushFilter_VoIP.md`。|
@@ -129,7 +85,7 @@ W4 P18        ─→ 本轮跳过；正式发布门控再补 KPI
 | **P_NF4** | **密友未读计数过滤（UNREADFIX）** | ✅ | 2026-06-06 装机实证；默认隐藏态密友未读数在底部 tab + 顶部「微信(N)」标题被**过滤/隐藏**，打开「显示密友未读消息数」开关则**显示**；证据 `03_execute_执行任务/P22_PushFilter/pnf4_unread_20260606.log`。|
 | **E2** | **伪装订位（全局伪造定位）** | ✅ | 2026-06-07 装机验证（提前于 v2/v3 应用户要求）：`moduleE/FakeLocation` hook `pz0.h.c` 注入伪经纬度 → 发位置/共享/朋友圈/附近的人全局生效；设置页「特色功能」复用原生选点页设置坐标（talker=filehelper 防误发）；关闭复原已验。详见权威 §一.1。|
 | **P_CertSync** | **证书三端同步（cert-sync-v1）** | ✅ | 2026-06-29 commit `20a45b1` push 完成（`devin/cert-sync-v1`）+ 装机验证 PASS（certBind=e3e13a49 三端对齐 / decryptSelfTest=true / tamper=正常）。scatter 是 prod_server_lock 设计预期，跟 cert-sync 无关。|
-| **P_CertConverge** | **证书唯一真源收敛（官替/共存各一把 + 硬闸）** | ⬜ | 2026-06-29 登记；**无客户窗口期**。根因 L1：coexistDebug `[cp] cert mismatch`→影子期。任务卡 `03_execute_执行任务/P_CertConverge_证书收敛/任务卡.md`；只读对账 `04_review_审稿复核/CERT_RECON_证书对账表_20260629.md`。待：D-017 标过时、四端脚本、L1 加项、§3.A 文档减法、debug 政策 A/B/C 拍板。|
+| **P_CertConverge** | **证书唯一真源收敛（官替/共存各一把 + 硬闸）** | ✅ | 2026-06-30 已被 v2「一套配方」覆盖（官替/共存 release 共用 official jks→`e3e13a49`）；新真源 `docs/RELEASE_LINE_SSOT_发行线统一口径.md` v2 + `DECISION_LOG` D-026；原任务卡已删除收敛（SUPERSEDED）。|
 | **P_RegistryUnify** | **registry 单一真源归一（C5a 收口）** | 🟡 | 2026-06-29 commit `df51951` push 完成（`devin/registry-unify-v1`）：MomentsFilter 4 个混淆字面量（jw1.d/wq.c1/wq.y0/ii5.b）迁入 `registry_8071.json`→`RegistryFallback`；合并时顺手加 `gen_registry_fallback.py` 的 `SKIP_ENTRIES={"a2.sig"}`（防 A2 OFFICIAL_DER 泄漏到 Java fallback）+ pop ACTOR_FIELD_NAMES 归一工作区改动；待装机验证 PR。|
 | **P_ArchAudit** | **架构基线盘点（arch-audit-v1）** | ✅ | 2026-06-29 Devin commit `6ca5333` on `full-restore`（未 push，token 失效）：6 份文档 `docs/arch_audit_2026q3/`（本地 `C:\Users\Me\Desktop\gn_fullrestore`）。核心发现见 `PROTECTION_MAP.md §10.7` 2026-06-29 段。|
 | **P_DebugGateUnify** | **debug 散点三门归一** | ✅ | 2026-06-29 Devin commit `0b3121a` push（`devin/debug-gate-unify`）：12 处散点收敛到 `AppConfig.isDevBuild/isDiagnostics/isDebugSurface`；三变体（officialDebug/coexistDebug/officialRelease）编译全过；禁入区 + 主仓 96 脏改动未碰。PR: https://github.com/hotojoo-maker/Guard-native/pull/new/devin/debug-gate-unify |
@@ -141,6 +97,8 @@ W4 P18        ─→ 本轮跳过；正式发布门控再补 KPI
 > 编号从 P15 起，是接续 apk2 项目 QE66 的 P14（保持跨项目可追溯）。`P_CV*` 系列与 `P_NC*` 同属语义号，不占 v2 路线图 P26–P30 / v3 P31–P33 编号位。
 >
 > **账实说明（2026-06-10 对齐）**：本表部分编号**无独立任务目录**，实体在别处——`P_NC1`→`07_archive_归档/P1A…P1F`；`P_NF1~4`/`P_PF2`→`03_execute_执行任务/P22_PushFilter`；`A2/A3`→`P_IMPORT` + 权威 §3/§4；`P24`→`docs/classmap/`。完整「编号↔文件夹」对照见 [`PROJECT_INDEX.md`](./PROJECT_INDEX.md) §零。
+
+</details>
 
 ---
 
@@ -175,7 +133,7 @@ W4 P18        ─→ 本轮跳过；正式发布门控再补 KPI
 ⏸️ v1 收尾新增 → 移出 v1，下一版再排（2026-06-10 用户拍板：§6a/C5/E3 推迟 v1.1/v2，v1 收口不含这三项）
   §6a  朋友圈"仅可见分组"图标隐藏：转 v1.1，当前 v1 不做；已验部分以 HOOKMAP §D / 权威 §6a 为准
   C5   语音转发：转 v2，不纳入当前 v1；8.0.71 需重新调研，不复用 8.0.66 锚点当结论
-  E3   修改余额 UI 层：转 v2/v3；金融敏感，接入前必须走 /guard-auth-review 合规预审 + PROTECTION_MAP 发版门控
+  E3   修改余额 UI 层：原计划转 v2/v3；**后应用户要求 2026-06-30 已装机落地**（`moduleE/FakeBalance.java`，自定义金额末两位自动小数，见 HOOKMAP §E / 权威 §E）
 
 🆕 下一版隐私覆盖缺口（2026-06-10 用户报告）
   D-SNS-VIS  发朋友圈「谁可以看 → 部分可见/不给谁看」选标签/选好友 列表，密友未隐藏；新 hook 点待逆向 → 按 hidden wxid 过滤；性质=隐私一致性缺口（通讯录主列表已隐藏，此入口遗漏 → 密友在选人界面暴露）

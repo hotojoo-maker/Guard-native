@@ -1,5 +1,5 @@
 # Guard Native 守护内核 — 主入口（AI 接手必读）
-<!-- 最后更新：2026-06-24（产品形态铁定 + 文档权威链 + 中间程序打法 + 定死词表；命名：官方包/重新打包，封号→封/账号异常，防破解/逆向直写）；8071 文档隔离；FAILURE_LOG 至 F-42 -->
+<!-- 最后更新：2026-07-01（产品形态铁定 + 文档权威链 + 中间程序打法 + 定死词表；命名：官方包/重新打包，封号→封/账号异常，防破解/逆向直写）；8071 文档隔离；FAILURE_LOG 至 F-43 -->
 > 项目代号: **Guard Native (守护内核)**
 > 目标: 官方包 **8.0.71** 隐私模块 → v1 收口 → **打包型 APK（LSPatch 为主）** → 底层加固
 > 当前底座: **官方包 8.0.71**（D-014，2026-05-21 切版）
@@ -40,7 +40,7 @@
 | 角色 | 触发时机 | skill 路径 |
 |------|---------|-----------|
 | **授权检查官** | 动 状态机 / 授权 / 模块边界 / 过滤位置 / 拆代码 / 新增 Filter 链 前必审 | `.cursor/skills/guard-auth-review_授权检查官/SKILL.md` |
-| **授权门控**（= 授权检查官快捷别名，同一角色入口） | 同上，快捷入口 | `.cursor/skills/auth-gate_授权门控/SKILL.md` |
+| **防封官** | 防封 / 反检测 / 检测面 / KPI / Matrix / normsg / `ro.boot` / LSPosed 进程边界 前必审 | `.cursor/skills/guard-antiban_防封官/SKILL.md` |
 | **网络安全官** | 加密 / SO / DRM / 授权防护 / 服务器授权信封 / 蜜罐 / 改 vip 前 | `.cursor/skills/guard-security_网络安全官/SKILL.md` |
 | **发版官** | 发布 / 出包 / 官替版 / 共存版 / 换 s_rel / LSPatch 打包 / 装机验证（双版本出包流水线） | `.cursor/skills/guard-release_发版/SKILL.md` |
 | **服务器运维** | miyou-server / 卡密 / release_lines / envelope / S_rel·W / 版本状态后台 | `.cursor/skills/guard-server_服务器运维/SKILL.md` |
@@ -50,12 +50,18 @@
 
 ---
 
-## 一、接手三步铁律
+## 一、接手顺序
 
-1. 读完本文（10 分钟）
-2. 读 [`HOOKMAP.md`](./HOOKMAP.md) 知道当前在哪个功能、哪个模块、什么状态
-3. 读 [`TASK_BOARD.md`](./TASK_BOARD.md) 领取你这个窗口的任务
-4. 不读完不准动代码
+1. 读完本文 CLAUDE.md（10 分钟）
+2. 碰 授权 / 发版 / 防封 / 加密 → 先读 [`_CORE_现状真源/`](./_CORE_现状真源/) 对应页（现状浓缩 + 深链）
+   - 授权 → [`_CORE_现状真源/授权_当前真源.md`](./_CORE_现状真源/授权_当前真源.md)
+   - 发版 → [`_CORE_现状真源/发版_当前真源.md`](./_CORE_现状真源/发版_当前真源.md)
+   - 防封 → [`_CORE_现状真源/防封_当前真源.md`](./_CORE_现状真源/防封_当前真源.md)
+   - 加密 → [`_CORE_现状真源/加密_当前真源.md`](./_CORE_现状真源/加密_当前真源.md)
+3. 读 [`docs/README.md`](./docs/README.md)（8071 文档车道）
+4. 读 [`HOOKMAP.md`](./HOOKMAP.md) + [`TASK_BOARD.md`](./TASK_BOARD.md)
+5. 查路径 / 导航 → [`PROJECT_INDEX.md`](./PROJECT_INDEX.md)
+6. 不读完不准动代码
 
 ---
 
@@ -65,7 +71,7 @@
 文档层   ████████████ 100%   HOOK_POINTS / CLASS_MAP / FAILURE_LOG / 29 条铁律
 代码层   ███████████░  上线维护期·hook 点基本完成   ← 转「维护 + 加功能 + 版本适配」（详 CURRENT_PLAN）
 验证层   ████████████ 100%   D1/D2/D3 + 会话 + 通讯录 + 密群 装机已验
-试错层   ████████████ 100%   F-01~F-41 已验证失败方案归档 (FAILURE_LOG.md)
+试错层   ████████████ 100%   F-01~F-43 已验证失败方案归档 (FAILURE_LOG.md)
 ```
 
 **v1 hook 已稳定**（有日志原文）：D1/D2/D3 朋友圈 · 会话 V→H · 会话 H→V fresh-warm（普通有历史 hidden id）· 通讯录 · A2 密友导入 · A3 密群/密群导入 · P21 Layer0b + P21B WithAll/bm · P20 搜索（联系人/群聊密群/聊天记录关键词场景）· B1/B2/B5/B6 触发 · **C1 防撤回**（2026-05-31）· **CA 语音/视频来电拦截**（2026-05-29）· **C3 未读计数 UNREADFIX**（2026-06-06）· **E2 伪装订位**（2026-06-07）
@@ -77,7 +83,7 @@
 
 ## 三、29 条铁律（违反即停）
 
-完整清单 → [`FAILURE_LOG.md`](./FAILURE_LOG.md)（至 F-41，最新：F-41 后台标记正常不重置 tier/risk · F-40 重装顶爆假种子 recipeOk=false · F-39 CLH getMethod 命中父类误 finish · F-38 伪装订位坐标候选证伪）
+完整清单 → [`FAILURE_LOG.md`](./FAILURE_LOG.md)（至 F-43，最新：F-43 克隆宿主签名 bleed-through→cert mismatch（修=先重签 e3e13a49，D-030）· F-42 LSPatch A15 官替闪退（调查中）· F-41 后台标记正常不重置 tier/risk · F-40 重装顶爆假种子 recipeOk=false）
 
 ### 战略级
 1. **目标版本 8.0.71 锁定**（D-014）— 当前代码主线，禁止以 8.0.66/8.0.70 架构直搬
@@ -94,9 +100,9 @@
    - `:push` 进程**禁止**：UI 操作 / `ActivityManager` / `getRunningAppProcesses` / WebServer / Overlay / Toast / 通知栏 / 复杂反射 dump / 全局 List hook / 网络授权请求 / 业务页面过滤
    - ❌ 永久禁止：`:sandboxed_process` `:isolated_*` `:appbrand*`
 7. **不调 ActivityManager.getRunningAppProcesses** — 沙箱进程无权限会 FATAL
-8. **verifiedbootstate 等 KPI = 出包前体检项**（非日常红线，详 §七）；守铁律5 零环境读取故不增量，硬轴 = 签名身份
+8. **verifiedbootstate 等 KPI = 可选抽检项**（非日常红线、非发版硬门，详 §七）；守铁律5 零环境读取故不增量，硬轴 = 签名身份
 
-### 实现级（FAILURE_LOG F-01 ~ F-41 摘要）
+### 实现级（FAILURE_LOG F-01 ~ F-43 摘要）
 9. 禁止把 8.0.70 架构搬到 8.0.71（混淆名全变）
 10. 禁止用 h8.L9/g8.f 调用链（是消息处理链不是会话链）
 11. 禁止 WCDB rawQuery 兜底（微信自定义封装）
@@ -110,15 +116,15 @@
 19. **禁止 hook（钩子）异步回调里持有 `this`**（JNI 局部引用被垃圾回收后 SIGABRT 崩）
 20. 禁止全局 hook ArrayList.add（频率过高）
 21. **必须 notifyDataSetChanged 时先清后通知**（不是先通知后清）
-22. **出包前跑 frida_stats.js 体检**（KPI 不增量，详 §七）
+22. **frida_stats.js KPI = 可选抽检、非发版硬门**（我方零环境读取故 vbs/PROP 不增量；想抽跑就跑、不跑不阻塞发版，详 §七）
 23. **禁止注入微信 JNI 链**（F-23 实证：CodecLooper SIGSEGV + 微信强制下线）
-    - ❌ 仍然禁止：`dlopen` 微信自身 SO / 在微信 `JNI_OnLoad` 链中注入 / Hook 任何 native 方法 / `System.loadLibrary` 加载不属于模块自身的 SO
+    - ❌ 仍然禁止：`dlopen` 微信自身 SO / 在微信 `JNI_OnLoad` 链中注入 / 重碰 native（改返回/替换/广钩） / `System.loadLibrary` 加载不属于模块自身的 SO
     - ✅ 例外——模块自有 SO（动态库 `libguardcore.so`）：状态机 / AES-GCM（加密算法） / HMAC（消息签名算法） / 授权校验 / wxid 匹配 / 进程角色判断 / hidden 状态持久化
 24. **禁止模块用 startService / extends Service**（F-24：Service not found）— Notification 用 `NotificationManager.notify()`，悬浮窗用 `WindowManager.addView()`
 25. **所有 XposedHelpers.findAndHookMethod 必须 `catch (Throwable)`**（F-25：NoSuchMethodError 穿透 catch Exception 导致 init 静默中断）
 26. **hook protobuf 类方法禁用 `findMethodExact`**（F-26：parseFrom 定义在父类，findMethodExact 不遍历继承链）→ 用 `getMethods()` + `XposedBridge.hookMethod()`
 27. **模块启动默认 HIDDEN（隐藏态），底层状态优先**（F-27）
-    - 安装任何业务 hook 前，必须先完成 `nativeInit()` + `nativeReloadState()`
+    - 安装任何业务 hook 前，必须先完成 `nativeInit()`
     - `:push` 进程内 hook 必须先判断 `nativeIsHidden()`；为 `false` 时直接短路返回
 28. **禁止以 `MvvmList.m(List,boolean)` 类级别 hook 作为朋友圈过滤入口**（F-28：8.0.71 朋友圈数据不走 m()，正确路径是 addAll 实例拦截）
 29. **禁止对已装机验证通过的 hook 点做任何未经用户同意的修改**（F-31：D1 h1() 被顺手优化后静默失效，无报错无崩溃只是不过滤。现状跑通 = 不动）
@@ -257,7 +263,9 @@ P2 / 暂缓 / 禁止 / 系统层破绽点 → **全部不做**
 | normsg / 100K | — | 4,000 | 5,124 | QE66 P14 |
 | CONN 密度 | — | 0.2 | 0.5 | QE66 P14 |
 
-环境类 vbs/PROP 我方零环境读取本就达标；密度类 normsg/CONN 明显异常才查（P18 零点未建 F-22，上表数字作参考）。**日常健康 = 身份(签名) + 卡顿/性能 + 零新增行为**。工具：`frida_stats.js`（→ [`TOOLS_INDEX.md`](./TOOLS_INDEX.md)）。
+环境类 vbs/PROP 我方零环境读取本就达标；密度类 normsg/CONN 明显异常才查（P18 零点未建 F-22，上表数字作参考）。**日常健康 = 身份(签名) + 卡顿/性能 + 零新增行为**。
+
+> **KPI 已弱化（2026-07-02）**：frida_stats.js 只作**可选抽检**，**不是发版硬门**。2026-07-02 对官替 LSPatch 候选包 warm-attach 实测：16 指标全 ≈0（PROP/vbs/CONN/DNS/proc 扫描/mprotect 均 0），远低红线——印证「零环境读取故不增量」。想抽跑就跑，不跑不阻塞发版。工具 `frida_stats.js`（→ [`TOOLS_INDEX.md`](./TOOLS_INDEX.md)）。
 
 ---
 
@@ -293,13 +301,14 @@ v4  2 月     底层 C++ 蜜罐 + 加盐字幕混合加密
 | **执行** | 写代码 / 跑脚本 / 设备调试（**必须与用户交互**，禁止盲猜） | `guard-execute-one_单任务执行` |
 | **审核** | P 任务自审（轻档）+ 发布门控（重档，含 KPI 红线） | `guard-review_质检门控` |
 | **终端** | PowerShell / adb / frida / build 全套命令 | `guard-terminal_终端操作` |
-| **授权检查官** | 大框架守门：状态机 / 授权 / 模块边界 / 过滤位置 / 拆-合代码决策 | `guard-auth-review_授权检查官`（别名入口 `auth-gate_授权门控`） |
+| **授权检查官** | 大框架守门：状态机 / 授权 / 模块边界 / 过滤位置 / 拆-合代码决策 | `guard-auth-review_授权检查官` |
+| **防封官** | 反检测 / 防封 / 检测面 / 异常上报链 / KPI 红线 | `guard-antiban_防封官` |
 | **网络安全官** | 客户端安全 / 加密配方 / DRM / 授权防护 / 服务器授权信封 / 蜜罐 | `guard-security_网络安全官` |
 | **发版官** | 发布出包流水线：官替/共存双版本 + 换 s_rel + LSPatch 打包 + 服务器同步 + 装机 L1（同一套签名/工具/流程/服务器） | `guard-release_发版` |
 | **服务器运维** | miyou-server 授权后台：卡密 / release_lines / envelope / S_rel·W / 版本状态 / 主备部署 | `guard-server_服务器运维` |
 | **git 保姆** | 替不懂 git 的用户跑命令：快照 / 备份 / 提交 / 回退 / 清 git 垃圾 | `guard-git_保姆` |
 
-> 共 **10 个 skill 文件夹**（核心 4 + 专项 6：授权检查官、网络安全官、发版官、服务器运维、git 保姆，外加授权门控别名）。`auth-gate_授权门控` 是 `guard-auth-review_授权检查官` 的快捷别名（同一角色，2 个入口文件夹）。**发版/发布/做官替/做共存 → 发版官**；服务器后台 → 服务器运维。
+> 共 **10 个 Guard 角色 skill**（核心 4 + 专项 6：授权检查官、防封官、网络安全官、发版官、服务器运维、git 保姆）。**发版/发布/做官替/做共存 → 发版官**；服务器后台 → 服务器运维。
 
 **调试铁律（执行角色核心）**：需要设备操作时，必须给用户一个明确指令，等结果回来再推进。禁止假设输出、禁止"估计 XXX"后直接改代码。
 **主目录**: `.cursor/skills/`（Cursor 日常用，统一 `SKILL.md` 大写）
@@ -352,9 +361,23 @@ v4  2 月     底层 C++ 蜜罐 + 加盐字幕混合加密
 
 ## 十三、发布与运营
 
-发布、危险通告、商业模式、对外品牌、官替版 / 共存版、签名证书和加密发版规则统一收敛到 [`docs/RELEASE_RULES.md`](./docs/RELEASE_RULES.md)。
+发布、危险通告、官替版 / 共存版、签名证书和加密发版规则统一收敛到 [`docs/RELEASE_RULES.md`](./docs/RELEASE_RULES.md)；**商业模式 / 对外品牌**已拆到 [`docs/运营_商业与品牌.md`](./docs/运营_商业与品牌.md)。
 
 本文件只保留入口：发版、签名、共存版、`registry_cipher`、`guardWxPkg`、客户包档案相关问题，先读 `docs/RELEASE_RULES.md`，再进入对应 skill。
+
+---
+
+## 十三.五、🔐 签名铁律（单一权威 · cert-converge v2 D-026）
+
+> 所有 skill 的签名规则指回这里；skill 里只保留一行 cert 值 + 指针。深真源 → `docs/RELEASE_RULES.md` + `docs/RELEASE_LINE_SSOT_v2.md`。
+
+- **发版 release（出货）**：`signing/guard-native-official-release.jks`（alias `guardofficial`）→ cert `e3e13a49`；**官替 + 共存共用此把**（build.gradle `guardOfficialRelease`）。密码在 `signing/keystore.properties`（gitignore）。
+- **调试 debug（smoke）**：`signing/guard-native-debug.keystore` → cert `ca421ec3`；仅模块更新/公告/C2-smoke，cert ≠ `GUARD_EXPECTED_CERT` 注定 registry 散沙，**不作发版候选**。
+- 禁止依赖或重建 `~/.android/debug.keystore`。
+- `INSTALL_FAILED_UPDATE_INCOMPATIBLE` 必须先停、比对已装 APK 与对应 key 指纹，未经用户确认禁止卸载。
+- 缺少对应 keystore 时停止 build/装机；日志只能写当前 P 任务 `logs/`，禁止写进 docs/skill 目录。
+- 官替版和共存版是两条独立发行线，**共用同一把 release jks**（D-026）；各自固定 `packageName` + `versionCode`；官替只覆盖官替，共存只覆盖同包名共存。
+- 发版 / 签名 / 共存版任务先读 `docs/RELEASE_RULES.md`；禁止为旧客户旧版本线重新生成 keystore。
 
 ---
 

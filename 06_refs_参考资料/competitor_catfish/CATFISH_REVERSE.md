@@ -546,7 +546,7 @@ packageInfo.signingInfo.getApkContentsSigners()[0] = fakeSignature;
 ### 第三层：Native 文件路径重定向（libbypassmm.so）
 
 ```
-hookOpen:     open 改造版 APK 路径 → 重定向到 assets/origin.apk（255MB 官方微信）
+hookOpen:     open 改造版 APK 路径 → 重定向到 assets/origin.apk（255MB 官方包）
 hookReadlink: /proc/self/fd/ 返回假路径
 SignatureHookImpl: mFakeSig / mRealSig，native 层签名查询返回腾讯证书
 ```
@@ -563,7 +563,7 @@ getSignMd5Str   @ 0x245778  (18KB) — 对签名字节做 MD5 摘要
 ### 完整链路
 
 ```
-assets/origin.apk (255MB 官方微信)
+assets/origin.apk (255MB 官方包)
   → libwechatsd.so 提取官方签名字节
     → SigCracker + ServiceManagerWraper
       → 任何 getPackageInfo("com.tencent.mm") → 包名+签名全伪造

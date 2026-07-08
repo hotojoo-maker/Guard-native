@@ -1,0 +1,252 @@
+package com.ghost.assist.net;
+
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
+
+import com.ghost.assist.core.GuardRuntime;
+import com.ghost.assist.core.LeaseClock;
+import com.ghost.assist.core.NativeBridge;
+import com.ghost.assist.core.RiskState;
+
+import org.json.JSONObject;
+
+import java.util.Random;
+
+/**
+ * GuardHeartbeat — S2 低频心跳调度骨架（Phase 1D-server）。
+ *
+ * 节奏（用户 2026-06-11 锁定）：
+ *   • 新装/probe (q=1)   : 10 ~ 30 min
+ *   • 正常稳定 (q=0)     : 60 min（±15% 抖动 = 51~69 min）
+ *   • 嫌疑/影子 (q>=2)   : 10 min（升频密集观察）
+ *   • 硬封顶            : 6 h —— 任何档都不超过，保证封停/危险通告 ≤6h 下发
+ *   • 全程随机抖动 ±15%  : 不走固定整点，避免成为反检测指纹
+ *
+ * 反检测：稳定态 1~6h 对 CONN 密度无压力；只在「冷启动 / 租约将过期」拉，不轮询。
+ *
+ * 边界：本类只调出站 / 信封 sanity / 缓存 / NativeBridge seed 出口，
+ * 不做隐藏/显示决策，不碰 StateMachine / Filter。
+ *
+ * 接入点（2026-06-12 已落地）：
+ *   • ModuleMain 冷启动：有 token 时 startAuthHeartbeatIfNeeded() 启动周期心跳。
+ *   • GuardActivation 激活后：syncOnce() 取首个 envelope，再 start() 周期续租。
+ *   • SettingsEntry：断网超过 72h 时 reverifyIfStale() 做算账重验。
+ */
+public final class GuardHeartbeat {
+
+    private static final String TAG = "NCL";
+
+    private static final long MIN_10 = 10L * 60 * 1000;
+    private static final long MIN_30 = 30L * 60 * 1000;
+    private static final long HOUR_1 = 60L * 60 * 1000;
+    private static final long HOUR_2 = 2L * 60 * 60 * 1000;
+    /** 硬封顶 6h：任何档位都不得超过。 */
+    private static final long CAP_6H = 6L * 60 * 60 * 1000;
+    /** S3b-B：进设置页时，断网超过此时长则强制重验（失败=撤销授权）。 */
+    private static final long STALE_REVERIFY_MS = 72L * 60 * 60 * 1000; // 72h
+
+    private static final Random RND = new Random();
+
+    private static volatile boolean sStarted = false;
+    private static Handler sHandler;
+
+    private GuardHeartbeat() {}
+
+    /**
+     * 按风险层算下次心跳间隔（含抖动 + 6h 封顶）。
+     *
+     * @param tier 信封里的 q：0=stable 1=probe 2=suspicious 3=shadow 4=notice
+     */
+    public static long nextIntervalMs(int tier) {
+        long base;
+        if (tier >= 2) {
+            base = MIN_10;                              // 嫌疑：升频密集观察
+        } else if (tier == 1) {
+            base = MIN_10 + (long) (RND.nextDouble() * (MIN_30 - MIN_10)); // 新装 10~30min
+        } else {
+            base = HOUR_1; // 稳定 60min（±15% 抖动后 = 51~69min）
+        }
+        // 抖动 ±15%
+        double jitter = 1.0 + (RND.nextDouble() * 0.30 - 0.15);
+        long v = (long) (base * jitter);
+        return Math.min(v, CAP_6H);
+    }
+
+    /**
+     * 跑一次心跳：用缓存 token 取新信封 → 验签 sanity → 存。
+     * 失败保留旧缓存（fail-closed，不清数据）。必须后台线程。
+     *
+     * @return 成功返回新信封的 tier（用于排下次间隔）；失败返回 -1
+     */
+    public static int syncOnce(String deviceId, String certHex, String appVersion) {
+        String token = "";
+        try {
+            token = EnvelopeStore.getToken();
+            if (token == null || token.isEmpty()) {
+                Log.i(TAG, "[hb] no token yet — awaiting activation");
+                return -1;
+            }
+            String installId = deviceId; // TODO: 换成 per-install UUID（区分反复卸装）
+            String env = EnvelopeClient.fetchEnvelope(token, deviceId, certHex, appVersion, installId);
+            AuthEnvelopeVerifier.Envelope e = AuthEnvelopeVerifier.verifyAndParse(env, deviceId);
+            if (e == null) {
+                if (isHardAuthError(EnvelopeClient.getLastErrorCode())) {
+                    EnvelopeStore.clear();
+                    EnvelopeStore.saveAuthError(EnvelopeClient.authErrorText(EnvelopeClient.getLastErrorCode()));
+                    Log.w(TAG, "[hb] hard auth error — token cleared");
+                }
+                Log.w(TAG, "[hb] envelope invalid — fail-closed");
+                reportHealth(token, deviceId, certHex, appVersion,
+                        nonEmpty(EnvelopeClient.getLastErrorCode(), "ENVELOPE_INVALID"),
+                        "unknown", null);
+                return -1;
+            }
+            EnvelopeStore.pushSeedExpiryToNative(e);   // 牙④: 先下推硬过期点 (lease+7天), 过期信封 unwrap 即散沙
+            if (!NativeBridge.applyServerSeedAndReset(e.keyMaterial, e.keyNonce)) {
+                Log.w(TAG, "[hb] server seed unwrap failed — keep cached, fail-closed");
+                reportHealth(token, deviceId, certHex, appVersion,
+                        "SERVER_SEED_UNWRAP_FAILED", "failed", null);
+                return -1;
+            }
+            String convAdapter = GuardRuntime.getRecipe("conv.list", "adapter_class");
+            String searchGateway = GuardRuntime.getRecipe("search.gateway", "gateway");
+            boolean recipeOk = !convAdapter.isEmpty() && !searchGateway.isEmpty();
+            Log.i(TAG, "[hb] registry after seed summary="
+                    + GuardRuntime.getActiveRegistrySummary() + " recipeOk=" + recipeOk);
+            EnvelopeStore.saveEnvelope(e);
+
+            // S3b：把已验签的服务器时间 + 租约喂给 LeaseClock（信封是 unix 秒 → 毫秒）。
+            // record-only：只建立可信时间基准 + 重算风险等级记日志，不改任何门控（不误伤）。
+            LeaseClock.onServerHeartbeat(e.serverNow * 1000L, e.leaseExpire * 1000L);
+            RiskState.Level lvl = RiskState.evaluate();
+            Log.i(TAG, "[hb] synced tier=" + e.tier + " lease=" + e.leaseExpire
+                    + " risk=" + lvl.label);
+            reportHealth(token, deviceId, certHex, appVersion, "OK", "ok", lvl);
+            return e.tier;
+        } catch (Throwable t) {
+            Log.w(TAG, "[hb] sync err: " + t.getClass().getSimpleName());
+            reportHealth(token, deviceId, certHex, appVersion,
+                    "SYNC_" + t.getClass().getSimpleName(), "unknown", null);
+            return -1;
+        }
+    }
+
+    /**
+     * S3b-B 设置页"算账检查点"：断网 > 72h 才强制联网重验。
+     *   • 72h 内 / 无离线基准 / 本就未授权 → 不动，返回当前授权态。
+     *   • 重验成功 → 保持授权。
+     *   • 重验失败（断网/无效）→ 撤销授权（保留 token 自愈）+ 记时间错误文案，返回 false。
+     * 内部异常按 fail-open 处理（不因 bug 误杀正版）。必须后台线程调用（含网络）。
+     *
+     * @return 检查后是否仍授权（false = 已撤销）
+     */
+    public static boolean reverifyIfStale(String deviceId, String certHex, String appVersion) {
+        try {
+            if (!EnvelopeStore.isAuthorizedNow()) return false; // 本就未授权，无需算账
+            long offline = LeaseClock.offlineMillis();
+            if (offline < 0 || offline <= STALE_REVERIFY_MS) return true; // 72h 内或无基准 → 放行
+            int tier = syncOnce(deviceId, certHex, appVersion);
+            if (tier >= 0) {
+                Log.i(TAG, "[hb] stale re-verify ok (offline was " + (offline / 3600000) + "h)");
+                return true;
+            }
+            EnvelopeStore.revokeKeepToken();
+            EnvelopeStore.saveAuthError("当前时间错误，授权验证失败，请检查时间");
+            Log.w(TAG, "[hb] stale re-verify FAILED — auth revoked (offline " + (offline / 3600000) + "h)");
+            return false;
+        } catch (Throwable t) {
+            Log.w(TAG, "[hb] reverify err (fail-open): " + t.getClass().getSimpleName());
+            return true; // 内部错误不误杀
+        }
+    }
+
+    private static boolean isHardAuthError(String code) {
+        return "CARD_BANNED".equals(code)
+                || "CARD_DISABLED".equals(code)
+                || "CARD_EXPIRED".equals(code)
+                || "DEVICE_BANNED".equals(code)
+                || "TOKEN_INVALID".equals(code);
+    }
+
+    private static void reportHealth(String token, String deviceId, String certHex,
+                                     String appVersion, String resultCode,
+                                     String seedUnwrap, RiskState.Level level) {
+        try {
+            if (token == null || token.isEmpty()) return;
+            RiskState.Level risk = level == null ? RiskState.currentLevel() : level;
+            JSONObject health = new JSONObject();
+            health.put("v", 1);
+            health.put("env_result", nonEmpty(resultCode, "UNKNOWN"));
+            health.put("lease_state", leaseState());
+            health.put("risk_level", risk.name());
+            health.put("last_error_code", "OK".equals(resultCode) ? "" : nonEmpty(resultCode, "UNKNOWN"));
+            health.put("server_seed_unwrap", nonEmpty(seedUnwrap, "unknown"));
+            health.put("registry_summary_state", registryState());
+            health.put("app_version", appVersion == null ? "" : appVersion);
+            health.put("schema", AuthEnvelopeVerifier.EXPECTED_SCHEMA);
+            health.put("wx_version", AuthEnvelopeVerifier.EXPECTED_WX_VERSION);
+            if (certHex != null && !certHex.isEmpty()) {
+                health.put("cert_digest_prefix",
+                        certHex.substring(0, Math.min(16, certHex.length())).toLowerCase());
+            }
+            boolean sent = EnvelopeClient.reportHealth(token, deviceId, certHex, appVersion, health);
+            Log.i(TAG, "[hb] health report sent=" + sent
+                    + " result=" + health.optString("env_result")
+                    + " lease=" + health.optString("lease_state")
+                    + " risk=" + health.optString("risk_level")
+                    + " registry=" + health.optString("registry_summary_state"));
+        } catch (Throwable t) {
+            Log.w(TAG, "[hb] health report skipped: " + t.getClass().getSimpleName());
+        }
+    }
+
+    private static String leaseState() {
+        RiskState.Level level = LeaseClock.currentLevel();
+        switch (level) {
+            case CLEAN: return "正常";
+            case OFFLINE_WARN: return "离线提醒";
+            case TIME_SUSPICIOUS: return "时间异常";
+            case DEGRADED: return "降级";
+            default: return level.name();
+        }
+    }
+
+    private static String registryState() {
+        String summary = GuardRuntime.getActiveRegistrySummary();
+        if (summary == null || summary.isEmpty()) return "unknown";
+        return summary.startsWith("scatter") || "scatter".equals(summary) ? "scatter" : "ready";
+    }
+
+    private static String nonEmpty(String value, String fallback) {
+        return value == null || value.isEmpty() ? fallback : value;
+    }
+
+    /**
+     * 启动心跳循环：先同步一次，再按风险层自排下次（postDelayed + 后台网络）。
+     * 幂等；重复调用只生效一次。
+     */
+    public static synchronized void start(final String deviceId,
+                                          final String certHex, final String appVersion) {
+        if (sStarted) return;
+        sStarted = true;
+        sHandler = new Handler(Looper.getMainLooper());
+        scheduleTick(deviceId, certHex, appVersion, 0);
+    }
+
+    private static void scheduleTick(final String deviceId, final String certHex,
+                                     final String appVersion, long delayMs) {
+        if (sHandler == null) return;
+        sHandler.postDelayed(new Runnable() {
+            @Override public void run() {
+                EnvelopeClient.runAsync(new Runnable() {
+                    @Override public void run() {
+                        int tier = syncOnce(deviceId, certHex, appVersion);
+                        long next = nextIntervalMs(tier < 0 ? EnvelopeStore.getTier() : tier);
+                        scheduleTick(deviceId, certHex, appVersion, next);
+                    }
+                });
+            }
+        }, delayMs);
+    }
+}

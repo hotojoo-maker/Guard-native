@@ -77,7 +77,7 @@ EXPIRED   ──→  VISIBLE    (仅基础功能，密友功能不可用)
 
 - 主进程：MMKV `g_<seed>` namespace，key 短哈希
 - :push 进程：通过 StateBridge 读主进程写入的共享状态（只读）
-- 冷启动顺序：`nativeInit()` → `nativeReloadState()` → 任何业务 hook
+- 冷启动顺序：`nativeInit()` → 任何业务 hook
 
 ---
 

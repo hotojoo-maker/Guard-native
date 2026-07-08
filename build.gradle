@@ -87,7 +87,7 @@ android {
 
     // ── Signing truth (2026-06-29) ──
     // debug 变体当前签 CA421... debug key（signingReport 为准），只用于模块/公告/C2 smoke；
-    // release 变体按 flavor 各自正式 keystore（官替 e3e13a49 / 共存 8f47a47a）。
+    // release 变体两线共用同一把正式 keystore（官替+共存 = e3e13a49；共存独立 8f47a47a 已退役，见 :116/:148）。
     // signingConfigs 必须在 productFlavors 之前声明（flavor 要引用它们）。
     def keystorePropsFile = rootProject.file("signing/keystore.properties")
     def keystoreProps = new Properties()
@@ -176,7 +176,7 @@ android {
             debuggable true
         }
         release {
-            // signingConfig 由 flavor 决定：official→guardOfficialRelease, coexist→guardCoexistRelease。
+            // signingConfig 由 flavor 决定：official + coexist 共用 guardOfficialRelease（一套配方 e3e13a49）；guardCoexistRelease 已退役。
             minifyEnabled true
             shrinkResources false   // keep xposed_init asset
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'

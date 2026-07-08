@@ -56,7 +56,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
  * （不用 stopForeground 判挂断——视频服务每 ~10s 循环 start/stopForeground，见 F-36）。
  * 来电振动：上升沿 fireAlert(CALL) 单次 onset（静默=不振，震动=振一次），不做持续响铃。
  *
- * 铁律：F-26（父类方法 getDeclaredMethod+hookMethod）、F-23（不碰微信 SO）、
+ * 铁律：F-26（父类方法 getDeclaredMethod+hookMethod）、F-23（不重碰微信 SO）、
  * 铁律 30（:push 只读 NativeBridge）、F-36（来电拦截 7 条已证伪路径永久禁止）。
  */
 public final class CallGuard {

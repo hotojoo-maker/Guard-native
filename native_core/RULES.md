@@ -12,7 +12,7 @@
 |---------|-----------|
 | `dlopen` 微信自身任何 SO | 铁律 23 F-23 |
 | 接入微信 `JNI_OnLoad` 链 | 铁律 23 F-23 |
-| Hook 微信任何 native 方法 | 铁律 23 |
+| 重碰微信 native 方法 | 铁律 23 |
 | 引入 Pine / bypassmm / shadowhook | 铁律 2（封号高暴露）|
 | `System.loadLibrary` 加载非模块自身 SO | 铁律 23 |
 | Hook `:sandboxed_process` / `:isolated_*` / `:appbrand*` | 铁律 6 |
@@ -33,7 +33,6 @@
   ModuleMain.handleLoadPackage()
     └─→ System.loadLibrary("guardcore")     ← 模块 ClassLoader，不是微信
     └─→ NativeBridge.nativeInit(processName, packageName)
-    └─→ NativeBridge.nativeReloadState()
     └─→ 注册业务 hook（此时 C++ 已就绪）
 
 禁止路径：
@@ -52,7 +51,7 @@
 - 读取 `nativeIsHiddenWxid(wxid)` / `nativeIsHiddenGroup(groupId)`
 - 调用 `nativeShouldBlockBadge(wxid)` 判断是否拦截 badge 写入
 - 少量限流日志（LogLimiter，每 tag 每 30 秒 ≤ 1 条）
-- `nativeInit()` + `nativeReloadState()`（初始化）
+- `nativeInit()`（初始化）
 
 ### 禁止
 

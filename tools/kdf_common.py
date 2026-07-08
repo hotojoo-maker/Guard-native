@@ -63,8 +63,8 @@ WSEG_C = bytes([
 # with keytool if the signing keystore changes (see gen_registry_cipher.py).
 # 三端同步红线（官替线）：此值 == CompatProbe/BuildConfig.GUARD_EXPECTED_CERT(official)
 #   == 实际 official 签名证书，三者逐字节相等。不等 → 正版 registry 散沙、密友隐藏静默全挂(F-31)。
-# ⚠ coexist 用独立 keystore（cert=8f47a47a...），其 registry 需按 coexist cert 单独生成
-#   per-flavor registry_cipher.inc；当前此常量只服务 official 线。
+# v2（D-026 cert-converge）：官替 / 共存共用本 cert e3e13a49 + 同一份 registry_cipher.inc，
+#   不再 per-flavor 分签（旧 v1「coexist 独立 8f47a47a」已退役）。
 CERT_SHA256 = bytes([
     0xe3, 0xe1, 0x3a, 0x49, 0x74, 0xfe, 0x4c, 0x40,
     0x43, 0x2a, 0x58, 0x3b, 0x11, 0x30, 0x9e, 0xdb,

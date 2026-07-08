@@ -170,7 +170,10 @@ public final class GuardHeartbeat {
                 || "CARD_DISABLED".equals(code)
                 || "CARD_EXPIRED".equals(code)
                 || "DEVICE_BANNED".equals(code)
-                || "TOKEN_INVALID".equals(code);
+                || "TOKEN_INVALID".equals(code)
+                // 停用闸：整线停用 / 单版本停用 → 清 token，下次心跳/冷启动即撤授权（非靠缓存过期）
+                || "RELEASE_KILLED".equals(code)
+                || "VERSION_KILLED".equals(code);
     }
 
     private static void reportHealth(String token, String deviceId, String certHex,

@@ -12,7 +12,7 @@
 > - 三方跳转：跨进程，共存收不到 / 官替需 root 系统级 → **裁定放弃硬目标**（研究线 §十五）。
 > - 落地收敛：三轴（签名/android_id/包名）全在 `getPackageInfo`/`getApplicationInfo` afterHook 喂官方，落点 `ModuleMain.bindSigningCert` + 发版 `tools/gate_three_axis.js` 自检门（研究线 §十六/§十七）。
 
-本文件 = Guard Native 防封**落地状态账**。`JIDE_ANDROID_ACC_STRIKE_MAPPING_20260617.md`、`tools/*.log`、外部 8071 报告和 skill 只作为证据来源；**研究结论以研究线权威账为准**，本文只跟主线落地（下方 06-18 段为冻结历史）。
+本文件 = Guard Native 防封**落地状态账**。`07_archive_归档/JIDE_ANDROID_ACC_STRIKE_MAPPING_20260617.md`（已归档）、`tools/*.log`、外部 8071 报告和 skill 只作为证据来源；**研究结论以研究线权威账为准**，本文只跟主线落地（下方 06-18 段为冻结历史）。
 
 ## 一、判定纪律
 
@@ -43,7 +43,7 @@
 - `tools/normsg_sig_B56_cli_20260618.log`
 - `tools/normsg_boot_probe_B56_cli_20260618.log`
 - `tools/normsg_event_probe_v2_B56_20260618.log`
-- `JIDE_ANDROID_ACC_STRIKE_MAPPING_20260617.md` 附录 H
+- `07_archive_归档/JIDE_ANDROID_ACC_STRIKE_MAPPING_20260617.md` 附录 H
 
 ## 三、字段分类
 
@@ -145,7 +145,7 @@ Signature.toByteArray len=751
 
 ### 4. 启动期环境检测面已实证
 
-结论：8.0.71 官方微信启动期由 `libwechatnormsg.so` 发起系统属性读取、framework 扫描和 fd 枚举。
+结论：8.0.71 官方包启动期由 `libwechatnormsg.so` 发起系统属性读取、framework 扫描和 fd 枚举。
 
 证据：L1，2026-06-18，`tools/normsg_boot_probe_B56_cli_20260618.log`。
 
@@ -215,7 +215,7 @@ gsm.*
 内部：
 
 - `.cursor/skills/guard-antiban_防封官/SKILL.md`
-- `JIDE_ANDROID_ACC_STRIKE_MAPPING_20260617.md`
+- `07_archive_归档/JIDE_ANDROID_ACC_STRIKE_MAPPING_20260617.md`（已归档）
 - `TOOLS_INDEX.md`
 - `CLAUDE.md` §三 / §七
 - `tools/dump_mm_z3.js`

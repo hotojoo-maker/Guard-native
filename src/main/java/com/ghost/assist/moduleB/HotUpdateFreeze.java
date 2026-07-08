@@ -18,9 +18,9 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
  *
  * 与 UpdateGuard(B7) 分工：UpdateGuard = 设置页更新红点 UI；本类 = 热更新通道层。
  *
- * 模式（AppConfig.isHotFreezeEnabled）：
- *   false（默认）= 观测：hook 挂上，只 log 命中，不改行为（冒烟验崩溃 + 看通道是否触发）。
- *   true         = 冻结：命中即 no-op，断「查更 / 下载 / apply」。
+ * 模式（AppConfig.isHotFreezeEnabled，默认 true=冻结/生产锁版本）：
+ *   true（默认）= 冻结：命中即 no-op，断「查更 / 下载 / apply」。
+ *   false        = 观测：hook 挂上，只 log 命中，不改行为（冒烟验崩溃 + 看通道是否触发）。
  *
  * 全程只 hook Java 方法、不碰 native（与 F-23 无关）；libcso native(mprotect) 禁。
  *
@@ -103,6 +103,7 @@ public class HotUpdateFreeze {
             XposedHelpers.findAndHookMethod("m53.d0", cl, "j", boolean.class, new XC_MethodHook() {
                 @Override
                 protected void beforeHookedMethod(MethodHookParam param) {
+                    AppConfig.getInstance().recordHotUpdate("m53.d0.j");
                     if (freeze()) {
                         param.setResult(false);
                         Log.i(TAG, P + " tinker m53.d0.j → blocked (process response)");
@@ -123,6 +124,7 @@ public class HotUpdateFreeze {
             XposedHelpers.findAndHookMethod("m53.d0", cl, "d", File.class, new XC_MethodHook() {
                 @Override
                 protected void beforeHookedMethod(MethodHookParam param) {
+                    AppConfig.getInstance().recordHotUpdate("m53.d0.d");
                     if (freeze()) {
                         param.setResult(null);
                         Log.i(TAG, P + " tinker m53.d0.d → blocked (apply)");
@@ -169,6 +171,7 @@ public class HotUpdateFreeze {
                     Context.class, String.class, new XC_MethodHook() {
                         @Override
                         protected void beforeHookedMethod(MethodHookParam param) {
+                            AppConfig.getInstance().recordHotUpdate("fl4.o.Bg");
                             if (freeze()) {
                                 param.setResult(false);
                                 Log.i(TAG, P + " fullapk fl4.o.Bg -> blocked (install dialog)");

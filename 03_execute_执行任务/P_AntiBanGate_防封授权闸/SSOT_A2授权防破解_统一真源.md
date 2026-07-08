@@ -43,7 +43,7 @@
 
 | 闸 | 出口（代码） | 吊什么 | 失败方向 | 为什么这个方向 |
 |---|---|---|---|---|
-| **A2 防封闸** | `GuardRuntime.isAntiBanReady()` | 本地 cert 完整性 **+ 时间闸**`[D-020]` | **fail-OPEN**（拿不准就装） | 误判 = **不再保号**（不再加工，咽喉只剩生料）→ 之后官方怎么判我方读不到、不预测，宁错放勿错杀 |
+| **A2 防封闸** | `GuardRuntime.isAntiBanReady()` | 本地 cert 完整性 **+ 时间闸**`[码]`（D-020 已落码·L2 待 L1） | **fail-OPEN**（拿不准就装） | 误判 = **不再保号**（不再加工，咽喉只剩生料）→ 之后官方怎么判我方读不到、不预测，宁错放勿错杀 |
 | **隐私闸** | `StateMachine.isActive()` 四层 AND | ① `isVipAuthorized`（=`EnvelopeStore.isAuthorizedNow`：token+Ed25519+license）② `isSensitiveConfigReady`（registry server-seed）③ `f1` 总开关 ④ HIDDEN 态 | **fail-CLOSED**（拿不准就散） | 误判可逆（密友暂没藏住，重授权即回）+ 这是变现门，宁错关（白嫖用不了）勿错开 |
 
 - **关键洞**：把「不可逆的不再保号（撤了=咽喉只剩生料，官方怎么判我方读不到）」和「可逆的隐私散沙」用两个相反的失败方向分开管。这是整套设计最聪明的一步。
@@ -64,8 +64,9 @@
 
 ### 3.2 现状 vs 目标（诚实）
 
-- `[码]` 现状：`isAntiBanReady() = !EnvelopeStore.isCardRevoked() && CompatProbe.isIntegrityIntact()` —— **只有 cert + 封停/删卡，无时间闸**。
-- `[D-020/D-021]` 目标：加首装 72h / 自然到期 7 天 / **封停删卡 72h** 时间闸 + 接官方对时防冻 + **超 2 年=丢值+影子**（§7.1）+ latch 改可恢复。隐私闸封停/到期 = 立刻关（已是现状·见 §3.3）。
+- `[码]` 现状（D-020 已落码 · L2 静态实证 · 待 L1 装机）：`isAntiBanReady()`（`GuardRuntime.java:138-148`）= `CompatProbe.isIntegrityIntact()` 篡改立刻散 + `isWithinAntiBanWindow()` 时间闸（`GuardRuntime.java:158-189`，try/catch fail-open）。分支（纯函数 `evalAntiBanWindow`）：首装未授权 `officialBase+72h` / 曾授权到期 `licenseExpire+7天` / 封停删卡 `cardRevokedAt+72h`，各无值 fail-open（宽限常量 72h/7天 行 135-136）。**已不再是「只有 cert、无时间闸」**。
+- ① A2 时间闸 ② 官方对时接线（`LeaseClock.noteOfficialTime`/`getOfficialBaseMs` + `OfficialClock.readOfficialNowMs` + 接线 `ModuleMain §6.55`）③ latch 可恢复（`EnvelopeStore.clearCardRevokedIfAuthorized`）+ 超 2 年=丢值+`markTampered`（§7.1）—— **均已落码（L2）**，file:line 详 §8。
+- **待 L1 装机**（无装机日志，**不得宣称 L1**）：DEBUG self-test 已就位——`antiBanGateSelfTest`（`[ANTIBAN-GATE]`）+ `antiBanBranchSelfTest`（8 分支 `[ANTIBAN-BRANCH]` expect/actual/PASS-FAIL），`GuardRuntime.java:200-238`。隐私闸封停/到期立刻关已是现状（§3.3）；剩余目标见 §9（Batch3 删全局 W / canary② 绑行为 / 删 Filter 明文 fallback）。
 
 ### 3.3 场景矩阵（照此实现）
 
@@ -83,7 +84,7 @@
 ### 3.4 可恢复（除篡改）
 
 - 时间 / 授权撤（#3/#4/#5）后，**重新输入有效授权 → 恢复**（服务器权威：发新有效信封 → 客户端恢复）。
-- ⇒ `[D-020]` 现有 `isCardRevoked`（`rf` 键）永久不自愈 latch 要改为「**可被有效授权恢复**」（封停/删卡不再永久焊死）。
+- ⇒ `[码]` `isCardRevoked`（`rf` 键）latch **已改「可被有效授权恢复」**（D-020 已落码·L2 待 L1）：收到 `rf≠1`+license 未过期的有效信封 → `EnvelopeStore.clearCardRevokedIfAuthorized`（`:233`）清 latch、两闸恢复（封停/删卡不再永久焊死）；本地改时间/清缓存不触发（须 Ed25519 验签）。
 - **篡改（§4 / D-019）仍不可恢复**——重签 = 盗版铁证，单向门。
 
 ### 3.5 反分析铁律
@@ -129,7 +130,7 @@
 - 必须：服务器时间 + `elapsedRealtime` 单调 + `max_trusted_now` 水位线（不信手机墙钟）+ **第二时间源（官方对时 `jy0.hd.b()`，微信 TimeHelper，改表杀不掉·L1 已验）**。
 - 72h **从「官方对时有值（有数据）」起算**——全新装无值时 fail-open 装，有值后计时（依据：「不可能下载 72h 不用」）。
 - **首装零上报（铁律）**：首装第一次启动就**必装 A2**（fail-open 保底）；首装无 token → `GuardHeartbeat` 不启动、`GuardActivation` 仅用户主动激活 → 我方**零自主联网**。倒计时**只读官方授时驱动、绝不靠给服务器发信息**（避免我方网络行为给新号添检测面 / 招风险）。
-- `[码]` 现状：锚点 `jy0.hd.b()` **已找到（L1）**，但 `LeaseClock.noteOfficialTime` **未接**。未接前「未授权断网也撤」只对普通用户生效，挡不住「屏蔽服务器+反复重启冻时间」的高手。
+- `[码]` 现状（D-020 已落码·L2·待 L1 装机）：锚点 `jy0.hd.b()` 已找到（L1·2026-06-27），`LeaseClock.noteOfficialTime`/`getOfficialBaseMs` **已接**——`OfficialClock.readOfficialNowMs` ← 接线 `ModuleMain §6.55`（`:217-229`）：首个有效值记 `officialBase` 作 72h 起算锚、`max` 水位只抬不降、超 2 年=丢值+`markTampered`（§7.1）。装机 logcat 未采 → 标 L2、待 L1。
 - **fail-open**：可信时间拿不到 / 异常 → 按「未到点」处理（宁不撤、勿误杀正版）。
 
 ### 7.1 官方对时未来上限 = 超 2 年判篡改影子（设计思路 · 防后续 AI 犟）
@@ -149,16 +150,16 @@
 
 | 概念 | 类 / 方法 | 现状 `[码]` |
 |---|---|---|
-| A2 防封闸 | `core/GuardRuntime.isAntiBanReady` | `!isCardRevoked() && isIntegrityIntact()`（无时间闸） |
+| A2 防封闸 | `core/GuardRuntime.isAntiBanReady`（`:138`） | ✅ `isIntegrityIntact()` 篡改立刻散 **+ 时间闸** `isWithinAntiBanWindow`（`:158`）/纯函数 `evalAntiBanWindow`（`:176`，首装·封停 72h、到期 7 天、fail-open）·L2 待 L1 |
 | 完整性查 | `core/CompatProbe.isIntegrityIntact` | cert≠EXPECTED 才 false；读不到/相符/异常=true（fail-open） |
 | A2 喂官方 | `core/A2SignatureSpoof`（`OFFICIAL_DER_HEX`） | live，由 `ModuleMain §6.7` 在 `isAntiBanReady` 为 true 时装 |
 | 隐私总闸 | `core/StateMachine.isActive` | 四层 AND（含 `isSensitiveConfigReady`） |
 | 真授权门 | `net/EnvelopeStore.isAuthorizedNow` | `isCardRevoked?false : token+验签信封+license 未过期` |
-| 封停/删卡 latch | `net/EnvelopeStore.isCardRevoked/markCardRevoked` | 永久不自愈（`[D-020]` 待改可恢复） |
+| 封停/删卡 latch | `net/EnvelopeStore.isCardRevoked/markCardRevoked`（`:192`/`:205`） | ✅ 已可恢复：`clearCardRevokedIfAuthorized`（`:233`）收有效信封清 latch（调用点 `:113-117`）·L2 待 L1 |
 | 篡改散沙 | `core/RiskState.isTamperDegraded` | 消费者 4：CallGuard/PushFilter/AntiRecall/FakeLocation |
 | 影子期 | `core/RiskState.SHADOW_HOURS_DEFAULT` | 168h（7 天，硬编码 override） |
 | 唯一弹窗 | `core/RiskPromptController.maybeShow` | 引流 URL 走 SO `getEndpoint("funnel")` |
-| 可信时间 | `core/LeaseClock` | 服务器授时已接；`noteOfficialTime`（官方对时第二源）**未接** |
+| 可信时间 | `core/LeaseClock` + `core/OfficialClock` | ✅ 服务器授时 + 官方对时第二源已接：`noteOfficialTime`/`getOfficialBaseMs`（`LeaseClock:85`/`:109`）← `OfficialClock.readOfficialNowMs`（`:36`）← `ModuleMain §6.55`（`:217`）·L2 待 L1 |
 
 ---
 
@@ -166,9 +167,9 @@
 
 | 缺口 | 现状 | 落点 |
 |---|---|---|
-| A2 时间闸（72h/7天） | 未落码 | `GuardRuntime.isAntiBanReady` + `LeaseClock` |
-| 官方对时第二源接线 | 锚点已找到、`noteOfficialTime` 未接 | `LeaseClock` |
-| latch 改可恢复 | 现永久不自愈 | `EnvelopeStore` |
+| ~~A2 时间闸（72h/7天）~~ | ✅ 已落码(L2)·待 L1 装机 | `GuardRuntime.isAntiBanReady` `:138` / `evalAntiBanWindow` `:176`（72h/7天 fail-open + DEBUG 8 分支自测 `:221`） |
+| ~~官方对时第二源接线~~ | ✅ 已落码(L2)·待 L1 装机 | `LeaseClock.noteOfficialTime` `:85` + `OfficialClock` + 接线 `ModuleMain §6.55` `:217` |
+| ~~latch 改可恢复~~ | ✅ 已落码(L2)·待 L1 装机 | `EnvelopeStore.clearCardRevokedIfAuthorized` `:233`（收有效信封清 rf latch） |
 | 续费弹窗走统一弹窗源（红线#9） | 弹窗本体 ✅ 已实现并接线（`SettingsEntry.showRenewReminderIfNeeded`·前7天·按天去重每天1次·读 `secondsToLicenseExpiry`·去续费）；仅「走独立 AlertDialog、未走 `RiskPromptController`」债 | 块D 收口 |
 | ~~主真源收编降指针~~ ✅（H36 2026-06-28） | DESIGN/SPEC/skill/PROTECTION_MAP A2 段已清 D-018 考古 + 结论指向本文 | — |
 | 周边历史/过程档残留「退款」旧词 | ✅ **已清（2026-06-28）**：代码符号（→`isCardRevoked`/`markCardRevoked`/`K_CARD_REVOKED`）+ 术语词表 + SSOT + DESIGN + DECISION_LOG + PROTECTION_MAP + STATUS + guard-server skill + RefundPush（改名 `封停删卡撤销_CardRevoke_…`）。🟡 **未清（dated 历史/过程档，作记录保留·可缓）**：worklog 旧条目 / 块B草稿 / 红队压测任务书 / SPEC §4 / RB1 worklog+部署清单 / F68 / PLAN / tmp_wiki | 按需再扫；`rf` 仅作 wire/存储键保留 |

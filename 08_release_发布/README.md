@@ -21,10 +21,10 @@
 
 1. 每客户独立 seed（反聚类）
 2. 签名 keystore 必须 `.gitignore`，绝不入仓
-3. 发版前由 `guard-risk-check_风险复核` skill 跑 5 项检查
+3. 发版前由 `guard-review_质检门控` skill 跑 5 项检查（发版门控重档）
 4. 发版历史可追溯（保留所有签名版本）
 
-## 发版前必跑（risk-check 5 项门控）
+## 发版前必跑（guard-review 质检门控 · 重档 5 项）
 
 1. 污染源（撤回结论引用清查）
 2. 证据升格（L3/L4 → L1 出处）

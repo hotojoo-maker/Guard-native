@@ -12,7 +12,7 @@ TOOLS_INDEX — 工具/脚本/资源索引
 
 | 依赖项 | 状态 | 落地路径 | 落地动作 |
 |------|:--:|---------|---------|
-| **8.0.71 官方微信 APK** | ✅ 主线 | 设备装机 `com.tencent.mm` | 日常开发 / 装机验证 |
+| **8.0.71 官方包 APK** | ✅ 主线 | 设备装机 `com.tencent.mm` | 日常开发 / 装机验证 |
 | **8.0.66 APK（可选）** | ⬜ 对比样本 | `06_refs_参考资料/apk_samples/wechat_8066.apk` | 仅 P18 版本 diff / 见 §A |
 | **8.0.66 jadx** | ⬜ 可选 | `06_refs_参考资料/apk_samples/wechat_8066_jadx/` | W4 对比用 |
 | 小米9 + Android 11 + Magisk + LSPosed | ✅ | — | 已就绪 |
@@ -49,7 +49,7 @@ TOOLS_INDEX — 工具/脚本/资源索引
 | 脚本 | 路径 | 用途 |
 |------|------|------|
 | 同步 skill | `./sync_skills.ps1` | `.cursor/skills → .claude/skills` 镜像 |
-| Frida 朋友圈过滤 | `./refs/filter_moments.js` | F05 已验证 v21 |
+| Frida 朋友圈过滤 | `./docs/isolation/filter_moments.js` | F05 已验证 v21 |
 | 伪装订位探针 v1（发位置消息层）| `tools/probe_loc_send_8071.js` | hook wy4.a/q2.F/kwebmap intent + 枚举 location/lbssdk 类（候选已证伪，留作回归）|
 | 伪装订位探针 v2（LBS SDK）| `tools/probe_loc_sdk_8071.js` | hook requestLocationUpdates/onLocationChanged + LatLng 构造 |
 | 伪装订位探针 v3（坐标源头栈）| `tools/probe_loc_src_8071.js` | 真实坐标 LatLng 调用栈 → 定位 `pz0.h.c → n83.g.onGetLocation` 源头 |

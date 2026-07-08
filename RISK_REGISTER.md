@@ -1,6 +1,6 @@
 # RISK_REGISTER — 风险表
 
-> 维护人：guard-risk-check_风险复核
+> 维护人：guard-review_质检门控
 > 规则：风险一旦识别永久保留；状态变更追加，不覆盖
 
 ---

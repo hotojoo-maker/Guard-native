@@ -143,7 +143,7 @@ public final class ContactImportGuard {
 
     private static void launch(Activity act, int listType, Set<String> preset, String title) {
         // 授权门（总判定，复用 StateMachine.isVipAuthorized；与 AntiRecall 杂项功能同口径）：
-        // 没授权 → 添加不进去。v1 stub=true，v2 接 LicenseGate 后自动生效。
+        // 没授权 → 添加不进去（已接 EnvelopeStore.isAuthorizedNow 真授权门）。
         if (!StateMachine.getInstance().isVipAuthorized()) {
             Log.i(TAG, "[CIG] launch blocked: not authorized");
             return;

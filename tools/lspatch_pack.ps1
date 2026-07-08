@@ -55,6 +55,13 @@ param(
     [switch]$Clean,
     [switch]$Build,
 
+    # D-030 / F-43: re-sign the host APK with the release keystore BEFORE LSPatch,
+    # so LSPatch -l 2 sigbypass reports the release cert (e3e13a49) at runtime, not
+    # the clone/original host sig (a40da80a / 0fe4ff85 / ca421ec3). Without it the
+    # output file sig is right but runtime certBind reads the host original -> A2
+    # scatter. Release auto-rebinds regardless; this switch forces it for debug too.
+    [switch]$RebindHost,
+
     [string]$HostApk = $null,
     [string]$Output  = $null,
 
@@ -105,6 +112,35 @@ function Read-KeystoreProps {
         $props[$k] = $v
     }
     return $props
+}
+
+# Resolve the Android SDK dir (local.properties sdk.dir > env > default), then the
+# newest build-tools apksigner. Used by -RebindHost / release auto-rebind to re-sign
+# the host APK so LSPatch sigbypass reports the release cert at runtime (F-43/D-030).
+function Get-SdkDir {
+    $lp = Join-Path $repoRoot "local.properties"
+    if (Test-Path $lp) {
+        $line = (Get-Content $lp | Where-Object { $_ -match '^\s*sdk\.dir\s*=' } | Select-Object -First 1)
+        if ($line) { return (($line -replace '^\s*sdk\.dir\s*=\s*', '') -replace '\\(.)', '$1').Trim() }
+    }
+    if ($env:ANDROID_SDK_ROOT) { return $env:ANDROID_SDK_ROOT }
+    if ($env:ANDROID_HOME)     { return $env:ANDROID_HOME }
+    return (Join-Path $env:LOCALAPPDATA "Android\Sdk")
+}
+
+function Find-Apksigner {
+    $cmd = Get-Command apksigner -ErrorAction SilentlyContinue
+    if ($cmd) { return $cmd.Source }
+    $sdk = Get-SdkDir
+    $bt = Get-ChildItem (Join-Path $sdk "build-tools") -Directory -ErrorAction SilentlyContinue |
+          Sort-Object Name -Descending | Select-Object -First 1
+    if ($bt) {
+        foreach ($n in @("apksigner.bat", "apksigner")) {
+            $a = Join-Path $bt.FullName $n
+            if (Test-Path $a) { return $a }
+        }
+    }
+    return $null
 }
 
 $keystore = $LsKeystore
@@ -199,6 +235,36 @@ if ($missing.Count -gt 0) {
 
 if (-not (Test-Path $Output)) {
     New-Item -ItemType Directory -Force -Path $Output | Out-Null
+}
+
+# --- D-030 / F-43: rebind host so LSPatch sigbypass reports the release cert --
+# LSPatch -l 2 returns the HOST's ORIGINAL signature at runtime (not LSPatch -k).
+# A clone/original host (a40da80a / 0fe4ff85 / ca421ec3) => runtime certBind !=
+# e3e13a49 => A2 scatter, even though the output file sig is correct. Re-sign the
+# host with the SAME release keystore first so its embedded origin.apk = e3e13a49.
+# Release auto-rebinds (foolproof); -RebindHost forces it for debug too.
+if ($RebindHost -or $BuildType -eq "release") {
+    # NOTE: local var must NOT be named $rebindHost — PowerShell vars are
+    # case-insensitive so it would alias the $RebindHost switch param (string ->
+    # SwitchParameter cast error). Use $resignedHost.
+    $apksignerExe = Find-Apksigner
+    if (-not $apksignerExe) {
+        Write-Host "[lspatch_pack] FAIL: -RebindHost/release needs apksigner (Android SDK build-tools) on PATH or under SDK" -ForegroundColor Red
+        exit 6
+    }
+    $hostLeaf = Split-Path $HostApk -Leaf
+    $resignedHost = Join-Path $Output ($hostLeaf -replace '\.apk$', '_rebind.apk')
+    Write-Host "[lspatch_pack] rebind: re-signing host with $keystore (alias=$keyAlias) -> $resignedHost"
+    $signArgs = @("sign", "--ks", $keystore, "--ks-key-alias", $keyAlias, "--ks-pass", "pass:$storePass", "--key-pass", "pass:$keyPass", "--out", $resignedHost, $HostApk)
+    & $apksignerExe @signArgs
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "[lspatch_pack] FAIL: host rebind sign failed (exit=$LASTEXITCODE)" -ForegroundColor Red
+        exit 6
+    }
+    $rsha = (& $apksignerExe verify --print-certs $resignedHost 2>&1 |
+             Select-String "Signer #1 certificate SHA-256" | Select-Object -First 1)
+    Write-Host "[lspatch_pack] rebind: $rsha" -ForegroundColor Green
+    $HostApk = $resignedHost
 }
 
 # --- Run LSPatch -------------------------------------------------------------

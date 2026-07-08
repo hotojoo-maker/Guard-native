@@ -1,17 +1,15 @@
 ---
+icon: 🔐
+cn: 授权检查官
 name: guard-auth-review_授权检查官
-description: Guard Native 授权检查官（别名：授权执行官、授权门控、auth-gate）。大框架守门人——管 状态机/授权/模块边界/过滤位置/拆代码/模块化决策，防止"乱接导致混乱"。改动 SearchUnlock/StateMachine/AuthManager/NativeBridge/DebugServer/C++ auth 前必审；新增 Filter 链或拆/合代码前也要它点头。
+description: Guard Native 授权检查官。大框架守门人——管 状态机/授权/模块边界/过滤位置/拆代码/模块化决策，防止"乱接导致混乱"。改动 SearchUnlock/StateMachine/AuthManager/NativeBridge/DebugServer/C++ auth 前必审；新增 Filter 链或拆/合代码前也要它点头。
 ---
-
 > ⚠️ 输出前自查：禁止错别字、黑话、客户看不懂的话。
 
 # guard-auth-review — 授权检查官（大框架守门人）
 
-## 🔐 固定签名铁律（所有角色必读）
-- 项目唯一固定签名文件：`signing/guard-native-debug.keystore`。
-- `build.gradle` 的 debug/release 必须都指向该文件；禁止依赖或重建 `~/.android/debug.keystore`。
-- `INSTALL_FAILED_UPDATE_INCOMPATIBLE` 必须先停、比对已装 APK 与固定 key 指纹，未经用户确认禁止卸载。
-- 缺少固定 key 时停止 build/装机；日志只能写当前 P 任务 `logs/`，禁止写进 docs/skill 目录。
+## 🔐 签名铁律
+> release cert `e3e13a49`（官替+共存共用同一 jks · D-026） · debug cert `ca421ec3`（不作发版候选） · 完整规则见 `CLAUDE.md` §十三.五 + `docs/RELEASE_RULES.md`
 
 > **职责范围（用户口径，2026-05-27 锁定）**
 >
@@ -166,7 +164,7 @@ StateMachine.isActive() = isVipAuthorized()                 // 1. 授权门 — 
 | `enterHidden()` / `exitHidden()` | 切到隐藏态 / 切出隐藏态（只能 SettingsEntry 按钮 + B 模块触发器调） |
 | `beginUnlock()` | 状态机进入"解锁中"——搜索框弹出时调 |
 | `isActive()` | 四层叠加：授权 + registry 配方门 + 密友总开关 + 当前是否 HIDDEN |
-| `isVipAuthorized()` | 当前 wxid 是否已有有效服务器授权；v1.1 已接 `EnvelopeStore.isAuthorizedNow()`，不再是 stub |
+| `isVipAuthorized()` | 当前 wxid 是否已有有效服务器授权；v1.6 授权闭环已接 `EnvelopeStore.isAuthorizedNow()`，不再是 stub |
 | `isFeatureEnabled()` | 用户在设置页有没有手动关闭"密友功能"开关 f1 |
 | `AuthManager.evaluate()` | 评估当前 wxid + 设备 + license 的组合，输出 AUTH_OK / ACCOUNT_MISMATCH 等 |
 | `bindAccount()` | 通过 DebugServer `/api/bind_account` 建立首次绑定关系 |
@@ -483,7 +481,7 @@ SearchUnlock（口令命中）
 □ AUTH_TAMPERED → PiracyNotice 引流弹窗 + 功能全关？
 □ v1 放行逻辑（MISMATCH/NO_LICENSE 仍注册 hook）是否有明确注释，不误解为"已授权"？
 □ isVipAuthorized() 是否仍接 `EnvelopeStore.isAuthorizedNow()`，没有被临时 hardcode true/false？
-  （v1.1 授权闭环已落地；现状以 `PROTECTION_MAP.md` §10.6 为准）
+  （v1.6 授权闭环已落地；现状以 `PROTECTION_MAP.md` §10.6 为准）
 □ DebugServer 写操作是否全部加了 isAuthOk() 门控？
   覆盖：apiSetFeature / apiSetNotifyPolicy / apiTrigger(show/toggle/unlock)
         apiSetMode / apiHidden(POST) / apiSetMyWxid(POST)
@@ -519,7 +517,7 @@ SearchUnlock（口令命中）
 ```
 □ C++ 是否只做：badge拦截 / 授权校验 / 反篡改 / 进程角色判断 / killSwitch？
 □ C++ 是否没有操作：RecyclerView / MvvmList / notifyDataSetChanged / 微信 DB / UI？
-□ C++ 是否没有 native hook 微信 SO（F-23 铁律）？
+□ C++ 是否没有重碰微信 native（F-23 铁律）？
 □ 主进程 Filter 链（ConvFilter/MomentsFilter/ContactFilter）是否只读 Java StateMachine.isActive()（铁律30）？
 □ :push 进程是否只读 NativeBridge.shouldBlockBadge()（铁律30）？
 □ NativeBridge 方法是否全部有 isAvailable() 前置检查？
@@ -629,13 +627,13 @@ BLOCK 原因: [如有，必填]
 
 | 简化项 | 当前 v1 状态 | v2 计划 |
 |-------|------------|--------|
-| `isVipAuthorized()` | ✅ 已接 `EnvelopeStore.isAuthorizedNow()`（v1.1 授权闭环；**不再是 stub**，详见 `PROTECTION_MAP §10.6`） | — |
+| `isVipAuthorized()` | ✅ 已接 `EnvelopeStore.isAuthorizedNow()`（v1.6 授权闭环；**不再是 stub**，详见 `PROTECTION_MAP §10.6`） | — |
 | ACCOUNT_MISMATCH / DEVICE_MISMATCH | 放行（hook 仍注册）| v2 真正拦截 |
 | killSwitch | stub，永远 false | 接入 miyou-server 真实接口 |
 | 蜜罐 | 未实现 | v2+ 引入假入口 |
 | Ed25519 验签 | ✅ 已落地 S4（2026-06-11 装机 PASS；详见 `PROTECTION_MAP §10.6`） | — |
 
-> ⚠️ 本表部分行已被 v1.1 推进超越（isVipAuthorized 已接信封授权、Ed25519 已落地、LeaseClock 已接服务器授时 + 设置页 72h 离线强验）。**授权/真锁的唯一权威现状以 `PROTECTION_MAP.md §10.6` 为准**；其余仍是 stub 的（killSwitch / 蜜罐 / MISMATCH 拦截）不得在 v1 期间自行"修复"。
+> ⚠️ 本表部分行已被 v1.6 推进超越（isVipAuthorized 已接信封授权、Ed25519 已落地、LeaseClock 已接服务器授时 + 设置页 72h 离线强验）。**授权/真锁的唯一权威现状以 `PROTECTION_MAP.md §10.6` 为准**；其余仍是 stub 的（killSwitch / 蜜罐 / MISMATCH 拦截）不得在 v1 期间自行"修复"。
 
 ---
 

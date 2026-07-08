@@ -40,13 +40,18 @@ OUT = os.path.join(ROOT, "native_core", "src", "bootstrap_cipher.inc")
 # in ONE place now — tools/kdf_common.py — shared with gen_registry_cipher.py and
 # the KDF self-test vectors. kdf_common.derive_bootstrap_key MUST stay
 # byte-for-byte identical to guard::derive_bootstrap_key() in config_crypto.cpp.
-from kdf_common import CERT_SHA256, derive_bootstrap_key as _kdf_derive_bootstrap_key
+import argparse
+import binascii
+
+from kdf_common import CERT_SHA256 as _DEFAULT_CERT_SHA256, derive_bootstrap_key as _kdf_derive_bootstrap_key
 
 
-def derive_bootstrap_key():
+def derive_bootstrap_key(cert_sha256):
     """Cert-only bootstrap key (no server seed, + domain tag). Mirrors
-    guard::derive_bootstrap_key() via the shared kdf_common routine."""
-    return _kdf_derive_bootstrap_key(CERT_SHA256)
+    guard::derive_bootstrap_key() via the shared kdf_common routine.
+    cert_sha256 = active signing-cert SHA-256 (official default, or the coexist
+    keystore cert for the per-flavor coexist bootstrap; mirrors gen_registry_cipher.py)."""
+    return _kdf_derive_bootstrap_key(cert_sha256)
 
 
 def carr(name, b):
@@ -54,7 +59,29 @@ def carr(name, b):
     return "constexpr uint8_t %s[] = { %s };\n" % (name, body)
 
 
-key = derive_bootstrap_key()
+_parser = argparse.ArgumentParser(
+    description="Generate encrypted bootstrap_cipher.inc from bootstrap_endpoints.json."
+)
+_parser.add_argument(
+    "--cert-sha256", default="",
+    help="Override signing-cert SHA-256 (hex, 64 chars). Defaults to kdf_common.CERT_SHA256 "
+         "(official line). Pass the coexist keystore cert for the coexist bootstrap.",
+)
+_parser.add_argument(
+    "--out", default="",
+    help="Output path for the .inc file (default: native_core/src/bootstrap_cipher.inc).",
+)
+_args = _parser.parse_args()
+
+_active_cert = _DEFAULT_CERT_SHA256
+if _args.cert_sha256:
+    _active_cert = binascii.unhexlify(_args.cert_sha256)
+    if len(_active_cert) != 32:
+        raise SystemExit("ERROR: --cert-sha256 must be 64 hex chars (32 bytes)")
+if _args.out:
+    OUT = _args.out
+
+key = derive_bootstrap_key(_active_cert)
 nonce = os.urandom(12)  # random per build -> no GCM nonce reuse
 
 with open(SRC, "r", encoding="utf-8") as f:

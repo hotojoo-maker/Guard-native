@@ -98,7 +98,7 @@ TEST-DEVICE-BAN-001  首次激活成功，后台封设备后 envelope 失败
 - 注入：`lspatch.jar <clone.apk> -m <coexist模块> -l 2 -k guard-native-debug.keystore ... -o lspatch_out -f`。产物 `02_tools_工具/lspatch_out/wechat_8071_original_clone-439-lspatched.apk`（约 251MB）。
 - 校验：`Embedding modules - com.ghost.assist` + `Done`；内嵌 SO 与重编 coexist 模块 SO 哈希一致（sha256[:16]=`aeeeec0b5c6d47bf`，区别于官替 `3e2ccd2b`，因 `GUARD_EXPECTED_PACKAGE` 不同）。
 - ⚠️ 当前共存版仍走**共享发行线 `android_8071`**（`AppConfig.GUARD_RELEASE_ID` 全局），与官替共用同一 s_rel/registry_cipher：可激活、可解、可隐藏，但版本列表里不单列、且 s_rel 轮换会同时影响官替。真正独立线（`android_8071_coexist` + 独立 s_rel + flavor 专属 release_id + 服务器加线）属后续 V3。
-- 共存版 = 包名 `com.tencent.mn`，与官方微信 `com.tencent.mm` 并存（装它不用卸官方）；第三方支付跳转仍走官方微信，隐私功能走共存版。
+- 共存版 = 包名 `com.tencent.mn`，与官方包 `com.tencent.mm` 并存（装它不用卸官方）；第三方支付跳转仍走官方包，隐私功能走共存版。
 
 ### 共存版进程角色 bug + 修复（2026-06-12，L1 捕获）
 
@@ -116,7 +116,7 @@ TEST-DEVICE-BAN-001  首次激活成功，后台封设备后 envelope 失败
 - 校验：LSPatch 日志 `Embedding modules - com.ghost.assist` + `Done`；内嵌 `assets/lspatch/modules/com.ghost.assist.apk` 的 `libguardcore.so` 与新编模块 SO 哈希一致（sha256[:16]=`3e2ccd2be1202a40`）。
 - 证书绑定：`bindSigningCert()` 读**模块自身**签名（guardFixed=`ca421ec3...`=registry `_CERT_SHA256`），LSPatch 外层签名不影响 registry 解密。
 - 固有限制（V3-T1 实证）：改包重签 → 第三方 App 调起/跳转微信支付校验签名失败（微信内支付可用）；需第三方支付跳转的客户走共存版。
-- 仍待：服务器切新 s_rel 后装机抓 `recipeOk=true`；本包签名非腾讯，安装前需卸载官方微信。
+- 仍待：服务器切新 s_rel 后装机抓 `recipeOk=true`；本包签名非腾讯，安装前需卸载官方包。
 
 ## 追加：s_rel 线上回退事故 + 修复 + 版本隔离原则（2026-06-12）
 
@@ -171,7 +171,7 @@ TEST-DEVICE-BAN-001  首次激活成功，后台封设备后 envelope 失败
 - **后台「版本状态」展开列异常设备**：`server.py` release 详情「展开真锁/异常设备」除真锁指纹外，拉 `/health/devices?release_id=` 列本线 tier≥2/decoy/失败 设备，每台带「恢复正常(清风险)」「封设备」。解决“只给‘1 版本异常’干数字、看不到是哪台”。
 
 **客户端「跟随宿主包」修复（本会话）**
-- `ContactImportGuard.java`(选人器 `SelectContactUI` + 选群器 `GroupCardSelectUI`) + `FakeLocation.java`(位置选点 `RedirectUI`)：`WECHAT_PKG` 由写死 `"com.tencent.mm"` 改为 `BuildConfig.GUARD_WX_PKG`。共存版跨包拉官方微信界面被安卓拦(SecurityException) → 加不进密友/密群、伪装定位拉不起；改后跟随宿主包。
+- `ContactImportGuard.java`(选人器 `SelectContactUI` + 选群器 `GroupCardSelectUI`) + `FakeLocation.java`(位置选点 `RedirectUI`)：`WECHAT_PKG` 由写死 `"com.tencent.mm"` 改为 `BuildConfig.GUARD_WX_PKG`。共存版跨包拉官方包界面被安卓拦(SecurityException) → 加不进密友/密群、伪装定位拉不起；改后跟随宿主包。
 - `ContactLabelHideGuard.java`：onResume 真实类名 whitelist(F-39)。
 - native 包名身份全程走 `GUARD_EXPECTED_PACKAGE`(`-DGUARD_WX_PKG`)，无写死；registry 里 `com.tencent.mm.*` 是类名(克隆包一致，勿动)。
 

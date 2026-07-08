@@ -34,7 +34,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
  *     LocationIntent.d(纬度)/.e(经度)/.h(POI名) → 存 Bridge。无 caller awaiting → 不真发消息。
  *
  * 【门控】只读/只写 Bridge 伪坐标 + 调微信原生 Activity；不碰状态机/授权写/口令/Filter。
- * 授权门：复用 StateMachine.isVipAuthorized()（v1 stub=true，v2 接 LicenseGate 自动生效）。
+ * 授权门：复用 StateMachine.isVipAuthorized()（已接 EnvelopeStore.isAuthorizedNow 真授权门）。
  */
 public final class FakeLocation {
 

@@ -15,7 +15,7 @@ import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
 /**
- * P19B 隐私补洞 — 隐藏通讯录「标签」入口（可开关，Bridge hclb）。
+ * P19B 隐私补洞 — 隐藏通讯录「标签」入口（可开关，Bridge hcl）。
  * 非独家功能：独家 = 隐藏标签列表里「指定的某个标签」（见 P26C，待实现）。
  *
  * 8.0.71 类名（P19B 探针 + 装机）：

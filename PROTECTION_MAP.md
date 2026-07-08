@@ -3,10 +3,8 @@
 > **定位**：这是**上线前的防护门控文档**。每个阶段发版前，对照 §9 的清单逐条打勾，全绿才上线。
 > **维护规矩**：防破解相关只记在这一份，别再散到别处；改相关代码前先看本文。
 > **证据基线**：2026-06-02 代码实测（只读核查，见 §附录 A），标 L2 = 静态已证实。
-> **关联**：`CLAUDE.md`（29 条铁律）· `docs/GUARD_GATE_TRUTH.md`（门控权威）· `docs/PRODUCT_GATE.md`（四层模型）· `DECISION_LOG.md` D-013（危险通告/kill switch）· `RISK_REGISTER.md` · `docs/DEBUG_CONSOLE_V2.md`（防护驾驶舱）
-> **当前进度（2026-06-02）**：**Phase 0 完成 ✅** —— 仪表盘（防护驾驶舱 + `/api/native` + `tools/guard_status`）+ ① DebugServer DEV-gate + ② proguard 收窄（release `BATCH1_VERIFY PASS` + mapping 实锤：NativeBridge 保留、过滤器混淆、诱饵留亮）+ ③ 接 `AuthManager.evaluate()`+`PiracyNotice`（装机 `evaluate=NO_LICENSE`，v1 放行不变）。**下一步 Phase 1**（真锁+心跳，接 miyou-server）。
-> **2026-06-11 更新**：Phase 1D-server（S2 服务器真锁）解冻，先建出出站/信封/心跳骨架。
-> **2026-06-12 更新**：S2/S3a/S4/S3b 已接入主流程最小闭环：冷启动应用缓存 envelope seed 并启动 `GuardHeartbeat`，激活后立即拉 signed envelope；`android_8071` 已 `prod_server_lock`，无 server seed 时 registry scatter。现状 + 下一受控步骤见 **§10.6**。
+> **关联**：`CLAUDE.md`（29 条铁律）· `docs/GUARD_GATE_TRUTH.md`（门控权威）· `DECISION_LOG.md` D-013（危险通告/kill switch）· `RISK_REGISTER.md` · `docs/DEBUG_CONSOLE_V2.md`（防护驾驶舱）
+> **当前进度**：Phase 0 完成 ✅；Phase 1 商业授权最小闭环 + `prod_server_lock` 已装机。**现状 + 下一受控步骤统一见 §10.6**（本处不再维护带日期 changelog）。
 
 ---
 
@@ -19,7 +17,7 @@
 
 ---
 
-## 1. 现状体检（证据基线 · L2）
+## 1. 现状体检（证据基线 · L2 · 2026-06-02 历史快照，现状以 §10.6 为准）
 
 | 能力 | 现状 | 证据（file:line） |
 |---|---|---|
@@ -34,9 +32,6 @@
 | 漏斗零件 | **已有，未接线** | `NativeBridge.java:78` `GRACE_WARN=24h/DEGRADE=72h/LOCKOUT=10天`；`PiracyNotice`（无人调用）；`OverlayWindow`；`SHOP_URL=zxmqq.shop` |
 
 **一句话**：地基（真授权 + 服务器）还没有，城墙（混淆）开着大门，但漏斗零件大多现成。
-
-> ⚠️ **2026-06-11/12 更新**：本表「服务器/心跳 = 完全没有」一行已过时——`net/` 下 S2 出站/信封/心跳先建骨架，后续已接入冷启动 / 激活 / 设置页 72h 重验主流程。本表保留 2026-06-02 基线快照不改；服务器侧现状以 **§10.6** 为准。
-> ⚠️ **2026-06-12 更新（漂移修正）**：本表「真授权」行的 `isVipAuthorized(){return true;}` 也已过时——**现 `StateMachine.java:97 isVipAuthorized()` = `EnvelopeStore.isAuthorizedNow()`（真授权门：token+Ed25519验签信封+license未过期）**，见 §10.6。因此本文 §2/§4/§5/§10.4/§附录A 中把 `isVipAuthorized` 当「return true 假锁诱饵」的描述均为旧态；**当前关键词党诱饵是 `PromoConfig` + `CompatProbe` 绊线（§10.9），不再是 isVipAuthorized**。下方相关节已就地更正。
 
 ---
 
@@ -216,7 +211,7 @@ StateMachine.isActive()                // 取中央总闸
 ```
 
 - **黑名单（碰到就停）**：每功能自造小配方/小网关/小授权；新功能 hook 类名另建 `xxx_pack`（只准往 `registry_pack` 补字段）；Java 侧散落 `decrypt_config`/schema/key/risk 分支；多份弹窗策略；遍地写 if 判风险。
-- registry 现就 **4 条大动脉**：`conv.list` / `moments.feed` / `contact.address` / `search.gateway`，不是每个小功能一条。删 fallback 时**整条核账整条删，不抠碎**；脆锚点（如 `search.gateway` 搜索框）靠多锚点冗余 + L1 复验稳住，加密只防搜名、稳不住锚点。
+- registry 现 **5 条**（live 实测 `entries=5`）：**4 条大动脉** `conv.list` / `moments.feed` / `contact.address` / `search.gateway` + `a2.sig`（A2 防封签名材料，非 hook 大动脉）——不是每个小功能一条。删 fallback 时**整条核账整条删，不抠碎**；脆锚点（如 `search.gateway` 搜索框）靠多锚点冗余 + L1 复验稳住，加密只防搜名、稳不住锚点。
 
 ### 10.2 kill↔funnel 拆两个独立闸（拍板 · 2026-06-30 减法收口）
 
@@ -234,8 +229,7 @@ StateMachine.isActive()                // 取中央总闸
 - 蓝图（十字防护全套）保留作路线图，别丢。
 - v1 只做轻的：**B 钉文档（本节）→ C 拆两闸（纯 Java）**。
 - **A 删 Filter fallback 缓做**：收益是兑现 registry 加密，但碰已验证 Filter，必须单独一刀 + 先 git 快照 + 逐条三证核账 + fail-closed + 装机回归。
-- **真锁主体 Phase 1D-server 冻结**：服务器短命钥匙 / Ed25519 验签 / LeaseClock 真数据源 / 远程 kill，等「真有客户 / 真有人来破」再启动（skill 估 20~35 人天，现在做属提前优化）。
-  - → ⚠️ **2026-06-11 此冻结已解除**（用户拍板②）：重启 Phase 1D-server（S2），先建出站/信封/心跳骨架；**2026-06-12 已接入主流程最小闭环**。现状以 **§10.6** 为唯一权威。
+- **真锁主体 Phase 1D-server**：2026-06-11 解冻并已接入主流程最小闭环，现状以 **§10.6** 为唯一权威（曾冻结的决策留痕见 `DECISION_LOG` 拍板②）。
 
 ### 10.4 两种「党」两个蜜罐（现状 + 待办）
 
@@ -269,7 +263,7 @@ StateMachine.isActive()                // 取中央总闸
 - `net/EnvelopeClient`：HTTPS 出站。`activate(卡密)→token`、`fetchEnvelope(token)→签名信封`；按 `AppConfig.guardServerList()` 主备 fallback；强制 https、连不上 / 证书错 = fail-closed。
 - `net/AuthEnvelopeVerifier`：**① Ed25519 验签（S4，2026-06-11 装机 PASS）**→ **② 确定性 sanity**（设备绑定 `sha256(deviceId)`、schema / 微信版本、key 材料存在、预过期租约）。`alg` 只接受 `Ed25519`，HS256/缺签名一律判废（fail-closed）。**仍故意不做 HMAC**（不放可伪造 secret 进客户端）；客户端只内置公钥（`ED25519_PUBLIC_B64`），私钥仅在 miyou-server `crypto_utils.GUARD_ED25519_PRIVATE_B64`（env 可覆盖）。验签库 `net.i2p.crypto:eddsa`（minSdk 27 无原生 Ed25519）。
 - `net/EnvelopeStore`：token / 信封 / license 到期 / 产品版本 `pv` / 更新通知 `up` 本地缓存；不存用户密友数据。
-- `net/GuardHeartbeat`：低频心跳 + 冷启动有 token 时启动；遇 `CARD_BANNED / CARD_DISABLED / CARD_EXPIRED / DEVICE_BANNED / TOKEN_INVALID` 清 token/envelope，网络失败不清，避免断网误杀。
+- `net/GuardHeartbeat`：低频心跳 + 冷启动有 token 时启动；遇硬错 7 码 `CARD_BANNED / CARD_DISABLED / CARD_EXPIRED / DEVICE_BANNED / TOKEN_INVALID / RELEASE_KILLED / VERSION_KILLED` 清 token/envelope（下次心跳/冷启动即撤授权），网络失败不清，避免断网误杀。
 - `net/GuardActivation`：设置页授权码激活入口；token 后必须立刻拉 envelope 成功才算激活成功。
 - `core/AppConfig`：`GUARD_SERVER_PRIMARY=https://zxmqq.shop`、`GUARD_SERVER_BACKUP=""`（备机槽留 `miyou.lol`）、`GUARD_PRODUCT_ID=quantum_wechat`、`GUARD_PRODUCT_VERSION=v1.6`（`BuildConfig.GUARD_PRODUCT_VERSION`，`build.gradle`）、`GUARD_RELEASE_ID` 按 flavor 注入（官替 `android_8071` / 共存 `android_8071_coexist`，`build.gradle:138/156`）。
 - `StateMachine.isVipAuthorized()`：已从 v1 stub 改为 `EnvelopeStore.isAuthorizedNow()`（token + verified envelope + license 未过期）。Filter 仍只读 `StateMachine.isActive()`，未直接接触服务器/风控。
@@ -281,14 +275,14 @@ StateMachine.isActive()                // 取中央总闸
 - 验收必须分两条：正常授权卡密收到 `pv/up` 并显示运营提示；封停/风险设备进入 funnel 时才弹引流。
 
 ### 仍未做（真锁的「牙」，与诚实口径一致）
-1. 当前 `android_8071` 已切 `prod_server_lock`：`registry_cipher.inc` 为 `GUARD_REGISTRY_REQUIRES_SERVER_SEED=1`，真实 `S_rel` 与服务器 envelope `k/n` 同源，线上 unwrap 后 `recipeOk=true`。**仍不能宣称服务器真锁终局完成**：删 Filter 明文 fallback、V3 官替/共存证书源与包名注入、每发行线独立回归、RiskState 真散沙降级仍未收口。
+1. 当前 `android_8071` 已切 `prod_server_lock`：`registry_cipher.inc` 为 `GUARD_REGISTRY_REQUIRES_SERVER_SEED=1`，真实 `S_rel` 与服务器 envelope `k/n` 同源，线上 unwrap 后 `recipeOk=true`。**仍不能宣称服务器真锁终局完成**：删 Filter 明文 fallback、V3 官替/共存证书源与包名注入、每发行线独立回归、RiskState 直接 risk-gating 仍未收窄（杂项功能 `isTamperDegraded` 散沙已落码，数以调用点为准；真未做 = `EncryptedConfigLoader` 直接接 RiskState/LeaseClock §10.5 step2 + 负向 L1；口径以 `core/RiskState.java` 为准）。
 2. ~~无 Ed25519 验签~~ → **S4 已落地（2026-06-11 装机 PASS）**：服务器 Ed25519 私钥签信封，客户端只放公钥验签，HS256 仅留 legacy `/api/v1/config` 公告路径。⚠️ 注意：Ed25519 防的是「伪造/篡改信封」，**不等于真锁**——真锁的「牙」仍是下面第 1 条 S3a 服务器短命 key 折进 SO。
 3. `LeaseClock` 已接信封授时（S3b-A，2026-06-11 装机 PASS）：`GuardHeartbeat.syncOnce` 验签后喂 `onServerHeartbeat(sn×1000, exp×1000)` + `RiskState.evaluate()` record-only 重算记日志。**S3b-B 也已落地（2026-06-11 装机 PASS）**：① `EnvelopeStore.isLicenseExpired` 改用 `LeaseClock.trustedNow()`（服务器授时，防回拨/前跳，不信手机墙钟）；② 设置页 `showGuardOverlay` 加"算账检查点"——断网 >72h 进设置页 → `GuardHeartbeat.reverifyIfStale` 强制重验，失败 → `revokeKeepToken`（撤销但留 token 自愈）+ 样式化弹窗"当前时间错误，授权验证失败，请检查时间"。⚠️ 边界：**正常使用（非设置页）断网不掉授权、密友照常隐藏（不误伤/不暴露）**；重连自愈实测通过。72h 阈值当前客户端写死，未走服务器下发。
 4. 备节点 HTTPS (`miyou.lol`) 反代未完成；Android 当前只启用主节点。
 5. 更新通知 `up` 已下发并被客户端消费，但属于运营提示，不是强制升级/真锁。
 
 ### 口径
-当前 = 「**商业授权最小闭环（客户端 pv **v1.6**）+ 当前 `android_8071` 发行线 prod_server_lock（server seed 解 registry）+ S4 Ed25519 信封验签 + S3b-A/B LeaseClock 授时与设置页 72h 离线强验（均 2026-06-11 装机 PASS）**」。可对内称“授权码→token→envelope→客户端 AuthGate 已通；信封已 Ed25519 防伪造/防篡改；当前发行线无有效 server seed 时 registry scatter；到期判定不信手机时间（trustedNow）；断网>72h 进设置页强制重验、失败撤销且可自愈”；**不得**对外或在文档里宣称「服务器真锁终局完成」（删 Filter fallback / V3 发行线发版流程 / RiskState 真降级仍未完成）。⚠️ 服务器 envelope 全局 `pv` 常量是否已跟注册表对齐 = **L4 待验**（接点①，见 LeanCloseout 任务卡 §8）。
+当前 = 「**商业授权最小闭环（客户端 pv **v1.6**）+ 当前 `android_8071` 发行线 prod_server_lock（server seed 解 registry）+ S4 Ed25519 信封验签 + S3b-A/B LeaseClock 授时与设置页 72h 离线强验（均 2026-06-11 装机 PASS）**」。可对内称“授权码→token→envelope→客户端 AuthGate 已通；信封已 Ed25519 防伪造/防篡改；当前发行线无有效 server seed 时 registry scatter；到期判定不信手机时间（trustedNow）；断网>72h 进设置页强制重验、失败撤销且可自愈”；**不得**对外或在文档里宣称「服务器真锁终局完成」（删 Filter fallback / V3 发行线发版流程 / RiskState 直接 risk-gating 未收窄——杂项散沙已落码，见「仍未做」#1 + `core/RiskState.java`）。⚠️ 服务器 envelope 全局 `pv` 常量是否已跟注册表对齐 = **L4 待验**（接点①，见 LeanCloseout 任务卡 §8）。
 
 ### 发包分发边界（避免误读）
 - **服务器真锁 ≠ 服务器打包 / 服务器分发 APK**。
@@ -302,7 +296,7 @@ StateMachine.isActive()                // 取中央总闸
 3. ~~**S4**：Ed25519 验签（客户端只放公钥）~~ ✅ **已完成（2026-06-11 装机 PASS）**：服务器 `crypto_utils.sign_guard_envelope` 切 Ed25519；客户端 `AuthEnvelopeVerifier` 内置公钥验签 fail-closed；主/备节点已部署。证据：本地 `JAVA_EDDSA_VERIFY=PASS`/`TAMPER_REJECT=PASS`、线上直连 `alg=Ed25519` 公钥验签 PASS、真机 `[hb] synced`+`AUTH_OK` 无 `signature verify failed`。
 4. **备机**：完成 `miyou.lol` HTTPS 反代后，客户端再打开 `GUARD_SERVER_BACKUP`。
 5. **运营**：更新通知弹窗已通，后续补“强制升级 / 版本灰度 / 下载包托管”再单独审。
-6. **LeaseClock 主时钟源 → 借官方可信时间（减法 · L4 待侦察，排在真锁牙之后）**：日常计时（租约倒计时 / 影子期发作）改读官方包进程内已同步的可信服务器时间，替代/降级我方 `GuardHeartbeat` 自有心跳授时。收益：① 严格强于手机墙钟（用户回拨无效，官方时间跟它服务器对）；② 减我方自有网络面 = KPI 加分（少一条自有连接 / 行为）；③ 合「借官方眼睛 / 我方零环境读取」（读进程内已有值，非读 `ro.boot.*` 环境，不新增检测面）。**边界（诚实）**：官方时间在同进程可被 hook → 只作「日常对表」、不作密码学锚；不可逆 / 值钱判定 + 钥匙的牙（服务器种子 / 设备 / 防重放）锚仍是 Ed25519 签名信封；保留 `elapsedRealtime` 单调 + `max_trusted_now` 水位线（授权只进不退）。**前置**：派只读侦察在 8.0.71 jadx/Frida 定位稳定时间锚点（类 / 字段，出 L2/L1）+ 评漂移（脆锚点，随官方版本搬家、每版复验）；无证据不落码。**不改第一优先**——`W` 明文（牙③ 一机一密）仍是 P0，本条排其后。
+6. **LeaseClock 主时钟源 → 借官方可信时间（减法 · L4 待侦察，排在真锁牙之后 · 仅 KPI 收益、低价值、可不做）**：日常计时（租约倒计时 / 影子期发作）改读官方包进程内已同步的可信服务器时间，替代/降级我方 `GuardHeartbeat` 自有心跳授时。⚠️ **唯一真动机是收益 ②（减自有网络面 = 防封 KPI）**；收益 ① 是假理由——自有签名服务器时间早已强于墙钟、不需官方提供。且官方时间同进程可被 hook（当主时钟 = 把到期判定脚构在可改值上）+ `jy0.hd` 混淆名每版搬家（脆锚点），故 L4 最低优先、可不做。收益：① 严格强于手机墙钟（用户回拨无效，官方时间跟它服务器对）；② 减我方自有网络面 = KPI 加分（少一条自有连接 / 行为）；③ 合「借官方眼睛 / 我方零环境读取」（读进程内已有值，非读 `ro.boot.*` 环境，不新增检测面）。**边界（诚实）**：官方时间在同进程可被 hook → 只作「日常对表」、不作密码学锚；不可逆 / 值钱判定 + 钥匙的牙（服务器种子 / 设备 / 防重放）锚仍是 Ed25519 签名信封；保留 `elapsedRealtime` 单调 + `max_trusted_now` 水位线（授权只进不退）。**前置**：派只读侦察在 8.0.71 jadx/Frida 定位稳定时间锚点（类 / 字段，出 L2/L1）+ 评漂移（脆锚点，随官方版本搬家、每版复验）；无证据不落码。**不改第一优先**——`W` 明文（牙③ 一机一密）仍是 P0，本条排其后。
 
 ### 10.7 DeepSeek 压测复盘 + S3b-C 优先级（2026-06-12）
 
@@ -313,7 +307,7 @@ StateMachine.isActive()                // 取中央总闸
 > 三条绕过思路。该测试证明：**能反编译 / 能抽模块是既定威胁；当前最薄弱处不是 Ed25519，
 > 而是业务门仍信本地缓存 + release 仍保留明文 fallback。**
 >
-> **2026-06-29 架构基线盘点**：Devin 任务 `devin/arch-audit-v1` 完成，6 份文档（commit `6ca5333` on `full-restore` 分支，本地 worktree `C:\Users\Me\Desktop\gn_fullrestore\docs\arch_audit_2026q3\`）。核心发现：① `core/` 3 个强耦合环路（配方解密三角 / LeaseClock↔RiskState / A2 闸经原生回环）；② **GuardRuntime 同时担「配方出口」+「A2 防封时间闸」**，fail-OPEN（A2）与 fail-CLOSED（registry）两套相反失败哲学塞同一类 → 建议拆 `core/AntiBanGate`；③ **密友判定双真相源**（`Bridge.getWxids()` vs `NativeBridge.isHiddenWxid()`，NativeBridge:196-203 注释承诺 Phase 3 未兑现）；④ **debug 散点 12 处三种写法并存**（`BuildConfig.DEBUG` / `isDebugEnabled()` / OR）→ 归一到 `isDevBuild/isDiagnostics/isDebugSurface` 三入口；⑤ **`fc5.g` 散在 ≥3 类**（ContactFilter / ContactLabelHideGuard / ContactLabelMemberFilter），改一版微信要改三处；⑥ moduleD `*Filter` 实际 5 个非 4 个（`MomentsGroupIconFilter` 是 UI 异类）。已派 Devin 3 连击：`devin/debug-gate-unify` / `devin/anti-ban-gate-extract` / `devin/fc5g-anchor-merge`（2026-06-29）。
+> **2026-06-29 架构基线盘点**：6 份架构审计文档见 `docs/arch_audit_2026q3/`（core 耦合环路 / GuardRuntime 双职责建议拆 `AntiBanGate` / 密友双真相源 / debug 散点归一 / `fc5.g` 多处 / moduleD Filter 计数等发现，均已派 Devin 收敛）。
 
 #### 压测结论（证据等级）
 
@@ -330,11 +324,8 @@ StateMachine.isActive()                // 取中央总闸
 
 #### P0（立即做，V1.2 正式发版前）
 
-1. **Release/PROD 删明文 fallback。** 🟡 **C5a 部分落地（2026-06-25 L1）**
-   - ✅ 22 个 `RegistryFallback` 常量 release 全 `""`（`gen_registry_fallback.py` + 装机 `fallbackSelfTest=ok`×4）。
-   - ⬜ 仍剩 **5 处内联**（ContactDiscoveryHook `MvvmList`、ContactLabelHideGuard `fc5.g/z3`、MomentsFilter Like/Comment）+ D8 未删净 → 见 LeanCloseout worklog §③。
-   - 🟡 **registry-unify-v1（2026-06-29 派 Devin 执行）**：MomentsFilter 剩余混淆字面量（`jw1.d` / `wq.c1` / `wq.y0` / `ii5.b` 等）迁入 `registry_8071.json` → `RegistryFallback` → `resolveRecipes()` 覆盖；目标分支 `devin/registry-unify-v1`；任务卡 `.devin/tasks/registry-unify-v1.md`。
-   - 规则不变：`GuardRuntime.getRecipe()` 返回空 ⇒ 不安装该敏感 hook。
+1. **Release/PROD 删明文 fallback。** 🟡 C5a 部分落地：`RegistryFallback` release 全 `""`；仍剩 5 处内联明文（进度追踪见 LeanCloseout worklog §③ / `.devin/tasks/registry-unify-v1.md`）。规则：`GuardRuntime.getRecipe()` 返回空 ⇒ 不安装该敏感 hook。
+   - ⚠️ 剩余内联明文 = **粗粒度有意取舍、非缺口**——判据以 **§10.5 为唯一真源**，删除动作延后不代表当前是缺陷。
 2. **授权门不再信裸 `tk/bl/le`。** 🟡 **部分落地**
    - ✅ `EnvelopeStore.isAuthorizedNow()` → `getVerifiedCachedEnvelope()` 每次对 cached blob 重验 Ed25519 + device/schema sanity（`EnvelopeStore:152-168`）。
    - ⬜ **负向验收仍缺 L1**：人为写 `tk/bl/le` 后须 `isAuthorizedNow=false`；手写 `9999999999` lease 不得生效。
@@ -432,18 +423,24 @@ StateMachine.isActive()                // 取中央总闸
 - [ ] `ModuleMain` 是否仅在本地已有 token 时启动冷启动 heartbeat？
 - [ ] `EncryptedConfigLoader` 仍只读本地 SO registry（无服务器 lease）？
 - [ ] `registry_cipher.inc` 是否仍为 `GUARD_REGISTRY_REQUIRES_SERVER_SEED=1`，且 `GuardHeartbeat` 成功 unwrap envelope `k/n` 后 `recipeOk=true`？
-- [ ] `RiskState` 仍 record-only（不 gating）？（S3b-A+B 已做：`LeaseClock` 已被 `GuardHeartbeat` 喂服务器授时；`EnvelopeStore.isLicenseExpired` 已换 `trustedNow`；设置页有 72h 离线强验→撤销。若这些被回退/再推进，必须回来更新本节）
+- [ ] `RiskState` 主链 record-only；杂项功能已接 `isTamperDegraded` 散沙（数以调用点为准，若回退须更新）；`EncryptedConfigLoader` 直接 risk-gating 仍未接？（S3b-A+B 已做：`LeaseClock` 已被 `GuardHeartbeat` 喂服务器授时；`EnvelopeStore.isLicenseExpired` 已换 `trustedNow`；设置页有 72h 离线强验→撤销。若这些被回退/再推进，必须回来更新本节）
 - [ ] `AuthEnvelopeVerifier` 是否仍只接受 `alg==Ed25519`（S4 已做）、客户端只内置公钥？
 
 ### ⚠️ 与 V3 改包路线（D-016 主攻方向）的冲突 —— 真锁落地前必须先对齐（2026-06-11）
 
 真锁机制「把签名证书折进 registry key」（`bindSigningCert → NativeBridge.setBindingMaterial → derive_registry_key`）与 V3「改包 + 我们的证书重签」（`DECISION_LOG.md` D-016 / D-015）**天生相反**，落地前必须碰头：
 
-- **① 证书源切换（D-016 已记）**：cert-bind 现读 v1 模块 APK 签名；V3 落地要改 `tools/gen_registry_cipher.py` 的 `_CERT_SHA256` + 运行时证书源从 `sModulePath` 改读宿主自身签名。详见 `DECISION_LOG.md` D-016 §影响（**机制不变，只换证书源**）。
+- **① 证书源切换（D-016 已记 · 2026-06-30 D-027 已落码）**：~~cert-bind 现读 v1 模块 APK 签名~~；运行时证书源已从 `sModulePath` 改读 **宿主整包 sourceDir**（`ModuleMain.bindSigningCert` / `CompatProbe.checkSignature` / `GuardRuntime.isAntiBanReady` / `antiBanGateSelfTest` 4 处 + 新加 `hostApkPath(app)` helper），同步 `tools/kdf_common.py` 的 `CERT_SHA256` = `e3e13a49`（official keystore）+ `tools/gen_registry_cipher.py` 派生 cert 已切到 official。详见 `DECISION_LOG.md` D-026 cert-converge / D-027 cert binding 改读宿主 / `FAILURE_LOG.md` F-43（LSPatch metaloader 重打包重签模块 → 模块自身 cert = `ca421ec3` ≠ 发版 `e3e13a49` → registry 散沙；改读宿主 sourceDir = LSPatch `-k` 那把 = 与生成 cipher 同源 = 解开）。**机制不变，只换证书源 = 已完成**。
 - **② 删 fallback = 重签即死（D-016 未串）**：真锁终局（S3a 服务器钥匙 + §10.5「A」删明文 fallback）一旦落地，任何「证书变了却没为它重生成 `registry_cipher`」的重签 / 改包 → 钥匙错 → registry 散沙 → **没有 fallback 兜底 → 隐私 hook 静默全挂**。⇒ 铁律：**「删 fallback」必须与「V3 发版」绑同一套本地 AI 发版流程**（每个发行证书都重生成 `registry_cipher` 并装机回归），否则 V3 重签包上线即裸奔。
 - **③ 共存版改包名 → 误判篡改 → 砸自己客户（D-016 未串）**：`anti_tamper.cpp` 现「`package_name != com.tencent.mm` 即 `PACKAGE_MISMATCH`」→ `RiskState.isConfirmedTamper()` → funnel 弹窗。V3 **共存版**（改了包名）会**整片命中** → 把正版共存客户当盗版引流。⇒ 上共存版前，`tamper_check` 的期望包名必须随打包注入的 `WX_PKG`（D-015）走，不能硬编码 `com.tencent.mm`。
 
 **结论**：当前 `android_8071` 可保持 `prod_server_lock`；但 **删 fallback / 真锁终局 / V3 官替共存发行线** 在 V3 改包形态对齐之前不要继续推进到“无兜底全硬失败”。先把上面 ②③ 的本地 AI 发版流程 + 包名注入接通，再谈删 fallback。否则「防破解」会把「主攻方向 V3」拆台。
+
+**2026-06-30 cert-converge v2 + cert binding 改读宿主进展（D-026/D-027/F-43 已落码）**：
+- ① 证书源切换 = ✅ 已落（详上节）；
+- ② 删 fallback = 仍待 V3 发版流程接通，**未推进**；
+- ③ 共存版包名匹配 = 已通过 `GUARD_EXPECTED_PACKAGE` 从 `GUARD_WX_PKG` 派生（`native_core/CMakeLists.txt`）+ `anti_tamper` 现按编译期注入的期望包名比对；cert binding 因为改读宿主整包 sourceDir、共存包整包是 LSPatch `-k` 用同一把 official keystore `e3e13a49` 签的，cert match 通过，**不再误判篡改**。
+- v2 cert merge 后，"V3 改包共存"的两条线（cert + 包名注入）都对齐，可继续推进删 fallback；但 W_dev Batch 3（删全局 W 回退、D-029）仍待 V3 同时推。
 
 ---
 
@@ -502,14 +499,286 @@ StateMachine.isActive()                // 取中央总闸
 > A2 防封 / 授权 / 防破解的**唯一可读真源** = `03_execute_执行任务/P_AntiBanGate_防封授权闸/SSOT_A2授权防破解_统一真源.md`（D-020 · code-true）。本节只留防破解总账侧指针，不复述结论（G10）。
 
 - **A2 闸**：吊本地 cert 完整性 **+ 时间闸**（首装 72h / 曾授权失效 7 天），fail-open；**未授权超窗撤 A2**（D-020 取代 D-018「未授权永不撤」）。代码锚点见 SSOT §8。
-- **封停 / 删卡撤销**：代码 `isCardRevoked` / `markCardRevoked`（语义 = 后台**封停 / 删卡**，**项目无「退款」概念**；`rf` 仅保留作 wire/存储键的历史缩写）；`EnvelopeStore.isAuthorizedNow()` 首判 `isCardRevoked()` → 撤隐私、A2 侧 `isAntiBanReady()=false`；不自愈、不清数据（红线#5）。服务器侧封停/删卡能力主节点 live（`/admin/api/cards/refund` 为历史接口名，归 miyou-server 仓库）；e2e 真机 L1 + 备节点待补。详见 SSOT §3 / §8。
+- **封停 / 删卡撤销**：代码 `isCardRevoked` / `markCardRevoked`（语义 = 后台**封停 / 删卡**，**项目无「退款」概念**；`rf` 仅保留作 wire/存储键的历史缩写）；`EnvelopeStore.isAuthorizedNow()` 首判 `isCardRevoked()` → 撤隐私、A2 侧 `isAntiBanReady()=false`；不自愈、不清数据（红线#5）。服务器侧封停/删卡能力主节点 live（`/admin/api/cards/refund` 为历史接口名，归 miyou-server 仓库）；**device-ban（`DEVICE_BANNED` 硬错误码→清 token）撤隐私 + 重激活恢复 e2e 真机 L1 已证（2026-07-03，详授权真源 §⑥）**；`rf=1` / `isCardRevoked` 连坐 A2 路径（72h grace + 有效信封自愈）+ 备节点 仍待 e2e 验。详见 SSOT §3 / §8。
 - 蜜罐 canary **不进** A2 门（仍走 `check()→markTampered→影子期引流`，§10.9 不变）。
 
 ---
 
-## 附录 A. 证据明细（2026-06-02 只读核查）
 
-- `StateMachine.java:86-92` —— `isActive()` 链 + `isVipAuthorized(){return true;}`（假锁）⚠️ 此为 2026-06-02 旧态；现 `:97 isVipAuthorized()=EnvelopeStore.isAuthorizedNow()` 真授权门（见 §1 注 / §10.6）
+---
+
+## 加密机制细节（从安全官 skill 迁入 · 2026-07-03 P91）
+
+> 以下 10 块机制原在 `.cursor/skills/guard-security_网络安全官/SKILL.md`，2026-07-03 P91 按「一份文档只干一件事」逐字剪切迁入（skill 只留规则/触发/模板，机制归此处）。未改写。
+
+## Java / SO / 服务器交叉校验
+
+SO 不能只是被动门卫；它必须是“能力翻译官”。
+
+维护准则：**十字架交叉验证，多层但不细碎。**
+
+纵向链路：
+
+- 服务器发短命材料。
+- SO 验真、解密、产出能力。
+- Java 只消费能力，不保存核心配方。
+
+横向链路：
+
+- 租约决定能不能继续用。
+- registry 决定核心 hook 能不能命中。
+- risk 决定异常后怎么表现。
+- compat 决定断网和旧 schema 如何恢复，避免误杀。
+
+每层都要有一点作用，但不要拆成一堆细碎机制。优先粗粒度能力包，少数关键出口，便于维护、测试和回滚。
+
+三条交叉链：
+
+1. Java 问 SO 要能力：Java 不保存核心配方，只能向 SO 请求解密后的 registry。
+2. SO 反查环境：SO 解密前检查包名、签名摘要、版本、device/customer 绑定、envelope hash。
+3. 服务器决定材料：SO 本地没有永久授权材料，只能用服务器短命 envelope 解出当期能力包。
+
+被 hook 后的预期：
+
+- hook `isVip=true`：没用，没有 registry。
+- hook UI 显示已激活：没用，过滤链拿不到配方。
+- hook Java 返回列表：可以骗界面，但核心类名/字段命不中。
+- hook SO 返回成功：如果没有解出的配置，Java 拿到的是空/散沙 registry。
+
+
+## 总体模块
+
+推荐收敛为四个核心模块：
+
+| 模块 | 职责 |
+|---|---|
+| `AuthEnvelopeVerifier` | 验服务器签名、设备绑定、包签名、版本、schema、过期时间 |
+| `EncryptedConfigLoader` | 读取 `encrypted_config`，调用 SO `decrypt_config()`，输出 hook registry |
+| `LeaseClock` | 管服务器时间、单调时间、断网宽限、手机时间异常 |
+| `RiskState` | 管蜜罐命中、疑似异常、降级、影子期后引流 |
+
+业务层只问统一结果：
+
+- `GuardRuntime.isConfigReady()`
+- `GuardRuntime.getActiveRegistry()`
+- `StateMachine.isActive()`
+- `RiskState.currentLevel()`
+
+业务层不得自己判断 vip、自己读系统时间、自己决定破解弹窗。
+
+
+## 授权信封 Envelope
+
+服务器不要返回明牌字段：
+
+- `isVip=true`
+- `viptime=9999999999`
+- `endtime=9999999999`
+- `auth=true`
+
+服务器应返回签名信封，至少包含：
+
+- protocol version
+- schema id
+- key id
+- server_now
+- issued_at
+- expire_at
+- device/customer binding
+- package/cert/version binding
+- encrypted packs
+- nonce
+- signature
+
+关键字段必须进入签名或密文，MITM 改任何字段都不能通过验证。
+
+
+## 粗粒度服务器解密包
+
+不要把解密拆得过细。服务器下发粗粒度能力包：
+
+1. `license_pack`：租约、客户、设备、版本绑定。
+2. `registry_pack`：核心 hook 配方 registry。
+3. `risk_pack`：蜜罐、弹窗冷却、引流策略、RiskLevel 参数。
+4. `compat_pack`：旧 schema 兼容、缓存恢复策略。
+
+客户端只在签名验真、租约有效、SO 解密成功后启用这些能力包。失败时散沙，不崩、不全开。
+
+
+## 加密配置
+
+只加密最值钱的核心配方，不做全仓库字符串加密。
+
+加密对象建议：
+
+- 核心类名
+- 核心方法名
+- 核心字段名
+- 微信版本对应 registry
+- 少量 feature/risk flag
+
+要求：
+
+- AES-GCM
+- 每份配置独立 nonce
+- tag 校验失败即失败
+- SO 提供 `decrypt_config()`
+- 解不开返回散沙配置，不崩、不全开
+
+
+## LeaseClock
+
+不得直接用 `System.currentTimeMillis()` 判死刑。
+
+必须记录：
+
+- 上次成功服务器时间
+- 上次成功本机 `elapsedRealtime`
+- 当前 `elapsedRealtime`
+- 租约过期时间
+- 上次成功心跳时间
+- 历史最大可信时间水位线 `max_trusted_now`
+- 上次启动标识 `boot_marker`
+
+离线可信时间：
+
+```text
+trusted_now = last_server_now + (current_elapsedRealtime - last_elapsedRealtime)
+```
+
+重启漏洞处理：
+
+- Android `elapsedRealtime` 在设备重启后会重新计数。
+- 若 `current_elapsedRealtime < last_elapsedRealtime`，必须判定发生过重启或计时异常。
+- 重启后不得用负数或异常 delta 延长租约。
+- 重启后离线状态最多保持 `last_server_now` 或 `max_trusted_now`，并进入 `TIME_SUSPICIOUS` 要求联网重校。
+- 持久化 `max_trusted_now`，任何离线推算不得低于历史水位后再倒退延长授权。
+- 可记录 boot marker：如系统 boot count、开机时间摘要、首次启动 elapsed/wall 组合；拿不到可靠 boot id 时，以 elapsed 回绕作为重启证据。
+
+手机墙钟前跳、回拨、跳变，只标记 `TIME_SUSPICIOUS`，不得单独触发永久引流；但与断网超过 24h、elapsed 回绕、蜜罐命中叠加时，可升级风险等级。
+
+
+## RiskLevel
+
+统一使用等级，不允许各模块散写 if。
+
+| 等级 | 名称 | 触发 | 表现 |
+|---|---|---|---|
+| L0 | `CLEAN` | 签名通过、租约有效、配置解开、无风险 | 正常 |
+| L1 | `OFFLINE_WARN` | 接近 24h 未心跳，或轻微网络异常 | 可关闭提醒，功能正常 |
+| L2 | `TIME_SUSPICIOUS` | 断网 1 天 + 时间异常流逝 | 弹窗要求联网，功能暂可用 |
+| L3 | `DEGRADED` | 超过 72h 未心跳，或多次时间异常 | 散沙降级，不清数据 |
+| L4 | `TAMPER_SHADOW` | 命中蜜罐，如改 vip/假锁/假缓存 | 24 到 48h 影子成功，表面可用 |
+| L5 | `TAMPER_FUNNEL` | 蜜罐命中超过影子期 | 打开软件即弹，点确定仍可用 |
+| L5R | `PROBATION` | 篡改用户购买后，服务器签名强校验通过 | 试用观察期，可用但保留风险观察 |
+| L6 | `TAMPER_PERSISTENT_FUNNEL` | 重复篡改、删除标记后又命中、服务器确认风险 | 每次打开/回前台弹，短冷却 |
+
+
+## 蜜罐影子期引流策略
+
+蜜罐命中后进入 `TAMPER_SHADOW`。
+
+影子期安全默认 24 到 48 小时；本项目当前发布代码为 7 天 override（见上）：
+
+- 表面显示已激活。
+- 功能可以继续使用。
+- 不弹窗，不暴露蜜罐。
+- 记录 `tamper_first_seen`。
+- 足够骗过初步逆向测试，但不让白嫖版本长期传播。
+- 若确有运营原因需要更长影子期，必须在审查报告里说明风险；当前 7 天为已落地硬编码，下一步应迁到服务端签名策略。
+
+影子期结束后进入 `TAMPER_FUNNEL`：
+
+- 打开软件即弹窗。
+- 回到前台可弹窗。
+- 打开设置页/授权页可弹窗。
+- 点确定后继续可用。
+- 点确定后只给短冷却，默认 10 到 60 秒。
+- 冷却结束后，下次前台/启动/设置页事件继续弹。
+- 不使用 10 天锁定策略。
+
+重复篡改进入 `TAMPER_PERSISTENT_FUNNEL`：
+
+- 每次冷启动弹。
+- 每次回前台弹。
+- 每次打开设置/授权相关页面弹。
+- 点确定后短暂消失，但风险态不清除。
+
+### 转正与解封闭环
+
+`TAMPER_FUNNEL` / `TAMPER_PERSISTENT_FUNNEL` 的目标是引流转正，不是永久拒绝付费用户。
+
+规则：
+
+- 用户完成购买后，必须联网做服务器强校验。
+- 只有服务器返回带签名的 `risk_reset` / 新租约 / 新 registry，客户端才允许降低本地风险等级。
+- 本地按钮、清缓存、改时间、删文件不得清除风险态。
+- `TAMPER_FUNNEL` 可在强校验通过后恢复到 `CLEAN`。
+- `TAMPER_PERSISTENT_FUNNEL` 可先降到 `PROBATION` 或 `OFFLINE_WARN`，观察一段时间后再恢复 `CLEAN`。
+- 重复篡改设备可要求换 key id、换 schema、重新绑定 device/customer。
+
+准则：
+
+```text
+本地不能自洗白；服务端签名强校验可以转正。
+```
+
+实现要求：
+
+- 允许多个触发点。
+- 禁止多份隐藏弹窗逻辑。
+- 所有触发点必须调用同一个 `RiskPromptController.maybeShow(reason)`。
+- 所有等级判断必须来自 `RiskState`。
+- 不清用户数据，不破坏微信本体，不影响正版用户恢复。
+
+
+## 功能失效策略
+
+功能失效靠核心能力拿不到正确配方，不靠崩溃、删数据或破坏微信。
+
+推荐失效点：
+
+1. Registry 失效：`EncryptedConfigLoader` 返回空 registry 或降级 registry。
+2. 中央网关失效：`StateMachine.isActive()` 依赖租约（授权）+ 配方（crypto config-ready）+ 总开关 + HIDDEN 态。**不依赖 RiskLevel**（#4 canonical 2026-06-27：密友门=isActive；RiskLevel 另走杂项+弹窗轴、不连坐；真源见 `RiskState` 类注释 / `_CORE_现状真源/防封_当前真源.md`）。
+3. 数据源失效：过滤层拿到空列表、乱码列表或过期快照，用户原始数据不清除。
+4. 策略失效：`TAMPER_FUNNEL` 后 UI 可点，但核心过滤链不给完整能力。
+
+统一出口建议：
+
+```text
+GuardRuntime.getActiveRegistry()
+```
+
+它根据 `LeaseClock + EncryptedConfigLoader + RiskState` 返回正常 registry、缓存 registry、降级 registry 或空 registry。
+
+
+## 防重放
+
+租约必须绑定：
+
+- device id 派生值
+- customer id
+- app version
+- package hash
+- cert hash
+- issued_at
+- expire_at
+- nonce
+- key id
+- schema id
+
+客户端必须拒绝：
+
+- 过期响应
+- 未来过远响应
+- 设备不匹配响应
+- 包签名不匹配响应
+- 已淘汰 schema 响应
+- encrypted_config hash 与签名不一致响应
+
+## 附录 A. 证据明细（2026-06-02 只读核查 · 历史快照，现状以正文 / §10.6 为准）
+
+- `StateMachine.java:86-92` —— `isActive()` 链 + `isVipAuthorized(){return true;}`（当时的假锁；现为真授权门）
 - `core/AuthManager.java` —— `evaluate()`（wxid+设备绑定）/`bindAccount()` 已写，**初始化流程未调用**（死代码）
 - `native_core/src/guard_core.cpp:90` —— JNI `nativeIsAuthorized` `return JNI_TRUE`（占位）
 - `native_core/src/auth_engine.cpp:25` —— `auth_is_authorized()` 有逻辑但状态默认 UNKNOWN 且 JNI 不调它

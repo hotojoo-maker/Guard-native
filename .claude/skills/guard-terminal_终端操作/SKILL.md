@@ -1,17 +1,15 @@
 ---
+icon: 💻
+cn: 终端操作
 name: guard-terminal
 description: Guard Native 专属终端操作员——PowerShell/adb/frida/build 全套命令执行，每步先说目的再执行，日志超过 500 行自动多代理分析。用户说"装机"/"build"/"跑frida"/"看日志"/"adb"/"端口转发"时使用此 skill。
 ---
-
 > ⚠️ 输出前自查：禁止错别字、黑话、客户看不懂的话。
 
 # Guard Native 终端操作员（PowerShell）
 
-## 🔐 固定签名铁律（所有角色必读）
-- 项目唯一固定签名文件：`signing/guard-native-debug.keystore`。
-- `build.gradle` 的 debug/release 必须都指向该文件；禁止依赖或重建 `~/.android/debug.keystore`。
-- `INSTALL_FAILED_UPDATE_INCOMPATIBLE` 必须先停、比对已装 APK 与固定 key 指纹，未经用户确认禁止卸载。
-- 缺少固定 key 时停止 build/装机；日志只能写当前 P 任务 `logs/`，禁止写进 docs/skill 目录。
+## 🔐 签名铁律
+> release cert `e3e13a49`（官替+共存共用同一 jks · D-026） · debug cert `ca421ec3`（不作发版候选） · 完整规则见 `CLAUDE.md` §十三.五 + `docs/RELEASE_RULES.md`
 
 > **Shell 环境：PowerShell**（不是 bash）
 > 用户不熟悉终端，每步先说目的，再给命令，再等结果
@@ -85,9 +83,9 @@ description: Guard Native 专属终端操作员——PowerShell/adb/frida/build 
 3. 设备操作失败 → 立刻停，给**一条具体修复指令**，等回复
 4. PowerShell 里用 `;` 串命令，不用 `&&`；用 `Select-String` 不用 `grep`
 5. **写文件一律 UTF-8**：PS 5.1 下 `>` / `Out-File` 默认 UTF-16LE、裸 `Set-Content` 默认 GBK → 中文 .md/.java 会被写成乱码。改文件优先走编辑器或 AI 文件工具（UTF-8 无 BOM）；非用 PS 不可时显式 `[System.IO.File]::WriteAllText($p,$t,(New-Object System.Text.UTF8Encoding($false)))`。终端中文显示乱码 = cp936 控制台问题（文件没坏），先 `chcp 65001`。
-6. **签名一致性（防装机翻车，2026-06-01 立）**：
-   - **固定签名源唯一允许**：`signing/guard-native-debug.keystore`。`build.gradle` 的 debug/release 都必须指向它，禁止再依赖 `~/.android/debug.keystore` 现场生成签名。
-   - 装机前先确认 APK 签名来自项目固定 key；如果 `signing/guard-native-debug.keystore` 不存在 → 停，不 build、不装机、不让 Gradle 生成新 key。
+6. **签名一致性（防装机翻车 · cert-converge v2 D-026 更正）**：
+   - **发版 release = `signing/guard-native-official-release.jks`（`e3e13a49`，官替+共存共用）；debug smoke = `signing/guard-native-debug.keystore`（`ca421ec3`，不出货）**。禁止再依赖 `~/.android/debug.keystore` 现场生成签名。
+   - 装机前先确认 APK 签名来自对应 key（release→`e3e13a49` / debug→`ca421ec3`）；对应 keystore 不存在 → 停，不 build、不装机、不让 Gradle 生成新 key。
    - `adb install -r` 报 `INSTALL_FAILED_UPDATE_INCOMPATIBLE: signatures do not match` 时 → **禁止直接 `adb uninstall`**！必须停下来问用户——手机上那个包可能是用户长期成果，卸载 = 换签名重装、不可逆。
    - 若需要比对旧包，先拉取已装 APK，用 `apksigner verify --print-certs` 对比 SHA-256；没有匹配私钥时，必须让用户决定「找旧 key」还是「卸载旧包后改用固定 key」。
    - **日志路径跟 P 任务走**：固定写 `03_execute_执行任务/<当前P任务>/logs/`；当前 P 任务不明确时先问用户，不要写到 docs/README/skill 等文档目录。
@@ -105,8 +103,9 @@ description: Guard Native 专属终端操作员——PowerShell/adb/frida/build 
 | `[SU] entry passcode matched` | 入口口令 `111111` 命中 | 紧接着应有 `H→V` 状态切换日志 |
 | `[CF:warmAll:BUS-V] expanded=N` | H→V 时 warm 出 N 个会话条目 | N ≥ 隐藏 id 数 |
 | `WXID-MISMATCH` | 群聊 wxid 抽取与 hidden id 不一致 | 配合 `using id as key` = 已修复 |
-| `AUTH_OK` / `AUTH_NO_LICENSE` / `AUTH_TAMPERED` | AuthGate 评估结果 | v1 期间 `isVipAuthorized` 是 stub → 永远 true |
-| `RiskGate SAFE_MODE` / `killSwitch` | 风险门触发，全链路静默 | 正版调试时永远不该出现 |
+| `AUTH_OK` / `AUTH_NO_LICENSE` / `AUTH_TAMPERED` | AuthGate 评估结果 | `isVipAuthorized` = `EnvelopeStore.isAuthorizedNow()`（token+Ed25519 信封+license 未过期）= 真授权门，非 stub |
+| `RiskGate` 高危 / `SAFE_MODE` | 风险门触发 / SO 散沙全链路静默 | 正版调试时永远不该出现（旧 `killSwitch` stub 已删、不再打印） |
+| `ClassNotFound` UI 类（`e2` 朋友圈适配器 / `MvvmContactListUI` 通讯录页 等）| 该 UI 类尚未加载 | **常见于微信未登录 / 未进对应页**——登录 + 打开该页后即 hook 上、警告消失，非 bug；先确认登录态（前台 activity 若为 `LoginPasswordUI` = 没登录）再判缺陷 |
 
 **关键提醒**：日志里 `state=V` ≠ 授权通过。**别在汇报里把"输了 111111 进 V 态"等同于"已激活授权"**——它们是两条不相干的链路。
 
@@ -116,7 +115,7 @@ description: Guard Native 专属终端操作员——PowerShell/adb/frida/build 
 
 ```
 项目根:   c:\Users\Me\Desktop\guard_native
-APK 输出: build\outputs\apk\debug\guard-native-debug.apk
+APK 输出: build\outputs\apk\<official|coexist>\<debug|release>\guard-native-<flavor>-<type>.apk
 Frida 脚本: 03_execute_执行任务\<当前P任务>\scripts\ 或 tools\
 日志输出:   03_execute_执行任务\<当前P任务>\logs\
 目标版本:  微信 8.0.71（com.tencent.mm，D-014）
@@ -134,17 +133,26 @@ cd "c:\Users\Me\Desktop\guard_native"
 .\gradlew assembleDebug 2>&1 | Select-String "error:|cannot|symbol|BUILD"
 ```
 
-### 装机（Guard 模块）
+### 装机 — 两种形态别混（cert-converge v2）
+
+**① debug LSPosed 模块**（dev / 找 hook / smoke）：装模块 APK + 在 LSPosed 管理器勾选微信；微信另装干净原版供挂钩。
 
 ```powershell
-adb install -r "c:\Users\Me\Desktop\guard_native\build\outputs\apk\debug\guard-native-debug.apk"
+adb install -r "c:\Users\Me\Desktop\guard_native\build\outputs\apk\official\debug\guard-native-official-debug.apk"
+# 干净原版微信（供 LSPosed 挂钩）：adb install -r <干净 8.0.71 原版 apk>
 ```
 
-### 装机（微信 8.0.71）
+> debug cert=`ca421ec3` ≠ `GUARD_EXPECTED_CERT` → registry 散沙，仅 smoke，**不出货**。
+
+**② release LSPatch 打包**（出货：官替/共存）：模块重打包进宿主 APK，装的是 **LSPatched 宿主**（不单独装模块/微信）。走发版流水线，别手搓：
 
 ```powershell
-adb install -r "C:\Users\Me\Desktop\guard_native\官方原版8.0.71-2026-5-19.apk"
+.\tools\lspatch_pack.ps1 -Flavor official -BuildType release -Clean -Build   # 官替 com.tencent.mm
+.\tools\lspatch_pack.ps1 -Flavor coexist  -BuildType release -Clean -Build   # 共存 com.tencent.mn
+# 干净装：卸 + 装 02_tools_工具\lspatch_out\*-lspatched.apk + 桌面点开（禁 monkey/am start）
 ```
+
+> 完整命令/坑/宿主重签 = `docs/RELEASE_RULES.md`「双版本发布手册」；cert=`e3e13a49`。
 
 ### 检查设备 / 微信版本
 
@@ -174,86 +182,14 @@ Start-Sleep 2
 adb logcat -v time | Tee-Object "c:\Users\Me\Desktop\guard_native\03_execute_执行任务\<当前P任务>\logs\logcat.txt"
 ```
 
-### frida warm-attach（微信已在跑）
+## 找 hook / 版本适配探针（上线维护期不读，只在版本适配/调试时按需 Read）
 
-```powershell
-# 1. 先拿 PID（找主进程，不要 :push :tools 后缀的）
-adb shell "ps -A | grep tencent"
+> v1 探索期 / 换版本找 hook 的活儿，维护期出货装机用不到，已挪出主文件（只有 SKILL.md 自动加载，子文档不自动读）。
+> - **找 hook 探针命令 + debug LSPosed 装机 + frida spawn/warm-attach** → 本文件夹 `PROBING_找hook探针.md`（手动 Read）
+> - **换微信版本整套流程**（jadx → check_classmap → 更新字典 → regen registry → 重打包）→ 先读 `docs/VERSION_UPGRADE_SOP.md`
+> - 日常出货装机命令 → `docs/RELEASE_RULES.md`「双版本发布手册」
 
-# 2. attach
-frida -U -p <PID> -l "<脚本完整路径.js>"
-```
-
-### frida spawn 模式（冷启动 / KPI 采集）
-
-```powershell
-frida -U -f com.tencent.mm --no-pause -l "<脚本完整路径.js>" 2>&1 | Tee-Object "<日志路径.log>"
-```
-
-### 确认 frida-server 在跑
-
-```powershell
-adb shell "ps -A | grep frida"
-# 没跑就启动：
-adb shell "/data/local/tmp/frida-server &"
-```
-
----
-
-## 标准装机验证流程（场景 A）
-
-```
-步骤 1  编译调试包
-步骤 2  adb install Guard 模块
-步骤 3  adb force-stop 微信
-步骤 4  清空 logcat
-步骤 5  告诉用户：打开微信，执行目标操作
-步骤 6  用户回来 → 拉日志
-步骤 7  判定结果
-```
-
-**步骤 6 日志检查（关键）**
-
-```powershell
-# 先确认新代码已加载
-adb logcat -d 2>&1 | Select-String "NCL.*init|NCL.*hook|NCL.*ready"
-
-# 再看拦截命中
-adb logcat -d 2>&1 | Select-String "NCL|GRD|MomentsFilter" | Select-Object -Last 50
-```
-
-- 看到 `NCL.*ready` → 新代码已加载 ✅
-- 没有 → 旧代码仍在，执行 `adb shell am force-stop com.tencent.mm` 重开
-
----
-
-## 8.0.71 类名探针流程（场景 B）
-
-用于找未知混淆类名或字段。必须先明确当前 P 任务和探针脚本路径，不从历史 P 任务默认套用。
-
-```powershell
-# 1. 确认 8.0.71 已装
-adb shell "dumpsys package com.tencent.mm | grep versionName"
-
-# 2. 确认 frida-server 在跑
-adb shell "ps -A | grep frida"
-
-# 3. spawn 跑探针（替换为当前 P 任务脚本和日志路径）
-frida -U -f com.tencent.mm --no-pause -l "C:\Users\Me\Desktop\guard_native\03_execute_执行任务\<当前P任务>\scripts\<探针脚本>.js" 2>&1 | Tee-Object "C:\Users\Me\Desktop\guard_native\03_execute_执行任务\<当前P任务>\logs\<日志名>.log"
-
-# 4. 等 [FIND] Hook 就绪 出现 → 告诉用户进朋友圈下滑
-# 5. 看到 [ITEM] ★ 或 [ADAPTER] ★ → 复制给用户
-```
-
----
-
-## KPI 门控流程（场景 C，每个 P 任务关闭必做）
-
-```powershell
-frida -U -f com.tencent.mm --no-pause -l "I:/apk2_official_research/official_wechat_ban_research/03_anti_frida/frida_stats.js" 2>&1 | Tee-Object "logs\kpi.log"
-```
-
-对比红线：verifiedbootstate ≤ 38，PROP ≤ 220，normsg ≤ 5124，CONN ≤ 0.5
+> **KPI / 防封出包体检 ≠ "找 hook"、仍在用**：`frida_stats.js` 出包前抽检 → `guard-review` skill §⑤（执行）+ `guard-antiban` skill（红线真源）。2026-07-02 弱化为可选、非硬门，但**属上线维护期活动，不埋 PROBING**。
 
 ---
 

@@ -107,3 +107,27 @@
 **未碰**：registry KDF 派生算法本身 / 状态机 / 授权 / registry 内容 / 已验证 hook 回调体；`GuardRuntime.java`、`EncryptedConfigLoader.java`（另一线 WIP）未纳入本轮任一提交。
 
 **置信度**：✅ L1（run_native_tests 原文 + 装机 logcat 原文 + 干净重编 compile_commands + `nm -D` 符号对照）。
+
+## C7 接6（2026-06-28）
+
+**任务**：6 个「代码另写死一份」内联值 → 改走 registry（与 C5a 同模式：字段初值引 `RegistryFallback` + `resolveRecipes` 里 `recipe()/recipeArr()` 取值）。归一消双源，不改 json、不重生 cipher、不重编 SO（6 键本就在 json/RegistryFallback、且不在 SO 自检 field_eq）。不碰 C5b 回调体（铁律29）。
+
+**双审**：见 `recon/C7_改前双审.md`（2026-06-25）——接6 = 干净（install 期/字段初值取值、值逐字节一致、非回调体），安全官面 PASS、授权检查官 9 项 PASS（WARN 仅针对另一块「删3 连 SO 自检」，与接6 无关）。用户改前拍「接着干 C7-接6」。git 基线 `8144a55`（目标文件改前无未提交改动，可 `git checkout --` 回滚）。
+
+**改动文件（纯 Java，src/main 共享两 flavor）**：
+- `moduleD/ContactFilter.java`：`ITEM_CONTACT_FIELD(d)`/`ITEM_TYPE_FIELD(e)` 去 final → 引 `RegistryFallback.CONTACT_ADDRESS__CONTACT_FIELD/TYPE_FIELD`；resolveRecipes 加 `recipe("contact_field"/"type_field")`。
+- `moduleD/MomentsFilter.java`：`ACTOR_FIELD_NAMES` 去 final → 引 `RegistryFallback.MOMENTS_FEED__ACTOR_FIELD_NAMES` split；新增 `recipeArr` helper；resolveRecipes 加 `recipeArr("actor_field_names")`。
+- `moduleD/ConvFilter.java`：① `CONTACT_FIELD_NAMES` 去 final → 引 `RegistryFallback.CONV_LIST__CONTACT_FIELDS` split + `recipeArr("contact_fields")`；② 新增 `L1_METHODS[]`/`L2_METHOD` 字段（引 `RegistryFallback.CONV_LIST__L1_METHODS/L2_METHOD`）+ `isL1Method()` helper + resolveRecipes 加 `recipeArr("l1_methods")`/`recipe("l2_method")`；install 期 4 处方法名匹配（installMvvmListHooks L1:391/L2:447、installMvvmListL3Hooks 排除:493、installMvvmConvHooks L1+L2:653/671）由内联 `"n"/"m"/"s"` 改用 `isL1Method()`/`L2_METHOD`，label `"L1"+mn`/`"CL1"+mn`。全在 install 期、非回调体。
+- **未碰**：`registry_8071.json` / `.inc` / KDF / SO / 状态机 / 授权 / hook 回调体（kc5.y 缓1 不动）。
+
+**编译**：`:compileCoexistDebugJavaWithJavac` + `:assembleOfficialDebug`/`:assembleCoexistDebug` 均 `BUILD SUCCESSFUL`（双 ABI；仅 ModuleMain 旧 deprecated 提示）。ReadLints 三文件零错。
+
+**⚠️ 执行事故 + 根因（L1）**：首轮误建/装 **coexist** flavor（hook `com.tencent.mn` 共存克隆），用户开的是**原版 `com.tencent.mm`** → 模块未注入、logcat 零 NCL init → 密友未隐藏。根因 = 挑错 flavor（build.gradle official→com.tencent.mm / coexist→com.tencent.mn），**非 C7 代码**（代码若运行哪怕崩溃也有 NCL 日志）。修复 = 重建 **official** flavor 重装。
+
+**装机回归（✅ L1，小米9/609b4b18，进程 29417，log `logs/c7jie6_official_recipeok_20260628.txt`）**：
+- 种子前 `registrySummary=scatter`（预期 fail-closed）→ 种子后 `[hb] registry after seed ... entries=5 [conv/moments/contact/search/a2.sig] recipeOk=true`。
+- 四 Filter 全 `recipes ... fallbackSelfTest=ok ready=true`（CF/MF/CTF/SF）。
+- 用户屏测：会话/通讯录/朋友圈三处密友隐藏正常、无崩溃（接6 值逐字节一致，hide 链无回归）。
+- 注：`entries=5`（含 a2.sig 第5块）= 当前健康值，旧 DoD 的 `entries=4` 是 a2.sig 加入前的数。
+
+**置信度**：✅ L1（编译原文 + 装机 logcat recipeOk=true/fallbackSelfTest×4 + 用户三链屏测）。
