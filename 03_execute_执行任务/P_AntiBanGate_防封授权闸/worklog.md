@@ -4,6 +4,175 @@
 
 ---
 
+## 2026-07-08f · 包名/路径轴 A13+ 新重载闭合（A2PkgPathSpoof · 落码编译，共存 L1 待装机）
+
+> 补齐 07-08e 遗留尾巴：签名轴已补 A13+ 新重载并 A15 L1 证实，包名轴 `A2PkgPathSpoof` 当时同病未改。本轮照签名轴成熟改法闭合。
+
+- **改法（`core/A2PkgPathSpoof.java` · 编译 BUILD SUCCESSFUL / ReadLints 0）**：install 抽共用 `gpiHook`/`gaiHook`，拓 **4 入口**：`getPackageInfo(String,int)` + `getPackageInfo(String,PackageInfoFlags)`(A13+) + `getApplicationInfo(String,int)` + `getApplicationInfo(String,ApplicationInfoFlags)`(A13+)；新增 `hookOne`（缺失重载 catch 计 0，A11 无 *Flags 不崩，铁律25）；`installed hooks=N/4` 日志（A11 预期 2/4、A13+ 预期 4/4）；`fed getPackageInfo/getApplicationInfo via NEW/OLD-overload` 灌值日志（新老各首次一行）。
+- **依据**：07-08e A15 L1 证 c$p 真走 `getPackageInfo(String,PackageInfoFlags)` 新重载读签名；共存包名/路径经 getPackageInfo(读 packageName) + getApplicationInfo(读 sourceDir) 同咽喉，故两方法各补新重载对齐。
+- **code-audit（同签名轴红线，PASS）**：只动自身包（feed 内 `self.equals`）· 不全局 hook getPackageName（红线#2）· caller-selective `isDetectionCaller()` 保留 · `deepCopy`(Parcel) clone 不污染 PM 缓存(R3) · 仅共存生效（官替 `OFFICIAL_PKG.equals(self)` 跳过）· 缺失重载 catch 不崩。
+- **成色/待办**：**L2 编译过**；共存版真机装机验 = 见下方 2026-07-08g **已 L1 闭合**。未提交 git。
+- 至此 A2 身份轴（签名 + 包名/路径）对 A13+/A16 新重载**代码层全闭合**；签名轴 A15 L1 已证，包名轴 2026-07-08g A15 L1 已证。
+
+### 2026-07-08g 追记 · 包名/路径轴 A13+ 新重载 L1 闭合（vivo A15 共存装机实证）
+- 环境：vivo A15（A13+）无 root、无线 adb；共存 `com.tencent.mn` debug + LSPatch official 重签（`certBind=e3e13a49`、`ANTIBAN-GATE ready=true`）；宿主 = `mn_clean_origin_8071.apk`（现成 MT 克隆）。装前卸了旧 06-24 debug 共存包（cert `ca421ec3`、我方旧测试包，用户确认非数据机）。
+- **L1 实证（logcat NCL，冷启+登录）**：
+  - `[A2PKG] installed hooks=**4/4**`（self=com.tencent.mn）—— 对比 A11=**2/4**：A13+ 4 入口（getPackageInfo/getApplicationInfo × int/*Flags）全挂上。
+  - `[A2PKG] fed getPackageInfo via **NEW-overload** pkg=com.tencent.mm sourceDir=/…/com.tencent.mm-…/base.apk`（+OLD）—— 微信 A15 真走 `PackageInfoFlags` 新重载读包名、灌成官方包名+官方原版路径。
+  - `[A2PKG] fed getApplicationInfo via **NEW-overload** pkg=com.tencent.mm`（+OLD）—— `ApplicationInfoFlags` 新重载也真走到（c$p.aa 读 sourceDir 那条）、灌官方路径。
+  - 顺带补签名轴：`[A2SIG] fed OFFICIAL via NEW-overload flags=**0x8000000**`（+OLD）—— 07-08e 只抓到 0x40，本轮补齐 `GET_SIGNING_CERTIFICATES`(signingInfo) 也走新重载。
+- **判定**：**A2 三轴（签名 signatures[]/signingInfo + 包名 packageName + 路径 sourceDir）对 A13+ 新重载全部 A15 真机 L1 走到并灌官方**；A16 同 A13+ 架构高置信覆盖。「是否 A16 封因」仍 L4（禁猜）。
+- 待办清零：包名轴 A13+ 从 07-08f「L2 待装机」→ **L1 闭合**。
+
+---
+
+## 2026-07-08e · 签名轴 A13+/A16 新重载终验 L1 闭合（vivo A15 无 root · 官替 LSPatch 装机实证）
+
+> 补上 2026-07-08 减法收口时唯一悬着的 gap：A16 上 c$p 是否走 A13+ 新重载 `getPackageInfo(String,PackageInfoFlags)`、我方 hook 拦不拦得住。此前 A11（小米9）无此重载验不了（L4）。本轮借 A15 真机闭合。
+
+- **环境**：vivo `V2361GA`（**Android 15 = A13+**，`10AE681KEA000FC`）、**无 root**、无线 adb（pair 522010@40065 → mDNS tls-connect）。产品真实形态验证:官替 debug 变体 + LSPatch `-k` official 重签宿主 → 运行时 `certBind=e3e13a49`（避 F-43 sigbypass bleed-through）。宿主 = 官方原版 8.0.71（`18c867f0`）。
+- **无 root 验法（不用 frida）**：模块自打日志 + `adb logcat`。debug 变体 minify off 保留 `BuildConfig.DEBUG` 验证日志；LSPatch official 重签让 cert 对上 → A2 真装（否则 debug cert `ca421ec3` mismatch → 散沙不装）。为此在 `A2SignatureSpoof.feedOfficial` 加 DEBUG 门控日志:新/老重载各首次一行 `fed OFFICIAL via NEW/OLD-overload`。
+- **L1 实证（logcat NCL，A15 官替冷启 + 登录）**：
+  - `[A2SIG] installed sig hooks=**2/2**`（self=com.tencent.mm）—— 对比 A11=**1/2**：**A13+ 新重载 `PackageInfoFlags` 真实存在且我方 hook 挂上**。
+  - 登录触发 c$p 后：`[A2SIG] fed OFFICIAL via **NEW-overload(PackageInfoFlags)** flags=0x40` **＋** `via OLD-overload(String,int) flags=0x40` —— **微信 A15 登录时新老重载都走、都读 GET_SIGNATURES、都被灌官方**。
+  - 全绿佐证：`certBind=e3e13a49`（重签生效）· `[ANTIBAN-GATE] ready=true certIntegrityIntact=true`（A2 真装非散沙）· 时间闸 8 分支 `2a_fresh_in72h PASS`（首装 72h fail-open 免授权装）· `[A2PKG] skip: 官替不需要包名/路径轴`（官替正确跳过）。
+- **判定**：
+  - **签名轴对 A13+/A16 = L1 闭合**：新重载挂得上（2/2）+ 微信真经新重载读签名（NEW-overload 命中）+ 灌官方成功。2026-07-08 减法收口时加的第二个入口 `getPackageInfo(String,PackageInfoFlags)` **在 A15 被实证走到**——**不是冗余、是 A13+ 必需**（只 hook 老重载会漏 NEW-overload 那条读取）。
+  - 至此签名轴 **A11 L1（07-08b）+ A13+/A15 L1（本轮）双版本证实**；A16 客户机同属 A13+ 架构、同新重载，高置信覆盖（严格 A16 本体未跑，但 A15=A13+ 同重载已证机制）。
+  - 「签名是否 A16 封因」仍 **L4**（红线#9 禁猜；本轮证的是"签名轴能力对 A13+ 完整"，非"签名是封因"）。
+- **代码/包**：`A2SignatureSpoof` 2 入口 + DEBUG 验证日志（编译过 / ReadLints 0，未提交 git）；待装包 `02_tools_工具/lspatch_out/官方原版8.0.71-..._rebind-439-lspatched.apk`（官替 debug rebind e3e13a49，250.8MB）。
+- **证据**：A15 真机 logcat 原文（NCL tag，本会话终端直采）；出包 `tools/lspatch_pack.ps1 -Flavor official -BuildType debug -RebindHost`。
+
+---
+
+## 2026-07-08d · 扫脸功能对照收口（官替摄像头通 / 共存 init lib failed 链条损坏）+ 「native 也加」否决（执行 · 小米9 root）
+
+> 触发：用户要求「native 也加」治共存版扫脸 VA scan。走 java_first 最小侵入验证 → 结论：共存扫脸死在 VA scan 之前，native 补丁救不了；扫脸正解=官替。用户判据（逐字）：「只要他能展开摄像头，就可以看作是通过」。
+
+- **官替形态完整复验（L1 真机）**：官方包 `com.tencent.mm` 登录后走扫脸，**摄像头能展开**（真进人脸识别）= 按用户判据 **通过**。(本轮观测探针挂主进程 PID 1197，摄像头展开阶段 `checkByNative` 未在主进程命中——推测 VA scan 在登录早期已跑 / 或在子进程；官方 `checkByNative=0` 由 2026-07-08c 的 10:36 轮既有 L1，不影响功能定性。)
+- **共存形态裸态复现（L1）**：共存包 `com.tencent.mn` 裸扫（force-stop 重启、**无任何 hook**）**直接 "init lib failed"，连摄像头都展开不了** = 不通过。
+- **隔离确认（systematic-debugging）**：先前挂 `checkByNative`→强制 return 0 的 patch（`tools/dump_vascan_patch.js`）时也 init lib failed，但 patch 探针 `checkByNative/getVAScanResult/j52.b.b` **全程零命中** → 扫脸**没走到 VA scan**；裸态（摘 hook）同样复现 → **init lib failed 与我方 hook 无关，是共存包自身链条损坏**。裸态 logcat 仅 `ro.hardware.fp.fod` 属性拒绝噪音，无人脸 native lib 报错，真因（本地 lib vs CGI 文案）未坐实（L4，不影响定性）。
+- **共存扫脸不稳定**：有时到 checkByNative=1（系统繁忙），有时更早 init lib failed（未到 VA scan）；共同点 = 链条级损坏、不可用。
+- **「native 也加」否决（L1 依据）**：共存扫脸**死在 VA scan 之前**（人脸库 init 阶段），加 native 处理 `checkByNative` **救不了**（问题在它之前）；且碰微信 native 违铁律2/23 + 有防封悖论（Matrix 监控 native hook 痕迹→送更强封号信号）。⇒ **不加 native、不新增 A2 轴**（做减法）。
+- **出货定性（L1 功能对照）**：**扫脸功能 = 官替可用（摄像头能展开）/ 共存不可用（init lib failed 链条损坏）**。用户要的「扫脸能用」由官替版**零成本天然满足**；共存版扫脸不支持，碰 native 也白碰。**本轮不落码、不碰 native。**
+- **证据**：用户真机观察（官替摄像头展开 / 共存直接错误）+ frida patch 探针零命中（term 577840）+ 裸态 logcat（仅 fp.fod 噪音）+ 官方 `checkByNative=0`(10:36)/共存=1(10:46) 既有 L1；探针 `tools/dump_vascan_patch.js`(+compiled)。frida 会话已全部收干净。
+
+---
+
+## 2026-07-08c · 扫脸/VA scan 检测面 L1 对照实证（官方 vs 共存，包名硬命门·官替免疫）
+
+- **触发**：找齐检测面（用户点名"扫脸 + 环境监测"是签名轴外盲区）。static jadx 8071 定位 + 小米9 root 真机 frida CLI warm-attach 对照。
+- **检测点（L2 代码坐实，jadx 8071）**：`com.tencent.mm.plugin.facedetect.FaceProNative.checkByNative()`（native）+ `getVAScanResult()`（native，返回读到的包名）；调用方 `j52.a.invokeSuspend`（DevSecurityScan/tpcs 设备安全预扫 + VA 扫描），结果写 `j52.e0.{f274845a,f274847c}` → `j52.b.b()` 拼上报串。VA = Virtual App/多开/克隆检测，仅扫脸(实名/支付人脸)场景走此链。
+- **L1 对照（同机 609b4b18 root、同扫脸场景，唯一变量=包名）**：
+
+| 变量 | 官方包 `com.tencent.mm`(签名 18c867f0) | 共存包 `com.tencent.mn`(签名 cdc5decb) |
+|---|---|---|
+| `checkByNative()` | **0 未命中** | **1 命中** |
+| `getVAScanResult()` | 未取（0 短路） | `"com.tencent.mn"` |
+| caller | `j52.a.invokeSuspend`(同) | 同 |
+| 扫脸结果 | **正常通过**（摄头亮、过人脸） | **不可用**（init lib failed，链条级损坏、死在 VA scan 之前；表现不稳定） |
+
+- **判定**：
+  - VA scan = **native 独立读包名**（不走 `getPackageInfo`），A2 签名轴/包名轴（Java hook `getPackageInfo`）**骑不了** = L1。官方包名→0、非官方包名→1，行为一致（"只比包名"存疑收敛）。
+  - **官替版免疫**（占 `com.tencent.mm` → VA 读官方包名 → 0 → 扫脸正常）= **L1 实证**（从此前 L3 推断升级）。
+  - **共存版扫脸功能性阻断**：VA=1 + 系统繁忙/ANR 强相关（L1）。⚠️ 服务器是否据此拒绝仍黑盒（红线#9），但**"共存包名是扫脸失败的直接触发变量"** L1 成立。
+  - 这是 **native 硬命门**新实例（同 PKGNAME_AXIS_FEED §④残留1"真实路径 native 直读洗不掉、彻底洗只能官替"）；性质=**功能阻断（扫脸用不了），非封号**。
+- **产品结论**：要扫脸 → 用官替版；共存版扫脸不可用。**不新增 A2 轴**：VA scan 走 native、现有 getPackageInfo hook 覆盖不到；碰微信 native 违铁律2/23 + Matrix 反 hook 悖论 → 加了负收益。「是否封号/处罚」= 服务器黑盒、不下定性（红线#9）。
+- **成色/待办**：checkByNative native 实现在哪个 SO（wechatvoicereco/tpcs?）+ 判定是否只比包名或含多开痕迹 = L4 静态待挖（本次行为对照已够下产品结论，native 细节非必需）；官方包扫脸"正常通过"到最终认证成功与否未跟到底（到人脸识别画面即证 checkByNative=0 放行，足够）。
+- **证据**：frida 栈控制台原文（cp936 乱码、符号/数值 ASCII 清晰，未落盘 .log）；探针 `tools/dump_vascan.js`(+compiled)；jadx 源 `FaceProNative.java`/`j52/{a,b,e0}.java`。
+
+---
+
+## 2026-07-08 · 签名大血管栈追踪 L1 实证（c$p 全走 getPackageInfo）+ 减法收口 2 入口（执行 · 小米9 A11 USB 直连 frida）
+
+- **环境**：小米9（A11/`609b4b18`）USB 直连本机；**纯官方原版 8.0.71**（已卸 LSPatch 重打包版换装，apksigner 校 cert md5=`18c867f0`=官方）；frida 17.11.0 本机 + 设备 `frida-server-17.11.0`（版本对齐）。
+- **工具（不造轮子）**：Frida 17 已把 Java bridge 移出核心 → 裸 `Java.perform` 报 `ReferenceError: Java is not defined`；用 **frida-compile** 打包 `frida-java-bridge`（ESM default import）解决。探针 `tools/dump_sig_md5.js`→`dump_sig_md5.compiled.js`，runner `tools/frida_run_sig.py`（改回 USB `get_usb_device`）。
+- **抓法**：spawn 冷启动（= 07-08 前提所指触发窗口之一）；hook `ApplicationPackageManager.getPackageInfo/getPackageInfoAsUser` 全重载 + `Signature.toByteArray`，对 AsUser 命中自身包时打调用栈看 caller。
+
+**L1 实证（本机 A11 动态，栈原文）**：
+
+- 冷启动 + 登录态两轮：微信自读签名全部 md5=`18c867f0`（官方原版理所当然），走 `getPackageInfo(String,int)` + `getPackageInfoAsUser(String,int,int)`，flags `0x40`(GET_SIGNATURES) 与 `0x8000000`(GET_SIGNING_CERTIFICATES) 均有。
+- **栈追踪决定性**：**所有** `getPackageInfoAsUser` 命中都是 `ApplicationPackageManager.getPackageInfo(ApplicationPackageManager.java:179)` 的 **framework 内部转调**，无一条独立调用。栈根（真正调用者）：
+  - `com.tencent.mm.normsg.c$p.ad`(Native) → `WCProbe$Info.n`（flags 0x40）
+  - `com.tencent.mm.normsg.c$p.aa`(Native) → `WCProbe$Info.f`（flags 0x40）
+  - `com.tencent.mm.normsg.c$p.af`(Native) → `WCProbe$Info.m`（flags 0x40）
+  - `com.tencent.mm.sdk.platformtools.t8.c0` → `t8.j0`；`oy5.d.<init>` → `modelbase.l3`
+  - `bu5.a.a` → `onMethodCall`（flags 0x8000000，Flutter 通道读 signingInfo）
+  - 他包 noise：高通 `Performance.checkAppPlatformSigned`、GMS `zzka`
+- **⇒ 坐实 07-05 的 L3→A11 L1**：`c$p.ad/aa/af`（native）经 JNI 回调 **`getPackageInfo(String,int)` 的 ART 入口**读签名（栈实锤 `c$p.ad(Native Method) ← getPackageInfo`），A2 老 hook（只 hook `getPackageInfo(String,int)`）在最外层即截到、全喂官方 `18c867f0`。**动态复证了 2026-06-19「getPackageInfo 是共同上游、掐一处覆盖全部 Java 签名读取」在 A11 成立**；A11 签名轴**无缺口**。
+
+**扩容探针复扫（同机 A11，三轮 L1）——坐实"全量"其实已到位，无须加 hook**：
+- 加挂 `getPackageArchiveInfo`（读 APK 文件签名）**命中 0 次** + `getInstalledPackages`（枚举）**命中 0 次** + `Signature.toByteArray` 收口去重栈追踪。
+- `Signature.toByteArray` 标 `OTHER-PATH` 的（`c$p.ad/aa/af`/`t8.c0`/`oy5.d`/`bu5.a.a`/GMS `zzka`）栈根均与其配对的 `via=getPackageInfo` 是同一方法：先 getPackageInfo 拿 `Signature` 对象、后对**同一对象**再 `toByteArray`。**非独立读源。**
+- 触发时机对比（同机同账号）：**热切账号（同进程 PID 不变重登）签名读取 0 次**；**杀进程 spawn 冷启（新账号已登）`c$p.ad/aa/af` 全部重现** → **c$p 大血管 = 冷启/进程初始化绑定，非登录动作绑定**（精确化 07-08 前提：只有"全新进程登录"才赶上，日常热切不读）。
+- 冷启那轮 c$p.aa 顺带枚举 `bin.mt.plus`(RE)/`com.xiaomi.scanner`（他包，flags 0x40）→ 与 A2 `observeBorrowed`「借官方眼睛」代码对上。
+- ⇒ **A11 上微信读自身签名对象的唯一源 = `getPackageInfo(String,int)`**；老 hook 已在最外层覆盖全部下游（c$p/t8/bu5/oy5/GMS）。"全量签名"靠掐这一处已达成，多挂 = 纯增暴露面。
+
+**代码落码（减法版 · `core/A2SignatureSpoof.java` · 编译 BUILD SUCCESSFUL / ReadLints 0 / code-audit 红线#1只动自身包·#2不全局hook·#3零环境读取·铁律25/29 全 PASS）**：
+- `install` 抽出共用 `sigHook`，挂 **2 入口**：① `getPackageInfo(String,int)`（A11 唯一源、老 hook 已验证覆盖 c$p，语义不动·铁律29）② `getPackageInfo(String,PackageInfoFlags)`(A13+，A16 唯一真缺口候选)。
+- **只挂 getPackageInfo 入口族**：不挂 `getPackageInfoAsUser`（framework 内部转调、冗余增暴露）、不挂 `getPackageArchiveInfo`/`getInstalledPackages`（零命中）。
+- `feedOfficial` flags 解析用 `extractFlags`（兼容 int 与 A13+ `PackageInfoFlags.getValue()` 反射，无编译期 A13 SDK 依赖）；`hookSig` 缺失重载 catch 计 0（A11 无 PackageInfoFlags → 不崩 init）；本机实跑 `installed=1/2`。
+
+**成色 / 待办**：
+- A11 上 c$p（含全部下游）读自身签名唯一走 `getPackageInfo(String,int)`、`getPackageArchiveInfo`/枚举/独立 toByteArray 零绕行 = **L1**（本机三轮栈实证）。
+- c$p = 冷启/进程初始化绑定（热切账号零读、冷启全现）= **L1**（同机对比实证）。
+- A16/A13+ 新重载 = 当时 L4 待验 → **已由 2026-07-08e/f/g A15 真机 L1 闭合**（签名+包名+路径三轴新重载都走到、都灌官方）；`A2PkgPathSpoof` 当时未改 → 07-08f/g 已闭合。
+- 「签名是否本次 A16 封因」= **L4 从未实证**（禁猜封因，红线#9）。
+- 证据：本会话 frida 栈为控制台原文（未落盘 .log）；工具 `tools/dump_sig_md5.js`(+compiled) / `frida_run_sig.py` / `frida_attach_sig.py`。
+
+---
+
+## 2026-07-08b · 共存包 A2 灌值 L1 坐实（root + com.tencent.mn 真机 warm-attach，签名轴/包名轴/路径轴全绿）
+
+- **环境**：小米9 root（Magisk `uid=0`）；`com.tencent.mn` = 共存包 8.0.71、**LSPatch 重打包挂 Guard 模块**（logcat 实锤 `LSPosed-Bridge: Loading legacy module com.ghost.assist from .../cache/lspatch/...`）；底签名非官方 `md5=cdc5decb4c4c784e01a2ae433a21a744`（apksigner 校）。同机官方原版 `com.tencent.mm`（借真官方路径）。
+- **注入教训（工具纪律）**：`com.tencent.mn` **禁 spawn 早注入**（本轮 spawn 冷启即闪退、零日志，印证防封账铁律 F.4 / 铁律23）；**warm-attach 也踩坑**：759KB 编译 bundle 走 python `create_script` RPC **两次 timeout**；改用 **frida CLI `-p <pid> -l <compiled> -l <hold>`** 注入成功（CLI 分块传输比 python 同步 RPC 稳）。另 PS `>` 写 .js 出 UTF-16 BOM 致 frida 读不了（G7），改 `UTF8Encoding($false)`。
+- **A2 安装 L1（logcat NCL tag，mn 冷启）**：`[A2SIG] installed (self=com.tencent.mn, der=751B)` + `[A2SIG] android_id axis installed` + `[A2PKG] installed` + `[A2PKG] fed getPackageInfo pkg=com.tencent.mm sourceDir=/data/app/~~.../com.tencent.mm-.../base.apk`（包名+路径灌成官方原版真值）+ `[A2SIG] borrowed env=0xa→0xb`（借官方眼睛 ROOT|RE|ACC 位）。⚠️ 此包是**旧版 A2**（`self=com.tencent.mn`、无今天减法版 `installed sig hooks=N/2` 行）。
+
+**签名轴灌值闭环 L1（frida 栈原文，warm-attach 触发前后台）**：
+
+- **核心配对（灌值铁证）**：同一逻辑调用，A2 hook 内 `HookBridge.invokeOriginalMethod` 取到原始 `getPackageInfoAsUser sig[0] md5=cdc5decb`（非官方底签名）→ afterHook 改写 → 对外 `getPackageInfo pkg=com.tencent.mn sig[0] md5=18c867f0 (喂进了!)`。进 `cdc5decb` / 出 `18c867f0`。
+- **所有检测大血管读到官方**（`SIG.toByteArray SELF(18c867f0)` + `getPackageInfo ...=18c867f0 喂进了`）：
+  - `c$p.ad → WCProbe$Info.n → plugin.normsg.u.z3 → ql3.s.z3 → w15.qg.toProtoBuf`（进上报组包）
+  - `c$p.aa → WCProbe$Info.f → normsg.u.uc → ql3.s.h`
+  - `c$p.af → WCProbe$Info.m → normsg.f.run`
+  - `t8.c0 → t8.j0 → toProtoBuf`；`oy5.d.<init> → modelbase.l3 → jy0.t7.b`
+- **`cdc5decb` 归属澄清（诚实）**：日志里读到 `cdc5decb` 的 `getPackageInfoAsUser` 全部 caller 栈含 `org.lsposed.lspd.nativebridge.HookBridge.invokeOriginalMethod ← LSPosedBridge$NativeHooker.callback`——即它们是 **A2 hook 自己调 invokeOriginalMethod 取原值的中间态**，非对外泄漏；afterHook 完成后同一调用对外即 `18c867f0`。**对检测大血管（c$p/t8/oy5）零非官方残留。**
+
+**结论（L1，底座 8.0.71，共存包 root 真机）**：
+- 签名轴：`getPackageInfo` 唯一咽喉，A2 afterHook 在最外层把全部下游（c$p.ad/aa/af + t8 + oy5）读到的对象灌成官方 `18c867f0`，检测链零残留 = **L1 坐实**（这是官方原版 07-08a 证不了的"灌值"环节，共存包补齐）。
+- 包名/路径轴：`[A2PKG] fed ... pkg=com.tencent.mm sourceDir=官方路径` = **L1 灌值成功**。
+- AsUser 的 `cdc5decb` 是 hook 内部 invokeOriginalMethod 中间态、非独立泄漏 → 印证「不挂 AsUser」正确。
+- **⚠️ 防破解隔离复核（用户点名 · L2 代码核 · 减法=保命）**：A2 灌值只 hook `getPackageInfo`（读已装包→给检测大血管看官方 `18c867f0`）；防破解两读点 `CompatProbe.certOfModule`（抓重签）+ `ModuleMain.bindSigningCert`（算 registry key）**走 `getPackageArchiveInfo(APK 路径)` 读真实签名**，与 A2 零交集（不同 API），且 A2 `feedOfficial` 的 `self.equals(pkgArg)` 只认包名参数、不认文件路径 → **A2 灌官方不污染防破解读点**：重签盗版仍被 `CompatProbe` 判 cert≠EXPECTED → registry 散沙（反白嫖闭环完好，L1 佐证：本包 `[A2PKG]` 装成功即证 cert 匹配、registry 未散）。⇒ **绝不给 A2 加 `getPackageArchiveInfo`/`getInstalledPackages` hook**（探针实测这俩检测零命中；一旦加则防破解读到假官方值→盗版重签也算出真 key→破防）。这是"做减法不做加法"在防封轴的硬约束。
+- **残留仍 L4/待验**：服务器是否据签名判罚（红线#9 禁猜封因）；A16 native 是否解 A13+ `PackageInfoFlags` 新重载（本机 A11 无此重载验不了）；`A2PkgPathSpoof` 的 A13+ `ApplicationInfoFlags` 重载（同签名轴，未改）。
+- 证据：frida 栈控制台原文（cp936 乱码、md5/栈帧 ASCII 清晰，未落盘 .log）；工具 `tools/dump_sig_md5.compiled.js` + frida CLI 注入。
+
+---
+
+## 2026-07-08 · 关键前提补记：c$p 签名大血管触发时机（用户口述，指导后续验证窗口设计）
+
+- **用户明确**：`c$p`（签名读取检测大血管）**不是持续/常驻读取，只在特定事件触发**——**登录时 / 新安装时 / 冷启动时**。平时挂着不触发这三类事件（如停在登录页空等）不代表大血管不读，只是没落在触发窗口。
+- **对验证设计的影响**：后续要坐实「签名有没有喂进 c$p」，frida 挂钩必须覆盖这三个窗口之一——最可行是 **spawn 冷启动**（进程创建早期挂上，覆盖冷启动 + 首次读取），登录/新安装可作为补充场景。2026-07-05/07-06 两轮 frida 连接零成功（`connection closed`），即使当时用的是冷启动 spawn 路径，也因通道未接通而没有产出任何读数。
+- **标注**：本条为**用户口述前提**（L4，非本次代码静态或日志动态实证），仅用于指导下一次验证窗口设计，不代表已验证 `c$p` 内部具体触发逻辑。
+- **待办不变**：A16 真机 L1 终验、native `c$p` 解哪个 methodID 确认，均待下一次 frida 通路打通后按此触发窗口重试。
+
+---
+
+## 2026-07-05 · A16 客户封号 → 签名轴大血管重载缺口调查（结论：Java hook 能截、拓三重载待审）
+
+- **触发**：客户机 Android 16、非 root、正常授权，仍被封 → 追「签名轴到底喂没喂进检测大血管」。全程只读、未改码。
+- **调查链（5 步）**：
+  1. 代码核实：`A2SignatureSpoof` hook = **全时**（进程存活期每次 `getPackageInfo` 调用都重写 `signatures[]`+`signingInfo`，无 latch/run-once），非一次性；但**只 hook `getPackageInfo(String,int)` 一个重载**。
+  2. 静态 jadx（子代理，官方 8.0.71 `I:\apk2\_3__D_wechat_ban\jadx_8071\sources\`，BuildConfig 坐实 versionCode 3080 / 8.0.71）：Java 全库 **0 处**用 A13+ 新重载 `PackageInfoFlags`/`getPackageInfoAsUser`；`bu5.a.a`/`t8.c0`/`ip5.b`/`oy5.d` 等纯 Java 签名读取点全走旧 `(String,int)`（flags 0x40 / 0x8000000）→ 这些点我们 hook 任何 Android 版本都盖。**但主漏斗 `c$p`(aa/ad/af) 是 native。**
+  3. SO 逆（子代理，从官方 8.0.71 APK 抽 `lib/arm64-v8a/libwechatnormsg.so`，md5 `c0e2cba0…` = 真机 L1 同一颗）：ELF + 反编译实测 **binder 直读排除**（零 ioctl/libbinder/Parcel/transact/IPackageManager 导入）+ **自解 APK 无证据**（零 zip/inflate/crypto/base.apk/META-INF）+ **实锤 JNI 回调**（FindClass/GetStaticFieldID/GetStaticObjectField/NewStringUTF + 每步 ExceptionCheck 的 JNIEnv vtable 偏移全对上 + `c$q` Java provider 桥）→ **normsg 读 Java 侧数据走 JNI→ART**。
+  4. 判定：native 用 JNI 调 `getPackageInfo` 读签名照样经 ART 方法分发，Xposed/LSPatch hook 改的就是 ART 入口 → **我们的 Java hook 能截到**（也解释 A11 L1 为何有效）。不需碰 native hook / 底层注入。
+  5. 唯一残留 A16 洞：native 用 JNI `GetMethodID` 解哪个 `getPackageInfo` 重载在加密 native 里看不到，**不能排除 A16 解的是新的 `(String, PackageInfoFlags)`**（第 2 步「Java 全库 0 处」只约束 Java 调用方，不约束 native 自己解 methodID）。
+- **修法（最终口径见 2026-07-08e/f/g 已闭合）**：签名/包名/路径三轴按 A13+ 新重载（`getPackageInfo(String,PackageInfoFlags)` / `getApplicationInfo(String,ApplicationInfoFlags)`）拓宽并 A15 真机 L1 闭合。⚠️ 本节当时拟的"含 `getPackageInfoAsUser` 保险下游"**已否**——07-08 栈追踪实证 AsUser 是 framework 内部转调、非独立读取点，不挂。
+- **成色**：Java hook 能截 native JNI = **L3 收敛**（SO 静态坐实 JNI→ART、非 binder）；A16 真机实读 `c$p.ad` MD5（官方 `18c867f0` vs 非官方）= 唯一 L1 铁证，**待验**；「签名是不是这次封因」= **L4 从未实证**（禁猜封因）。
+- **证据（在盘、不复制）**：`recon/so_extract_20260705/`（`libwechatnormsg_arm64-v8a.so` + `analyze.py` + `imports_arm64.txt` + `strings_arm64.txt`）；jadx 源 `I:\apk2\_3__D_wechat_ban\jadx_8071\sources\`。
+- **待办 → ✅ 已闭合（2026-07-08e/f/g）**：签名/包名/路径三轴 A13+ 新重载已拓并 A15 真机 L1 闭合；最终口径 = 官替签名轴 2 入口(getPackageInfo × int/PackageInfoFlags)、共存再 +包名/路径轴各 4 入口，**AsUser 未挂**(实证 framework 内部转调、冗余)。③ native `c$p` methodID 确认仍 L3、非必需。
+
+---
+
 ## 2026-06-29 · registry 单一真源归一（C5a 收口）— Devin 任务派发
 
 - **触发**：PROTECTION_MAP §P0-1 仍剩 MomentsFilter 5 处混淆字面量内联（`jw1.d` / `wq.c1` / `wq.y0` / `ii5.b` 等），`ConvFilter` / `ContactFilter` 已归一，本次收尾 MomentsFilter。

@@ -67,6 +67,11 @@ public final class A2SignatureSpoof {
     //   0x1 = root/提权框架   0x2 = RE/重打包工具   0x4 = hook 框架(xposed/lsposed)
     //   0x8 = RE/root 工具已注册无障碍服务（更强可疑信号，来自 accessibility 借用点）
     private static volatile int sBorrowedEnv = 0;
+
+    // A16 验证日志限流（DEBUG-only）：新/老 getPackageInfo 重载各首次灌值时打一行，
+    // 供无 root A16 真机 adb logcat 确认「微信真走新重载读签名 + 已灌官方」。release R8 剔除。
+    private static volatile boolean sLoggedOldOv = false;
+    private static volatile boolean sLoggedNewOv = false;
     static final int BIT_ROOT = 0x1;
     static final int BIT_RE   = 0x2;
     static final int BIT_HOOK = 0x4;
@@ -122,28 +127,37 @@ public final class A2SignatureSpoof {
             return;
         }
         final String self = BuildConfig.GUARD_WX_PKG;
-        try {
-            XposedHelpers.findAndHookMethod(
-                    "android.app.ApplicationPackageManager", lpparam.classLoader,
-                    "getPackageInfo", String.class, int.class,
-                    new XC_MethodHook() {
-                        @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
-                            try {
-                                observeBorrowed(param, self);   // 借官方眼睛：被动观测，绝不改他包返回
-                            } catch (Throwable ignored) {
-                            }
-                            try {
-                                feedOfficial(param, self, der);
-                            } catch (Throwable ignored) {
-                                // 单次失败不影响官方包本体（铁律 19/25）
-                            }
-                        }
-                    });
-            Log.i(TAG, "[A2SIG] installed (self=" + self + ", der=" + der.length + "B)");
-        } catch (Throwable t) {
-            Log.w(TAG, "[A2SIG] install fail: " + t.getClass().getSimpleName());
-        }
+        // 共用 afterHook 体：被动观测「借官方眼睛」+ 灌官方签名（只动自身包，红线#1）。
+        final XC_MethodHook sigHook = new XC_MethodHook() {
+            @Override
+            protected void afterHookedMethod(MethodHookParam param) {
+                try {
+                    observeBorrowed(param, self);   // 借官方眼睛：被动观测，绝不改他包返回
+                } catch (Throwable ignored) {
+                }
+                try {
+                    feedOfficial(param, self, der);
+                } catch (Throwable ignored) {
+                    // 单次失败不影响官方包本体（铁律 19/25）
+                }
+            }
+        };
+        // 减法（2026-07-08 A11 栈追踪 L1，官方原版 8.0.71）：c$p.ad/aa/af + t8.c0 + oy5.d + bu5.a.a
+        // 读自身签名的对象**唯一源** = getPackageInfo(String,int)；getPackageInfoAsUser 只是 framework
+        // 内部转调（栈实证无一条独立调用）、getPackageArchiveInfo / getInstalledPackages 零命中 → hook
+        // AsUser 纯冗余、只增暴露面（守红线#2 精神），不做加法。只保两入口：
+        //   ① getPackageInfo(String,int)   —— A11 唯一源、老 hook 已验证覆盖 c$p（不动语义，铁律29）
+        //   ② getPackageInfo(String,PackageInfoFlags)（A13+）—— A16 唯一真缺口候选（本机 A11 无此重载→计0）
+        // ⚠️ 防破解命门（禁改）：绝不 hook getPackageArchiveInfo / getInstalledPackages —— 防破解读点
+        //   CompatProbe.certOfModule + ModuleMain.bindSigningCert 走 getPackageArchiveInfo 读【真实签名】
+        //   算 registry key / 抓重签；灌了官方值 → 盗版重签也算出真 key → 散沙失效、反白嫖破功。
+        int installed = 0;
+        installed += hookSig(lpparam, "getPackageInfo",
+                new Object[]{ String.class, int.class }, sigHook);
+        installed += hookSig(lpparam, "getPackageInfo",
+                new Object[]{ String.class, "android.content.pm.PackageManager$PackageInfoFlags" }, sigHook);
+        Log.i(TAG, "[A2SIG] installed sig hooks=" + installed + "/2 (self=" + self
+                + ", der=" + der.length + "B)");
 
         // A2-3 android_id 轴：afterHook Settings.Secure.getString(_, "android_id")，把返回喂成
         // 官方签名本机 SSAID，让检测大血管 c$p.aa/ea 读到「签名↔android_id」自洽的官方态。
@@ -200,7 +214,7 @@ public final class A2SignatureSpoof {
         if (param.args == null || param.args.length < 2) return;
         Object pkgArg = param.args[0];
         if (pkgArg == null || !self.equals(pkgArg.toString())) return;   // 只动自身包
-        int flags = (param.args[1] instanceof Integer) ? (Integer) param.args[1] : 0;
+        long flags = extractFlags(param.args[1]);
         boolean wantSig = (flags & GET_SIGNATURES) != 0
                 || (flags & GET_SIGNING_CERTIFICATES) != 0;
         if (!wantSig) return;
@@ -214,6 +228,60 @@ public final class A2SignatureSpoof {
         if (pi.signingInfo != null) {
             spoofSigningInfo(pi.signingInfo, official);
         }
+        // A16 无 root 验证锚点（DEBUG-only，新/老重载各首次一行，不刷屏）：arg[1] 是 int =
+        // 老重载 getPackageInfo(String,int)；是 PackageInfoFlags 对象 = A13+ 新重载。A16 上若见
+        // NEW-overload 行 = 微信真经新重载读签名且已灌官方（A11 只会出 OLD-overload）。
+        if (BuildConfig.DEBUG) {
+            boolean isNew = !(param.args[1] instanceof Integer);
+            if (isNew && !sLoggedNewOv) {
+                sLoggedNewOv = true;
+                Log.i(TAG, "[A2SIG] fed OFFICIAL via NEW-overload(PackageInfoFlags) flags=0x"
+                        + Long.toHexString(flags) + " (A13+/A16 走新重载读签名, 已灌官方)");
+            } else if (!isNew && !sLoggedOldOv) {
+                sLoggedOldOv = true;
+                Log.i(TAG, "[A2SIG] fed OFFICIAL via OLD-overload(String,int) flags=0x"
+                        + Long.toHexString(flags));
+            }
+        }
+    }
+
+    /**
+     * Hook one getPackageInfo overload with the shared signature-feeding
+     * afterHook. Uses the XposedHelpers varargs form (parameter types may be
+     * Class or a String class-name resolved via classLoader). Returns 1 on
+     * success, 0 when the overload is absent on this Android version — A11 has
+     * no PackageInfoFlags overload, so a missing one must be swallowed (铁律25),
+     * never crash init.
+     */
+    private static int hookSig(XC_LoadPackage.LoadPackageParam lpparam,
+                               String method, Object[] sig, XC_MethodHook hook) {
+        try {
+            Object[] params = new Object[sig.length + 1];
+            System.arraycopy(sig, 0, params, 0, sig.length);
+            params[sig.length] = hook;
+            XposedHelpers.findAndHookMethod(
+                    "android.app.ApplicationPackageManager", lpparam.classLoader, method, params);
+            return 1;
+        } catch (Throwable t) {
+            return 0;
+        }
+    }
+
+    /**
+     * Extract the flags value from arg[1]. Legacy overloads pass an int; the
+     * A13+ overloads pass a {@code PackageManager.PackageInfoFlags} object whose
+     * {@code getValue()} returns the long flags. Reflect getValue() so we cover
+     * the new overloads without a compile-time A13 SDK dependency.
+     */
+    private static long extractFlags(Object a) {
+        if (a instanceof Integer) return ((Integer) a).longValue();
+        if (a == null) return 0L;
+        try {
+            Object v = a.getClass().getMethod("getValue").invoke(a);
+            if (v instanceof Long) return (Long) v;
+        } catch (Throwable ignored) {
+        }
+        return 0L;
     }
 
     /**

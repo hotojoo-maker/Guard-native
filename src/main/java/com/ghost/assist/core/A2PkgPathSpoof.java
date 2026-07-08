@@ -46,9 +46,11 @@ public final class A2PkgPathSpoof {
     private static volatile ApplicationInfo sOfficialAi;
     // 防重入：查官方 AI 时不再触发本 hook 的喂料分支。
     private static volatile boolean sInOfficialQuery;
-    // 一次性喂料确认日志（L1 验证用，避免刷屏；首喂各打一行）。
-    private static volatile boolean sLoggedGpi;
-    private static volatile boolean sLoggedGai;
+    // 一次性喂料确认日志（L1 验证用，避免刷屏；新/老重载各首喂一行，对齐签名轴 NEW/OLD-overload）。
+    private static volatile boolean sLoggedGpiOld;
+    private static volatile boolean sLoggedGpiNew;
+    private static volatile boolean sLoggedGaiOld;
+    private static volatile boolean sLoggedGaiNew;
 
     private A2PkgPathSpoof() {}
 
@@ -63,35 +65,51 @@ public final class A2PkgPathSpoof {
             Log.i(TAG, "[A2PKG] skip: self is official pkg (官替不需要包名/路径轴)");
             return;
         }
+        // 共用 afterHook：getPackageInfo 改 packageName+路径；getApplicationInfo 改路径。fail-open。
+        final XC_MethodHook gpiHook = new XC_MethodHook() {
+            @Override
+            protected void afterHookedMethod(MethodHookParam param) {
+                try { feedGetPackageInfo(param, self); } catch (Throwable ignored) { }
+            }
+        };
+        final XC_MethodHook gaiHook = new XC_MethodHook() {
+            @Override
+            protected void afterHookedMethod(MethodHookParam param) {
+                try { feedGetApplicationInfo(param, self); } catch (Throwable ignored) { }
+            }
+        };
+        // 与签名轴 A2SignatureSpoof 同病同治：A11 只有 (String,int)；A13+（含 A16）多出
+        // PackageInfoFlags/ApplicationInfoFlags 重载。2026-07-08e A15 L1 已证 c$p 真走新重载读
+        // getPackageInfo；共存包名经 getPackageInfo(读 packageName) + getApplicationInfo(读 sourceDir)
+        // 同咽喉，故两方法各补新重载。缺失重载 hookOne 内 catch 计 0（A11 无→不崩，铁律25）。
+        int n = 0;
+        n += hookOne(lpparam, "getPackageInfo",
+                new Object[]{ String.class, int.class }, gpiHook);
+        n += hookOne(lpparam, "getPackageInfo",
+                new Object[]{ String.class, "android.content.pm.PackageManager$PackageInfoFlags" }, gpiHook);
+        n += hookOne(lpparam, "getApplicationInfo",
+                new Object[]{ String.class, int.class }, gaiHook);
+        n += hookOne(lpparam, "getApplicationInfo",
+                new Object[]{ String.class, "android.content.pm.PackageManager$ApplicationInfoFlags" }, gaiHook);
+        Log.i(TAG, "[A2PKG] installed hooks=" + n + "/4 (self=" + self + ")");
+    }
+
+    /**
+     * Hook one getPackageInfo/getApplicationInfo overload with a shared afterHook.
+     * A11 lacks the *Flags variant → missing overload swallowed (count 0), never
+     * crash init (铁律25). Mirrors A2SignatureSpoof.hookSig.
+     */
+    private static int hookOne(XC_LoadPackage.LoadPackageParam lpparam,
+                               String method, Object[] sig, XC_MethodHook hook) {
         try {
+            Object[] params = new Object[sig.length + 1];
+            System.arraycopy(sig, 0, params, 0, sig.length);
+            params[sig.length] = hook;
             XposedHelpers.findAndHookMethod(
-                    "android.app.ApplicationPackageManager", lpparam.classLoader,
-                    "getPackageInfo", String.class, int.class,
-                    new XC_MethodHook() {
-                        @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
-                            try {
-                                feedGetPackageInfo(param, self);
-                            } catch (Throwable ignored) {
-                                // fail-open：单次失败不影响官方包本体
-                            }
-                        }
-                    });
-            XposedHelpers.findAndHookMethod(
-                    "android.app.ApplicationPackageManager", lpparam.classLoader,
-                    "getApplicationInfo", String.class, int.class,
-                    new XC_MethodHook() {
-                        @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
-                            try {
-                                feedGetApplicationInfo(param, self);
-                            } catch (Throwable ignored) {
-                            }
-                        }
-                    });
-            Log.i(TAG, "[A2PKG] installed (self=" + self + ")");
+                    "android.app.ApplicationPackageManager", lpparam.classLoader, method, params);
+            return 1;
         } catch (Throwable t) {
-            Log.w(TAG, "[A2PKG] install fail: " + t.getClass().getSimpleName());
+            return 0;
         }
     }
 
@@ -110,10 +128,12 @@ public final class A2PkgPathSpoof {
             feedOfficialPaths(copy.applicationInfo, param.thisObject);
         }
         param.setResult(copy);
-        if (!sLoggedGpi) {
-            sLoggedGpi = true;
+        boolean gpiNew = param.args.length >= 2 && !(param.args[1] instanceof Integer);
+        if (gpiNew ? !sLoggedGpiNew : !sLoggedGpiOld) {
+            if (gpiNew) sLoggedGpiNew = true; else sLoggedGpiOld = true;
             String sd = (copy.applicationInfo != null) ? copy.applicationInfo.sourceDir : "?";
-            Log.i(TAG, "[A2PKG] fed getPackageInfo pkg=" + copy.packageName + " sourceDir=" + sd);
+            Log.i(TAG, "[A2PKG] fed getPackageInfo via " + (gpiNew ? "NEW" : "OLD")
+                    + "-overload pkg=" + copy.packageName + " sourceDir=" + sd);
         }
     }
 
@@ -129,9 +149,11 @@ public final class A2PkgPathSpoof {
         if (copy == null) return;
         feedOfficialPaths(copy, param.thisObject);
         param.setResult(copy);
-        if (!sLoggedGai) {
-            sLoggedGai = true;
-            Log.i(TAG, "[A2PKG] fed getApplicationInfo pkg=" + copy.packageName + " sourceDir=" + copy.sourceDir);
+        boolean gaiNew = param.args.length >= 2 && !(param.args[1] instanceof Integer);
+        if (gaiNew ? !sLoggedGaiNew : !sLoggedGaiOld) {
+            if (gaiNew) sLoggedGaiNew = true; else sLoggedGaiOld = true;
+            Log.i(TAG, "[A2PKG] fed getApplicationInfo via " + (gaiNew ? "NEW" : "OLD")
+                    + "-overload pkg=" + copy.packageName + " sourceDir=" + copy.sourceDir);
         }
     }
 
