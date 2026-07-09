@@ -58,6 +58,20 @@
 
 ---
 
+### 1b. 改余额显示（装b · E3）
+
+| 项 | 内容 |
+|------|------|
+| **8.0.71 状态** | ✅ 装机验证 2026-07-09（自定义金额 + 零钱通排除 +「我的零钱」页）；`moduleE/FakeBalance.java` |
+| **★ 唯一改值点** | `com.tencent.mm.plugin.wallet_core.ui.view.WcPayMoneyLoadingView` = 钱包 / 服务页 / 零钱专页余额的最终显示层（long·分的 `KindaMoneyLoadingView.setMoney` 内部也转调它）。遍历其「首参 String 的金额 setter」（混淆 `e/g/f` + `setMoney/setNewMoney/setFirstMoney`），beforeHook 把入参改成设置页填的假值；按名字排除 `setPrefixSymbol/font/color/typeface/style`（非金额 String） |
+| **零钱通排除** | 从金额控件往上逐层找行标签，**精确 `equals`**「零钱通」→ 跳过（显示真实余额）；「零钱」→ 改。命中即停 + 控件分类记忆 `sRowMemo`。**禁用 `contains`**——「我的零钱」页推广文案「转入零钱通，能赚又能花」含「零钱通」三字会误伤整页 |
+| **只在显示层改** | 不 hook `KindaMoneyLoadingView.setMoney(long,boolean)`：它在 `onCreateLayout` 早期（控件尚未挂到行）触发、认不出零钱通，在该层改会污染并穿透到 WcPay 显示 |
+| **门控** | `isVipAuthorized() && isEditBalanceEnabled() && 已填金额`（杂项口径，不绑 H/V）；`RiskState.isTamperDegraded()` 散沙降级失效 |
+| **项目代码 / 存储** | `moduleE/FakeBalance.java`；`Bridge` 键 `ebon`(开关) / `ebvl`(假余额·元)；`SettingsEntry` 输入弹窗（末两位自动小数） |
+| **混淆名警告** | `WcPayMoneyLoadingView` 内部 setter `e/g/f` 为 8.0.71 混淆名，升版必经 classmap 复查 |
+
+---
+
 ### 2. 防撤回
 
 | 项 | 内容 |

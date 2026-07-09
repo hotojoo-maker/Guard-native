@@ -261,10 +261,12 @@ symbols:
     refs: [moduleB/UpdateGuard.java]
     status: ok
 
-  # ---- 推送/通知（PushFilter，已证伪路径）----
+  # ---- 推送/通知（PushFilter）----
+  # x.d = 主进程消息到达点，live（Frida L1 实证 2026-05-29，PushFilter MSGALERT）。
+  # 仅 x.a(f9) 子路径 8.0.71 零命中证伪，勿重试；类本身被 x.d hook 引用，status=ok。
   - name: com.tencent.mm.booter.notification.x
     kind: class
-    desc: 通知 booter 类（x.a(f9) 8.0.71 零命中，已证伪废弃）
-    feature: "C 推送通知（§C 废弃路径）"
+    desc: 通知 booter 类；x.d = 主进程消息到达点 live（L1 2026-05-29）；仅 x.a(f9) 零命中证伪废弃
+    feature: "C 推送通知（x.d 消息到达 live）"
     refs: [moduleC/PushFilter.java]
-    status: deprecated
+    status: ok

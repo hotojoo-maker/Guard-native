@@ -29,6 +29,8 @@ description: Guard Native 执行——写代码/跑脚本/设备调试/单个 P 
 
 **文档车道（8071）**：先读 [`docs/README.md`](../../docs/README.md)。写 hook 以 `docs/HOOK_MAP_8071_AUTHORITATIVE.md` 为准；**禁止**从 `docs/archive/wechat_8066/` 或 Catfish `refs/` 直搬类名（见 `docs/isolation/INDEX_COMPETITOR.md`）。
 
+**换微信版本 / 找 hook**：先读 `docs/VERSION_UPGRADE_SOP.md`（jadx → check_classmap → 更新字典 → regen registry → 重打包整套流程）；终端探针命令在 `guard-terminal_终端操作/PROBING_找hook探针.md`（按需 Read）。
+
 **门控/状态机语意**：动 StateMachine / AuthManager / SearchUnlock / Filter 的 `isActive()` 调用前，**必须先读** `guard-auth-review` skill **§零.前 语意速查**。该节解释：① 入口口令 / 授权 / 状态机三者互不替代；② HIDDEN/VISIBLE/UNLOCKING 三态用户实际看到什么；③ Filter 只能 **只读** `isActive()`，禁止 `enterHidden/exitHidden`。
 
 ---
@@ -367,7 +369,6 @@ v4（仅在 v3 没找到时）→ 拽嵌套对象一层
 - ❌ 卡住了去看 Catfish/8.0.70（换话题逃避）
 - ❌ logcat 没命中就假设 hook 成功
 - ❌ 写 hook 前不过 F-xx 速查表
-- ❌ 收尾不跑 frida_stats
 - ❌ 自己写 FAILURE_LOG（标注 TODO，让总调度写）
 - ❌ 用"已确认"/"命中"描述尚未设备实测的推断（= 上下文幻觉根因）
 - ❌ 不维护 worklog.md 就跨多轮推进（= 失忆型螺旋）

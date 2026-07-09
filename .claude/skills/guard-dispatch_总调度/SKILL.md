@@ -136,7 +136,7 @@ description: Guard Native 总调度——制定 P 任务计划/协调多 Vchat �
 - 每完成一个子任务更新 `03_execute_执行任务/P<N>/result.md`
 
 ### 5. 收尾
-- 跑 `frida_stats.js` 对比基线（F-22 铁律）
+- KPI（`frida_stats.js`）= **可选抽检、非收尾硬门**（2026-07-02 弱化 · F-22 铁律同口径；我方零环境读取故 vbs/PROP 不增量）——想抽跑就跑、不跑不挡收尾；红线真源见 `guard-antiban` skill / `CLAUDE.md` §七
 - **文档写入门控**：改 `HOOKMAP.md` / `TASK_BOARD.md` / `worklog.md` / `result.md` / `FAILURE_LOG.md` 前，**必须先向用户展示拟写入内容，等明确同意后再改**
 - 更新 `HOOKMAP.md` 对应行状态 ⬜→🟡 或 🟡→✅（仅用户同意后）
 - 在 `04_review_审稿复核/W<N>_<日期>.md` 写 5-10 行交接快照（仅用户同意后）
@@ -150,7 +150,7 @@ description: Guard Native 总调度——制定 P 任务计划/协调多 Vchat �
 【总调度报告】
 
 接手状态: 新会话 | 续接 P<N>
-当前窗口: W<N> (主题: xxx)
+当前窗口: <角色>-<序号> (主题: xxx)
 P 任务: P<N>_xxx
 预计耗时: X 天
 
@@ -263,7 +263,6 @@ adb logcat -d 2>&1 | findstr "NCL"
 - ❌ **未经用户同意改 md 文档**
 - ❌ 该更新且经用户确认却不更新 TASK_BOARD 就开干
 - ❌ 跑多窗口都改根目录 md
-- ❌ 关任务不跑 frida_stats.js
 - ❌ 测试失败只分析不写诊断脚本 — **必须产出可执行命令给用户**
 - ❌ 给说明书不给提示词 — **用户要的是 "Run this:" 不是 "You should check X"**
 - ❌ 不换窗口时反复 invoke skill — **同一窗口连续干活直接用，别每次问要不要切 agent**

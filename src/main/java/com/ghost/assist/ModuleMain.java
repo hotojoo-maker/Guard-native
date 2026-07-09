@@ -271,8 +271,8 @@ public class ModuleMain implements IXposedHookLoadPackage, IXposedHookZygoteInit
         // 隐藏微信「设置」页「存储空间」入口行（授权 + 隐身态；只读 StateMachine）
         com.ghost.assist.moduleD.SettingsStorageHideGuard.install(lpparam);
         UpdateGuard.install(lpparam);
-        // 官方热更新通道冻结（libcso/Tinker）。Tinker 类走 app classloader（DelegateLastClassLoader）。
-        // 默认冻结模式（AppConfig.isHotFreezeEnabled=true）：命中即 no-op，断查更/下载/apply；置 false 才是观测（只 log 不改行为）。
+        // 官方热更新通道（libcso/Tinker/整包更新）。Tinker 类走 app classloader（DelegateLastClassLoader）。
+        // D-033（2026-07-05）：远程自动热更新(Tinker)默认放行(observe)；整包/手动点「检查更新」仍默认冻结。
         com.ghost.assist.moduleB.HotUpdateFreeze.install(lpparam, app.getClassLoader());
         installForegroundFunnelTrigger(lpparam);  // 段1: 前台(onResume)触发引流弹窗（唯一出口 RiskPromptController）
         TriggerGuard.install(app);  // B1/B2/B5，Android API，不吃 lpparam

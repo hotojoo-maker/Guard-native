@@ -14,13 +14,20 @@ import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
 /**
- * 官方热更新通道冻结（libcso 主 / Tinker 次）。
+ * 官方热更新通道（libcso 主 / Tinker 次 / 整包更新）。
  *
  * 与 UpdateGuard(B7) 分工：UpdateGuard = 设置页更新红点 UI；本类 = 热更新通道层。
  *
- * 模式（AppConfig.isHotFreezeEnabled，默认 true=冻结/生产锁版本）：
- *   true（默认）= 冻结：命中即 no-op，断「查更 / 下载 / apply」。
- *   false        = 观测：hook 挂上，只 log 命中，不改行为（冒烟验崩溃 + 看通道是否触发）。
+ * 两档独立开关（D-033，2026-07-05）：
+ *   ① 远程自动热更新（Tinker，p53.j.b / m53.d0.j / m53.d0.d）
+ *       = AppConfig.isAutoHotUpdateFreezeEnabled()，默认 false = 放行（只 log 不拦）。
+ *       用户 2026-07-05 明确要求关闭对「官方远程自动热更新」的拦截。
+ *   ② 整包 / 手动点「检查更新」版本升级（fl4.o.Wg 查更 / fl4.o.Bg 装包弹框）
+ *       = AppConfig.isHotFreezeEnabled()，默认 true = 继续冻结（保持 07-05 前行为，
+ *         防客户手动升级把重打包版本换掉）。
+ *   libcso ip.g.a 一直 observe-only（兼正常 SO 加载，整条冻结会误伤）。
+ *
+ * true=冻结（命中即 no-op），false=观测（hook 挂上，只 log 命中，不改行为）。
  *
  * 全程只 hook Java 方法、不碰 native（与 F-23 无关）；libcso native(mprotect) 禁。
  *
@@ -37,14 +44,19 @@ public class HotUpdateFreeze {
 
     private static boolean sInstalled = false;
 
+    // 整包 / 手动点「检查更新」版本升级（fl4.o.Wg/Bg）—— 默认冻结。
     private static boolean freeze() { return AppConfig.getInstance().isHotFreezeEnabled(); }
+
+    // 远程自动热更新（Tinker）—— D-033 起默认放行（observe），只 log 不拦。
+    private static boolean autoFreeze() { return AppConfig.getInstance().isAutoHotUpdateFreezeEnabled(); }
 
     public static void install(XC_LoadPackage.LoadPackageParam lpparam, ClassLoader appCl) {
         if (sInstalled) return;
         sInstalled = true;
         ClassLoader cl = (appCl != null) ? appCl : lpparam.classLoader;
 
-        Log.i(TAG, P + " install begin (mode=" + (freeze() ? "FREEZE" : "OBSERVE") + ")");
+        Log.i(TAG, P + " install begin (fullApk=" + (freeze() ? "FREEZE" : "OBSERVE")
+                + " autoTinker=" + (autoFreeze() ? "FREEZE" : "OBSERVE") + ")");
 
         hookLibcsoStartup(cl);
         hookTinkerCheckUpdate(cl);
@@ -83,7 +95,7 @@ public class HotUpdateFreeze {
             XposedHelpers.findAndHookMethod("p53.j", cl, "b", Map.class, new XC_MethodHook() {
                 @Override
                 protected void beforeHookedMethod(MethodHookParam param) {
-                    if (freeze()) {
+                    if (autoFreeze()) {
                         param.setResult(null);
                         Log.i(TAG, P + " tinker p53.j.b → blocked (checkAvailableUpdate)");
                     } else {
@@ -104,7 +116,7 @@ public class HotUpdateFreeze {
                 @Override
                 protected void beforeHookedMethod(MethodHookParam param) {
                     AppConfig.getInstance().recordHotUpdate("m53.d0.j");
-                    if (freeze()) {
+                    if (autoFreeze()) {
                         param.setResult(false);
                         Log.i(TAG, P + " tinker m53.d0.j → blocked (process response)");
                     } else {
@@ -125,7 +137,7 @@ public class HotUpdateFreeze {
                 @Override
                 protected void beforeHookedMethod(MethodHookParam param) {
                     AppConfig.getInstance().recordHotUpdate("m53.d0.d");
-                    if (freeze()) {
+                    if (autoFreeze()) {
                         param.setResult(null);
                         Log.i(TAG, P + " tinker m53.d0.d → blocked (apply)");
                     } else {

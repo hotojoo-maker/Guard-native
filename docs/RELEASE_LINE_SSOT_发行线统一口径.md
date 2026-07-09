@@ -44,10 +44,10 @@
 | **服务器 `release_lines.lease_profile`** | `{stable_lease:259200,...}` | 同一份 JSON（2026-06-30 已对齐） |
 | `schema_id` | `r8071_v1` | `r8071_v1` |
 | 微信版本 | `8.0.71` | `8.0.71` |
-| `product_version` | `v1.6` | `v1.6` |
+| `product_version` | `v1.8` | `v1.8` |
 | debug 签名 cert | `ca421ec3`（仅 smoke） | `ca421ec3`（仅 smoke） |
 
-**版本号备注**：`v1.3 → v1.6`（`versionCode 13 → 14`），有意跳过 1.4 / 1.5。客户端真源 = `build.gradle`；服务器 `release_lines.product_version` 同步 v1.6。
+**版本号备注**：当前版本线 `v1.8` / `versionCode 16`（真源 `build.gradle:65-68` + commit `1cb7716`，G8）；**已出货给客户仍 = v1.7 / `versionCode 15`**（v1.8 正式包尚未出货，装机记录见 `_CORE/发版_当前真源.md §⑦`）。历史：`v1.3 → v1.6`（`vc13→14`，跳过 1.4/1.5）→ `v1.7`（`vc15`）→ `v1.8`（`vc16`）。服务器 `release_lines.product_version` 两线**已 L1 对齐 v1.8**（2026-07-08；配方零漂移，指纹见 §1 表 `s_rel 7255096e` / `cert e3e13a49`）。pv=v1.8 与出货 v1.7 的口径（`pv` 是展示位、v1.7/v1.8 共用同一份配方）**单一真源在** `_CORE/发版_当前真源.md §⑦`，此处不复写。
 
 **身份与加密分离**：身份（统计 / 封禁 / 后台管理 / 同机双装识别）走 `release_id` + `package_name` + `package_line`；加密（registry 解密 / envelope 钥匙派生）走 cert + S_rel。前者两线**保持不同**、后者两线**完全相同**。
 

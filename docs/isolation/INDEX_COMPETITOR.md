@@ -26,7 +26,7 @@
 | [`./FEATURE_MATRIX.md`](./FEATURE_MATRIX.md) | 8066 / 8070 | 密友功能矩阵 F01–F09 + 失败 / 状态列 |
 | [`./SOURCE_MAP.md`](./SOURCE_MAP.md) | — | refs→apk2 / Catfish 源路径映射（内含外部 `I:/apk2` 路径；如内部互引旧 `refs/` 名待修） |
 | [`./VERSION_8065_ANALYSIS.md`](./VERSION_8065_ANALYSIS.md) | 8.0.65 | 微信 8.0.65 静态分析（versionCode 2960）+ 跨版本字段差异 |
-| [`./FAILURE_LOG_catfish.md`](./FAILURE_LOG_catfish.md) | apk2 副本 | ⚠️ **竞品 / apk2 失败档副本**（原 `refs/FAILURE_LOG.md`，F-01 起讲「8070 套 8066」）——与根目录 `FAILURE_LOG.md`（Guard 自有 F-01~F-42）**不同源**，已改名区分，勿混 |
+| [`./FAILURE_LOG_catfish.md`](./FAILURE_LOG_catfish.md) | apk2 副本 | ⚠️ **竞品 / apk2 失败档副本**（原 `refs/FAILURE_LOG.md`，F-01 起讲「8070 套 8066」）——与根目录 `FAILURE_LOG.md`（Guard 自有 F-01~F-43）**不同源**，已改名区分，勿混 |
 
 ## 三、Catfish 竞品调研（原 `07_archive_归档/T09_Catfish_L0v3/`）
 

@@ -163,6 +163,6 @@ python tools/gen_registry_cipher.py
 
 ---
 
-## 九、待办挂钩（交收口官，本窗不自行执行）
+## 九、待办挂钩
 
-- 建议在 `guard-execute-one_单任务执行` 与 `guard-terminal_终端操作` skill 各加一句「换微信版本 → 先读 `docs/VERSION_UPGRADE_SOP.md`」的指引。**本窗不改 skill 正文**（避免与镜像收敛任务冲突），登记交收口官统一落。
+- ✅ **已落（2026-07-02）**：`guard-execute-one_单任务执行`（§文档车道下）与 `guard-terminal_终端操作`（§找 hook 指针段）均已加「换微信版本 → 先读 `docs/VERSION_UPGRADE_SOP.md`」指引；同轮把 terminal 的找 hook 探针（场景 A/B + frida spawn/warm-attach + KPI 抽检）挪到 `guard-terminal_终端操作/PROBING_找hook探针.md`（子文档，维护期不自动加载、版本适配时按需 Read）。两镜像已 `sync_skills.ps1` 同步。

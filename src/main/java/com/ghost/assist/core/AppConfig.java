@@ -30,7 +30,8 @@ public class AppConfig {
     private static final String KEY_MRD      = "mrd";  // moments red dot
     private static final String KEY_URD      = "urd";  // update red dot
     private static final String KEY_MGI      = "mgi";  // moments group-visible icon (M6a)
-    private static final String KEY_HUF      = "huf";  // hot-update freeze (libcso/Tinker)
+    private static final String KEY_HUF      = "huf";  // 整包/手动点「检查更新」版本升级冻结 (fl4.o.Wg/Bg)
+    private static final String KEY_AHU      = "ahu";  // 远程自动热更新(Tinker)冻结开关（D-033 默认关=放行）
     private static final String KEY_HUL      = "hul";  // hot-update timeline (最近10条·本机采集)
 
     // One-time migration marker: "mv2" = migrated from old DEV-default to PROD-default.
@@ -186,10 +187,16 @@ public class AppConfig {
     public boolean isMomentsGroupIconEnabled() { return mPrefs.getBoolean(KEY_MGI, true); }
     public void setMomentsGroupIconEnabled(boolean v) { mPrefs.edit().putBoolean(KEY_MGI, v).apply(); }
 
-    // 官方热更新冻结（Tinker / 整包更新 / libcso 观测）。默认开 = 生产锁版本
-    // （防官方静默热补丁 + 整包升级把重打包版本换掉 / 改 hook 依赖类）。置 false 可临时观测。
+    // 整包 / 手动点「检查更新」的版本升级冻结（fl4.o.Wg 查更 / fl4.o.Bg 装包弹框）。
+    // 默认开 = 继续挡住「手动点更新换版本」（防客户升级把重打包版本换掉）。保持 2026-07-05 之前行为。
     public boolean isHotFreezeEnabled() { return mPrefs.getBoolean(KEY_HUF, true); }
     public void setHotFreezeEnabled(boolean v) { mPrefs.edit().putBoolean(KEY_HUF, v).apply(); }
+
+    // 官方【远程自动热更新（Tinker）】冻结开关：p53.j.b / m53.d0.j / m53.d0.d。
+    // 2026-07-05（D-033）用户要求关闭对远程自动热更新的拦截 → 默认 false = 放行
+    // （HotUpdateFreeze Tinker 三钩走 observe 分支：只 log 不拦）。需恢复拦截改回默认 true。
+    public boolean isAutoHotUpdateFreezeEnabled() { return mPrefs.getBoolean(KEY_AHU, false); }
+    public void setAutoHotUpdateFreezeEnabled(boolean v) { mPrefs.edit().putBoolean(KEY_AHU, v).apply(); }
 
     // 官方热更新时间线（本机 only · 最近10条环形 · 零上报）：只记「真有货」事件，供 adb 采集。
     public synchronized void recordHotUpdate(String tag) {

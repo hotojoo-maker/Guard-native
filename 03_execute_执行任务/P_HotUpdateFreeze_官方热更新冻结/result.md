@@ -1,5 +1,10 @@
 # result · P_HotUpdateFreeze 装机验证（L1）
 
+> ⚠️ **2026-07-05 决策变更（用户指令 · Chat-mcp `guard_native-F1`，详见 `DECISION_LOG.md` D-033）**：拆成两档独立开关——
+> - **远程自动热更新（Tinker：`p53.j.b`/`m53.d0.j`/`m53.d0.d`）** → 新开关 `isAutoHotUpdateFreezeEnabled()` 默认 `false` = **放行**（observe，只 log 不拦）。
+> - **整包 / 手动点「检查更新」（`fl4.o.Wg`/`fl4.o.Bg`）** → 沿用 `isHotFreezeEnabled()` 默认 `true` = **仍冻结**（保留 07-05 前行为）。
+> 所以以下 §2「Tinker `p53.j.b → blocked`」是**改前历史实证**；改后 Tinker 走 observe，整包 `fl4.o.Wg → blocked` 仍生效。
+
 > 2026-07-01。设备：小米9 `609b4b18` / Android 11 / 8.0.71。出货形态 = LSPatch 重打包 release。
 > 结论：**Tinker + 整包更新 两通道 L1 实证冻结；libcso 观测；官替 + 共存 双版本全功能验证通过。**
 

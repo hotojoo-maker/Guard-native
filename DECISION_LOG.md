@@ -328,6 +328,30 @@
 
 ---
 
+### D-032：android_id 轴收成两轴（2026-07-04）
+- 入口页（防封_当前真源.md、CLAUDE.md）A2 三轴→两轴（去 android_id），因 feedOfficialSsaid 已停喂（非 root 算不出本机 SSAID + 与签名同源冗余）；设计层保留、SSOT §1.1 未同步。
+
+---
+
+### D-033：关闭拦截官方【远程自动热更新（Tinker）】，保留【整包/手动点更新】拦截（2026-07-05）
+- **决策**：**用户要求关闭对官方「远程自动热更新（Tinker）」的拦截**，但**保留之前对「手动点检查更新 / 整包版本升级」的拦截**（用户口径：「只需要保留之前手动点击更新的地方，之前已经做了」）。据此把原来共用一个开关的 `HotUpdateFreeze` 拆成两档：
+  - **远程自动热更新（Tinker：`p53.j.b` / `m53.d0.j` / `m53.d0.d`）** → 新开关 `AppConfig.isAutoHotUpdateFreezeEnabled()`，默认 `false` = **放行**（observe，只 log 不拦）。Tinker 是同版本原地打补丁、类名稳定。
+  - **整包 / 手动点「检查更新」版本升级（`fl4.o.Wg` 查更 / `fl4.o.Bg` 装包弹框）** → 沿用 `AppConfig.isHotFreezeEnabled()`，默认 **`true` 保持冻结**（挡住客户手动升级把重打包版本换掉）。
+  - `libcso ip.g.a` 一直 observe-only（不变）。设置页更新红点（`UpdateGuard`/B7）未动。
+- **依据**：用户 2026-07-05 于 Chat-mcp 会话 `guard_native-F1` 明确指令「把拦截官方热更新的功能关掉」+ 澄清「热更新=远程自动热更新，类名不会变」+「只保留之前手动点击更新的地方」。
+- **影响**：官方远程自动热补丁不再被拦（正常下发生效）；手动/整包升级仍被挡，版本仍受保护。恢复对 Tinker 的拦截：`setAutoHotUpdateFreezeEnabled(true)` 或改回默认。
+- **改动点**：`core/AppConfig.java`（新增 `isAutoHotUpdateFreezeEnabled` + KEY_AHU；`isHotFreezeEnabled` 默认维持 true）、`moduleB/HotUpdateFreeze.java`（Tinker 三钩改走 `autoFreeze()`，整包 Wg/Bg 仍走 `freeze()`）、`ModuleMain.java`（注释）。
+
+---
+
+### D-034：E3 改余额排除零钱通 + 收敛到 WcPay 单一显示层（2026-07-09）
+- **决策**：改余额时「零钱通」显示真实余额（排除），零钱 / 服务页 / 「我的零钱」页仍改假值。实现收敛为**只在 `WcPayMoneyLoadingView`（唯一最终显示层）改值** + 按行标签精确 `equals`「零钱通」排除；不再 hook `KindaMoneyLoadingView.setMoney`。
+- **依据**：用户要求；小米9 共存版 LSPatch 逐项装机验证通过（零钱=假 / 零钱通=真 / 我的零钱=假）。
+- **影响**：`moduleE/FakeBalance.java`；hook 点权威 `docs/HOOK_MAP_8071_AUTHORITATIVE §1b`；`HOOKMAP §E E3`。官替版同代码另线出包验证。
+- **不撤回**：纯显示层，不动状态机 / 授权写链。
+
+---
+
 ## 决策模板
 
 ```markdown

@@ -9,7 +9,7 @@
 
 - **打包型 APK**：模块经 LSPatch **打包进** rebuild 后的官方包 APK（出货主形态）；LSPosed 模块 = 开发/验证阶段历史形态，非当前出货默认。
 - **核心检测轴 = 是否官方（签名/身份）**，这才是官方真正区分的硬轴；**root/解锁本身正常、非异常、非封因**（L1：开发机 root 调试一月零封、官方包读 unlocked 也不 kill），**不当破解者嫌疑**（产品主要面向普通用户，多非 root；root 至多服务器侧弱信号、付费即正版）。
-- **核心打法 = 中间程序「掐官方检测的咽喉、骑它脖子上」**：不自己造检测（守 KPI），而是卡在官方身份检查的咽喉 `getPackageInfo`/c$p 上——**灌官方值**（签名/android_id/包名→官方）= 我们号安全不被判异常；**顺手借官方的眼睛**读「签名变没变」= 抓改包破解。env（`ro.boot.*`）仍官方自己读、我方零读取（详 `03_execute_执行任务/P_AntiBanGate_防封授权闸/DESIGN.md` §0）。
+- **核心打法 = 中间程序「掐官方检测的咽喉、骑它脖子上」**：不自己造检测（守 KPI），而是卡在官方身份检查的咽喉 `getPackageInfo`/c$p 上——**灌官方值**（签名/包名→官方）= 我们号安全不被判异常；**顺手借官方的眼睛**读「签名变没变」= 抓改包破解。env（`ro.boot.*`）仍官方自己读、我方零读取（详 `03_execute_执行任务/P_AntiBanGate_防封授权闸/DESIGN.md` §0）。
 - **环境判定**：靠 `.mm` 官方包自身采集；我方不主动新增环境检测面（KPI 硬约束，见防封研究线 §0）。
 - **命名规约（定死词表 · 2026-06-24，以后照此写、别再解释）**：
   - **不写品牌名** → 官方包 / 共存包 / 官替 / 官方客户端 / **原版**。
@@ -19,7 +19,7 @@
   - **「防破解 / 逆向 / 反编译」直接写**——我们是正派一方、护自家产品（防守口径，不回避）。
   - 往官方检测回答官方真值 = **灌官方值 / 喂官方值**（不写 spoof / 伪造 / 欺骗）。
   - 核心打法固定叫法：**中间程序「掐咽喉 / 骑脖子」** + **借官方的眼睛**（掐 `getPackageInfo`/c$p 咽喉：灌官方值=保号、借官方的眼睛读「签名变没变」=抓破解）。
-  - 技术锚点照写不藏：`签名` / `android_id` / `getPackageInfo` / `c$p` / `LSPatch` / `libguardcore.so`。
+  - 技术锚点照写不藏：`签名` / `getPackageInfo` / `c$p` / `LSPatch` / `libguardcore.so`。
 - **防封命脉真源**：`C:\Users\Me\Desktop\防封_反检测线\防封权威账_2026年6月.md`；机制设计 = `P_AntiBanGate/DESIGN.md`；时间参数 = `配方卡_SPEC_v1.md`。
 
 ## 零、AI 接手第一步 — 确认角色，读 skill
@@ -369,7 +369,7 @@ v4  2 月     底层 C++ 蜜罐 + 加盐字幕混合加密
 
 ## 十三.五、🔐 签名铁律（单一权威 · cert-converge v2 D-026）
 
-> 所有 skill 的签名规则指回这里；skill 里只保留一行 cert 值 + 指针。深真源 → `docs/RELEASE_RULES.md` + `docs/RELEASE_LINE_SSOT_v2.md`。
+> 所有 skill 的签名规则指回这里；skill 里只保留一行 cert 值 + 指针。深真源 → `docs/RELEASE_RULES.md` + `docs/RELEASE_LINE_SSOT_发行线统一口径.md`。
 
 - **发版 release（出货）**：`signing/guard-native-official-release.jks`（alias `guardofficial`）→ cert `e3e13a49`；**官替 + 共存共用此把**（build.gradle `guardOfficialRelease`）。密码在 `signing/keystore.properties`（gitignore）。
 - **调试 debug（smoke）**：`signing/guard-native-debug.keystore` → cert `ca421ec3`；仅模块更新/公告/C2-smoke，cert ≠ `GUARD_EXPECTED_CERT` 注定 registry 散沙，**不作发版候选**。

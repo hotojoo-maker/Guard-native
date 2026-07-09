@@ -46,6 +46,10 @@ tools/re_8071/
 tools/probe_*.js
 tools/verify_nf_*.png
 tools/wallet_uidump.xml
+# E3 钱包余额一次性侦察 scratch（view 树 dump / 探针 / runner，留本地不入库）
+tools/wallet_*
+tools/wv*
+tools/frida_run_wallet.py
 
 # Cursor MCP 配置备份
 .cursor/mcp.json.bak-*
@@ -144,3 +148,24 @@ signing/*.jks
 tmp_*_unzip/
 # P 任务大 .txt 验证日志（logs/ 目录，留本地不入库，同上方 03_execute *.log 规则）
 03_execute_执行任务/**/logs/
+
+# KC-Chat 运行时产物（插件自动生成，请勿入库）
+.cursor/kc-mcp/
+.cursor/kc-mcp-messages/
+.cursor/kc-chat-exports/
+
+# --- 2026-07-09 未跟踪产物保护（防 git add -A 卷入 PII / 大二进制 / 一次性探针）---
+# 根 logs/ = 设备 logcat + KPI/normsg 探针输出 + AI 对话导出（含真实 wxid PII，可重生成，绝不入库）
+/logs/
+# 一次性 frida 探针 / runner（含设备号，可重生成；已跟踪的历史脚本不受影响）
+/tools/dump_*.js
+/tools/frida_run_*.py
+/tools/hold.js
+/tools/wv_*.txt
+/tools/wv_*.err
+# recon 逆向解包产物（第三方 SO + strings/imports dump，体积大、含版权二进制；recon/*.md 仍入库）
+**/recon/**/*.so
+**/recon/**/strings_*.txt
+**/recon/**/imports_*.txt
+# 根目录待删清单 scratch
+/gn_logs_to_remove.txt
