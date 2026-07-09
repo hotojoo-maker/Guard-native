@@ -53,27 +53,24 @@ import com.ghost.assist.net.GuardHeartbeat;
 import java.lang.ref.WeakReference;
 
 import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
 
 /**
- * SettingsEntry v5 — 在微信「我 → 设置」页注入「密友设置 ›」入口行。
+ * SettingsEntry — 微信「我 → 设置」页的密友设置入口。
  *
- * 路径 A：ListView → addHeaderView（天然随列表滚动）
+ * 主入口（设置页）：在「我 → 设置」页「个人资料」行上方注入「量子密友设置 ›」。
+ *   - 锚点 = 「个人资料」那一行（findSettingsListByProfileRow）：找到该文本且祖先里有
+ *     RecyclerView/ListView 的列表 → 就是设置主列表；banner 悬浮在列表最顶（= 个人资料上面）。
+ *   - 渲染：8.0.71 实测 adapter hook（pz3.g onBindViewHolder）0 命中（死路径），改为在列表父层
+ *     注入悬浮 guardRow banner + 顶部 padding + 跟随滚动（syncLlHeader / overlayHostFor）。
  *
- * 路径 B：WxRecyclerView（pz3.g adapter，19 items）
- *   B1（即时固定 header）：在 WxRecyclerView 爷父 LinearLayout 的 index=1 注入 guardRow
- *        作用：第一次进设置立即可见，B2 hooks 装好后自动移除
- *   B2（真正随列表滚动）：XposedBridge.hookAllMethods 钩 pz3.g 三个方法
- *        getItemCount()        → N+1 时返回 N+1（header visible）
- *        getItemViewType(pos)  → pos 0: 借用 original[0] 的 viewType；pos 1..N: shift -1
- *        onBindViewHolder(h,p) → pos 0: 跳过 original，定制 itemView 为 "密友设置 ›"
- *                                 pos 1..N: shift -1，让 original 正常绑定
+ * 备用入口（「我」首页）：解锁态下把「我」首页个人资料行改成「量子密友」，点它弹面板
+ *   （scheduleMoreTabProfileProbe / syncMoreTabProfileEntry）。主入口万一某机型没出来时兜底。
+ *   仅在 LauncherUI 生效，只改行标题、不动「个人资料」详情页的真实微信号值。
  *
  * 铁律：
  *   - 不改 WeChat Adapter 数据字段
  *   - catch (Throwable) 全部静默
- *   - B1 固定 header 在 B2 装好后立即移除，不会重叠
  */
 public class SettingsEntry {
 
@@ -85,13 +82,14 @@ public class SettingsEntry {
     // 两个都监听以兼容不同版本入口。
     private static final String COMMON_SETTINGS_CLASS =
             "com.tencent.mm.plugin.setting.ui.setting_new.CommonSettingsUI";
+    // 备用入口：右下角「我」首页（LauncherUI）——主入口(设置页那行)万一没出来时兜底。
     private static final String LAUNCHER_UI_CLASS =
             "com.tencent.mm.ui.LauncherUI";
     private static final int MORE_PROFILE_TAG = 0x67757072; // "gupr"
+    private static final int PROFILE_LP_TAG   = 0x67756c70; // "gulp" 设置页个人资料行长按备用入口
 
     private static volatile boolean sInstalled      = false;
     private static volatile boolean sDiagDone       = false;
-    private static volatile boolean sProbeScheduled = false;
 
     // Path A: ListView
     private static volatile WeakReference<ListView> sListViewRef;
@@ -116,23 +114,6 @@ public class SettingsEntry {
     private static volatile WeakReference<View> sPaddedRvRef;
     private static volatile int                 sRvOrigPaddingTop    = 0;
     private static volatile boolean             sRvOrigClipToPadding = true;
-
-    // B2: Xposed adapter hooks state
-    private static volatile boolean               sAdapterHooked   = false;
-    private static volatile WeakReference<Object> sKnownAdapterRef = null;
-    private static volatile boolean               sHeaderVisible   = false;
-    // Cached original WeChat item count — our header is appended at pos == sLastOrigCount.
-    // Updated on every getItemCount call to stay in sync with RecyclerView state.
-    private static volatile int                   sLastOrigCount   = 0;
-
-    // P_SE5 (2026-05-28): 切回 INJECT 模式（5-25 原版方案）。
-    // hijack 路径在 8.0.71 上有两个无法解决的难题：
-    //   1. pz3.g.onBindViewHolder afterHook 是死路径（实测 0 命中）
-    //   2. WeChat 的 click dispatch 走 RecyclerView.OnItemTouchListener、不是 OnClickListener
-    //      → H 态 delegate original 永远拿到 null 或 self-ref、点击不响应
-    // INJECT 模式不动"个人资料"行、只在 pos=1 注入"密友设置 ›"新行，H 态点"个人资料"
-    // 走 RecyclerView 原生 dispatch 100% 工作。
-    private static volatile boolean sUseInjectMode    = true;
 
     // P_SE5: overlay 显示期间禁止状态机 enterHidden。
     // 用户在密友设置面板里配置密友时不应被误触发拉回 H。
@@ -176,7 +157,6 @@ public class SettingsEntry {
      * TriggerGuard 触发 enterHidden 后、overlay 状态切换按钮 dismiss 后调本方法。
      */
     public static void onStateChanged() {
-        if (!sUseInjectMode) return;
         final ViewGroup ll = sLlRef != null ? sLlRef.get() : null;
         if (ll == null) return;
         final boolean shouldShow = shouldShowEntry();
@@ -244,12 +224,9 @@ public class SettingsEntry {
         String label = br.getFakeLocLabel();
         return (label != null && !label.isEmpty()) ? label : "\u5df2\u8bbe\u7f6e"; // 已设置
     }
-    private static final int        PROFILE_ROW_TAG   = 0x67757a72; // "guzr"
-    private static final int        PROFILE_ORIG_TAG  = 0x67757a73; // "guzs" — cache 原 onClick listener
-    private static final String     PROFILE_TEXT      = "\u4e2a\u4eba\u8d44\u6599"; // 个人资料
-    private static final String     MIYOU_TEXT        = "\u91cf\u5b50\u5bc6\u53cb"; // 量子密友 — V 态下"个人资料"行替换文字
 
-    // "我" tab top profile row replacement.
+    // 备用入口：右下角「我」首页的头像行（LauncherUI）。主入口(设置页那行)万一某机型没出来时兜底。
+    // 只在「我」首页生效，不碰「个人资料」详情页（详情页微信号保持真实 wxid）。
     private static volatile WeakReference<View> sMoreProfileRowRef;
     private static volatile WeakReference<TextView> sMoreTitleRef;
     private static volatile WeakReference<View.OnClickListener> sMoreOriginalClickRef;
@@ -286,11 +263,15 @@ public class SettingsEntry {
                             String cls = activity.getClass().getName();
                             try {
                                 if (MAIN_SETTINGS_CLASS.equals(cls)
-                                        || (COMMON_SETTINGS_CLASS.equals(cls) && isMainSettingsScreen(activity))) {
-                                    syncEntry(activity);
-                                } else if (COMMON_SETTINGS_CLASS.equals(cls)) {
-                                    removeLlHeader();
+                                        || COMMON_SETTINGS_CLASS.equals(cls)) {
+                                    // 主入口：syncEntry 靠「个人资料」行判定是不是设置主页：
+                                    // 是主页 → 在其上方注入入口行；不是（子页）→ 收掉可能残留的 banner。
+                                    // 带延迟重试：首次进设置页 onResume 时列表可能还没布局好，
+                                    // 立即跑会找不到「个人资料」行 → 需返回再进/点其他才刷出来。
+                                    // 0/250/700ms 三拨补跑，列表一布局好就注入，不用用户再操作。
+                                    scheduleSyncEntry(activity);
                                 } else if (LAUNCHER_UI_CLASS.equals(cls)) {
+                                    // 备用入口：「我」首页个人资料行改「量子密友」（解锁态自显）。
                                     scheduleMoreTabProfileProbe(activity);
                                 }
                             } catch (Throwable t) {
@@ -304,6 +285,8 @@ public class SettingsEntry {
             Log.w(TAG, "[SET] install failed: " + t);
         }
 
+        // 备用入口 hook：任何带「微信号」字样的 TextView attach 时改成「量子密友」（解锁态自显）。
+        // 这是最早截图那个行为（个人资料页微信号→量子密友），作为主入口没出来时的兜底。
         try {
             XposedHelpers.findAndHookMethod(
                     android.view.View.class,
@@ -315,7 +298,12 @@ public class SettingsEntry {
                             if (!(obj instanceof TextView)) return;
                             TextView tv = (TextView) obj;
                             CharSequence text = tv.getText();
-                            if (text == null || !text.toString().contains("微信号")) return;
+                            if (text == null || !text.toString().contains("\u5fae\u4fe1\u53f7")) return;
+                            // 仅「我」首页 LauncherUI 放行；其他含「头像+微信号+大字」的页面
+                            // （转账页 RemittanceUI 等）会被 findProfileTitle 误选中大字控件当标题。
+                            Activity attachAct = unwrapActivity(tv.getContext());
+                            if (attachAct == null
+                                    || !LAUNCHER_UI_CLASS.equals(attachAct.getClass().getName())) return;
                             try {
                                 syncMoreTabProfileEntryFromWxid(tv);
                             } catch (Throwable t) {
@@ -328,14 +316,8 @@ public class SettingsEntry {
             Log.w(TAG, "[SET:more] attach hook failed: " + t);
         }
 
-        // P_SE3: 量子密友文字防覆写 hook。
-        // syncMoreTabProfileEntryFromWxid 把 title.setText("量子密友") 后，WeChat 内部 binder
-        // 可能在后续 layout/refresh 中再次 setText 把文字改回去（如 "昵称"/"用户名"）。
-        // 装一个 TextView.setText(CharSequence) 的 before hook，专门拦 sMoreTitleRef 这一个实例：
-        //   - 仅在 VISIBLE 状态下生效
-        //   - 仅当 this == sMoreTitleRef.get()
-        //   - 当 args[0] != "量子密友" 时强制改回，并打 [SET:more:guard] 日志
-        // 性能：每次 TextView.setText 进 hook 都做一次实例比对，开销可忽略。
+        // P_SE3: 量子密友文字防覆写 hook —— 微信内部 binder 可能在后续 layout 把文字改回，
+        // 专拦 sMoreTitleRef 这一个实例：仅 VISIBLE + this==sMoreTitleRef + args[0]!=量子密友 时改回。
         try {
             XposedHelpers.findAndHookMethod(
                     TextView.class,
@@ -354,7 +336,7 @@ public class SettingsEntry {
                             if (incoming == null || !expected.contentEquals(incoming)) {
                                 param.args[0] = expected;
                                 Log.i(TAG, "[SET:more:guard] setText intercept "
-                                        + incoming + " -> 量子密友");
+                                        + incoming + " -> \u91cf\u5b50\u5bc6\u53cb");
                             }
                         }
                     });
@@ -367,6 +349,39 @@ public class SettingsEntry {
     // -----------------------------------------------------------------------
     // syncEntry — main dispatcher (every onResume, idempotent)
     // -----------------------------------------------------------------------
+
+    /**
+     * 进设置页：即时试一次，然后挂 OnGlobalLayout —— 列表一旦布局好（个人资料行出现）就注入，
+     * 不再靠固定延迟猜（慢机上 700ms 也可能不够，导致要返回再进/点其他才刷出）。
+     * 注入成功 / 该隐藏 / 超 4s 任一 → 自摘监听，避免常驻。syncEntry 幂等。
+     */
+    private static void scheduleSyncEntry(final Activity activity) {
+        syncEntry(activity);
+        final ViewGroup root = getContentRoot(activity);
+        if (root == null) return;
+        final long start = System.currentTimeMillis();
+        final android.view.ViewTreeObserver.OnGlobalLayoutListener[] holder =
+                new android.view.ViewTreeObserver.OnGlobalLayoutListener[1];
+        holder[0] = new android.view.ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override public void onGlobalLayout() {
+                View banner = sHeaderRowRef != null ? sHeaderRowRef.get() : null;
+                boolean injected = banner != null && banner.getParent() != null;
+                boolean done = injected || !shouldShowEntry()
+                        || (System.currentTimeMillis() - start) > 4000;
+                if (done) {
+                    try {
+                        android.view.ViewTreeObserver vto = root.getViewTreeObserver();
+                        if (vto.isAlive()) vto.removeOnGlobalLayoutListener(holder[0]);
+                    } catch (Throwable ignored) {}
+                    return;
+                }
+                syncEntry(activity);
+            }
+        };
+        try {
+            root.getViewTreeObserver().addOnGlobalLayoutListener(holder[0]);
+        } catch (Throwable ignored) {}
+    }
 
     private static void syncEntry(Activity activity) {
         if (activity == null) return;
@@ -381,197 +396,103 @@ public class SettingsEntry {
             sDiagDone = true;
             diagViewTree(root);
         }
-        // P_SE1 hijack: delayed — RecyclerView not laid out until after onResume
-        scheduleProfileRowHijack(root);
+
+        // 锚点 = 「个人资料」那一行所在的列表（RecyclerView / ListView）。
+        // 只认「个人资料」文本且其祖先里有 RV/LV 的 —— 详情页的「个人资料」标题栏没有
+        // 列表祖先，天然被排除；子页（通用/隐私等）没有「个人资料」行，也进不来。
+        // 找不到 = 不是设置主页 → 收掉可能残留的 banner。不再靠标题栏猜测、不靠搜索框位置。
+        View list = findSettingsListByProfileRow(root);
+        if (list == null) {
+            removeLlHeader();
+            return;
+        }
 
         boolean shouldShow = shouldShowEntry();
-
-        // ── Path A: ListView ─────────────────────────────────────────────────
-        ListView lv = findListViewRecursive(root);
-        if (lv != null) {
-            syncListViewHeader(lv, activity, shouldShow);
-            return;
+        if (list instanceof ListView) {
+            syncListViewHeader((ListView) list, activity, shouldShow);
+        } else {
+            handleRecyclerView(list, activity, shouldShow);
         }
-
-        // ── Path B: WxRecyclerView ────────────────────────────────────────────
-        View rv = findRecyclerViewRecursive(root);
-        if (rv != null) {
-            handleRecyclerView(rv, activity, shouldShow);
-            return;
-        }
-
-        Log.w(TAG, "[SET] no ListView/RecyclerView found — check [SET:tree] log");
+        attachProfileRowLongPressBackup(root);
     }
 
-    private static boolean isMainSettingsScreen(Activity activity) {
+    // 备用入口②（长按 · 2026-07-09）：设置页「个人资料」整行长按 → 弹量子密友面板。
+    // 只加长按、不碰普通点击（普通点击照常进真·个人资料页，零破坏）；主入口 banner 某机型
+    // 没注入出来时的兜底。仅 shouldShowEntry()（显形态）挂、隐藏态摘。EntryGate：只开面板，
+    // 不碰授权/状态机/过滤（授权检查官改前审 PASS）。
+    private static void attachProfileRowLongPressBackup(ViewGroup root) {
         try {
-            ViewGroup root = getContentRoot(activity);
-            if (root == null) return false;
-            // CommonSettingsUI hosts both the top settings page and many child
-            // pages. Background fragments can remain in the root, so first check
-            // the visible toolbar title instead of scanning the whole tree.
-            String title = findVisibleToolbarTitle(root, activity);
-            return "\u8bbe\u7f6e".equals(title)
-                    && (hasExactText(root, "\u8d26\u53f7\u4e0e\u5b89\u5168")
-                    || hasExactText(root, "\u901a\u7528")
-                    || hasExactText(root, "\u9690\u79c1"));
-        } catch (Throwable ignored) {
-            return false;
-        }
-    }
-
-    private static boolean hasExactText(View v, String expected) {
-        if (v instanceof TextView) {
-            CharSequence text = ((TextView) v).getText();
-            if (text != null && expected.contentEquals(text)) return true;
-        }
-        if (v instanceof ViewGroup) {
-            ViewGroup g = (ViewGroup) v;
-            for (int i = 0; i < g.getChildCount(); i++) {
-                if (hasExactText(g.getChildAt(i), expected)) return true;
+            TextView profileTv = findTextViewContaining(root, "\u4e2a\u4eba\u8d44\u6599"); // 个人资料
+            if (profileTv == null) return;
+            View row = null;
+            ViewParent p = profileTv.getParent();
+            for (int i = 0; i < 5 && p instanceof View; i++) {
+                View pv = (View) p;
+                row = pv;
+                if (pv.isClickable()) break;
+                p = pv.getParent();
             }
-        }
-        return false;
-    }
-
-    private static String findVisibleToolbarTitle(View v, Context context) {
-        TextView title = findVisibleToolbarTitleView(v, context, null);
-        CharSequence text = title != null ? title.getText() : null;
-        return text != null ? text.toString() : null;
-    }
-
-    private static TextView findVisibleToolbarTitleView(View v, Context context, TextView best) {
-        if (v == null || !v.isShown()) return best;
-        if (v instanceof TextView) {
-            TextView tv = (TextView) v;
-            CharSequence text = tv.getText();
-            if (text != null && text.length() > 0 && text.length() <= 8) {
-                int[] loc = new int[2];
-                tv.getLocationOnScreen(loc);
-                int y = loc[1];
-                if (y >= 0 && y < dp(context, 120) && tv.getTextSize() >= dp(context, 15)) {
-                    int bestY = Integer.MAX_VALUE;
-                    if (best != null) {
-                        int[] bestLoc = new int[2];
-                        best.getLocationOnScreen(bestLoc);
-                        bestY = bestLoc[1];
-                    }
-                    if (best == null || y < bestY) {
-                        best = tv;
-                    }
-                }
-            }
-        }
-        if (v instanceof ViewGroup) {
-            ViewGroup g = (ViewGroup) v;
-            for (int i = 0; i < g.getChildCount(); i++) {
-                best = findVisibleToolbarTitleView(g.getChildAt(i), context, best);
-            }
-        }
-        return best;
-    }
-
-    // -----------------------------------------------------------------------
-    // P_SE1 hijack: delayed scan for "个人资料" row → hijack onClick
-    // -----------------------------------------------------------------------
-
-    /**
-     * P_SE5: 扫"个人资料"行 → 根据状态机做差异化处理。
-     *
-     * 8.0.71 pz3.g.onBindViewHolder hook 死路径，所以 view-tree 扫描是唯一路径。
-     *
-     * - VISIBLE: 文字 → "量子密友"，装 hijack listener 整行热区 → 弹 overlay
-     * - HIDDEN:  文字 → "个人资料"，**卸**所有 hijack listener，让 RecyclerView.OnItemTouchListener
-     *            自然处理 click → 走 WeChat 原生跳 ContactInfo Fragment
-     *
-     * 2 波重试：100ms 早探 + 800ms 兜底；conditional setText 防闪烁。
-     */
-    private static void scheduleProfileRowHijack(final ViewGroup root) {
-        // P_SE5: INJECT 模式下不动"个人资料"行（走 5-25 路线，只注入新行）。
-        if (sUseInjectMode) return;
-        final int[] delays = {100, 800};
-        Handler h = new Handler(Looper.getMainLooper());
-        for (final int delay : delays) {
-            h.postDelayed(new Runnable() {
-                @Override public void run() { tryPatchProfileRow(root, delay); }
-            }, delay);
-        }
-    }
-
-    private static void tryPatchProfileRow(final ViewGroup root, final int waveTag) {
-        try {
-            TextView profileTv = findProfileRowTitle(root);
-            if (profileTv == null) {
-                if (waveTag == 800) {
-                    Log.w(TAG, "[SET:hijack:zir] wave-" + waveTag + "ms: no profile row found");
+            if (row == null) return;
+            if (!shouldShowEntry()) {
+                if (row.getTag(PROFILE_LP_TAG) != null) {
+                    row.setOnLongClickListener(null);
+                    row.setTag(PROFILE_LP_TAG, null);
                 }
                 return;
             }
-            // walk up to RecyclerView's direct child (the full row item)
-            View row = profileTv;
-            ViewParent p = profileTv.getParent();
-            while (p instanceof View
-                    && !p.getClass().getName().contains("RecyclerView")) {
-                row = (View) p;
-                p = p.getParent();
-            }
-
-            final TextView titleTvFinal = profileTv;
-            final View rowRef = row;
-            boolean visible = StateMachine.getInstance().getState()
-                    == StateMachine.State.VISIBLE;
-            final String desired = visible ? MIYOU_TEXT : PROFILE_TEXT;
-
-            // Q4: conditional setText 防闪烁（文字已经对就不动）。
-            if (!desired.contentEquals(titleTvFinal.getText())) {
-                titleTvFinal.setText(desired);
-            }
-            // 防 WeChat 异步覆写：250ms / 700ms 兜底重写两次。
-            Handler hf = new Handler(Looper.getMainLooper());
-            hf.postDelayed(new Runnable() {
-                @Override public void run() {
-                    if (!desired.contentEquals(titleTvFinal.getText())) {
-                        titleTvFinal.setText(desired);
-                    }
+            if (row.getTag(PROFILE_LP_TAG) != null) return;
+            final Context ctx = row.getContext();
+            row.setLongClickable(true);
+            row.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override public boolean onLongClick(View v) {
+                    Log.i(TAG, "[SET:lp] profile row long-press -> overlay");
+                    showGuardOverlay(ctx);
+                    return true;
                 }
-            }, 250);
-            hf.postDelayed(new Runnable() {
-                @Override public void run() {
-                    if (!desired.contentEquals(titleTvFinal.getText())) {
-                        titleTvFinal.setText(desired);
-                    }
-                }
-            }, 700);
-
-            if (visible) {
-                // VISIBLE: 装 hijack listener，整行热区 → overlay
-                row.setClickable(true);
-                View.OnClickListener hijack = new View.OnClickListener() {
-                    @Override public void onClick(View v) {
-                        Log.i(TAG, "[SET:hijack:zir] click VISIBLE -> overlay");
-                        showGuardOverlay(v.getContext());
-                    }
-                };
-                row.setOnClickListener(hijack);
-                attachHijackToAllDescendants(row, hijack);
-                Log.i(TAG, "[SET:hijack:zir] wave-" + waveTag + "ms VISIBLE patched"
-                        + " rowClass=" + row.getClass().getName());
-            } else {
-                // HIDDEN: 卸所有 hijack，让 RecyclerView.OnItemTouchListener 自然处理 click。
-                // 8.0.71 ContactInfo 是 CommonSettingsUI 的 Fragment，原生 click dispatch 走 RV。
-                detachHijackFromAllDescendants(row);
-                row.setOnClickListener(null);
-                row.setClickable(false);
-                Log.i(TAG, "[SET:hijack:zir] wave-" + waveTag + "ms HIDDEN unpatched (native)"
-                        + " rowClass=" + row.getClass().getName());
-            }
+            });
+            row.setTag(PROFILE_LP_TAG, Boolean.TRUE);
+            Log.i(TAG, "[SET:lp] profile row long-press backup attached");
         } catch (Throwable t) {
-            Log.w(TAG, "[SET:hijack:zir] wave-" + waveTag + "ms failed: " + t);
+            Log.w(TAG, "[SET:lp] attach fail: " + t);
         }
     }
 
+    /**
+     * 递归找「个人资料」那一行（精确文本）且其祖先里有 RecyclerView/ListView 的那个列表。
+     * 返回该列表 View（RecyclerView 或 ListView），找不到返回 null。
+     */
+    private static View findSettingsListByProfileRow(View v) {
+        if (v instanceof TextView) {
+            CharSequence t = ((TextView) v).getText();
+            if (t != null && "\u4e2a\u4eba\u8d44\u6599".contentEquals(t)) { // 个人资料
+                View list = findListAncestor(v);
+                if (list != null) return list;
+            }
+        }
+        if (v instanceof ViewGroup) {
+            ViewGroup vg = (ViewGroup) v;
+            for (int i = 0; i < vg.getChildCount(); i++) {
+                View found = findSettingsListByProfileRow(vg.getChildAt(i));
+                if (found != null) return found;
+            }
+        }
+        return null;
+    }
+
+    /** 从某个 View 往上找最近的 RecyclerView / ListView 祖先（≤12 层）。 */
+    private static View findListAncestor(View v) {
+        ViewParent p = v.getParent();
+        for (int depth = 0; depth < 12 && p instanceof View; depth++) {
+            if (p instanceof ListView) return (View) p;
+            if (p.getClass().getName().contains("RecyclerView")) return (View) p;
+            p = p.getParent();
+        }
+        return null;
+    }
+
     // -----------------------------------------------------------------------
-    // "我" tab profile row entry
+    // 备用入口：「我」首页个人资料行 → 量子密友（解锁态自显；主入口那行没出来时兜底）
+    // 保留最早的行为：个人资料页带「微信号」的行，解锁态自动显示成「量子密友」，点它弹面板。
     // -----------------------------------------------------------------------
 
     private static void scheduleMoreTabProfileProbe(final Activity activity) {
@@ -597,7 +518,7 @@ public class SettingsEntry {
 
         ViewGroup root = getContentRoot(activity);
         if (root == null) return;
-        TextView wxidText = findTextViewContaining(root, "微信号");
+        TextView wxidText = findTextViewContaining(root, "\u5fae\u4fe1\u53f7"); // 微信号
         if (wxidText == null) return;
         syncMoreTabProfileEntryFromWxid(wxidText);
     }
@@ -661,334 +582,22 @@ public class SettingsEntry {
     // -----------------------------------------------------------------------
 
     private static void handleRecyclerView(View rv, Activity activity, boolean shouldShow) {
-        // P_SE5 (2026-05-28): 8.0.71 实测 pz3.g.onBindViewHolder hook 0 命中（死路径），
-        // INJECT 模式的核心也无法靠 B2 hook 注入新行。改为依赖 B1 grandparent injection
-        // 注入 banner 到 RV 同层级 LinearLayout —— 这条路径不依赖 adapter hook、稳定可靠。
-        if (sUseInjectMode) {
-            // P_SE7: 保存 RV 引用让 syncLlHeader 给 scroll-follow 监听器用。
-            sRvRef = new WeakReference<>(rv);
-            ViewGroup ll = findRvContainerLinearLayout(rv);
-            if (ll != null) {
-                syncLlHeader(ll, activity, shouldShow);
-            }
-            // 同时让 B2 hook 试一次（万一某个版本 onBindViewHolder 真触发）
-            if (sAdapterHooked && sHeaderVisible != shouldShow) {
-                sHeaderVisible = shouldShow;
-                refreshAdapterNotify();
-            }
-            return;
+        // 8.0.71 实测 pz3.g.onBindViewHolder hook 0 命中（死路径），无法靠 adapter hook 注入新行。
+        // 改为在 RV 父层注入悬浮 banner（syncLlHeader / overlayHostFor）—— 不依赖 adapter hook、稳定可靠。
+        // P_SE7: 保存 RV 引用让 syncLlHeader 给 scroll-follow 监听器用。
+        sRvRef = new WeakReference<>(rv);
+        ViewGroup ll = findRvContainerLinearLayout(rv);
+        if (ll == null) {
+            // 兜底：容器猜不中时用 RV 的直接父层（syncLlHeader 优先走 overlayHostFor(rv)，
+            // sibling 注入才用到 ll），保证换 OEM 层级时仍能落地。
+            ViewParent p = rv.getParent();
+            if (p instanceof ViewGroup) ll = (ViewGroup) p;
         }
-
-        // hijack 模式（已弃用）：每次 onResume 强制 rebind
-        if (sAdapterHooked) {
-            refreshAdapterNotify();
-            return;
+        if (ll != null) {
+            syncLlHeader(ll, activity, shouldShow);
+        } else {
+            Log.w(TAG, "[SET] no container for banner (rv parent null)");
         }
-
-        // Schedule one-time adapter probe → installs B2 hooks
-        if (!sProbeScheduled) {
-            sProbeScheduled = true;
-            sRvRef = new WeakReference<>(rv);
-            final Activity actRef  = activity;
-            final boolean  showRef = shouldShow;
-            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-                @Override public void run() { probeLate(actRef, showRef); }
-            }, 400);
-        }
-    }
-
-    // -----------------------------------------------------------------------
-    // B2: delayed adapter probe + hook installation
-    // -----------------------------------------------------------------------
-
-    private static void probeLate(Activity activity, boolean initialShow) {
-        View rv = sRvRef != null ? sRvRef.get() : null;
-        if (rv == null) { Log.w(TAG, "[SET:adapter] rv ref lost"); return; }
-
-        // Log class hierarchy
-        try {
-            Class<?> c = rv.getClass();
-            StringBuilder chain = new StringBuilder();
-            while (c != null && !c.getName().equals("android.view.ViewGroup")) {
-                if (chain.length() > 0) chain.append(" -> ");
-                chain.append(c.getName());
-                c = c.getSuperclass();
-            }
-            Log.i(TAG, "[SET:rv-chain] " + chain);
-        } catch (Throwable ignored) {}
-
-        // Get adapter
-        Object adapter;
-        try {
-            adapter = rv.getClass().getMethod("getAdapter").invoke(rv);
-        } catch (Throwable t) {
-            Log.w(TAG, "[SET:adapter] getAdapter failed: " + t);
-            return;
-        }
-        if (adapter == null) {
-            Log.w(TAG, "[SET:adapter] null — hooks not installed");
-            return;
-        }
-
-        int cnt = 0;
-        try { cnt = (int) adapter.getClass().getMethod("getItemCount").invoke(adapter); }
-        catch (Throwable ignored) {}
-        Log.i(TAG, "[SET:adapter] class=" + adapter.getClass().getName() + " count=" + cnt);
-
-        // Log inner classes (ViewHolder discovery for future reference)
-        try {
-            for (Class<?> inner : adapter.getClass().getDeclaredClasses()) {
-                Log.i(TAG, "[SET:vh] " + inner.getName()
-                        + " super=" + inner.getSuperclass().getName());
-            }
-        } catch (Throwable ignored) {}
-
-        // Log first 5 item viewTypes
-        for (int i = 0; i < Math.min(cnt, 5); i++) {
-            try {
-                int vt = (int) adapter.getClass()
-                        .getMethod("getItemViewType", int.class).invoke(adapter, i);
-                Log.i(TAG, "[SET:adapter] item[" + i + "] viewType=" + vt);
-            } catch (Throwable ignored) {}
-        }
-
-        sKnownAdapterRef = new WeakReference<>(adapter);
-        installAdapterHooks(adapter.getClass(), initialShow);
-    }
-
-    // -----------------------------------------------------------------------
-    // B2: Xposed hooks on pz3.g
-    //
-    //  getItemCount()           afterHook:  return N+1 when sHeaderVisible
-    //  getItemViewType(pos)     beforeHook: pos>0 → shift pos-1
-    //                                       pos=0 → unchanged (borrow original[0]'s type)
-    //  onBindViewHolder(h, pos) beforeHook: pos=0 → customize view, skip original
-    //                                       pos>0 → shift pos-1
-    //  getItemId(pos)           beforeHook: pos=0 → return -1L (unique id)
-    //                                       pos>0 → shift pos-1
-    // -----------------------------------------------------------------------
-
-    // Position of our injected guard entry in the settings RecyclerView.
-    // pos 0 is WeChat's search box (viewType=6); we inject at pos 1 so the
-    // entry appears right at the top of the visible settings list.
-    private static final int INJECT_POS = 1;
-
-    private static void installAdapterHooks(final Class<?> adapterCls, boolean initialShow) {
-        try {
-            // Inject our guard entry at INJECT_POS (= 1, after the search box at pos 0).
-            // Total count becomes N+1; positions INJECT_POS+1 … N are WeChat's items
-            // shifted by 1 — achieved by rewriting pos in getItemViewType / onBindViewHolder
-            // / getItemId before the original method runs.
-
-            // 1. getItemCount — advertise N+1 items. (legacy inject mode only)
-            XposedBridge.hookAllMethods(adapterCls, "getItemCount", new XC_MethodHook() {
-                @Override
-                protected void afterHookedMethod(MethodHookParam param) {
-                    if (!sUseInjectMode) return;
-                    if (!sHeaderVisible) return;
-                    Object r = param.getResult();
-                    if (r instanceof Integer) {
-                        param.setResult((Integer) r + 1);
-                    }
-                }
-            });
-
-            // 2. getItemViewType — our slot returns viewType 1; shifted slots delegate. (legacy)
-            XposedBridge.hookAllMethods(adapterCls, "getItemViewType", new XC_MethodHook() {
-                @Override
-                protected void beforeHookedMethod(MethodHookParam param) {
-                    if (!sUseInjectMode) return;
-                    if (!sHeaderVisible
-                            || param.args.length < 1
-                            || !(param.args[0] instanceof Integer)) return;
-                    int pos = (int) param.args[0];
-                    if (pos == INJECT_POS) {
-                        param.setResult(1); // normal row ViewHolder type
-                    } else if (pos > INJECT_POS) {
-                        param.args[0] = pos - 1; // shift → WeChat handles original pos-1
-                    }
-                    // pos 0 (search box): unchanged
-                }
-            });
-
-            // 3. onBindViewHolder — bind our entry at INJECT_POS; shift the rest. (legacy)
-            XposedBridge.hookAllMethods(adapterCls, "onBindViewHolder", new XC_MethodHook() {
-                @Override
-                protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                    if (!sUseInjectMode) return;
-                    if (!sHeaderVisible
-                            || param.args.length < 2
-                            || !(param.args[1] instanceof Integer)) return;
-                    int pos = (int) param.args[1];
-                    if (pos == INJECT_POS) {
-                        Object holder = param.args[0];
-                        try {
-                            View itemView = (View) holder.getClass()
-                                    .getField("itemView").get(holder);
-                            customizeGuardHeader(itemView);
-                        } catch (Throwable t) {
-                            Log.w(TAG, "[SET:hook] customize failed: " + t);
-                        }
-                        param.setResult(null); // skip WeChat's original bind
-                    } else if (pos > INJECT_POS) {
-                        param.args[1] = pos - 1; // shift
-                    }
-                }
-            });
-
-            // 4. getItemId — stable id for our slot; shift the rest. (legacy)
-            XposedBridge.hookAllMethods(adapterCls, "getItemId", new XC_MethodHook() {
-                @Override
-                protected void beforeHookedMethod(MethodHookParam param) {
-                    if (!sUseInjectMode) return;
-                    if (!sHeaderVisible
-                            || param.args.length < 1
-                            || !(param.args[0] instanceof Integer)) return;
-                    int pos = (int) param.args[0];
-                    if (pos == INJECT_POS) {
-                        param.setResult(-1L);
-                    } else if (pos > INJECT_POS) {
-                        param.args[0] = pos - 1; // shift
-                    }
-                }
-            });
-
-            // 5. P_SE1 hijack: 在每次 onBindViewHolder 完成后扫"个人资料"行，接管 onClick。
-            //    VISIBLE → showGuardDialog；HIDDEN → 委托给原始 onClickListener（走 ContactInfoUI）。
-            //    R1 整行热区：itemView 自身 + 所有后代 View 都装 hijack listener。
-            //    无论 Android 把 click 派发到哪个子 View，触发的都是同一个 hijack 决策点。
-            //    原始 onClick 在首次 patch 时用 findFirstOnClickListener 抓出来，
-            //    缓存在 PROFILE_ORIG_TAG，避免后续 bind 误把我们的 hijack 当原始递归装。
-            XposedBridge.hookAllMethods(adapterCls, "onBindViewHolder", new XC_MethodHook() {
-                @Override
-                protected void afterHookedMethod(MethodHookParam param) {
-                    if (sUseInjectMode) return;
-                    if (param.args.length < 2) return;
-                    try {
-                        Object holder = param.args[0];
-                        if (holder == null) return;
-                        View itemView = (View) holder.getClass().getField("itemView").get(holder);
-                        if (itemView == null) return;
-                        TextView titleTv = findProfileRowTitle(itemView);
-                        if (titleTv == null) return;
-
-                        // Q4: VISIBLE 下文字替换为"量子密友"，HIDDEN 还原"个人资料"。
-                        // 三次 post 对抗 WeChat 在 onBindViewHolder 之后的异步 setText 覆盖。
-                        boolean visibleNow = StateMachine.getInstance().getState()
-                                == StateMachine.State.VISIBLE;
-                        final String desiredText = visibleNow ? MIYOU_TEXT : PROFILE_TEXT;
-                        final TextView titleTvF = titleTv;
-                        titleTvF.setText(desiredText);
-                        Handler h5 = new Handler(Looper.getMainLooper());
-                        h5.postDelayed(new Runnable() {
-                            @Override public void run() {
-                                if (!desiredText.contentEquals(titleTvF.getText())) {
-                                    titleTvF.setText(desiredText);
-                                }
-                            }
-                        }, 100);
-                        h5.postDelayed(new Runnable() {
-                            @Override public void run() {
-                                if (!desiredText.contentEquals(titleTvF.getText())) {
-                                    titleTvF.setText(desiredText);
-                                }
-                            }
-                        }, 400);
-
-                        // 拿原始 onClick：首次从子树扫，之后从 tag 缓存读，避免 hijack 自己递归装自己。
-                        Object cached = itemView.getTag(PROFILE_ORIG_TAG);
-                        final View.OnClickListener original;
-                        if (cached instanceof View.OnClickListener) {
-                            original = (View.OnClickListener) cached;
-                        } else {
-                            original = findFirstOnClickListener(itemView);
-                            if (original != null) {
-                                itemView.setTag(PROFILE_ORIG_TAG, original);
-                            }
-                        }
-
-                        final View itemViewRef = itemView;
-                        final View.OnClickListener hijack = new View.OnClickListener() {
-                            @Override public void onClick(View v) {
-                                boolean visible = StateMachine.getInstance().getState()
-                                        == StateMachine.State.VISIBLE;
-                                if (visible) {
-                                    Log.i(TAG, "[SET:hijack:zir] click VISIBLE -> overlay");
-                                    showGuardOverlay(v.getContext());
-                                } else {
-                                    Log.i(TAG, "[SET:hijack:zir] click HIDDEN  -> delegate original (on itemView)");
-                                    // H2 修复：8.0.71 ContactInfo 是 CommonSettingsUI Fragment，
-                                    // 原 listener 内部要从 itemView 拿 adapterPosition 才能跳 Fragment。
-                                    // 必须传 itemViewRef，否则传子 View 时 getChildAdapterPosition(v) == -1，listener no-op。
-                                    if (original != null) original.onClick(itemViewRef);
-                                }
-                            }
-                        };
-
-                        // R1 整行：自身 + 全后代都装 hijack listener，无论 WeChat 把 clickable
-                        // 设在哪个子 View，触发的都是 hijack。
-                        itemView.setClickable(true);
-                        itemView.setOnClickListener(hijack);
-                        attachHijackToAllDescendants(itemView, hijack);
-
-                        // P_SE5: 不再用 firstTime 门控、每次都打 orig 日志，方便诊断 H 态点不动问题。
-                        // PROFILE_ROW_TAG 已不再控制 patched 日志、保留 setTag 用于其他可能的复用。
-                        itemView.setTag(PROFILE_ROW_TAG, Boolean.TRUE);
-                        Log.i(TAG, "[SET:hijack:zir] hook5 patched orig="
-                                + (original != null ? original.getClass().getName() : "null")
-                                + " state=" + StateMachine.getInstance().getStateName());
-                    } catch (Throwable t) {
-                        Log.w(TAG, "[SET:hijack:zir] afterHook failed: " + t);
-                    }
-                }
-            });
-
-            sAdapterHooked = true;
-            sHeaderVisible = initialShow;
-            Log.i(TAG, "[SET:hook] adapter hooks installed on " + adapterCls.getName()
-                    + " visible=" + initialShow + " hijack=" + !sUseInjectMode);
-
-            // P_SE5: 不再移除 B1 banner —— 8.0.71 上 B2 onBindViewHolder hook 死路径，
-            // B1 banner 必须长期保留作为唯一注入路径。removeLlHeader 保留作为状态切换工具。
-            // Trigger redraw with new item count（B2 hook 若工作则切换 visibility）
-            refreshAdapterNotify();
-
-        } catch (Throwable t) {
-            Log.w(TAG, "[SET:hook] installAdapterHooks failed: " + t);
-        }
-    }
-
-    /**
-     * Customize a WeChat settings ViewHolder's itemView to show the guard entry.
-     * Called from onBindViewHolder hook at position 0.
-     * WeChat's original onBindViewHolder is skipped, so this replaces its binding.
-     * When this ViewHolder is recycled for a real position, the original binding
-     * restores correct content (text + click listener).
-     */
-    private static void customizeGuardHeader(View itemView) {
-        TextView tv = findFirstTextView(itemView);
-        if (tv != null) tv.setText("\u5bc6\u53cb\u8bbe\u7f6e \u203a"); // 密友设置 ›
-        itemView.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                Log.i(TAG, "[SET] entry clicked");
-                showGuardOverlay(v.getContext());
-            }
-        });
-    }
-
-    private static void refreshAdapterNotify() {
-        final Object adapter = sKnownAdapterRef != null ? sKnownAdapterRef.get() : null;
-        if (adapter == null) return;
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
-            @Override public void run() {
-                try {
-                    adapter.getClass().getMethod("notifyDataSetChanged").invoke(adapter);
-                    Log.i(TAG, "[SET:hook] notifyDataSetChanged visible=" + sHeaderVisible);
-                } catch (Throwable t) {
-                    Log.w(TAG, "[SET:hook] notifyDataSetChanged failed: " + t);
-                }
-            }
-        });
     }
 
     private static void removeLlHeader() {
@@ -1248,9 +857,6 @@ public class SettingsEntry {
     // -----------------------------------------------------------------------
 
     private static void syncListViewHeader(ListView lv, Activity activity, boolean shouldShow) {
-        if (!sUseInjectMode) {
-            return;
-        }
         ListView knownLv  = sListViewRef  != null ? sListViewRef.get()  : null;
         View     knownRow = sHeaderRowRef != null ? sHeaderRowRef.get() : null;
 
@@ -1310,7 +916,8 @@ public class SettingsEntry {
         TextView title = new TextView(context);
         title.setText("\u91cf\u5b50\u5bc6\u53cb\u8bbe\u7f6e"); // 量子密友设置
         title.setTextColor(Color.parseColor("#191919"));
-        title.setTextSize(17f);
+        // 对齐原生设置行字号（原来 17f 明显比「个人资料」大）。
+        title.setTextSize(16f);
         LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
         row.addView(title, titleLp);
@@ -1651,6 +1258,22 @@ public class SettingsEntry {
                     }
                 }, passwordOut));
 
+        // ===== 使用教程（服务器下发温馨提示 · 仅已激活可见 · 后台清空则整组隐藏）=====
+        // 单条运营提示（tip），验签信封搭载下发；点开走公告卡（沿用 showStyledPrompt 弹窗风格）。
+        if (EnvelopeStore.isAuthorizedNow() && EnvelopeStore.hasTip()) {
+            final String tipTitle = EnvelopeStore.getTipTitle();
+            final String tipBody = EnvelopeStore.getTipBody();
+            final String tipUrl = EnvelopeStore.getTipUrl();
+            content.addView(buildSectionHeader(activity, "使用教程"));
+            content.addView(buildTipRow(activity,
+                    (tipTitle == null || tipTitle.isEmpty()) ? "使用教程" : tipTitle,
+                    new View.OnClickListener() {
+                        @Override public void onClick(View v) {
+                            showTipAnnouncement(activity, tipTitle, tipBody, tipUrl);
+                        }
+                    }));
+        }
+
         // ===== 性能（密友与特色功能之间的分组）=====
         content.addView(buildSectionHeader(activity, "性能"));
         content.addView(buildSwitchRow(activity, "高性能模式",
@@ -1840,7 +1463,7 @@ public class SettingsEntry {
             msgView.setText(messageText == null ? "" : messageText);
             msgView.setTextColor(0xFF666666);
             msgView.setTextSize(14f);
-            msgView.setLineSpacing(dp(activity, 7), 1.25f);
+            msgView.setLineSpacing(dp(activity, 3), 1.15f);
             LinearLayout.LayoutParams msgLp = new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             msgLp.topMargin = dp(activity, 22);
@@ -2224,6 +1847,60 @@ public class SettingsEntry {
         lp.setMargins(0, 0, 0, dp(ctx, 1));
         row.setLayoutParams(lp);
         return row;
+    }
+
+    /** 使用教程行：暗绿色标题字与普通行区分，点开走公告卡。 */
+    private static View buildTipRow(Context ctx, String title, View.OnClickListener listener) {
+        LinearLayout row = new LinearLayout(ctx);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setBackgroundColor(Color.WHITE);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        int ph = dp(ctx, 16);
+        int pv = dp(ctx, 14);
+        row.setPadding(ph, pv, ph, pv);
+        row.setOnClickListener(listener);
+        row.setClickable(true);
+
+        TextView tvTitle = new TextView(ctx);
+        tvTitle.setText(title);
+        tvTitle.setTextColor(Color.parseColor("#2E7D32")); // 暗绿，与普通行区分
+        tvTitle.setTextSize(17f);
+        row.addView(tvTitle, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView tvBtn = new TextView(ctx);
+        tvBtn.setText("\u67e5\u770b \u203a"); // 查看 ›
+        tvBtn.setTextColor(Color.parseColor("#2E7D32"));
+        tvBtn.setTextSize(14f);
+        row.addView(tvBtn);
+
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.setMargins(0, 0, 0, dp(ctx, 1));
+        row.setLayoutParams(lp);
+        return row;
+    }
+
+    /** 使用教程公告卡：沿用 showStyledPrompt 弹窗风格；服务器带了链接才出「前往」按钮。 */
+    private static void showTipAnnouncement(final Activity activity, String title,
+                                            String body, String url) {
+        final String u = url == null ? "" : url.trim();
+        Runnable go = null;
+        if (!u.isEmpty()) {
+            go = new Runnable() {
+                @Override public void run() {
+                    try {
+                        activity.startActivity(new android.content.Intent(
+                                android.content.Intent.ACTION_VIEW, android.net.Uri.parse(u))
+                                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK));
+                    } catch (Throwable ignored) {}
+                }
+            };
+        }
+        showStyledPrompt(activity,
+                (title == null || title.isEmpty()) ? "使用教程" : title,
+                (body == null || body.isEmpty()) ? "" : body,
+                go != null ? "前往" : null, go, "知道了");
     }
 
     /** 已授权态：把行尾值 TextView 渲染成微信绿「已授权」圆角色块（去掉 ›，白字绿底）。 */
@@ -3099,44 +2776,8 @@ public class SettingsEntry {
     }
 
     // -----------------------------------------------------------------------
-    // View tree search
+    // 备用入口用的视图树查找辅助
     // -----------------------------------------------------------------------
-
-    private static ListView findListViewRecursive(ViewGroup root) {
-        for (int i = 0; i < root.getChildCount(); i++) {
-            View child = root.getChildAt(i);
-            if (child instanceof ListView) return (ListView) child;
-            if (child instanceof ViewGroup) {
-                ListView found = findListViewRecursive((ViewGroup) child);
-                if (found != null) return found;
-            }
-        }
-        return null;
-    }
-
-    private static View findRecyclerViewRecursive(ViewGroup root) {
-        for (int i = 0; i < root.getChildCount(); i++) {
-            View child = root.getChildAt(i);
-            if (child.getClass().getName().contains("RecyclerView")) return child;
-            if (child instanceof ViewGroup) {
-                View found = findRecyclerViewRecursive((ViewGroup) child);
-                if (found != null) return found;
-            }
-        }
-        return null;
-    }
-
-    private static TextView findFirstTextView(View v) {
-        if (v instanceof TextView) return (TextView) v;
-        if (v instanceof ViewGroup) {
-            ViewGroup vg = (ViewGroup) v;
-        for (int i = 0; i < vg.getChildCount(); i++) {
-                TextView found = findFirstTextView(vg.getChildAt(i));
-                if (found != null) return found;
-            }
-        }
-        return null;
-    }
 
     private static TextView findTextViewContaining(View v, String needle) {
         if (v instanceof TextView) {
@@ -3147,44 +2788,6 @@ public class SettingsEntry {
             ViewGroup vg = (ViewGroup) v;
             for (int i = 0; i < vg.getChildCount(); i++) {
                 TextView found = findTextViewContaining(vg.getChildAt(i), needle);
-                if (found != null) return found;
-            }
-        }
-        return null;
-    }
-
-    // P_SE1: 严格等值匹配（避免 "个人资料" 被 "个人资料隐私" 等长名命中）。
-    private static TextView findExactText(View v, String exact) {
-        if (v instanceof TextView) {
-            CharSequence text = ((TextView) v).getText();
-            if (text != null && exact.contentEquals(text)) return (TextView) v;
-        }
-        if (v instanceof ViewGroup) {
-            ViewGroup vg = (ViewGroup) v;
-            for (int i = 0; i < vg.getChildCount(); i++) {
-                TextView found = findExactText(vg.getChildAt(i), exact);
-                if (found != null) return found;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Q4: 找设置菜单"个人资料"行的 title TextView。
-     * 需要同时识别已替换为"量子密友"的状态，否则状态机切换后无法再找到这一行。
-     */
-    private static TextView findProfileRowTitle(View v) {
-        if (v instanceof TextView) {
-            CharSequence text = ((TextView) v).getText();
-            if (text != null
-                    && (PROFILE_TEXT.contentEquals(text) || MIYOU_TEXT.contentEquals(text))) {
-                return (TextView) v;
-            }
-        }
-        if (v instanceof ViewGroup) {
-            ViewGroup vg = (ViewGroup) v;
-            for (int i = 0; i < vg.getChildCount(); i++) {
-                TextView found = findProfileRowTitle(vg.getChildAt(i));
                 if (found != null) return found;
             }
         }
@@ -3219,7 +2822,7 @@ public class SettingsEntry {
         if (v instanceof TextView && v != wxidText) {
             TextView tv = (TextView) v;
             CharSequence text = tv.getText();
-            if (text != null && text.length() > 0 && !text.toString().contains("微信号")) {
+            if (text != null && text.length() > 0 && !text.toString().contains("\u5fae\u4fe1\u53f7")) {
                 best = tv;
             }
         }
@@ -3252,61 +2855,6 @@ public class SettingsEntry {
         } catch (Throwable ignored) {
             return null;
         }
-    }
-
-    // disable clickable on all child views so clicks bubble up to row
-    private static void disableChildClicks(View v) {
-        if (v instanceof ViewGroup) {
-            ViewGroup vg = (ViewGroup) v;
-            for (int i = 0; i < vg.getChildCount(); i++) {
-                View child = vg.getChildAt(i);
-                child.setClickable(false);
-                child.setFocusable(false);
-                disableChildClicks(child);
-            }
-        }
-    }
-
-    // P_SE1 R1 整行热区：把同一个 hijack listener 装到 root 的全部后代。
-    // 无论 Android 把 click 派发到 root 还是哪个子 View，触发的都是同一个 hijack。
-    /**
-     * P_SE5: 状态机切到 HIDDEN 后，卸掉所有装在 row 子树上的 hijack listener，
-     * 让 RecyclerView.OnItemTouchListener 自然处理 click，走 WeChat 原生跳 Fragment。
-     */
-    private static void detachHijackFromAllDescendants(View v) {
-        v.setOnClickListener(null);
-        v.setClickable(false);
-        if (v instanceof ViewGroup) {
-            ViewGroup vg = (ViewGroup) v;
-            for (int i = 0; i < vg.getChildCount(); i++) {
-                detachHijackFromAllDescendants(vg.getChildAt(i));
-            }
-        }
-    }
-
-    private static void attachHijackToAllDescendants(View v, View.OnClickListener listener) {
-        if (v instanceof ViewGroup) {
-            ViewGroup vg = (ViewGroup) v;
-            for (int i = 0; i < vg.getChildCount(); i++) {
-                View child = vg.getChildAt(i);
-                child.setOnClickListener(listener);
-                attachHijackToAllDescendants(child, listener);
-            }
-        }
-    }
-
-    // walk subtree to find first OnClickListener (for full-row hijack)
-    private static View.OnClickListener findFirstOnClickListener(View v) {
-        View.OnClickListener listener = getCurrentOnClickListener(v);
-        if (listener != null) return listener;
-        if (v instanceof ViewGroup) {
-            ViewGroup vg = (ViewGroup) v;
-            for (int i = 0; i < vg.getChildCount(); i++) {
-                listener = findFirstOnClickListener(vg.getChildAt(i));
-                if (listener != null) return listener;
-            }
-        }
-        return null;
     }
 
     // -----------------------------------------------------------------------

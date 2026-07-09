@@ -9,7 +9,7 @@
 
 ## ⚡ 0. 新接手的 AI / 维护者：只看 §十七
 
-- **当前线上方案** = §十七（v27 = v24 行为 + 80ms post-dedup + IK3n install）
+- **当前线上方案** = §十七（v27 = v24 行为 + 80ms post-dedup + IK3n install）+ **v28（2026-07-09）**：post-dedup 的 `dedupListByIdentity` 从「仅 identity」升级为「identity(兜底)+hideKey(wxid/群id) keep-first」（群走群 id、不同密群不互删）；⚠️ **跨结构**（`MvvmConvList` 的 o/p/h vs `kc5.a` 的 d）重复仅各自 keep-first、不跨 List 合并 = **已知残留**（同一会话可能仍在两个 backing 结构各留一条）
 - §一~§十六 全是 2026-05-24~05-27 期间的探索 / 失败路线 / 中间方案，**只是历史防绕圈**
 - 想动 ConvFilter / ConvHotReload V↔H 相关逻辑前必须：
   1. 读完 §十七

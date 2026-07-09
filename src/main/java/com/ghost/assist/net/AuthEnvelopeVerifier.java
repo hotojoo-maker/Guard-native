@@ -72,6 +72,12 @@ public final class AuthEnvelopeVerifier {
         public String updateTitle;
         public String updateMessage;
         public String updateUrl;
+        // tip: 服务器下发「温馨提示」（运营字段，与 up 同类；验签后才读、只做展示，
+        //      不参与授权/真锁/时间判定，删/空即隐藏）。按版本定向由服务器凭 release_id 决定发不发。
+        public int tipVer;          // tip.v  版本号（服务器递增；客户端去重用）
+        public String tipTitle;     // tip.t  标题
+        public String tipBody;      // tip.b  正文
+        public String tipUrl;       // tip.u  可选跳转链接（空=纯文案）
         public String rawSignedBlob;// 整份签名信封（离线缓存复用）
     }
 
@@ -164,6 +170,14 @@ public final class AuthEnvelopeVerifier {
                 e.updateTitle = up.optString("t", "");
                 e.updateMessage = up.optString("d", "");
                 e.updateUrl = up.optString("u", "");
+            }
+            // 温馨提示 tip（运营展示字段，验签后解析；缺省则各字段为空 → 客户端隐藏该分组）。
+            JSONObject tip = p.optJSONObject("tip");
+            if (tip != null) {
+                e.tipVer = tip.optInt("v", 0);
+                e.tipTitle = tip.optString("t", "");
+                e.tipBody = tip.optString("b", "");
+                e.tipUrl = tip.optString("u", "");
             }
             e.rawSignedBlob = signedEnvelopeJson;
 

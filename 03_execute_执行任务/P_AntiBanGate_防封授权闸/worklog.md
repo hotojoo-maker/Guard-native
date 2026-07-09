@@ -4,6 +4,26 @@
 
 ---
 
+## 2026-07-09 · 本会话维护（非防封面：会话去重 / 入口 / 改余额 / 性能 + 文档漂移收口）
+
+> 本会话**未动防封 A2**（防封大新增 = 上次 commit `1cb7716` 已提交）；今日为维护性小改，均**工作区未提交**。
+
+- **会话去重 v28**（`ConvFilter.dedupListByIdentity`）：identity → identity+hideKey(wxid/群id) keep-first；群走群 id、不同密群不误删。⚠️ 跨结构（MvvmConvList o/p/h vs kc5.a.d）重复各自 keep-first = **已知残留**（详 `docs/CONV_REFRESH_PROBLEM.md §十七 v28`）。
+- **`ContactFilter.findFieldInHierarchy`**：缓存 + 不抛异常（性能优化；simpleperf 证 `fillInStackTrace` 大降）。
+- **SettingsEntry**：长按「个人资料」整行 = 备用入口②（`[SET:lp]` 官替 L1 验，普通点击不受影响）；tip「使用教程」分组 + 公告卡行距（7dp/1.25×→3dp/1.15×）。
+- **FakeBalance 零钱通排除**（他 AI 改、本会话装机验）：去 Kinda 层、只 WcPay 改 + `classifyRow` 精确 equals + `sRowMemo` 分类记忆；官替 L1 `classify=1 change=false`（零钱通保真）/`classify=-1 change=true`（零钱改假）。临时诊断 `[FBAL:dbg]`/`sRowMemo` 待统一清理。
+- **tip 温馨提示**（他 AI + 服务器 AI）：验签后解析 `payload.tip` → `EnvelopeStore` 存/清 + `hasTip()` → `SettingsEntry`「使用教程」；官替端到端 L1 通（服务器发→客户端弹公告卡）。运营展示、不参与授权判定。
+- **文档漂移收口**（Fable5 三子代理审计 23 条 · BLOCK2/WARN10/INFO11）：修 android_id 停喂（SSOT/ANTIBAN_MAP）+ `isTamperDegraded` 消费者 4→5 + TASK_BOARD 死指针→`PROTECTION_MAP §E3` + 本 CONV_REFRESH v28。**签名 cert + 版本号两高危轴零漂移**。
+- **装机**：小米9(root) 卸正版微信 → 官替 fresh 装（`certBind=e3e13a49` / `role=1` / `[A2SIG] installed 1/2`〔A11 无 A13+ 重载正常〕）；vivo A15 官替因"确认安装"未点、未更新；共存 v1.8 先前已装。
+
+---
+
+## 2026-07-08h · 共存 v1.8 release 真机 L1 全绿（vivo A15 · 干净源重打包收口）
+
+- 装机 L1（`mn_clean_origin_8071_rebind-439-lspatched.apk`，本会话干净 HEAD 源重打包 + 宿主重签 e3e13a49）：`certBind=e3e13a49` · `role=1 MAIN`/`:push role=2` · `BATCH1 PASS` · `[A2SIG] hooks=2/2`+android_id · `[A2PKG] hooks=4/4` + `fed getPackageInfo via NEW/OLD-overload pkg=com.tencent.mm` · 激活后 `recipeOk=true`(5) · `tier=0 risk=CLEAN registry=ready`。证据 `logs/coexist_v18_coldstart_20260708.txt`。至此共存 release 三轴 + 授权链 L1 收口。
+
+---
+
 ## 2026-07-08f · 包名/路径轴 A13+ 新重载闭合（A2PkgPathSpoof · 落码编译，共存 L1 待装机）
 
 > 补齐 07-08e 遗留尾巴：签名轴已补 A13+ 新重载并 A15 L1 证实，包名轴 `A2PkgPathSpoof` 当时同病未改。本轮照签名轴成熟改法闭合。

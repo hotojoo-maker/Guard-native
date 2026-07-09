@@ -15,7 +15,7 @@ def on_msg(m, d):
     else:
         print("MSG:", m, flush=True)
 
-dev = frida.get_usb_device(timeout=10)
+dev = frida.get_device("609b4b18", timeout=10)  # 小米9（唯一 root+frida-server；get_usb_device 会误选 vivo 无线设备）
 print("USB DEVICE:", dev, flush=True)
 code = open(JS, encoding="utf-8").read()
 

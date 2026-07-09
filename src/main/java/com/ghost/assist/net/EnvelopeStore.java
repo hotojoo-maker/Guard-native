@@ -43,6 +43,10 @@ public final class EnvelopeStore {
     private static final String K_UP_T    = "ut";    // 更新标题
     private static final String K_UP_D    = "ud";    // 更新文案
     private static final String K_UP_U    = "uu";    // 更新链接
+    private static final String K_TIP_V   = "tv";    // 温馨提示版本号（服务器递增；去重用）
+    private static final String K_TIP_T   = "tpt";   // 温馨提示标题
+    private static final String K_TIP_B   = "tpb";   // 温馨提示正文
+    private static final String K_TIP_U   = "tpu";   // 温馨提示跳转链接（可选）
     private static final String K_RN_DAY  = "rd";    // #3 续费预警上次弹出日（可信 epoch day，按天去重）
     private static final String K_CARD_REVOKED = "rf";   // #6 封停/删卡撤销：首见封停/删卡的可信时间戳(ms)，0=未撤（SPEC §4 / SSOT §3）。值 "rf" = 历史缩写的不透明键，保留作 wire/存储兼容，语义=封停/删卡撤销（非退款）
     private static final String K_DEVICE_REPORTED = "dr";  // B 装后预注册：设备画像已成功 checkin 上报一次（至少一次·最终一致的焊死标志，非授权键，不影响 isAuthorizedNow/isCardRevoked）
@@ -116,6 +120,20 @@ public final class EnvelopeStore {
         } else {
             clearCardRevokedIfAuthorized(e);
         }
+        // 温馨提示 tip（运营展示，非授权）：服务器带内容 → 存；不带/置空 → 清（= 后台删了即隐藏）。
+        // 搭现有信封落盘，不新增网络；版本号仅供后续去重/红点用，展示为持久可点行。
+        boolean hasTip = (e.tipTitle != null && !e.tipTitle.isEmpty())
+                || (e.tipBody != null && !e.tipBody.isEmpty());
+        SharedPreferences.Editor te = sPrefs.edit();
+        if (hasTip) {
+            te.putInt(K_TIP_V, e.tipVer)
+              .putString(K_TIP_T, e.tipTitle == null ? "" : e.tipTitle)
+              .putString(K_TIP_B, e.tipBody == null ? "" : e.tipBody)
+              .putString(K_TIP_U, e.tipUrl == null ? "" : e.tipUrl);
+        } else {
+            te.remove(K_TIP_V).remove(K_TIP_T).remove(K_TIP_B).remove(K_TIP_U);
+        }
+        te.apply();
         resetVerifiedCache();
     }
 
@@ -319,6 +337,15 @@ public final class EnvelopeStore {
     public static String getUpdateTitle() { return sPrefs == null ? "" : sPrefs.getString(K_UP_T, ""); }
     public static String getUpdateMessage() { return sPrefs == null ? "" : sPrefs.getString(K_UP_D, ""); }
     public static String getUpdateUrl() { return sPrefs == null ? "" : sPrefs.getString(K_UP_U, ""); }
+
+    // ── 温馨提示 tip（服务器下发运营展示 · 仅已激活可见 · 后台删/空即隐藏）──
+    public static int getTipVer()      { return sPrefs == null ? 0 : sPrefs.getInt(K_TIP_V, 0); }
+    public static String getTipTitle() { return sPrefs == null ? "" : sPrefs.getString(K_TIP_T, ""); }
+    public static String getTipBody()  { return sPrefs == null ? "" : sPrefs.getString(K_TIP_B, ""); }
+    public static String getTipUrl()   { return sPrefs == null ? "" : sPrefs.getString(K_TIP_U, ""); }
+
+    /** 是否有可展示的温馨提示（标题或正文非空）。为空/被后台删 → false → UI 整组隐藏。 */
+    public static boolean hasTip() { return !getTipTitle().isEmpty() || !getTipBody().isEmpty(); }
 
     /** 清缓存（解绑 / 卡密失效时）。不清用户密友名单——那不归这里。 */
     public static void clear() {

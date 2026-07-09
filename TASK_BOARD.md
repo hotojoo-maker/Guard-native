@@ -71,7 +71,7 @@
 | A2  | 密友列表（数据层 + 导入 UI） | ✅ | 原生 `SelectContactUI` 导入；详见权威 §3。|
 | A3  | 密群（数据层 + Filter union + 导入 UI）| ✅ | 过滤链 + 原生 `GroupCardSelectUI` 导入；详见权威 §4。|
 | **P23** | **F08 防撤回（C1）** | ✅ | 2026-05-31 L1 装机；详见 P23 result / 权威 §2。|
-| P_NC1 / S3a / S4 / S3b | native 加密 + 授权真锁链 | 🟡 | 本体 ✅ 装机（BATCH1/PHASE1A~1E PASS；S4 Ed25519 / S3b LeaseClock / server seed 解 registry 均验；07-02 live 双版 `certBind=e3e13a49`+`recipeOk=true` 实证）；整链尾巴以 `PROTECTION_MAP.md §10.6` + `DRIFT_LEDGER` 为单一真源，本行不复述。|
+| P_NC1 / S3a / S4 / S3b | native 加密 + 授权真锁链 | 🟡 | 本体 ✅ 装机（BATCH1/PHASE1A~1E PASS〔P1A-P1E dev 期，dev_cert_only〕；S4 Ed25519 / S3b LeaseClock / server seed 解 registry 均验；07-02 live 双版 `certBind=e3e13a49`+`recipeOk=true` 实证，prod_server_lock 下 PHASE1B~1E FAIL 属预期）；整链尾巴以 `PROTECTION_MAP.md §10.6` + `DRIFT_LEDGER` 为单一真源，本行不复述。|
 | **P22** | **PushFilter 通知策略层** | 🟡 | 主拦截/来电/未读已收口；普通消息通知 + 铃声功能转 v1.1，详见 `docs/P22_PushFilter_VoIP.md`。|
 | **P_CV1** | **通讯录 V↔H 热切** | 🟡 | 原 logcat 缺失，仅存 L1 装机截图(2026-05-27)+L2 代码互证；证据 `07_archive_归档/P_CV1_通讯录V态热切/worklog.md`；待补 logcat 双通原文。|
 | **P_PF2** | **语音/视频来电拦截 + CallGuard** | ✅ | 2026-05-29 装机验证；详见 `docs/P22_PushFilter_VoIP.md`。|
@@ -133,7 +133,7 @@
 ⏸️ v1 收尾新增 → 移出 v1，下一版再排（2026-06-10 用户拍板：§6a/C5/E3 推迟 v1.1/v2，v1 收口不含这三项）
   §6a  朋友圈"仅可见分组"图标隐藏：转 v1.1，当前 v1 不做；已验部分以 HOOKMAP §D / 权威 §6a 为准
   C5   语音转发：转 v2，不纳入当前 v1；8.0.71 需重新调研，不复用 8.0.66 锚点当结论
-  E3   修改余额 UI 层：原计划转 v2/v3；**后应用户要求 2026-06-30 已装机落地**（`moduleE/FakeBalance.java`，自定义金额末两位自动小数，见 HOOKMAP §E / 权威 §E）
+  E3   修改余额 UI 层：原计划转 v2/v3；**后应用户要求 2026-06-30 已装机落地**（`moduleE/FakeBalance.java`，自定义金额末两位自动小数，见 HOOKMAP §E / PROTECTION_MAP §E3）
 
 🆕 下一版隐私覆盖缺口（2026-06-10 用户报告）
   D-SNS-VIS  发朋友圈「谁可以看 → 部分可见/不给谁看」选标签/选好友 列表，密友未隐藏；新 hook 点待逆向 → 按 hidden wxid 过滤；性质=隐私一致性缺口（通讯录主列表已隐藏，此入口遗漏 → 密友在选人界面暴露）

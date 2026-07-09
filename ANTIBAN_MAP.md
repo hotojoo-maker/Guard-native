@@ -10,7 +10,7 @@
 > - 隐藏血管：静态全 190 .so + 动态广扫(`so_identity_scan`) **双证无新增** → 检测仍**单血管 = normsg/c$p**（研究线 §十二）。
 > - 包名命门松动：native `/proc/self/cmdline` 冷启动补验 **0 读** → 包名检测走 Java `getPackageInfo`、c$p 咽喉 spoof 够，**不因包名被迫官替**（研究线 §13.4）。
 > - 三方跳转：跨进程，共存收不到 / 官替需 root 系统级 → **裁定放弃硬目标**（研究线 §十五）。
-> - 落地收敛：三轴（签名/android_id/包名）全在 `getPackageInfo`/`getApplicationInfo` afterHook 喂官方，落点 `ModuleMain.bindSigningCert` + 发版 `tools/gate_three_axis.js` 自检门（研究线 §十六/§十七）。
+> - 落地收敛：**签名 + 包名/路径两轴**在 `getPackageInfo`/`getApplicationInfo` afterHook 喂官方（**android_id 轴现状=停喂**：非 root 撞车，`feedOfficialSsaid` NO-OP、仅被动观测），落点 `ModuleMain.bindSigningCert` + 发版 `tools/gate_three_axis.js` 自检门（研究线 §十六/§十七）。
 > - `re` 借官方眼睛弱信号（2026-07-04 MMQ68 扩面）：被动借微信自身 `getPackageInfo`(c$p.aa)+`Settings.Secure.getString(无障碍)`，折 bitmask `0x1`root/`0x2`RE重打包/`0x4`hook/`0x8`RE工具开无障碍（我方零主动读/零 ro.boot/零 native）；经 checkin/activate/health 上报服务器判可疑。机制+位语义+解锁不可借证据 = `P_DeviceFunnel worklog §九补记3`，落点 `A2SignatureSpoof.observeBorrowed/observeAccessibility`。
 
 本文件 = Guard Native 防封**落地状态账**。`07_archive_归档/JIDE_ANDROID_ACC_STRIKE_MAPPING_20260617.md`（已归档）、`tools/*.log`、外部 8071 报告和 skill 只作为证据来源；**研究结论以研究线权威账为准**，本文只跟主线落地（下方 06-18 段为冻结历史）。

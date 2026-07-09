@@ -421,11 +421,26 @@ public class ContactFilter {
     // Helpers
     // ------------------------------------------------------------------
 
+    // (类名#字段名)→Field 命中缓存。语义与"逐层 getDeclaredField"完全一致：本类→父类
+    // 首个同名字段，找不到返回 null；差别仅在不再对每一层抛 NoSuchFieldException（抓栈是热
+    // 路径最贵操作）。共享同一 Field 实例安全（setAccessible 幂等、Field 读取无状态）。
+    // 未命中不写缓存（CHM 不容 null 值，且热路径的 o/p/h 均为命中项）。
+    private static final java.util.Map<String, Field> sFieldCache =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
     static Field findFieldInHierarchy(Class<?> cls, String name) {
-        Class<?> c = cls;
-        while (c != null && !c.getName().equals("java.lang.Object")) {
-            try { return c.getDeclaredField(name); } catch (NoSuchFieldException ignored) {}
-            c = c.getSuperclass();
+        if (cls == null) return null;
+        String key = cls.getName() + '#' + name;
+        Field cached = sFieldCache.get(key);
+        if (cached != null) return cached;
+        for (Class<?> c = cls; c != null && c != Object.class; c = c.getSuperclass()) {
+            for (Field f : c.getDeclaredFields()) {
+                if (f.getName().equals(name)) {
+                    f.setAccessible(true);
+                    sFieldCache.put(key, f);
+                    return f;
+                }
+            }
         }
         return null;
     }

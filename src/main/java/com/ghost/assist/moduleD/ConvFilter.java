@@ -1168,21 +1168,26 @@ public class ConvFilter {
         return total;
     }
 
+    // v28 去重键 = identity（兜底）+ hideKey（wxid/群id）等值。恢复期同一会话被 o/p/h + adapter
+    // 图多路注入成【不同对象】，仅认 identity 会漏 → 净剩多条累加。约束（勿退回 identity-only）：
+    //   • 群走 hideKeyOf=群id（不认成员 wxid）→ 不同密群绝不互相合并；
+    //   • keep-first 每 key 只留首现项、绝不清零（守 F-35 空列表 + 护密群不被删没）；
+    //   • hideKeyOf==null 仅按对象身份兜底、不参与 key 收敛。
     private static int dedupListByIdentity(List<Object> list) {
         if (list == null || list.size() < 2) return 0;
-        java.util.IdentityHashMap<Object, Boolean> seen =
+        java.util.IdentityHashMap<Object, Boolean> seenObjs =
                 new java.util.IdentityHashMap<Object, Boolean>();
+        java.util.HashSet<String> seenKeys = new java.util.HashSet<String>();
         int removed = 0;
         Iterator<Object> it = list.iterator();
         while (it.hasNext()) {
             Object item = it.next();
             if (item == null) continue;
-            if (seen.containsKey(item)) {
-                it.remove();
-                removed++;
-            } else {
-                seen.put(item, Boolean.TRUE);
-            }
+            if (seenObjs.containsKey(item)) { it.remove(); removed++; continue; }
+            seenObjs.put(item, Boolean.TRUE);
+            String key = hideKeyOf(item);
+            if (key == null) continue;
+            if (!seenKeys.add(key)) { it.remove(); removed++; }
         }
         return removed;
     }

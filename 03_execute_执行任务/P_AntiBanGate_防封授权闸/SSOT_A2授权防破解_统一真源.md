@@ -30,10 +30,10 @@
 | 轴 | 官替版 | 共存版 | 口径 |
 |---|---:|---:|---|
 | **签名** | 要喂 | 要喂 | 两种形态都是重新打包/重签，签名都会偏离官方 DER；签名是已证硬轴。 |
-| **android_id / SSAID** | 要喂 | 要喂 | SSAID 跟签名 key 派生，重签后会偏。**大血管** `c$p.aa` 经 Java `Settings.Secure.getString("android_id")` 采集 → 在该 Java 读点 hook 即控上传（L1，`recon/A2_FEED_DIFF_KPI_实验_20260625.md`）。**算法全球同构**（HMAC-SHA256），**`user_key` 每机随机**（`settings_ssaid.xml`，root 可读）→ 本机 official SSAID **数值每机不同**，非全球共用一个 hex。非 root **不必** runtime 读 `user_key` 才能喂；喂 **本机**「官方 DER 对应 SSAID」（root 实验机 `ssaid_calc.py` 算一次入库/发版常量）。服务端大概率拿不到 `user_key`、难做签名↔SSAID 密码学校验 → 控大血管上传态为主。 |
+| **android_id / SSAID** | 停喂 | 停喂 | ⚠️ 现状=**停喂**（2026-07-09 核代码）：非 root 算不出本机官方 SSAID，全局硬喂会让所有客户撞同一 id；`A2SignatureSpoof.feedOfficialSsaid` 的 `setResult` 已注释、`OFFICIAL_SSAID` 成死码，hook 仅保留被动观测（借官方眼睛，`observeAccessibility`）。留系统自然值（每机唯一稳定；服务端无 `user_key` 无法核真伪、只看一致）。root 机需精确值时改由 `ssaid_calc.py` 逐机喂。算法背景（HMAC-SHA256、`user_key` 每机随机 root-only）保留备查，但当前不喂。 |
 | **包名 / 路径** | 通常不需要 | 要喂 | 官替已占官方包名；共存包名不同，需仅在 `normsg` / `bu5` / `c$p` 检测 caller 下选择性灌官方包名/路径，禁止全局改 `getPackageName`。 |
 
-一句话：**签名 + android_id 两种形态都要照顾；包名/路径主要是共存版的额外轴。**`android_id` 不写成“喂不了”，也不写成“全球共用一个官方 SSAID”；写“**大血管 Java 喂点已证**、算法同构但**输出每机不同**、喂**本机**官方态（非 runtime 读 `user_key`）”。
+一句话：**签名轴两种形态都要喂；包名/路径是共存版额外轴；android_id 现状=停喂**（非 root 硬喂会撞车，`feedOfficialSsaid` 已 NO-OP、仅被动观测；要喂需 root 逐机 `ssaid_calc`）。
 
 **共存包名铁律**：禁止把代码里的 `.mm` 粗暴全替成 `.mn`。共存要分两种包名：运行 / 作用域 / 数据目录 / native 期望包名用**真实共存包名**；喂给官方检测咽喉的身份输入用**官方包名 / 官方路径 / 官方 DER**。签名必须同时覆盖 `signatures[]` 和 `signingInfo` 两条读取路径，只改一条会漏。
 
@@ -99,7 +99,7 @@
 
 - **触发源**：诱饵 `PromoConfig`（明文 URL+base64 token+开关，真功能不读它）+ 绊线 `CompatProbe`（`check()` 比编译期 `BASELINE` canary、`checkSignature()` 比 `EXPECTED_CERT`）→ `RiskState.markTampered`。
 - **时序**：命中 → **7 天影子期**（`RiskState.SHADOW_HOURS_DEFAULT=168h`，表面照常）→ `TAMPER_FUNNEL` → `RiskPromptController.maybeShow()`（唯一弹窗）→ `FunnelPrompt` 引流。引流 URL 在 SO 加密引导段（`NativeBridge.getEndpoint("funnel")`），非 Java 明文。
-- **散沙扩面**`[码]`：`RiskState.isTamperDegraded()` 被 **4 个**杂项功能消费——`CallGuard` / `PushFilter` / `AntiRecall` / `FakeLocation`（`active()=isActive()&&!isTamperDegraded()`）。**密友隐藏四链不进 RiskState 散沙**（record-only 是故意，铁律 29 防误伤正版；篡改时密友散沙靠 registry 重签覆盖）。
+- **散沙扩面**`[码]`：`RiskState.isTamperDegraded()` 被 **5 个**杂项功能消费——`CallGuard` / `PushFilter` / `AntiRecall` / `FakeLocation` / `FakeBalance`（`active()=isActive()&&!isTamperDegraded()`）。**密友隐藏四链不进 RiskState 散沙**（record-only 是故意，铁律 29 防误伤正版；篡改时密友散沙靠 registry 重签覆盖）。
 - **canary 走 COMPARE 不走 USE**：命中→标记→影子期，**不折进 key**（折 key=误判即解不出即封、无缓冲；逆序线只用 COMPARE+影子期）。URL **永不折 key**（换 URL 会批量封旧用户）。
 - **不可逆（D-019）**：篡改散沙无客户端洗白/恢复路（正版 cert 不变→`isConfirmedTamper` 对正版恒 false→根本不会误判进影子期；任何恢复路=给盗版反复重置的洗白口）。
 - **诚实缺口**：canary② =「hash 弹窗稳定段 / 绑行为」**未做**（现状 canary=诱饵指纹+模块签名）→ 留诱饵常量、只 NOP 弹窗显示 = 不触发 canary；好在重签必触发 cert 绊线兜底。
@@ -156,7 +156,7 @@
 | 隐私总闸 | `core/StateMachine.isActive` | 四层 AND（含 `isSensitiveConfigReady`） |
 | 真授权门 | `net/EnvelopeStore.isAuthorizedNow` | `isCardRevoked?false : token+验签信封+license 未过期` |
 | 封停/删卡 latch | `net/EnvelopeStore.isCardRevoked/markCardRevoked`（`:192`/`:205`） | ✅ 已可恢复：`clearCardRevokedIfAuthorized`（`:233`）收有效信封清 latch（调用点 `:113-117`）·L2 待 L1 |
-| 篡改散沙 | `core/RiskState.isTamperDegraded` | 消费者 4：CallGuard/PushFilter/AntiRecall/FakeLocation |
+| 篡改散沙 | `core/RiskState.isTamperDegraded` | 消费者 5：CallGuard/PushFilter/AntiRecall/FakeLocation/FakeBalance（以调用点为准，grep 即得） |
 | 影子期 | `core/RiskState.SHADOW_HOURS_DEFAULT` | 168h（7 天，硬编码 override） |
 | 唯一弹窗 | `core/RiskPromptController.maybeShow` | 引流 URL 走 SO `getEndpoint("funnel")` |
 | 可信时间 | `core/LeaseClock` + `core/OfficialClock` | ✅ 服务器授时 + 官方对时第二源已接：`noteOfficialTime`/`getOfficialBaseMs`（`LeaseClock:85`/`:109`）← `OfficialClock.readOfficialNowMs`（`:36`）← `ModuleMain §6.55`（`:217`）·L2 待 L1 |
